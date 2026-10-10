@@ -47,4 +47,8 @@ refresh_raw = Rails.configuration.x.multi_account[:refresh_flow]
 refresh_val = (refresh_raw.is_a?(String) && refresh_raw.strip.empty?) ? nil : boolean_cast.cast(refresh_raw)
 Rails.configuration.x.multi_account[:refresh_flow] = refresh_val.nil? ? true : refresh_val
 
-raise 'Missing multi-account config: redirect_uri. Please set MA_MULTI_ACCOUNT_REDIRECT_URI environment variable or configure settings.' if Rails.configuration.x.multi_account[:redirect_uri].blank?
+# 설정이 없으면 서버 도메인으로 콜백 주소를 만든다. (Docker 빌드처럼 .env.production 이 없는 단계 포함)
+if Rails.configuration.x.multi_account[:redirect_uri].blank?
+  scheme = Rails.configuration.x.use_https ? 'https' : 'http'
+  Rails.configuration.x.multi_account[:redirect_uri] = "#{scheme}://#{Rails.configuration.x.web_domain}/multi_accounts/callback"
+end
