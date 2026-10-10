@@ -819,14 +819,16 @@ ko:
         desc_html: 이것은 hCaptcha의 외부 스크립트에 의존합니다, 이것은 개인정보 보호에 위협을 가할 수도 있습니다. 추가적으로, <strong>이것은 몇몇 사람들(특히나 장애인들)에게 가입 절차의 접근성을 심각하게 떨어트릴 수 있습니다</strong>. 이러한 이유로, 대체제로 승인 전용이나 초대제를 통한 가입을 고려해보세요.
         title: 새로운 사용자가 계정 확인을 위해서는 CAPTCHA를 풀어야 하도록 합니다
       community:
+        lighter_main: 비우면 메인색을 밝게
         posting: 글쓰기
-        same_as_light: 비우면 낮 테마색
+        same_as_light: 비우면 낮과 같게
+        same_as_main: 비우면 메인색
         search: 검색
         search_scopes:
           all: 서버 전체 (모든 계정의 공개 툿 포함)
           following: 나와 팔로우한 사람
         theme: 테마
-        theme_hint_html: 낮/밤 테마색과 배경 이미지로 화면 전체 색을 자동으로 맞춥니다. 낮에는 밝은 박스와 검은 글자, 밤에는 어두운 박스와 흰 글자가 됩니다. 로고는 <a href="%{branding_path}">브랜딩</a> 탭의 워드마크(낮/밤)를 씁니다.
+        theme_hint_html: 메인색은 큰 박스·메뉴·아이콘·아이디/시간 같은 바탕 색을, 서브색은 게시 버튼·링크 같은 포인트 색을 정합니다. 낮에는 메인색이 살짝 섞인 반투명한 흰 박스와 검은 글자, 밤에는 메인색을 어둡게 한 반투명한 박스와 흰 글자가 되고 배경 이미지가 비칩니다. 로고는 <a href="%{branding_path}">브랜딩</a> 탭의 워드마크(낮/밤)를 씁니다.
         title: 커뮤니티 옵션
       content_retention:
         danger_zone: 위험한 영역

@@ -160,6 +160,7 @@ RSpec.describe ThemeHelper do
     before do
       allow(InstancePresenter).to receive(:new).and_return(presenter)
       allow(helper).to receive(:vite_stylesheet_tag).and_return('<link rel="stylesheet">'.html_safe)
+      Setting.community_theme_enabled = true
     end
 
     context 'when the theme is off' do
@@ -170,49 +171,58 @@ RSpec.describe ThemeHelper do
       end
     end
 
-    context 'when the theme is on with only a light colour' do
-      before do
-        Setting.community_theme_enabled = true
-        Setting.community_theme_color_light = '#4a5390'
-        Setting.community_theme_color_dark = ''
-      end
+    context 'when only the light main colour is set' do
+      before { Setting.community_theme_main_light = '#3F4479' }
 
-      it 'uses the light colour for both modes and picks readable text colours' do
+      it 'reuses it everywhere and lightens the dark accent' do
         expect(helper.community_theme_tags)
-          .to include('--community-theme-accent-light:#4a5390;')
-          .and include('--community-theme-accent-dark:#4a5390;')
-          .and include('--community-theme-on-accent-light:#ffffff;')
+          .to include('--community-theme-main-light:#3f4479;')
+          .and include('--community-theme-point-light:#3f4479;')
+          .and include('--community-theme-main-dark:#3f4479;')
+          .and include('--community-theme-point-dark:#696fb1;')
+          .and include('--community-theme-on-point-light:#ffffff;')
           .and include('<link rel="stylesheet">')
       end
     end
 
-    context 'when the dark colour is bright and a dark background is uploaded' do
+    context 'when all four colours are set and a dark background is uploaded' do
       let(:dark_background) { instance_double(SiteUpload, file: instance_double(Paperclip::Attachment, url: '/system/bg.png')) }
 
       before do
-        Setting.community_theme_enabled = true
-        Setting.community_theme_color_light = '#c0392b'
-        Setting.community_theme_color_dark = '#f5c518'
+        Setting.community_theme_main_light = '#8a7e5a'
+        Setting.community_theme_point_light = '#c0392b'
+        Setting.community_theme_main_dark = '#2b5f78'
+        Setting.community_theme_point_dark = '#f5c518'
       end
 
-      it 'puts dark text on the bright colour and exposes the background' do
+      it 'uses each colour as given, with dark text on the bright accent' do
         expect(helper.community_theme_tags)
-          .to include('--community-theme-accent-dark:#f5c518;')
-          .and include('--community-theme-on-accent-dark:#14161a;')
+          .to include('--community-theme-main-dark:#2b5f78;')
+          .and include('--community-theme-point-light:#c0392b;')
+          .and include('--community-theme-point-dark:#f5c518;')
+          .and include('--community-theme-on-point-dark:#14161a;')
           .and include('--community-theme-background-dark:url("/system/bg.png");')
           .and not_include('--community-theme-background-light')
       end
     end
 
-    context 'when a stored colour is malformed' do
+    context 'when only the dark main colour is set at night' do
       before do
-        Setting.community_theme_enabled = true
-        Setting.community_theme_color_light = 'red;}body{'
+        Setting.community_theme_main_light = '#3f4479'
+        Setting.community_theme_main_dark = '#2b5f78'
       end
+
+      it 'lightens the dark main colour for the dark accent' do
+        expect(helper.community_theme_tags).to include('--community-theme-point-dark:#4c9abf;')
+      end
+    end
+
+    context 'when a stored colour is malformed' do
+      before { Setting.community_theme_main_light = 'red;}body{' }
 
       it 'falls back to the default colour' do
         expect(helper.community_theme_tags)
-          .to include("--community-theme-accent-light:#{ThemeHelper::COMMUNITY_THEME_DEFAULT_COLOR};")
+          .to include("--community-theme-main-light:#{ThemeHelper::COMMUNITY_THEME_DEFAULT_COLOR};")
           .and not_include('body{')
       end
     end

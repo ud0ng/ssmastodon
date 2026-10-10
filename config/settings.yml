@@ -14,8 +14,10 @@ defaults: &defaults
   status_search_enabled: false
   status_search_scope: following
   community_theme_enabled: false
-  community_theme_color_light: ''
-  community_theme_color_dark: ''
+  community_theme_main_light: ''
+  community_theme_point_light: ''
+  community_theme_main_dark: ''
+  community_theme_point_dark: ''
   profile_directory: true
   closed_registrations_message: ''
   timeline_preview: true

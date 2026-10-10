@@ -1,42 +1,59 @@
 // 커뮤니티 테마 (서버 설정 > 커뮤니티 옵션 > 테마)
 //
-// 서버가 :root 에 넣어주는 변수
-//   --community-theme-accent-{light,dark}       낮/밤 테마색
-//   --community-theme-on-accent-{light,dark}    테마색 위 글자색 (흰색/검은색 자동)
-//   --community-theme-background-{light,dark}   낮/밤 배경 이미지 (없으면 단색)
+// 서버가 :root 에 넣어주는 변수 (빈 칸은 서버가 채워서 넘긴다)
+//   --community-theme-main-{light,dark}       메인색: 큰 박스·메뉴·아이콘·아이디/시간 같은 바탕 색
+//   --community-theme-point-{light,dark}      서브색: 게시 버튼·링크·해시태그·보낸 채팅 같은 포인트 색
+//   --community-theme-on-point-{light,dark}   서브색 위 글자색 (흰색/검은색 자동)
+//   --community-theme-background-{light,dark} 낮/밤 배경 이미지 (없으면 단색)
 //
-// 낮은 반투명한 흰 박스 + 검은 글자 + 테마색 메뉴, 밤은 반투명한 검은 박스 + 흰 글자.
-// 박스에 테마색을 조금만 섞고 배경이 비치게 해서, 배경·테마색과 자연스럽게 어울리게 한다.
-// 흐린 글자와 구분선에도 테마색을 섞는다. 관리자 화면에는 적용하지 않는다.
-
-@mixin community-theme-dark {
-  --ct-accent: var(--community-theme-accent-dark);
-  --ct-on-accent: var(--community-theme-on-accent-dark);
-  --ct-background-image: var(--community-theme-background-dark, none);
-  --ct-base: color-mix(in srgb, #0c0e14 95%, var(--ct-accent));
-  --ct-raised: color-mix(in srgb, var(--ct-base) 88%, #fff);
-  --ct-text: #f4f5f7;
-  --ct-dim: color-mix(in srgb, var(--ct-accent) 35%, #9aa0ab);
-  --ct-line: color-mix(in srgb, var(--ct-accent) 18%, transparent);
-  --ct-nav: var(--ct-text);
-  --ct-shade: #000;
-  --ct-panel-alpha: 80%;
-  --ct-main-alpha: 84%;
-}
+// 낮: 메인색이 아주 살짝 섞인 반투명 흰 박스 + 검은 글자, 메뉴는 메인색 계열의 진한 색,
+//     아이콘·아이디·시간은 메인색을 연하게 → 호버하면 진하게.
+// 밤: 메인색을 깊게 어둡게 한 반투명 박스 + 흰 글자, 메뉴는 흰색에 가까운 메인색,
+//     아이콘·아이디·시간은 메인색을 탁하게 → 호버하면 흰색.
+// 관리자·환경설정 화면에는 적용하지 않는다.
 
 @mixin community-theme-light {
-  --ct-accent: var(--community-theme-accent-light);
-  --ct-on-accent: var(--community-theme-on-accent-light);
+  --ct-main: var(--community-theme-main-light);
+  --ct-point: var(--community-theme-point-light);
+  --ct-on-point: var(--community-theme-on-point-light);
   --ct-background-image: var(--community-theme-background-light, none);
-  --ct-base: color-mix(in srgb, #fff 97%, var(--ct-accent));
-  --ct-raised: color-mix(in srgb, #fff 94%, var(--ct-accent));
-  --ct-text: color-mix(in srgb, #14161a 90%, var(--ct-accent));
-  --ct-dim: color-mix(in srgb, var(--ct-accent) 45%, #6b6f78);
-  --ct-line: color-mix(in srgb, var(--ct-accent) 16%, transparent);
-  --ct-nav: color-mix(in srgb, var(--ct-accent) 82%, #14161a);
+
+  --ct-base: color-mix(in srgb, var(--ct-main) 4%, #fff);
+  --ct-raised: color-mix(in srgb, var(--ct-main) 3%, #fff);
+  --ct-soft: color-mix(in srgb, var(--ct-main) 10%, #fff);
+  --ct-text: color-mix(in srgb, var(--ct-main) 8%, #14161a);
+  --ct-nav: color-mix(in srgb, var(--ct-main) 80%, #14161a);
+  --ct-dim: color-mix(in srgb, var(--ct-main) 50%, #fff);
+  --ct-dim-hover: var(--ct-nav);
+  --ct-line: color-mix(in srgb, var(--ct-main) 14%, transparent);
+  --ct-hover: color-mix(in srgb, var(--ct-main) 6%, transparent);
   --ct-shade: #fff;
-  --ct-panel-alpha: 70%;
-  --ct-main-alpha: 76%;
+
+  --ct-panel-alpha: 92%;
+  --ct-main-alpha: 88%;
+  --ct-raised-alpha: 72%;
+}
+
+@mixin community-theme-dark {
+  --ct-main: var(--community-theme-main-dark);
+  --ct-point: var(--community-theme-point-dark);
+  --ct-on-point: var(--community-theme-on-point-dark);
+  --ct-background-image: var(--community-theme-background-dark, none);
+
+  --ct-base: color-mix(in srgb, var(--ct-main) 28%, #0a0b10);
+  --ct-raised: color-mix(in srgb, var(--ct-main) 36%, #0d0e14);
+  --ct-soft: color-mix(in srgb, var(--ct-main) 45%, #121318);
+  --ct-text: color-mix(in srgb, var(--ct-main) 6%, #f4f5f8);
+  --ct-nav: color-mix(in srgb, var(--ct-main) 12%, #fff);
+  --ct-dim: color-mix(in srgb, var(--ct-main) 40%, #b9bcc8);
+  --ct-dim-hover: var(--ct-text);
+  --ct-line: color-mix(in srgb, color-mix(in srgb, var(--ct-main) 40%, #fff) 16%, transparent);
+  --ct-hover: color-mix(in srgb, color-mix(in srgb, var(--ct-main) 50%, #fff) 10%, transparent);
+  --ct-shade: #000;
+
+  --ct-panel-alpha: 92%;
+  --ct-main-alpha: 88%;
+  --ct-raised-alpha: 86%;
 }
 
 body.community-theme:not(.admin) {
@@ -58,30 +75,31 @@ body.community-theme:not(.admin) {
   // 면
   --ct-panel: color-mix(in srgb, var(--ct-base) var(--ct-panel-alpha), transparent);
   --ct-panel-main: color-mix(in srgb, var(--ct-base) var(--ct-main-alpha), transparent);
-  --ct-panel-strong: color-mix(in srgb, var(--ct-base) 94%, transparent);
+  --ct-panel-raised: color-mix(in srgb, var(--ct-raised) var(--ct-raised-alpha), transparent);
   --ct-panel-solid: var(--ct-base);
-  --ct-hover: color-mix(in srgb, var(--ct-accent) 10%, transparent);
 
-  // Bird UI
+  // Bird UI — 면
   --color-bg: var(--ct-panel);
   --color-column: var(--ct-panel);
   --color-modal-panel: var(--ct-panel-solid);
   --color-dark: var(--ct-panel-solid);
-  --color-mobile-search-bg: var(--ct-raised);
+  --color-mobile-search-bg: var(--ct-panel-raised);
   --color-mobile-popout-bg: var(--ct-panel-solid);
   --color-bg-75: color-mix(in srgb, var(--ct-base) 75%, transparent);
   --color-bg-90: color-mix(in srgb, var(--ct-base) 90%, transparent);
-  --color-bg-compose-form: color-mix(in srgb, var(--ct-raised) var(--ct-main-alpha), transparent);
+  --color-bg-compose-form: var(--ct-panel-raised);
   --color-bg-compose-form-focus: var(--ct-raised);
-  --color-mud: var(--color-bg-compose-form);
-  --color-brand-commu-mud: var(--color-bg-compose-form);
+  --color-mud: var(--ct-panel-raised);
+  --color-brand-commu-mud: var(--ct-panel-raised);
   --color-brand-commu-bg: var(--ct-panel-solid);
   --color-brand-commu-dark: var(--ct-panel-solid);
 
+  // Bird UI — 글자·비활성 색 (메인색)
   --color-fg: var(--ct-text);
   --color-light-text: var(--ct-text);
   --color-button-text: var(--ct-text);
   --color-column-link: var(--ct-nav);
+  --color-column-link-hover: var(--ct-dim-hover);
   --color-dim: var(--ct-dim);
   --color-brand-commu-dim: var(--ct-dim);
   --color-light-purple: var(--ct-dim);
@@ -89,51 +107,66 @@ body.community-theme:not(.admin) {
   --color-brand-commu-text-light: var(--ct-dim);
 
   --color-border: var(--ct-line);
-  --color-button-border: color-mix(in srgb, var(--ct-text) 25%, transparent);
+  --color-button-border: color-mix(in srgb, var(--ct-dim) 70%, transparent);
   --color-thread-line: var(--ct-line);
   --color-brand-commu-threaded-line: var(--ct-line);
   --color-noti-hover: var(--ct-hover);
-  --color-light-shade: var(--ct-hover);
+  --color-light-shade: var(--ct-soft);
   --color-icon-button-hover: var(--ct-hover);
   --color-focusable-toot: transparent;
   --color-modal-overlay: color-mix(in srgb, var(--ct-shade) 35%, transparent);
 
-  --color-brand-commu: var(--ct-accent);
-  --color-link: var(--ct-accent);
-  --color-brand-commu-links: var(--ct-accent);
-  --color-accent: var(--ct-accent);
-  --color-accent-dark: var(--ct-accent);
-  --color-accent-dark-50: var(--ct-accent);
-  --color-hashtag: var(--ct-accent);
-  --color-mention: var(--ct-accent);
-  --color-column-link-hover: var(--ct-accent);
-  --color-post-button: var(--ct-accent);
-  --color-post-button-text: var(--ct-on-accent);
-  --color-on-brand: var(--ct-on-accent);
-  --color-ghost-button-text: var(--ct-accent);
-  --color-sent-message-background: var(--ct-accent);
-  --color-sent-message-text: var(--ct-on-accent);
-  --color-recieve-message-background: var(--ct-raised);
+  // Bird UI — 포인트 (서브색)
+  --color-brand-commu: var(--ct-point);
+  --color-link: var(--ct-point);
+  --color-brand-commu-links: var(--ct-point);
+  --color-accent: var(--ct-point);
+  --color-accent-dark: var(--ct-point);
+  --color-accent-dark-50: var(--ct-point);
+  --color-hashtag: var(--ct-point);
+  --color-mention: var(--ct-point);
+  --color-post-button: var(--ct-point);
+  --color-post-button-text: var(--ct-on-point);
+  --color-on-brand: var(--ct-on-point);
+  --color-ghost-button-text: var(--ct-point);
+  --color-sent-message-background: var(--ct-point);
+  --color-sent-message-text: var(--ct-on-point);
+  --color-recieve-message-background: var(--ct-soft);
   --color-recieve-message-text: var(--ct-text);
+  --color-hover-message-list-background: var(--ct-soft);
 
   // 기본 마스토돈
   --background-color: var(--ct-panel-solid);
-  --background-color-tint: var(--ct-panel-strong);
+  --background-color-tint: var(--ct-panel);
   --background-border-color: var(--ct-line);
   --surface-background-color: var(--ct-raised);
-  --surface-variant-background-color: var(--ct-raised);
+  --surface-variant-background-color: var(--ct-soft);
   --dropdown-background-color: var(--ct-panel-solid);
   --dropdown-border-color: var(--ct-line);
-  --modal-background-color: var(--ct-panel-strong);
+  --modal-background-color: var(--ct-panel);
   --modal-border-color: var(--ct-line);
   --input-background-color: var(--ct-raised);
+  --input-placeholder-color: var(--ct-dim);
   --on-input-color: var(--ct-text);
 
   background: var(--ct-background-image) center / cover no-repeat fixed, var(--ct-panel-solid);
   color: var(--ct-text);
-}
 
-// 가운데 칸(타임라인·채팅)은 거의 불투명한 패널, 양옆은 배경이 그대로 보인다.
-body.community-theme:not(.admin) .columns-area__panels__main > .columns-area {
-  background: var(--ct-panel-main);
+  // 가운데 칸(타임라인·채팅)은 반투명 박스, 양옆은 배경이 그대로 보인다.
+  .columns-area__panels__main > .columns-area {
+    background: var(--ct-panel-main);
+  }
+
+  // 아이콘 버튼은 평소 연한 메인색, 호버하면 진한 메인색 (포인트색이 아니다)
+  .icon-button:not(.active):hover,
+  .icon-button:not(.active):focus-visible {
+    color: var(--ct-dim-hover);
+  }
+
+  // 아이디·시간도 호버하면 진하게
+  a.status__relative-time:hover,
+  a.status__display-name:hover .display-name__account,
+  .account__display-name:hover .display-name__account {
+    color: var(--ct-dim-hover);
+  }
 }

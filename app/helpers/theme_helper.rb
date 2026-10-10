@@ -48,27 +48,29 @@ module ThemeHelper
     tag.style(":root{#{declarations.join}}".html_safe) # rubocop:disable Rails/OutputSafety
   end
 
-  COMMUNITY_THEME_DEFAULT_COLOR = '#1d9bf0'
+  COMMUNITY_THEME_DEFAULT_COLOR = '#4a5390'
 
   def community_theme_enabled?
     Setting.community_theme_enabled
   end
 
   # 커뮤니티 테마 (서버 설정 > 커뮤니티 옵션 > 테마)
-  # 낮/밤 테마색·배경 이미지를 CSS 변수로 넣고, 그 변수를 쓰는 테마 스타일시트를 붙인다.
-  # 밤 테마색을 비워두면 낮 테마색을 그대로 쓴다.
+  # 낮/밤 메인색(큰 박스·메뉴·비활성 색)과 서브색(포인트 버튼·링크), 배경 이미지를 CSS 변수로 넣고,
+  # 그 변수를 쓰는 테마 스타일시트를 붙인다. 빈 칸은 이렇게 채운다.
+  #   낮 서브색 ← 낮 메인색
+  #   밤 메인색 ← 낮 메인색
+  #   밤 서브색 ← 밤 메인색(없으면 낮 서브색)을 밝게 한 색 (어두운 박스 위에서 보이도록)
   def community_theme_tags
     return unless community_theme_enabled?
 
-    light = community_theme_color(Setting.community_theme_color_light) || COMMUNITY_THEME_DEFAULT_COLOR
-    dark  = community_theme_color(Setting.community_theme_color_dark) || light
-
-    declarations = [
-      "--community-theme-accent-light:#{light};",
-      "--community-theme-accent-dark:#{dark};",
-      "--community-theme-on-accent-light:#{community_theme_on_color(light)};",
-      "--community-theme-on-accent-dark:#{community_theme_on_color(dark)};",
-    ]
+    colors = community_theme_colors
+    declarations = colors.flat_map do |mode, (main, point)|
+      [
+        "--community-theme-main-#{mode}:#{main};",
+        "--community-theme-point-#{mode}:#{point};",
+        "--community-theme-on-point-#{mode}:#{community_theme_on_color(point)};",
+      ]
+    end
 
     %w(light dark).each do |mode|
       upload = InstancePresenter.new.public_send(:"community_theme_background_#{mode}")
@@ -83,11 +85,52 @@ module ThemeHelper
 
   private
 
-  def community_theme_color(value)
-    value if value.to_s.match?(Form::AdminSettings::COMMUNITY_THEME_COLOR_FORMAT)
+  def community_theme_colors
+    main_light  = community_theme_color(Setting.community_theme_main_light) || COMMUNITY_THEME_DEFAULT_COLOR
+    point_light = community_theme_color(Setting.community_theme_point_light) || main_light
+    main_dark   = community_theme_color(Setting.community_theme_main_dark)
+    point_dark  = community_theme_color(Setting.community_theme_point_dark) || community_theme_lighten(main_dark || point_light)
+
+    { light: [main_light, point_light], dark: [main_dark || main_light, point_dark] }
   end
 
-  # 테마색 위에 올라갈 글자색. 흰색과 검은색 중 대비가 더 큰 쪽을 고른다.
+  def community_theme_color(value)
+    value.downcase if value.to_s.match?(Form::AdminSettings::COMMUNITY_THEME_COLOR_FORMAT)
+  end
+
+  # 채도는 그대로 두고 밝기만 올린다. (흰색을 섞으면 탁해진다)
+  def community_theme_lighten(hex, amount = 0.3)
+    r, g, b = hex.delete_prefix('#').scan(/../).map { |pair| pair.to_i(16) / 255.0 }
+    max, min = [r, g, b].minmax.reverse
+    lightness = (max + min) / 2
+    delta = max - min
+
+    if delta.zero?
+      hue = saturation = 0.0
+    else
+      saturation = lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min)
+      hue = case max
+            when r then ((g - b) / delta) % 6
+            when g then ((b - r) / delta) + 2
+            else ((r - g) / delta) + 4
+            end
+      hue /= 6
+    end
+
+    lightness += (1 - lightness) * amount
+    format('#%02x%02x%02x', *community_theme_hsl_to_rgb(hue, saturation, lightness))
+  end
+
+  def community_theme_hsl_to_rgb(hue, saturation, lightness)
+    chroma = (1 - ((2 * lightness) - 1).abs) * saturation
+    x = chroma * (1 - (((hue * 6) % 2) - 1).abs)
+    m = lightness - (chroma / 2)
+    r, g, b = [[chroma, x, 0], [x, chroma, 0], [0, chroma, x], [0, x, chroma], [x, 0, chroma], [chroma, 0, x]][(hue * 6).floor % 6]
+
+    [r, g, b].map { |channel| ((channel + m) * 255).round }
+  end
+
+  # 서브색 위에 올라갈 글자색. 흰 글자가 충분히 읽히면(대비 3:1 이상) 흰색, 아니면 검은색.
   def community_theme_on_color(hex)
     channels = hex.delete_prefix('#').scan(/../).map do |pair|
       value = pair.to_i(16) / 255.0
@@ -95,7 +138,7 @@ module ThemeHelper
     end
     luminance = (0.2126 * channels[0]) + (0.7152 * channels[1]) + (0.0722 * channels[2])
 
-    (luminance + 0.05) / 0.05 > 1.05 / (luminance + 0.05) ? '#14161a' : '#ffffff'
+    1.05 / (luminance + 0.05) >= 3 ? '#ffffff' : '#14161a'
   end
 
   def css_string_escape(value)

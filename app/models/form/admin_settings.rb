@@ -46,8 +46,10 @@ class Form::AdminSettings
     status_search_enabled
     status_search_scope
     community_theme_enabled
-    community_theme_color_light
-    community_theme_color_dark
+    community_theme_main_light
+    community_theme_point_light
+    community_theme_main_dark
+    community_theme_point_dark
     community_theme_background_light
     community_theme_background_dark
   ).freeze
@@ -112,8 +114,7 @@ class Form::AdminSettings
   validates :min_age, numericality: { only_integer: true }, allow_blank: true, if: -> { defined?(@min_age) }
   validates :status_max_characters, numericality: { only_integer: true, in: StatusLengthValidator::MAX_CHARS_RANGE }, if: -> { defined?(@status_max_characters) }
   validates :status_search_scope, inclusion: { in: STATUS_SEARCH_SCOPES }, if: -> { defined?(@status_search_scope) }
-  validates :community_theme_color_light, format: { with: COMMUNITY_THEME_COLOR_FORMAT }, allow_blank: true, if: -> { defined?(@community_theme_color_light) }
-  validates :community_theme_color_dark, format: { with: COMMUNITY_THEME_COLOR_FORMAT }, allow_blank: true, if: -> { defined?(@community_theme_color_dark) }
+  validates :community_theme_main_light, :community_theme_point_light, :community_theme_main_dark, :community_theme_point_dark, format: { with: COMMUNITY_THEME_COLOR_FORMAT }, allow_blank: true
   validates :site_short_description, length: { maximum: DESCRIPTION_LIMIT }, if: -> { defined?(@site_short_description) }
   validates :status_page_url, url: true, allow_blank: true
   validate :validate_site_uploads

@@ -36,14 +36,26 @@
               as: :boolean,
               wrapper: :with_label
 
+  - color_input = { pattern: '#[0-9a-fA-F]{6}', maxlength: 7 }
+
   .fields-row
     .fields-row__column.fields-row__column-6.fields-group
-      = f.input :community_theme_color_light,
-                input_html: { pattern: '#[0-9a-fA-F]{6}', placeholder: ThemeHelper::COMMUNITY_THEME_DEFAULT_COLOR, maxlength: 7 },
+      = f.input :community_theme_main_light,
+                input_html: color_input.merge(placeholder: ThemeHelper::COMMUNITY_THEME_DEFAULT_COLOR),
                 wrapper: :with_label
     .fields-row__column.fields-row__column-6.fields-group
-      = f.input :community_theme_color_dark,
-                input_html: { pattern: '#[0-9a-fA-F]{6}', placeholder: t('admin.settings.community.same_as_light'), maxlength: 7 },
+      = f.input :community_theme_point_light,
+                input_html: color_input.merge(placeholder: t('admin.settings.community.same_as_main')),
+                wrapper: :with_label
+
+  .fields-row
+    .fields-row__column.fields-row__column-6.fields-group
+      = f.input :community_theme_main_dark,
+                input_html: color_input.merge(placeholder: t('admin.settings.community.same_as_light')),
+                wrapper: :with_label
+    .fields-row__column.fields-row__column-6.fields-group
+      = f.input :community_theme_point_dark,
+                input_html: color_input.merge(placeholder: t('admin.settings.community.lighter_main')),
                 wrapper: :with_label
 
   .image-picker

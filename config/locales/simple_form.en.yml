@@ -72,9 +72,11 @@ en:
         backups_retention_period: Users have the ability to generate archives of their posts to download later. When set to a positive value, these archives will be automatically deleted from your storage after the specified number of days.
         bootstrap_timeline_accounts: These accounts will be pinned to the top of new users' follow recommendations.
         closed_registrations_message: Displayed when sign-ups are closed
-        community_theme_color_dark: Colour for buttons, links, the selected menu item and sent chat bubbles in dark mode. Leave blank to use the light colour.
-        community_theme_color_light: 'Colour for buttons, links, the selected menu item and sent chat bubbles in light mode. (e.g. #4a5390)'
         community_theme_enabled: Turn off to go back to the default theme.
+        community_theme_main_dark: Dark-mode colour for large panels, the menu, icons and handles/times. Leave blank to use the light main colour.
+        community_theme_main_light: 'Light-mode colour for large panels, the menu, icons and handles/times. Panels get a hint of it; inactive elements such as icons use a pale shade that deepens on hover. (e.g. #4a5390)'
+        community_theme_point_dark: Dark-mode colour for accent buttons and links. Leave blank to use a lightened dark main colour (or light accent colour).
+        community_theme_point_light: Light-mode colour for accent buttons (such as Post), links, hashtags and sent chat bubbles. Leave blank to use the light main colour.
         content_cache_retention_period: All posts from other servers (including boosts and replies) will be deleted after the specified number of days, without regard to any local user interaction with those posts. This includes posts where a local user has marked it as bookmarks or favorites. Private mentions between users from different instances will also be lost and impossible to restore. Use of this setting is intended for special purpose instances and breaks many user expectations when implemented for general purpose use.
         custom_css: You can apply custom styles on the web version of Mastodon.
         favicon: WEBP, PNG, GIF or JPG. Overrides the default Mastodon favicon with a custom icon.
@@ -255,9 +257,11 @@ en:
         closed_registrations_message: Custom message when sign-ups are not available
         community_theme_background_dark: Dark background
         community_theme_background_light: Light background
-        community_theme_color_dark: Dark theme colour
-        community_theme_color_light: Light theme colour
         community_theme_enabled: Use the community theme
+        community_theme_main_dark: Dark main colour
+        community_theme_main_light: Light main colour
+        community_theme_point_dark: Dark accent colour
+        community_theme_point_light: Light accent colour
         content_cache_retention_period: Remote content retention period
         custom_css: Custom CSS
         favicon: Favicon
