@@ -4,13 +4,13 @@
 #   cd ~/mastodon && docker compose build && bin/docker-setup
 #
 # 하는 일
-#   1. 비밀 키를 만들고 .env.production 을 저장 (DB=db, Redis=redis, 메일=Gmail SMTP)
+#   1. 비밀 키를 만들고 .env.production 을 저장 (DB=db, Redis=redis, 메일=외부 SMTP, 기본값 Brevo)
 #   2. DB 생성 → 스키마 → 마이그레이션 → seed (관리자 역할 포함)
 #   3. 멀티계정 OAuth 클라이언트 생성
 #   4. 관리자(Owner) 계정 생성
 #
 # 묻는 값은 환경변수로 미리 줄 수도 있다:
-#   LOCAL_DOMAIN, SMTP_LOGIN, SMTP_PASSWORD, ADMIN_USERNAME, ADMIN_EMAIL
+#   LOCAL_DOMAIN, SMTP_SERVER, SMTP_LOGIN, SMTP_PASSWORD, SMTP_FROM_ADDRESS, ADMIN_USERNAME, ADMIN_EMAIL
 #
 # 이미 .env.production 이 있으면 멈춘다. (비밀 키를 다시 만들면 모두 로그아웃되고 암호화된 데이터가 깨진다)
 
@@ -60,11 +60,13 @@ run_web() {
 
 echo '== 서버 정보 =='
 ask LOCAL_DOMAIN '서버 도메인 (바꿀 수 없음)'
-ask SMTP_LOGIN 'Gmail 주소 (메일 발송용)'
-ask_secret SMTP_PASSWORD 'Gmail 앱 비밀번호 16자리 (입력이 화면에 안 보입니다)'
+ask SMTP_SERVER 'SMTP 서버' 'smtp-relay.brevo.com'
+ask SMTP_LOGIN 'SMTP 로그인 (Brevo는 ...@smtp-brevo.com 형태)'
+ask_secret SMTP_PASSWORD 'SMTP 비밀번호 (Brevo는 SMTP 키, 입력이 화면에 안 보입니다)'
 SMTP_PASSWORD="${SMTP_PASSWORD// /}"
+ask SMTP_FROM_ADDRESS '보내는 주소' "notifications@${LOCAL_DOMAIN}"
 ask ADMIN_USERNAME '관리자 아이디' 'admin'
-ask ADMIN_EMAIL '관리자 이메일' "$SMTP_LOGIN"
+ask ADMIN_EMAIL '관리자 이메일 (실제로 받는 메일 주소)'
 
 echo
 echo '== 1/4 설정 파일 만들기 =='
@@ -89,14 +91,14 @@ DB_PASS=
 REDIS_HOST=redis
 REDIS_PORT=6379
 
-SMTP_SERVER=smtp.gmail.com
+SMTP_SERVER=${SMTP_SERVER}
 SMTP_PORT=587
 SMTP_LOGIN=${SMTP_LOGIN}
 SMTP_PASSWORD=${SMTP_PASSWORD}
 SMTP_AUTH_METHOD=plain
 SMTP_OPENSSL_VERIFY_MODE=peer
 SMTP_ENABLE_STARTTLS=auto
-SMTP_FROM_ADDRESS=${SMTP_LOGIN}
+SMTP_FROM_ADDRESS=${SMTP_FROM_ADDRESS}
 
 UPDATE_CHECK_URL=
 AUTHORIZED_FETCH=true
