@@ -18,6 +18,7 @@ defaults: &defaults
   community_theme_point_light: ''
   community_theme_main_dark: ''
   community_theme_point_dark: ''
+  community_theme_post_button_main: false
   profile_directory: true
   closed_registrations_message: ''
   timeline_preview: true

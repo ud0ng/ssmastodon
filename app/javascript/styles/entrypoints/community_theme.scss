@@ -25,6 +25,7 @@
   --ct-nav: color-mix(in srgb, var(--ct-main) 80%, #14161a);
   --ct-dim: color-mix(in srgb, var(--ct-main) 50%, #fff);
   --ct-dim-hover: var(--ct-nav);
+  --ct-on-nav: #fff;
   --ct-line: color-mix(in srgb, var(--ct-main) 14%, transparent);
   --ct-hover: color-mix(in srgb, var(--ct-main) 6%, transparent);
   --ct-shade: #fff;
@@ -47,6 +48,7 @@
   --ct-nav: color-mix(in srgb, var(--ct-main) 12%, #fff);
   --ct-dim: color-mix(in srgb, var(--ct-main) 40%, #b9bcc8);
   --ct-dim-hover: var(--ct-text);
+  --ct-on-nav: #14161a;
   --ct-line: color-mix(in srgb, color-mix(in srgb, var(--ct-main) 40%, #fff) 16%, transparent);
   --ct-hover: color-mix(in srgb, color-mix(in srgb, var(--ct-main) 50%, #fff) 10%, transparent);
   --ct-shade: #000;
@@ -169,4 +171,10 @@ body.community-theme:not(.admin) {
   .account__display-name:hover .display-name__account {
     color: var(--ct-dim-hover);
   }
+}
+
+// 옵션: 게시 버튼만 메인색 (낮은 메뉴처럼 진한 메인색, 밤은 흰빛 메인색)
+body.community-theme.community-theme--post-main:not(.admin) {
+  --color-post-button: var(--ct-nav);
+  --color-post-button-text: var(--ct-on-nav);
 }

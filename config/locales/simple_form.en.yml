@@ -77,6 +77,7 @@ en:
         community_theme_main_light: 'Light-mode colour for large panels, the menu, icons and handles/times. Panels get a hint of it; inactive elements such as icons use a pale shade that deepens on hover. (e.g. #4a5390)'
         community_theme_point_dark: Dark-mode colour for accent buttons and links. Leave blank to use a lightened dark main colour (or light accent colour).
         community_theme_point_light: Light-mode colour for accent buttons (such as Post), links, hashtags and sent chat bubbles. Leave blank to use the light main colour.
+        community_theme_post_button_main: Use the main colour (dark like the menu in light mode, near-white in dark mode) for the Post button only. Links, hashtags and the rest keep the accent colour.
         content_cache_retention_period: All posts from other servers (including boosts and replies) will be deleted after the specified number of days, without regard to any local user interaction with those posts. This includes posts where a local user has marked it as bookmarks or favorites. Private mentions between users from different instances will also be lost and impossible to restore. Use of this setting is intended for special purpose instances and breaks many user expectations when implemented for general purpose use.
         custom_css: You can apply custom styles on the web version of Mastodon.
         favicon: WEBP, PNG, GIF or JPG. Overrides the default Mastodon favicon with a custom icon.
@@ -262,6 +263,7 @@ en:
         community_theme_main_light: Light main colour
         community_theme_point_dark: Dark accent colour
         community_theme_point_light: Light accent colour
+        community_theme_post_button_main: Main colour for the Post button
         content_cache_retention_period: Remote content retention period
         custom_css: Custom CSS
         favicon: Favicon

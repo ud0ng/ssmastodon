@@ -50,6 +50,7 @@ class Form::AdminSettings
     community_theme_point_light
     community_theme_main_dark
     community_theme_point_dark
+    community_theme_post_button_main
     community_theme_background_light
     community_theme_background_dark
   ).freeze
@@ -77,6 +78,7 @@ class Form::AdminSettings
     authorized_fetch
     status_search_enabled
     community_theme_enabled
+    community_theme_post_button_main
   ).freeze
 
   UPLOAD_KEYS = %i(

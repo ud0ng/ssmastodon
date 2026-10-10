@@ -58,6 +58,11 @@
                 input_html: color_input.merge(placeholder: t('admin.settings.community.lighter_main')),
                 wrapper: :with_label
 
+  .fields-group
+    = f.input :community_theme_post_button_main,
+              as: :boolean,
+              wrapper: :with_label
+
   .image-picker
     - SiteUpload::COMMUNITY_THEME_BACKGROUND_VARS.each do |var|
       = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: var.to_sym, upload: @admin_settings.public_send(var), frame: 'thumbnail', size: :community_theme_background }
