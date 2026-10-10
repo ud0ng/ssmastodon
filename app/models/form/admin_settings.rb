@@ -45,6 +45,11 @@ class Form::AdminSettings
     status_max_characters
     status_search_enabled
     status_search_scope
+    community_theme_enabled
+    community_theme_color_light
+    community_theme_color_dark
+    community_theme_background_light
+    community_theme_background_dark
   ).freeze
 
   INTEGER_KEYS = %i(
@@ -69,6 +74,7 @@ class Form::AdminSettings
     captcha_enabled
     authorized_fetch
     status_search_enabled
+    community_theme_enabled
   ).freeze
 
   UPLOAD_KEYS = %i(
@@ -78,6 +84,8 @@ class Form::AdminSettings
     favicon
     wordmark_dark
     wordmark_light
+    community_theme_background_light
+    community_theme_background_dark
   ).freeze
 
   DIGEST_KEYS = %i(
@@ -90,6 +98,7 @@ class Form::AdminSettings
 
   DESCRIPTION_LIMIT = 200
   STATUS_SEARCH_SCOPES = %w(following all).freeze
+  COMMUNITY_THEME_COLOR_FORMAT = /\A#\h{6}\z/
 
   attr_accessor(*KEYS)
 
@@ -103,6 +112,8 @@ class Form::AdminSettings
   validates :min_age, numericality: { only_integer: true }, allow_blank: true, if: -> { defined?(@min_age) }
   validates :status_max_characters, numericality: { only_integer: true, in: StatusLengthValidator::MAX_CHARS_RANGE }, if: -> { defined?(@status_max_characters) }
   validates :status_search_scope, inclusion: { in: STATUS_SEARCH_SCOPES }, if: -> { defined?(@status_search_scope) }
+  validates :community_theme_color_light, format: { with: COMMUNITY_THEME_COLOR_FORMAT }, allow_blank: true, if: -> { defined?(@community_theme_color_light) }
+  validates :community_theme_color_dark, format: { with: COMMUNITY_THEME_COLOR_FORMAT }, allow_blank: true, if: -> { defined?(@community_theme_color_dark) }
   validates :site_short_description, length: { maximum: DESCRIPTION_LIMIT }, if: -> { defined?(@site_short_description) }
   validates :status_page_url, url: true, allow_blank: true
   validate :validate_site_uploads

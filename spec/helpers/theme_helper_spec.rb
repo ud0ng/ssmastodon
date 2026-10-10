@@ -153,6 +153,71 @@ RSpec.describe ThemeHelper do
     end
   end
 
+  describe '#community_theme_tags' do
+    let(:presenter) { instance_double(InstancePresenter, community_theme_background_light: nil, community_theme_background_dark: dark_background) }
+    let(:dark_background) { nil }
+
+    before do
+      allow(InstancePresenter).to receive(:new).and_return(presenter)
+      allow(helper).to receive(:vite_stylesheet_tag).and_return('<link rel="stylesheet">'.html_safe)
+    end
+
+    context 'when the theme is off' do
+      before { Setting.community_theme_enabled = false }
+
+      it 'emits nothing' do
+        expect(helper.community_theme_tags).to be_nil
+      end
+    end
+
+    context 'when the theme is on with only a light colour' do
+      before do
+        Setting.community_theme_enabled = true
+        Setting.community_theme_color_light = '#4a5390'
+        Setting.community_theme_color_dark = ''
+      end
+
+      it 'uses the light colour for both modes and picks readable text colours' do
+        expect(helper.community_theme_tags)
+          .to include('--community-theme-accent-light:#4a5390;')
+          .and include('--community-theme-accent-dark:#4a5390;')
+          .and include('--community-theme-on-accent-light:#ffffff;')
+          .and include('<link rel="stylesheet">')
+      end
+    end
+
+    context 'when the dark colour is bright and a dark background is uploaded' do
+      let(:dark_background) { instance_double(SiteUpload, file: instance_double(Paperclip::Attachment, url: '/system/bg.png')) }
+
+      before do
+        Setting.community_theme_enabled = true
+        Setting.community_theme_color_light = '#c0392b'
+        Setting.community_theme_color_dark = '#f5c518'
+      end
+
+      it 'puts dark text on the bright colour and exposes the background' do
+        expect(helper.community_theme_tags)
+          .to include('--community-theme-accent-dark:#f5c518;')
+          .and include('--community-theme-on-accent-dark:#14161a;')
+          .and include('--community-theme-background-dark:url("/system/bg.png");')
+          .and not_include('--community-theme-background-light')
+      end
+    end
+
+    context 'when a stored colour is malformed' do
+      before do
+        Setting.community_theme_enabled = true
+        Setting.community_theme_color_light = 'red;}body{'
+      end
+
+      it 'falls back to the default colour' do
+        expect(helper.community_theme_tags)
+          .to include("--community-theme-accent-light:#{ThemeHelper::COMMUNITY_THEME_DEFAULT_COLOR};")
+          .and not_include('body{')
+      end
+    end
+  end
+
   private
 
   def html_links

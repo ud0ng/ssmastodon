@@ -30,6 +30,8 @@ class SiteUpload < ApplicationRecord
   WORDMARK_TOLERANCE = 3
   WORDMARK_MIME_TYPES = %w(image/png image/jpeg).freeze
 
+  COMMUNITY_THEME_BACKGROUND_VARS = %w(community_theme_background_light community_theme_background_dark).freeze
+
   STYLES = {
     app_icon:
       APP_ICON_SIZES.to_h do |size|
@@ -62,6 +64,8 @@ class SiteUpload < ApplicationRecord
     mascot: {}.freeze,
     wordmark_dark: {}.freeze,
     wordmark_light: {}.freeze,
+    community_theme_background_light: {}.freeze,
+    community_theme_background_dark: {}.freeze,
   }.freeze
 
   has_attached_file :file, styles: ->(file) { STYLES[file.instance.var.to_sym] }, convert_options: { all: '-coalesce +profile "!icc,*" +set date:modify +set date:create +set date:timestamp' }, processors: [:lazy_thumbnail, :blurhash_transcoder, :type_corrector]

@@ -831,10 +831,13 @@ en:
         title: Require new users to solve a CAPTCHA to confirm their account
       community:
         posting: Posting
+        same_as_light: Leave blank to use the light colour
         search: Search
         search_scopes:
           all: Whole server (public posts from every account)
           following: Me and people I follow
+        theme: Theme
+        theme_hint_html: Colour the whole interface from a light and a dark theme colour and background image. Light mode uses bright panels with dark text, dark mode uses dark panels with light text. The logo comes from the wordmarks (light/dark) on the <a href="%{branding_path}">Branding</a> tab.
         title: Community options
       content_retention:
         danger_zone: Danger zone
@@ -897,6 +900,7 @@ en:
             where: The server's horizontal logo.
         sizes:
           app_icon: 1024×1024px
+          community_theme_background: 1920×1080px or larger recommended
           favicon: 48×48px
           mascot: Any size
           thumbnail: 1200×630px

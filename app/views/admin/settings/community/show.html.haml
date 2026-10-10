@@ -27,3 +27,25 @@
               include_blank: false,
               label_method: ->(scope) { I18n.t("admin.settings.community.search_scopes.#{scope}") },
               wrapper: :with_label
+
+  %h4= t('admin.settings.community.theme')
+  %p.hint= t('admin.settings.community.theme_hint_html', branding_path: admin_settings_branding_path)
+
+  .fields-group
+    = f.input :community_theme_enabled,
+              as: :boolean,
+              wrapper: :with_label
+
+  .fields-row
+    .fields-row__column.fields-row__column-6.fields-group
+      = f.input :community_theme_color_light,
+                input_html: { pattern: '#[0-9a-fA-F]{6}', placeholder: ThemeHelper::COMMUNITY_THEME_DEFAULT_COLOR, maxlength: 7 },
+                wrapper: :with_label
+    .fields-row__column.fields-row__column-6.fields-group
+      = f.input :community_theme_color_dark,
+                input_html: { pattern: '#[0-9a-fA-F]{6}', placeholder: t('admin.settings.community.same_as_light'), maxlength: 7 },
+                wrapper: :with_label
+
+  .image-picker
+    - SiteUpload::COMMUNITY_THEME_BACKGROUND_VARS.each do |var|
+      = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: var.to_sym, upload: @admin_settings.public_send(var), frame: 'thumbnail', size: :community_theme_background }

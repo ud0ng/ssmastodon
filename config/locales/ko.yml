@@ -820,10 +820,13 @@ ko:
         title: 새로운 사용자가 계정 확인을 위해서는 CAPTCHA를 풀어야 하도록 합니다
       community:
         posting: 글쓰기
+        same_as_light: 비우면 낮 테마색
         search: 검색
         search_scopes:
           all: 서버 전체 (모든 계정의 공개 툿 포함)
           following: 나와 팔로우한 사람
+        theme: 테마
+        theme_hint_html: 낮/밤 테마색과 배경 이미지로 화면 전체 색을 자동으로 맞춥니다. 낮에는 밝은 박스와 검은 글자, 밤에는 어두운 박스와 흰 글자가 됩니다. 로고는 <a href="%{branding_path}">브랜딩</a> 탭의 워드마크(낮/밤)를 씁니다.
         title: 커뮤니티 옵션
       content_retention:
         danger_zone: 위험한 영역
@@ -886,6 +889,7 @@ ko:
             where: 가로 형태를 가진 서버의 로고입니다.
         sizes:
           app_icon: 1024×1024px
+          community_theme_background: 1920×1080px 이상 권장
           favicon: 48×48px
           mascot: 크기 제한 없음
           thumbnail: 1200×630px

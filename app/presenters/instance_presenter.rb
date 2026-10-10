@@ -105,4 +105,16 @@ class InstancePresenter < ActiveModelSerializers::Model
 
     @wordmark_light = Rails.cache.fetch('site_uploads/wordmark_light') { SiteUpload.find_by(var: 'wordmark_light') }
   end
+
+  def community_theme_background_light
+    return @community_theme_background_light if defined?(@community_theme_background_light)
+
+    @community_theme_background_light = Rails.cache.fetch('site_uploads/community_theme_background_light') { SiteUpload.find_by(var: 'community_theme_background_light') }
+  end
+
+  def community_theme_background_dark
+    return @community_theme_background_dark if defined?(@community_theme_background_dark)
+
+    @community_theme_background_dark = Rails.cache.fetch('site_uploads/community_theme_background_dark') { SiteUpload.find_by(var: 'community_theme_background_dark') }
+  end
 end
