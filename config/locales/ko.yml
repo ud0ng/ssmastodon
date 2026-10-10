@@ -1,10 +1,10 @@
 ---
 ko:
   about:
-    about_mastodon_html: "한참(longwhile@crepe) 마스토돈 에디션"
+    about_mastodon_html: '미래의 소셜 네트워크: 광고 없음, 기업 감시 없음, 윤리적 설계, 탈중앙화! 여러분만의 데이터를 Mastodon으로 보호하고 누리세요!'
     contact_missing: 미설정
     contact_unavailable: 없음
-    hosted_on: "한참(longwhile@crepe) 마스토돈 에디션"
+    hosted_on: "%{domain}에서 호스팅 되는 마스토돈"
     title: 정보
   accounts:
     followers:
@@ -1177,7 +1177,6 @@ ko:
     motion: 움직임
     viewing: 보기
   application_mailer:
-    footer_html: '<a href="https://kre.pe/QTRx">자캐커뮤 특화 한참 마스토돈 에디션</a>'
     notification_preferences: 이메일 설정 변경
     salutation: "%{name} 님,"
     settings: '이메일 설정 변경: %{link}'
@@ -2027,7 +2026,7 @@ ko:
       follows_title: 누구를 팔로우 할 지
       follows_view_more: 팔로우 할 사람들 더 보기
       guide_action: 마스토돈 가이드
-      guide_explanation: 마스토돈이 처음이신가요? 자캐커뮤에 특화된 한참 에디션의 이용 가이드를 알아보세요!
+      guide_explanation: 마스토돈이 처음이신가요? 이용 가이드를 확인해 보세요!
       hashtags_recent_count:
         other: 최근 2일동안 %{people}명
       hashtags_subtitle: 최근 2일간 무엇이 유행했는지 둘러보기

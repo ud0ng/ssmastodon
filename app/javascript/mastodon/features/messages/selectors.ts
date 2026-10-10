@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import type { Map as ImmutableMap } from 'immutable';
 
 import type { Account } from 'mastodon/models/account';

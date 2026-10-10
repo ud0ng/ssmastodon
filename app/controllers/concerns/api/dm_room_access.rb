@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# @_longwhile custom feature
 module Api::DmRoomAccess
   extend ActiveSupport::Concern
 

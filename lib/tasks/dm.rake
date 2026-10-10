@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-# @_longwhile custom feature
-
 namespace :dm do
   desc 'account_conversations.status_ids 를 statuses 로부터 다시 채운다 (STATUS_IDS_LIMIT 롤백용)'
   task rebuild_status_ids: :environment do

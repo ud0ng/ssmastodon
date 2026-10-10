@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# @_longwhile custom feature
 class Api::V1::Admin::DmRoomsController < Api::BaseController
   include Api::DmRoomAccess
   include Authorization

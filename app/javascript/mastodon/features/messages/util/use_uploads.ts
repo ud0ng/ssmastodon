@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { defineMessages, useIntl } from 'react-intl';

@@ -139,7 +139,7 @@ class NotifyService < BaseService
       FeedManager.instance.filter?(:mentions, @notification.target_status, @recipient)
     end
 
-    # @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
+    # DM 채팅
     #   방 제목 변경 안내는 알림을 만들지 않는다. (docs/dm-chat/phases/dm-chat-phase-5.md §3.3)
     #
     #   그 안내는 별도 테이블이 아니라 멤버 전원을 멘션한 평범한 direct status 다.
@@ -232,7 +232,7 @@ class NotifyService < BaseService
     # For certain conditions we don't need to create a notification at all
     return if drop?
 
-    # @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
+    # DM 채팅
     #   **DM 알림은 만들되 사람에게는 보이지 않는다.**
     #
     #   알릴 곳은 /messages 로 옮겨졌다 — 내비의 "채팅" 에 안 읽은 수가 배지로
@@ -328,7 +328,7 @@ class NotifyService < BaseService
     @notification.type == :mention && @notification.target_status.direct_visibility?
   end
 
-  # @_longwhile — DM 채팅이 켜진 인스턴스의 direct 멘션. 꺼져 있으면 상류 그대로 돈다.
+  # DM 채팅이 켜진 인스턴스의 direct 멘션. 꺼져 있으면 상류 그대로 돈다.
   def dm_chat_message?
     Mastodon::DmChat.enabled? && direct_message?
   end
@@ -337,7 +337,6 @@ class NotifyService < BaseService
     ::Web::PushNotificationWorker.push_bulk(web_push_subscriptions.select { |subscription| subscription.pushable?(@notification) }) { |subscription| [subscription.id, @notification.id] }
   end
 
-  # @_longwhile custom feature
   def push_to_app_subscriptions!
     targets = web_push_subscriptions.reject { |subscription| browser_subscription?(subscription) }
                                     .select { |subscription| subscription.pushable?(@notification) }

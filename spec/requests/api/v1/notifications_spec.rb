@@ -144,7 +144,6 @@ RSpec.describe 'Notifications' do
       end
     end
 
-    # @_longwhile custom feature
     context 'when DM chat is enabled' do
       before { allow(Mastodon::DmChat).to receive(:enabled?).and_return(true) }
 

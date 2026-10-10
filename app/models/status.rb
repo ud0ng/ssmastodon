@@ -198,7 +198,6 @@ class Status < ApplicationRecord
     "v3:#{super}"
   end
 
-  # @_longwhile custom feature
   def rate_limiter(by, options = {})
     return super if defined?(@rate_limiter) || !direct_visibility?
 

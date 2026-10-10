@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# @_longwhile custom feature
 class Api::V1::DmRooms::StatusesController < Api::BaseController
   include Api::DmRoomAccess
 

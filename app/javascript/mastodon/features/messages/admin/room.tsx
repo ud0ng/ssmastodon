@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { Fragment, useEffect, useMemo } from 'react';
 
 import { defineMessages, useIntl } from 'react-intl';

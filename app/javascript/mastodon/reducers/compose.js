@@ -111,7 +111,6 @@ function statusToMentionAccts(status) {
   return statusToMentionCandidates(status).map(candidate => candidate.get('acct'));
 }
 
-// @_longwhile custom feature
 function statusToMentionCandidates(status) {
   let set = ImmutableOrderedSet([]);
 

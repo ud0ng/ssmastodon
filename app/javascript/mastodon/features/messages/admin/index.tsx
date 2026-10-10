@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
 import classNames from 'classnames';

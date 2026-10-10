@@ -29,10 +29,6 @@ RSpec.describe UserMailer do
         .and(have_body_text(Rails.configuration.x.local_domain))
     end
 
-    it 'says who set up the server, with a link' do
-      expect(mail).to have_body_text('https://kre.pe/QTRx')
-    end
-
     it 'offers the guide next to the confirm button' do
       expect(mail)
         .to have_body_text(I18n.t('user_mailer.welcome.guide_action'))

@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { unescapeHTML } from 'mastodon/utils/html';
 
 interface Props {

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# @_longwhile custom feature
 module Mastodon
   class DmSeeder
     DEFAULT_USERNAME_PREFIX = 'dmtest'

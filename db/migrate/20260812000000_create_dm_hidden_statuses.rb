@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# @_longwhile custom feature
 class CreateDmHiddenStatuses < ActiveRecord::Migration[8.0]
   def change
     create_table :dm_hidden_statuses do |t|

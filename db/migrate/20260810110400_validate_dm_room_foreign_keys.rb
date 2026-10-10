@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# @_longwhile custom feature
 class ValidateDmRoomForeignKeys < ActiveRecord::Migration[8.0]
   def change
     validate_foreign_key :dm_rooms, :statuses, column: :root_status_id

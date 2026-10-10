@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# @_longwhile custom feature / 한참(longwhile) 제작 기능 — 서버 초대 운영진 전용화
+# 서버 초대 운영진 전용화
 #   기존 인스턴스에서는 everyone(기본) 역할에 invite_users 가 이미 저장되어 있어
 #   일반 사용자도 초대 링크를 만들 수 있었다. 이 마이그레이션으로:
 #     - everyone 역할에서 invite_users 제거 (일반 사용자 초대 불가)

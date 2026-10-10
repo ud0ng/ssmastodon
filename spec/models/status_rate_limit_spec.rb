@@ -2,7 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile custom feature
 RSpec.describe Status do
   let(:account) { Fabricate(:account) }
 

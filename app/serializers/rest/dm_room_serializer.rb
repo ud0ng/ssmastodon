@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# @_longwhile custom feature
 class REST::DmRoomSerializer < ActiveModel::Serializer
   attributes :id, :unread_count, :root_status_id, :last_read_status_id,
              :is_group, :is_local, :title, :participant_read_states,

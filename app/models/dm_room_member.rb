@@ -12,7 +12,6 @@
 #  dm_room_id :bigint(8)        not null
 #
 
-# @_longwhile custom feature
 class DmRoomMember < ApplicationRecord
   belongs_to :dm_room
   belongs_to :account

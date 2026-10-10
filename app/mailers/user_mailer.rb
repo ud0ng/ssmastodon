@@ -12,7 +12,7 @@ class UserMailer < Devise::Mailer
 
   helper_method :welcome_guide_url
 
-  DEFAULT_GUIDE_URL = 'https://stellar-ground-601.notion.site/303d06ebad998013bebbd2946804a568?pvs=73'
+  DEFAULT_GUIDE_URL = 'https://docs.joinmastodon.org/'
 
   before_action :set_instance
 

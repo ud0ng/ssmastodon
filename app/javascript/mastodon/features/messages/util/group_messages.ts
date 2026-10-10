@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 export const GROUP_WINDOW_MS = 3 * 60 * 1000;
 
 export interface GroupableMessage {

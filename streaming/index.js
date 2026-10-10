@@ -985,7 +985,6 @@ const startServer = async () => {
       arr.push(`timeline:${req.accountId}:notifications`);
     }
 
-    // @_longwhile custom feature
     if (process.env.DM_CHAT_ENABLED === 'true') {
       arr.push(`timeline:direct:${req.accountId}`);
     }

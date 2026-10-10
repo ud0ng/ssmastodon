@@ -105,14 +105,7 @@ class Sanitize
       math.replace(math.document.create_text_node(annotation.text)) unless annotation.nil?
     end
 
-    # ═════════════════════════════════════════════════════════════════════════
-    # @_longwhile custom feature / 한참(longwhile) 제작 기능
     #   - color / background-color 인라인 스타일 허용 (마크다운·정렬 기능 지원용)
-    # 이 기능을 사용·재사용하려면 서버 내에 아래 출처를 반드시 표기해야 합니다.
-    # If you use or reuse this feature, you must credit the author on your server.
-    #   Twitter/X : @_longwhile  ·  https://twitter.com/_longwhile
-    #   Crepe     : https://kre.pe/QTRx
-    # ═════════════════════════════════════════════════════════════════════════
     SAFE_STYLE_TRANSFORMER = lambda do |env|
       node = env[:node]
       return unless node.element? && node['style']

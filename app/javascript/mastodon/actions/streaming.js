@@ -262,7 +262,6 @@ export const connectHashtagStream = (columnId, tagName, onlyLocal, accept) =>
 export const connectDirectStream = () =>
   connectTimelineStream('direct', 'direct');
 
-// ─── @_longwhile custom feature
 /**
  * @returns {function(): void}
  */

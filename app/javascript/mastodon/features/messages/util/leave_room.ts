@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import type { IntlShape } from 'react-intl';
 import { defineMessages } from 'react-intl';
 

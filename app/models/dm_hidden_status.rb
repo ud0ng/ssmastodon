@@ -11,7 +11,6 @@
 #  status_id  :bigint(8)        not null
 #
 
-# @_longwhile custom feature
 class DmHiddenStatus < ApplicationRecord
   belongs_to :account
   belongs_to :status

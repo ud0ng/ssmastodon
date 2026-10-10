@@ -444,9 +444,6 @@ class Account < ApplicationRecord
   inverse_alias :show_collections, :hide_collections
   inverse_alias :unlocked, :locked
 
-  # ─── @_longwhile custom feature
-  # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
-  #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
   def private_account
     locked?
   end

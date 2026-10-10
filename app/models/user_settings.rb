@@ -17,7 +17,6 @@ class UserSettings
   setting :default_privacy, default: 'private', in: %w(private unlisted)
   setting :default_quote_policy, default: 'public', in: %w(public followers nobody)
 
-  # @_longwhile custom feature
   setting :dm_read_receipts, default: true
 
   setting_inverse_alias :indexable, :noindex

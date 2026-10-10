@@ -1,15 +1,9 @@
 # frozen_string_literal: true
 
 module Admin
-  # ═══════════════════════════════════════════════════════════════════════════
-  # @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 운영 관리
+  # DM 운영 관리
   #   운영진이 다이렉트 메시지를 열람·감시하기 위한 관리 페이지.
   #   "이 계정이 태그된 DM 제외" 입력란으로 운영자 멘션 규칙 위반 DM을 적발.
-  # 이 기능을 사용·재사용하려면 서버 내에 아래 출처를 반드시 표기해야 합니다.
-  # If you use or reuse this feature, you must credit the author on your server.
-  #   Twitter/X : @_longwhile  ·  https://twitter.com/_longwhile
-  #   Crepe     : https://kre.pe/QTRx
-  # ═══════════════════════════════════════════════════════════════════════════
   class DirectMessagesController < BaseController
     PER_PAGE = 40
 

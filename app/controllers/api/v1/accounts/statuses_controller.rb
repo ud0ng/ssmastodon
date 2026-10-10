@@ -31,7 +31,6 @@ class Api::V1::Accounts::StatusesController < Api::BaseController
     )
   end
 
-  # @_longwhile custom feature
   def filter_params
     params.merge(no_direct: true, only_direct: false)
   end

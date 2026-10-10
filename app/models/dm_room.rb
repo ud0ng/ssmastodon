@@ -14,7 +14,6 @@
 #  root_status_id  :bigint(8)
 #
 
-# @_longwhile custom feature
 class DmRoom < ApplicationRecord
   include Redisable
 

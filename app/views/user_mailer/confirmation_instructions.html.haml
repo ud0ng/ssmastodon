@@ -8,7 +8,6 @@
       %table.email-inner-card-table{ cellspacing: 0, cellpadding: 0, border: 0, role: 'presentation' }
         %tr
           %td.email-inner-card-td.email-prose
-            %p= t('devise.mailer.confirmation_instructions.installed_by_html', host: site_hostname)
             - explanation = t(@resource.approved? ? 'devise.mailer.confirmation_instructions.explanation' : 'devise.mailer.confirmation_instructions.explanation_when_pending', host: site_hostname)
             - explanation.split(/\n{2,}/).each do |paragraph|
               %p= paragraph

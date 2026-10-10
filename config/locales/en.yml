@@ -1194,7 +1194,6 @@ en:
     motion: Motion
     viewing: Viewing
   application_mailer:
-    footer_html: '<a href="https://kre.pe/QTRx">Hancham Mastodon Edition for OC communities</a>'
     notification_preferences: Change email preferences
     salutation: "%{name},"
     settings: 'Change email preferences: %{link}'

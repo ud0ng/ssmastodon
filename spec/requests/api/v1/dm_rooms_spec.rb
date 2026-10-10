@@ -2,7 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile custom feature
 RSpec.describe 'API V1 DM rooms' do
   let(:user)     { Fabricate(:user) }
   let(:token)    { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: 'read:statuses write:conversations') }

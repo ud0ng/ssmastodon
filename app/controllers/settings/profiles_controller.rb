@@ -26,9 +26,6 @@ class Settings::ProfilesController < Settings::BaseController
     params.expect(account: [:display_name, :note, :avatar, :header, fields_attributes: [[:name, :value]], settings: UserSettings.keys])
   end
 
-  # ─── @_longwhile custom feature
-  # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
-  #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
   def account_attributes(toggle_changed)
     attributes = account_params.except(:settings)
     return attributes unless toggle_changed

@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { useEffect, useState } from 'react';
 
 const DESKTOP_QUERY = '(min-width: 1175px) and (pointer: fine)';

@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { createAction } from '@reduxjs/toolkit';
 
 import {

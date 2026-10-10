@@ -163,7 +163,6 @@ RSpec.describe NotifyService do
     end
   end
 
-  # @_longwhile custom feature
   context 'with a direct message while DM chat is enabled' do
     let(:unknown)  { Fabricate(:account, username: 'unknown') }
     let(:status)   { Fabricate(:status, account: unknown, visibility: :direct) }

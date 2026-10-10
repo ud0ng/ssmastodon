@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# @_longwhile custom feature
 class BackfillDmRoomCreators < ActiveRecord::Migration[8.0]
   def up
     safety_assured do

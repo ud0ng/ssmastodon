@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { useEffect, useState } from 'react';
 
 const KEYBOARD_MIN_HEIGHT = 100;

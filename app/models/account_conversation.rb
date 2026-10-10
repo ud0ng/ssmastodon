@@ -17,7 +17,6 @@
 class AccountConversation < ApplicationRecord
   include Redisable
 
-  # @_longwhile custom feature
   STATUS_IDS_LIMIT = begin
     parsed = Integer(ENV.fetch('STATUS_IDS_LIMIT', '100'), exception: false)
     parsed.nil? || parsed.negative? ? 100 : parsed

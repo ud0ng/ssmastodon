@@ -156,7 +156,6 @@ class Notification < ApplicationRecord
       scope.without_unavailable
     end
 
-    # @_longwhile custom feature
     def without_direct_messages
       where(
         <<~SQL.squish,

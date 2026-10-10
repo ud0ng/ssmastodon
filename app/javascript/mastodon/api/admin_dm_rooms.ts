@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import api, { apiRequestGet, getLinks } from 'mastodon/api';
 import type { ApiDmRoomJSON } from 'mastodon/api_types/dm_rooms';
 import type { ApiStatusJSON } from 'mastodon/api_types/statuses';

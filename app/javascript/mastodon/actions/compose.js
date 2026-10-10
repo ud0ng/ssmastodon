@@ -139,7 +139,6 @@ export function replyCompose(status) {
   };
 }
 
-// @_longwhile custom feature
 export function setComposeReplyMentions(accts) {
   return {
     type: COMPOSE_REPLY_MENTIONS_SET,

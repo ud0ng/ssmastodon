@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# @_longwhile custom feature
 class CreateDmRoomMembers < ActiveRecord::Migration[8.0]
   def change
     create_table :dm_room_members do |t|

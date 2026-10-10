@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { FormattedDate, FormattedMessage } from 'react-intl';
 
 interface Props {

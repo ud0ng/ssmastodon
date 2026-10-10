@@ -14,7 +14,6 @@ class RateLimiter
       period: 3.hours.freeze,
     }.freeze,
 
-    # @_longwhile custom feature
     direct_statuses: {
       limit: [(ENV['DM_RATE_LIMIT'] || 1000).to_i, 1].max,
       period: [(ENV['DM_RATE_LIMIT_PERIOD'] || 3600).to_i, 60].max.seconds.freeze,

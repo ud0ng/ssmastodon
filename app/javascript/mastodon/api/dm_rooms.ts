@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import api, {
   apiRequest,
   apiRequestGet,

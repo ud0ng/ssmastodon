@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { createReducer } from '@reduxjs/toolkit';
 
 import type {

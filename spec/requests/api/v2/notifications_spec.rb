@@ -453,7 +453,6 @@ RSpec.describe 'Notifications' do
         .to start_with('application/json')
     end
   end
-  # @_longwhile custom feature
   describe 'GET /api/v2/notifications with direct messages', :inline_jobs do
     subject do
       get '/api/v2/notifications', headers: headers, params: params

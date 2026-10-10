@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { useMemo } from 'react';
 
 import { Avatar } from 'mastodon/components/avatar';

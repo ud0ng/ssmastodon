@@ -273,7 +273,6 @@ export function revealStatus(ids) {
   };
 }
 
-// ─── @_longwhile custom feature
 export function setExpandContentWarnings(expand) {
   return (dispatch, getState) => {
     dispatch(changeSetting(['content_warnings', 'expand_all'], expand));

@@ -2,7 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile custom feature
 RSpec.describe DmRoom do
   let!(:alice) { Fabricate(:account, username: 'alice') }
   let!(:bob)   { Fabricate(:account, username: 'bob') }

@@ -10,7 +10,6 @@ import type {
   ApiNotificationJSON,
 } from 'mastodon/api_types/notifications';
 
-// @_longwhile custom feature
 const EXCLUDE_DIRECT_MESSAGES = { exclude_direct_messages: true };
 
 export const apiFetchNotifications = async (

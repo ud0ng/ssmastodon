@@ -203,7 +203,6 @@ RSpec.describe PublicFeed do
       end
     end
 
-    # @_longwhile custom feature
     describe 'the followed-authors filter' do
       subject { described_class.new(viewer).get(20).map(&:id) }
 

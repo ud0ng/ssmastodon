@@ -1,165 +1,30 @@
-# 한참 인스턴스 (Mastodon Custom)
+# ssmastodon
 
-> 자캐커뮤를 위한 특별한 마스토돈
+연합 기능을 끈 폐쇄형 커뮤니티용 마스토돈 커스텀 버전입니다. (Mastodon 4.4 기반)
 
-**한참 인스턴스**는 자캐커뮤 운영과 러닝에 최적화된 마스토돈 커스텀 버전입니다. 2024년 6월부터 현재까지 20개 이상의 서버에 설치되어 많은 커뮤니티에서 사용되고 있습니다.
+## 주요 특징
 
-기본 마스토돈의 진입장벽을 낮추고, 커뮤니티 운영에 필요한 기능들을 추가하여 운영진과 러너 모두에게 편리한 환경을 제공합니다.
+- **비공개 서버** — 로그인·가입하지 않은 사용자에게 툿이 보이지 않고, 연합이 제한되어 외부 서버로 콘텐츠가 나가지 않습니다.
+- **다중계정 로그인** — 웹에서 여러 계정을 동시에 로그인하고 전환할 수 있습니다.
+- **DM 채팅** — DM을 채팅방 형태로 주고받고, 운영진은 서버 내 DM을 한 페이지에서 확인할 수 있습니다.
+- **트위터풍 UI** — Bird UI 기반 인터페이스, KoPub 돋움 폰트.
+- **마크다운** — `*기울임*`, `**볼드**`, `~~취소선~~` 등 지원.
+- **알림 탭 분리** — 모든 알림 / 멘션 / DM.
+- **글자수 1,000자**
 
----
+> 고급 인터페이스(Advanced UI)와 커스텀 이모지는 지원하지 않습니다.
 
-## ✨ 주요 특징
+## 설치
 
-### 🔄 다중계정 로그인 & 계정 전환
-마스토돈 웹에서 여러 계정을 동시에 로그인하고 손쉽게 전환할 수 있습니다. (2024.11.15 구현)
+Docker Compose로 배포합니다. 자세한 설치 방법은 [마스토돈 공식 문서](https://docs.joinmastodon.org/admin/install/)를 참고하세요.
 
-### 🎨 익숙한 UI
-트위터 기반 인터페이스로 마스토돈이 처음인 러너도 편하게 사용할 수 있습니다.
+```bash
+docker compose build
+docker compose run --rm web bundle exec rake mastodon:setup
+docker compose up -d
+```
 
-### 🔒 비공개 서버
-- 로그인하지 않은 사용자에게 툿이 노출되지 않음
-- 서버에 가입하지 않은 사용자에게 툿이 노출되지 않음
-- 연합 제한으로 타 서버로 콘텐츠가 유출되지 않음
-
-### 📨 DM 관리 기능
-운영계가 서버 내 모든 DM을 하나의 페이지에서 확인할 수 있습니다. (계정 DM창과 별개 페이지)
-
-### 🔤 깔끔한 폰트
-KoPub 돋움 ttf 적용으로 Windows PC 웹에서도 눈이 피로하지 않은 가독성을 제공합니다.
-
-### 📝 바이오 표시
-팔로잉/팔로워 목록에서 각 계정의 바이오를 바로 확인할 수 있습니다.
-
-### ✍️ 마크다운 기능
-- `*기울임*` → *기울임*
-- `**볼드**` → **볼드**
-- `***굵은 기울임***` → ***굵은 기울임***
-- `~~취소선~~` → ~~취소선~~
-
-### 🔔 알림창 분리
-알림창이 3가지 탭으로 구성되어 효율적인 알림 관리가 가능합니다:
-1. **모든 알림** - 좋아요, 리트윗 등
-2. **멘션** - 멘션만 모아보기
-3. **DM** - DM만 모아보기
-
-### 📊 퍼블릭 툿 타임라인
-- **홈 타임라인**: 모든 멘션이 보이는 타임라인
-- **퍼블릭 피드**: 퍼블릭 툿만 모아볼 수 있는 깔끔한 피드
-
-### 📏 넉넉한 글자수 제한
-트위터의 240자가 아닌 **1,000자**까지 작성 가능합니다.
-
-### 🐛 오류 수정
-- DM과 팔로워 공개 툿에도 답글 수 표시
-- 스크롤 오류 수정 (답멘 선택 시 스크롤이 맨 위로 올라가는 문제 해결)
-
----
-
-## ⚠️ 주의사항
-
-**호환성 문제로 인해 다음 기능은 지원하지 않습니다:**
-- 고급 인터페이스 (Advanced UI)
-- 커스텀 이모지
-
----
-
-## 📖 마스토돈에 대하여
-
-마스토돈(Mastodon)은 [ActivityPub](https://www.w3.org/TR/activitypub/)을 기반으로 하는 **자유 오픈 소스 소셜 네트워크 서버**로, 사용자는 친구를 팔로우하고 새로운 친구를 발견할 수 있습니다. 마스토돈에서 사용자는 링크, 사진, 텍스트, 비디오 등 원하는 무엇이든 게시할 수 있습니다. 모든 마스토돈 서버는 연합 네트워크(Federated Network)로서 상호 운용이 가능합니다. 즉, 한 서버의 사용자가 다른 서버의 사용자와 원활하게 통신할 수 있으며, 여기에는 ActivityPub을 구현한 마스토돈 이외의 소프트웨어도 포함됩니다!
-
-## 탐색 (Navigation)
-
-- [프로젝트 홈페이지 🐘](https://joinmastodon.org)
-- [개발 후원하기 🎁](https://joinmastodon.org/sponsors#donate)
-  - [후원사 보기](https://joinmastodon.org/sponsors)
-- [블로그 📰](https://blog.joinmastodon.org)
-- [문서 📚](https://docs.joinmastodon.org)
-- [공식 컨테이너 이미지 🚢](https://github.com/mastodon/mastodon/pkgs/container/mastodon)
-
-## 주요 기능 (Features)
-
-**페디버스(Fediverse)의 일원. 특정 업체에 종속되지 않는 개방형 표준 기반.** - 이 네트워크는 단순히 마스토돈에 그치지 않습니다. ActivityPub을 구현하는 모든 것은 [페디버스(Fediverse)](https://jointhefediverse.net/)라고 불리는 더 넓은 소셜 네트워크의 일부가 됩니다. 다른 서버(다른 소프트웨어를 실행하는 서버 포함)의 사용자를 팔로우하고 소통할 수 있으며, 그들도 여러분을 팔로우할 수 있습니다.
-
-**실시간, 연대기순 타임라인 업데이트** - 팔로우 중인 사람들의 업데이트가 사용자 인터페이스(UI)에 실시간으로 나타납니다.
-
-**미디어 첨부** - 업데이트에 첨부된 이미지와 비디오를 업로드하고 볼 수 있습니다. 오디오 트랙이 없는 비디오는 애니메이션 GIF처럼 처리되며, 일반 비디오는 연속적으로 반복 재생됩니다.
-
-**안전 및 관리(Moderation) 도구** - 마스토돈에는 비공개 게시물, 잠금 계정, 문구 필터링, 뮤트(숨기기), 차단 등 다양한 기능과 함께 신고 및 관리 시스템이 포함되어 있습니다.
-
-**OAuth2 및 직관적인 REST API** - 마스토돈은 OAuth2 제공자 역할을 하며, 서드파티 앱은 REST 및 스트리밍 API를 사용할 수 있습니다. 이를 통해 다양한 선택권을 가진 [풍부한 앱 생태계](https://joinmastodon.org/apps)가 구축되어 있습니다!
-
-## 배포 (Deployment)
-
-### 기술 스택 (Tech stack)
-
-- [Ruby on Rails](https://github.com/rails/rails): REST API 및 웹 페이지 구동.
-- [PostgreSQL](https://www.postgresql.org/): 메인 데이터베이스.
-- [Redis](https://redis.io/) 및 [Sidekiq](https://sidekiq.org/): 캐싱 및 큐(Queueing) 작업.
-- [Node.js](https://nodejs.org/): 스트리밍 API 구동.
-- [React.js](https://reactjs.org/) 및 [Redux](https://redux.js.org/): 인터페이스의 동적인 부분 구현.
-- [BrowserStack](https://www.browserstack.com/): 실제 기기 및 브라우저 테스트 지원. (본 프로젝트는 BrowserStack으로 테스트되었습니다.)
-- [Chromatic](https://www.chromatic.com/): 시각적 회귀 테스트(Visual regression testing) 제공. (본 프로젝트는 Chromatic으로 테스트되었습니다.)
-
-### 요구 사항 (Requirements)
-
-- **Ruby** 3.2+
-- **PostgreSQL** 12+
-- **Redis** 4.0+
-- **Node.js** 18+
-
-이 저장소에는 **Docker 및 docker-compose**를 위한 배포 설정뿐만 아니라 Heroku, Scalingo와 같은 다른 환경을 위한 설정도 포함되어 있습니다. Helm 차트의 경우 [mastodon/chart 저장소](https://github.com/mastodon/chart)를 참조하세요. [**독립형(Standalone)** 설치 가이드](https://docs.joinmastodon.org/admin/install/)는 메인 문서에서 확인할 수 있습니다.
-
-## 기여하기 (Contributing)
-
-마스토돈은 **AGPLv3 라이선스** 하에 배포되는 **자유 오픈 소스 소프트웨어**입니다. 프로젝트를 개선하고자 하는 모든 분의 기여와 도움을 환영합니다.
-
-개발 프로세스를 다루는 전체 [CONTRIBUTING](https://github.com/mastodon/.github/blob/main/CONTRIBUTING.md) 가이드를 읽어주시기 바랍니다.
-
-또한, 환영받고 포용적인 커뮤니티를 유지할 수 있도록 하는 [CODE OF CONDUCT(행동 강령)](https://github.com/mastodon/.github/blob/main/CODE_OF_CONDUCT.md)을 읽고 이해해 주시기 바랍니다. 협업은 상호 존중과 이해에서 시작됩니다.
-
-개발 환경 설정에 대해서는 [DEVELOPMENT](docs/DEVELOPMENT.md) 문서에서 배울 수 있습니다.
-
-**번역** 🌐에 도움을 주고 싶으시다면 [Crowdin](https://crowdin.com/project/mastodon)에서 참여하실 수 있습니다.
-
-## 커스텀 기능 저작권 표시 (Custom Feature Attribution)
-
-> 한국어 — 아래 커스텀 기능들은 **한참(@_longwhile)** 이 직접 제작했습니다.
-> 이 기능들을 사용하거나 다른 서버/포크에 가져다 쓰려면, 서버 내(예: 소개/푸터/이용약관 등 이용자가 볼 수 있는 곳)에
-> 아래 출처 중 **하나 이상**을 반드시 표기해야 합니다.
->
-> English — The custom features listed below were created by **한참 (@_longwhile)**.
-> If you use or port these features to another server/fork, you **must** display **at least one** of the
-> credits below somewhere visible on your server (e.g. about page, footer, or terms).
-
-**출처 / Credit**
-
-- Twitter/X: [@_longwhile](https://twitter.com/_longwhile)
-- Crepe(크레페): https://kre.pe/QTRx
-
-**대상 기능 / Covered features**
-
-| 기능 (KR) | Feature (EN) | 주요 파일 (Key files) |
-| --- | --- | --- |
-| 답장할 멘션 탭 (보류 멘션) | Pending mentions tab | `app/javascript/mastodon/features/pending-mentions/index.tsx`, `app/javascript/mastodon/selectors/notifications.ts`, `app/javascript/mastodon/reducers/statuses.js` |
-| 마크다운 · 정렬 · 자동 링크 | Markdown / alignment / auto-link | `app/lib/text_formatter.rb`, `lib/sanitize_ext/sanitize_config.rb` |
-| 계정 전환 (멀티계정) | Account switching (multi-account) | `config/initializers/multi_account.rb`, `app/services/multi_accounts/refresh_service.rb` |
-| DM 운영진 열람 (admin/owner 전체 DM 열람) | Admin/owner DM viewing | `app/policies/status_policy.rb`, `app/lib/account_statuses_filter.rb`, `app/lib/feed_manager.rb`, `app/models/public_feed.rb`, `app/services/fan_out_on_write_service.rb` |
-| 게시물 스크롤 오류 해결 | Status scroll fix | `app/javascript/mastodon/features/status/index.jsx`, `app/javascript/mastodon/reducers/contexts.ts` |
-| 공지 계정(@longwhile) 노출 · 전체 브로드캐스트 | Announcement account exposure / broadcast | `app/models/public_feed.rb`, `app/services/fan_out_on_write_service.rb`, `app/validators/unreserved_username_validator.rb` |
-| 프로텍트(잠금) 계정 · 관리자 보호 토글 | Protected (locked) account / admin toggle | `app/policies/account_policy.rb`, `app/controllers/admin/accounts_controller.rb`, `app/controllers/settings/profiles_controller.rb`, `app/models/account.rb`, `app/javascript/mastodon/components/account.tsx` |
-| 검색 범위 제한 (나+팔로잉) | Search scope restriction | `app/lib/search_query_transformer.rb` |
-| 팔로우 요청 자동 승인 | Auto-approve follow requests | `app/services/follow_service.rb` |
-| 알림 진입 시 '모두' 탭 초기화 | Notifications reset to "All" tab | `app/javascript/mastodon/features/notifications_v2/index.tsx` |
-
-각 파일 상단(또는 해당 코드 블록)에는 동일한 출처 표기 주석이 포함되어 있습니다.
-A matching attribution comment is included at the top of each file (or above the relevant code block).
-
-> 참고 / Note: 본 프로젝트의 베이스인 Mastodon 자체는 아래 AGPL 라이선스를 따릅니다.
-> 위 표기 요청은 한참(@_longwhile)이 직접 작성한 커스텀 기능에 대한 것입니다.
-> The base Mastodon project itself remains under the AGPL license shown below;
-> the attribution request above applies to the custom features authored by 한참 (@_longwhile).
-
-## 라이선스 (LICENSE)
+## 라이선스
 
 Copyright (c) 2016-2025 Eugen Rochko (+ [`mastodon authors`](AUTHORS.md))
 

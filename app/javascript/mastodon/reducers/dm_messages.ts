@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { createReducer } from '@reduxjs/toolkit';
 
 import { compareIds } from 'mastodon/features/messages/util/compare_ids';

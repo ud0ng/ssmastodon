@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { useMemo } from 'react';
 
 import { defineMessages, useIntl } from 'react-intl';

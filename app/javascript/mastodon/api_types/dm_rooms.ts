@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import type { ApiAccountJSON } from './accounts';
 import type { ApiStatusJSON } from './statuses';
 

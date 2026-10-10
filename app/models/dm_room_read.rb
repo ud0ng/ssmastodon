@@ -13,7 +13,6 @@
 #  last_read_status_id :bigint(8)
 #
 
-# @_longwhile custom feature
 class DmRoomRead < ApplicationRecord
   belongs_to :dm_room
   belongs_to :account

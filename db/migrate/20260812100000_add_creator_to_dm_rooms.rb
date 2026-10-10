@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# @_longwhile custom feature
 class AddCreatorToDmRooms < ActiveRecord::Migration[8.0]
   def change
     add_column :dm_rooms, :creator_id, :bigint, if_not_exists: true

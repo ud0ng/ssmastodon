@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { FormattedMessage } from 'react-intl';
 
 export const RoomIntro: React.FC = () => (

@@ -1,4 +1,3 @@
-// @_longwhile custom feature
 export const TITLE_EVENT_PREFIX = 'conversation:title_changed:';
 
 export const MEMBER_EVENT_PREFIX = 'conversation:members_changed:';

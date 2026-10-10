@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { isTitleEvent } from './title_event';
 
 export interface PreviewSource {

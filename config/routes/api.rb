@@ -81,7 +81,6 @@ namespace :api, format: false do
       end
     end
 
-    # @_longwhile custom feature
     resources :dm_rooms, only: [:index, :show, :create, :destroy] do
       member do
         post :read
@@ -276,7 +275,6 @@ namespace :api, format: false do
     end
 
     namespace :admin do
-      # @_longwhile custom feature
       resources :dm_rooms, only: [:index, :show] do
         resources :statuses, only: [:index], controller: 'dm_rooms/statuses'
       end

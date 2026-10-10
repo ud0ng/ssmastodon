@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { useEffect } from 'react';
 
 const BODY_CLASS = 'layout-messages';

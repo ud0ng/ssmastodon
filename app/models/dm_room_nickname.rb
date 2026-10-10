@@ -13,7 +13,6 @@
 #  target_account_id :bigint(8)        not null
 #
 
-# @_longwhile custom feature
 class DmRoomNickname < ApplicationRecord
   MAX_LENGTH = 30
 

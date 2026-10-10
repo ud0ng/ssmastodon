@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 const PREFIX = 'dm_draft:';
 
 const storage = (): Storage | null => {

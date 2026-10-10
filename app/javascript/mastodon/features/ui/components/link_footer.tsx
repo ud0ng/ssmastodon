@@ -7,14 +7,6 @@ export const LinkFooter: React.FC<{
 }> = ({ multiColumn }) => (
   <div className='link-footer'>
     <p>
-      본 서버는{' '}
-      <a href='https://crepe.cm/@longwhile/lw5w0ofg' target='_blank' rel='noopener'>
-        크레페 한참 커미션
-      </a>
-      의 공개 배포 버전을 사용합니다.
-    </p>
-
-    <p>
       <strong>{domain}</strong>{' '}
       <Link
         to='/privacy-policy'
@@ -23,7 +15,7 @@ export const LinkFooter: React.FC<{
       >
         개인정보처리방침
       </Link>{' '}
-      <a href='https://github.com/long-while/longwhile-mastodon' target='_blank' rel='noopener' className='version'>v{version}</a>
+      <a href='https://github.com/ud0ng/ssmastodon' target='_blank' rel='noopener' className='version'>v{version}</a>
     </p>
   </div>
 );

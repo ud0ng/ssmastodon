@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# @_longwhile custom feature
 class AddDirectVisibilityIndexToStatuses < ActiveRecord::Migration[8.0]
   disable_ddl_transaction!
 

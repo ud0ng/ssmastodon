@@ -1,5 +1,3 @@
-// @_longwhile custom feature
-
 import { stripLeadingMentions } from '../util/strip_leading_mentions';
 
 describe('stripLeadingMentions', () => {
