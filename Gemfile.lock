@@ -987,7 +987,7 @@ DEPENDENCIES
   inline_svg
   irb (~> 1.8)
   jd-paperclip-azure (~> 3.0)
-  json-ld
+  json-ld (~> 3.3.1)
   json-ld-preloaded (~> 3.2)
   json-schema (~> 5.0)
   jwt (~> 2.10)
