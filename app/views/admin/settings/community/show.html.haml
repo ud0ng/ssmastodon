@@ -13,3 +13,17 @@
     = f.input :status_max_characters,
               input_html: { type: 'number', min: StatusLengthValidator::MAX_CHARS_RANGE.min, max: StatusLengthValidator::MAX_CHARS_RANGE.max },
               wrapper: :with_block_label
+
+  %h4= t('admin.settings.community.search')
+
+  .fields-group
+    = f.input :status_search_enabled,
+              as: :boolean,
+              wrapper: :with_label
+
+  .fields-group
+    = f.input :status_search_scope,
+              collection: Form::AdminSettings::STATUS_SEARCH_SCOPES,
+              include_blank: false,
+              label_method: ->(scope) { I18n.t("admin.settings.community.search_scopes.#{scope}") },
+              wrapper: :with_label

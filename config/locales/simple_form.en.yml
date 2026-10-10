@@ -89,6 +89,8 @@ en:
         site_title: How people may refer to your server besides its domain name.
         status_max_characters: Maximum number of characters in a single post. (100 – 10,000, default 1,000)
         status_page_url: URL of a page where people can see the status of this server during an outage
+        status_search_enabled: Search post text and content warnings using the database, without Elasticsearch. Your own posts, posts mentioning you and posts you favourited or bookmarked are always searchable.
+        status_search_scope: How far searches reach into other people's posts.
         theme: Theme that logged out visitors and new users see.
         thumbnail: A roughly 2:1 image displayed alongside your server information.
         timeline_preview: Logged out visitors will be able to browse the most recent public posts available on the server.
@@ -268,6 +270,8 @@ en:
         site_title: Server name
         status_max_characters: Maximum post length
         status_page_url: Status page URL
+        status_search_enabled: Enable full-text post search
+        status_search_scope: Search scope
         theme: Default theme
         thumbnail: Server thumbnail
         timeline_preview: Allow unauthenticated access to public timelines

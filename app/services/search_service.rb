@@ -40,8 +40,9 @@ class SearchService < BaseService
     )
   end
 
+  # Elasticsearch 가 없으면 DB 검색으로 찾는다. (서버 설정 > 커뮤니티 옵션)
   def perform_statuses_search!
-    StatusesSearchService.new.call(
+    (Chewy.enabled? ? StatusesSearchService : DatabaseStatusesSearchService).new.call(
       @query,
       @account,
       limit: @limit,
@@ -82,7 +83,7 @@ class SearchService < BaseService
   end
 
   def status_searchable?
-    Chewy.enabled? && status_search? && @account.present?
+    Setting.status_search_enabled && status_search? && @account.present?
   end
 
   def account_searchable?

@@ -81,11 +81,7 @@ class SearchQueryTransformer < Parslet::Transform
                       _index: PublicStatusesIndex.index_name,
                     },
                   },
-                  {
-                    terms: {
-                      account_id: allowed_account_ids,
-                    },
-                  },
+                  *public_index_account_filter(allowed_account_ids),
                 ],
               },
             },
@@ -118,6 +114,13 @@ class SearchQueryTransformer < Parslet::Transform
           minimum_should_match: 1,
         },
       }
+    end
+
+    # 검색 범위가 '서버 전체'면 공개 툿은 작성자와 관계없이 찾는다.
+    def public_index_account_filter(allowed_account_ids)
+      return [] if Setting.status_search_scope == 'all'
+
+      [{ terms: { account_id: allowed_account_ids } }]
     end
   end
 

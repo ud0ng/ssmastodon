@@ -831,6 +831,10 @@ en:
         title: Require new users to solve a CAPTCHA to confirm their account
       community:
         posting: Posting
+        search: Search
+        search_scopes:
+          all: Whole server (public posts from every account)
+          following: Me and people I follow
         title: Community options
       content_retention:
         danger_zone: Danger zone

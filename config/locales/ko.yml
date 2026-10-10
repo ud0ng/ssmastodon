@@ -820,6 +820,10 @@ ko:
         title: 새로운 사용자가 계정 확인을 위해서는 CAPTCHA를 풀어야 하도록 합니다
       community:
         posting: 글쓰기
+        search: 검색
+        search_scopes:
+          all: 서버 전체 (모든 계정의 공개 툿 포함)
+          following: 나와 팔로우한 사람
         title: 커뮤니티 옵션
       content_retention:
         danger_zone: 위험한 영역

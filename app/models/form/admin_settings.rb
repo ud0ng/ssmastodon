@@ -43,6 +43,8 @@ class Form::AdminSettings
     wordmark_dark
     wordmark_light
     status_max_characters
+    status_search_enabled
+    status_search_scope
   ).freeze
 
   INTEGER_KEYS = %i(
@@ -66,6 +68,7 @@ class Form::AdminSettings
     require_invite_text
     captcha_enabled
     authorized_fetch
+    status_search_enabled
   ).freeze
 
   UPLOAD_KEYS = %i(
@@ -86,6 +89,7 @@ class Form::AdminSettings
   }.freeze
 
   DESCRIPTION_LIMIT = 200
+  STATUS_SEARCH_SCOPES = %w(following all).freeze
 
   attr_accessor(*KEYS)
 
@@ -98,6 +102,7 @@ class Form::AdminSettings
   validates :media_cache_retention_period, :content_cache_retention_period, :backups_retention_period, numericality: { only_integer: true }, allow_blank: true, if: -> { defined?(@media_cache_retention_period) || defined?(@content_cache_retention_period) || defined?(@backups_retention_period) }
   validates :min_age, numericality: { only_integer: true }, allow_blank: true, if: -> { defined?(@min_age) }
   validates :status_max_characters, numericality: { only_integer: true, in: StatusLengthValidator::MAX_CHARS_RANGE }, if: -> { defined?(@status_max_characters) }
+  validates :status_search_scope, inclusion: { in: STATUS_SEARCH_SCOPES }, if: -> { defined?(@status_search_scope) }
   validates :site_short_description, length: { maximum: DESCRIPTION_LIMIT }, if: -> { defined?(@site_short_description) }
   validates :status_page_url, url: true, allow_blank: true
   validate :validate_site_uploads
