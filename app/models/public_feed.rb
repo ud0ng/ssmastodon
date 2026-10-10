@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 class PublicFeed
-  #   - 공지용 계정(@longwhile) 노출 로직 및 DM 운영진 열람(공개 타임라인)
+  #   - 공지용 계정(@manager) 노출 로직 및 DM 운영진 열람(공개 타임라인)
   # 공지용 계정: 해당 계정의 unlisted(로컬 범위) 툿은 팔로우 여부와 무관하게 노출됨
-  ANNOUNCEMENT_USERNAME = 'longwhile'
+  ANNOUNCEMENT_USERNAME = 'manager'
 
   # @param [Account] account
   # @param [Hash] options
@@ -94,7 +94,7 @@ class PublicFeed
     )
   SQL
 
-  # 일반 사용자: 팔로우 중 + 본인 계정 + 공지용 계정(@longwhile)의 툿 노출
+  # 일반 사용자: 팔로우 중 + 본인 계정 + 공지용 계정(@manager)의 툿 노출
   # - 일반 계정: private(팔로워 전용) — 잠금 여부와 무관하다
   # - 공지용 계정: unlisted. 이 인스턴스에서 unlisted 를 쓰는 건 공지 계정뿐이고,
   #   팔로우 여부와 무관하게 항상 노출된다
@@ -110,7 +110,7 @@ class PublicFeed
     exclude_mentioning_statuses? ? scope.where(WITHOUT_MENTIONS_SQL) : scope
   end
 
-  # Admin / Owner: 팔로우 중 + 본인 계정 + 공지용 계정(@longwhile)의 툿 노출 (감시 목적)
+  # Admin / Owner: 팔로우 중 + 본인 계정 + 공지용 계정(@manager)의 툿 노출 (감시 목적)
   # - private + unlisted
   # - 본인이 멘션된 툿은 제외 (이미 멘션/알림 타임라인에서 확인 가능)
   # - 산개 멘션은 일반 사용자와 똑같이 제외한다

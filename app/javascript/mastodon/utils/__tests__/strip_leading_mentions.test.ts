@@ -9,21 +9,21 @@ const carriedOver = (...handles: string[]) => new Set(handles.map(url));
 
 describe('stripLeadingMentions', () => {
   it('drops the handles the composer carried over', () => {
-    const html = `<p>${mention('chul_su')} ${mention('longwhile')} Blackjack, anyone?</p>`;
+    const html = `<p>${mention('chul_su')} ${mention('commu')} Blackjack, anyone?</p>`;
 
     expect(
-      stripLeadingMentions(html, carriedOver('chul_su', 'longwhile')),
+      stripLeadingMentions(html, carriedOver('chul_su', 'commu')),
     ).toBe('<p>Blackjack, anyone?</p>');
   });
 
   it('keeps someone the reply is bringing into the conversation', () => {
     // @newcomer is not part of the thread yet, so naming them is information.
-    const html = `<p>${mention('newcomer')} ${mention('longwhile')} over here</p>`;
+    const html = `<p>${mention('newcomer')} ${mention('commu')} over here</p>`;
 
-    const result = stripLeadingMentions(html, carriedOver('longwhile'));
+    const result = stripLeadingMentions(html, carriedOver('commu'));
 
     expect(result).toContain(url('newcomer'));
-    expect(result).not.toContain(url('longwhile'));
+    expect(result).not.toContain(url('commu'));
   });
 
   it('keeps a mention the author wrote inside the sentence', () => {

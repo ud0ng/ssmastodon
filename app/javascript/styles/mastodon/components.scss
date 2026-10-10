@@ -338,12 +338,12 @@
   }
 
   &.active {
-    color: var(--color-brand-longwhile, #{$highlight-text-color});
+    color: var(--color-brand-commu, #{$highlight-text-color});
 
     &:hover,
     &:active,
     &:focus {
-      color: var(--color-brand-longwhile, #{$highlight-text-color});
+      color: var(--color-brand-commu, #{$highlight-text-color});
       background-color: transparent;
     }
 
@@ -866,7 +866,7 @@ body>[data-popper-placement] {
       padding: 8px;
 
       .icon-button.active {
-        color: var(--color-brand-longwhile-favourite, #ffbe2e);
+        color: var(--color-brand-commu-favourite, #ffbe2e);
         background: rgba(0, 0, 0, 75%);
       }
     }
@@ -927,21 +927,21 @@ body>[data-popper-placement] {
 
     .icon-button {
       box-sizing: content-box;
-      color: var(--color-brand-longwhile, #{$highlight-text-color});
+      color: var(--color-brand-commu, #{$highlight-text-color});
 
       &:hover,
       &:focus,
       &:active {
-        color: var(--color-brand-longwhile, #{$highlight-text-color});
+        color: var(--color-brand-commu, #{$highlight-text-color});
       }
 
       &.disabled {
-        color: var(--color-brand-longwhile, #{$highlight-text-color});
+        color: var(--color-brand-commu, #{$highlight-text-color});
         opacity: 0.5;
       }
 
       &.active {
-        background: var(--color-brand-longwhile, #{$ui-highlight-color});
+        background: var(--color-brand-commu, #{$ui-highlight-color});
         color: $primary-text-color;
       }
     }
@@ -3197,7 +3197,7 @@ body .ui__navigation-bar__items .ui__navigation-bar__item {
   height: 56px;
   border-radius: 50%;
 
-  background: var(--color-brand-longwhile, $ui-highlight-color);
+  background: var(--color-brand-commu, $ui-highlight-color);
   color: $white;
   text-decoration: none;
 
@@ -3210,7 +3210,7 @@ body .ui__navigation-bar__items .ui__navigation-bar__item {
 
   &:hover,
   &:focus-visible {
-    background: var(--color-brand-longwhile-hover, $ui-highlight-color);
+    background: var(--color-brand-commu-hover, $ui-highlight-color);
   }
 
   @media screen and (min-width: $mobile-breakpoint + 1px) {
@@ -5132,7 +5132,7 @@ a.status-card {
       width: max(100%, 56px);
       height: 4px;
       border-radius: 2px;
-      background: var(--color-brand-longwhile, $ui-highlight-color);
+      background: var(--color-brand-commu, $ui-highlight-color);
       transform: translateX(-50%);
     }
   }
@@ -10829,7 +10829,7 @@ noscript {
   text-transform: uppercase;
   margin-inline-start: 10px;
   cursor: pointer;
-  color: $long-while-300;
+  color: $commu-300;
   border-radius: 4px;
   padding: 0 4px;
 
@@ -12133,7 +12133,7 @@ div.compose-panel .account__bio {
     flex-shrink: 0;
     width: 20px;
     height: 20px;
-    color: var(--color-brand-longwhile, #{$ui-highlight-color});
+    color: var(--color-brand-commu, #{$ui-highlight-color});
   }
 
   &__account-info {
@@ -12204,7 +12204,7 @@ div.compose-panel .account__bio {
 
   &__action-icon {
     flex-shrink: 0;
-    color: var(--color-brand-longwhile, #{$ui-highlight-color});
+    color: var(--color-brand-commu, #{$ui-highlight-color});
     transition: color 200ms;
   }
 
@@ -12231,7 +12231,7 @@ div.compose-panel .account__bio {
       inset: 0;
       background: color-mix(in srgb,
           color-mix(in srgb,
-            var(--account-switcher-accent-color, var(--color-brand-longwhile, #{$ui-highlight-color})) 40%,
+            var(--account-switcher-accent-color, var(--color-brand-commu, #{$ui-highlight-color})) 40%,
             #1a1a1a 60%),
           transparent 80%);
       pointer-events: none;
@@ -12396,7 +12396,7 @@ div.compose-panel .account__bio {
     }
 
     &--danger {
-      color: var(--color-brand-longwhile-danger, #{$error-color});
+      color: var(--color-brand-commu-danger, #{$error-color});
 
       &:hover:not(:disabled),
       &:focus-visible:not(:disabled) {
@@ -12406,13 +12406,13 @@ div.compose-panel .account__bio {
     }
 
     &--link {
-      color: var(--color-brand-longwhile-links, #{$account-switcher-add-text-color});
+      color: var(--color-brand-commu-links, #{$account-switcher-add-text-color});
       background: rgba($darker-text-color, 0.05);
 
       &:hover:not(:disabled),
       &:focus-visible:not(:disabled) {
         color: color-mix(in srgb,
-            var(--color-brand-longwhile-links, #{$account-switcher-add-text-color}) 85%,
+            var(--color-brand-commu-links, #{$account-switcher-add-text-color}) 85%,
             #000000 15%);
         background: rgba($darker-text-color, 0.08);
       }
@@ -12463,7 +12463,7 @@ div.compose-panel .account__bio {
   &__manage-action {
     border: 0;
     border-radius: 999px;
-    color: var(--color-brand-longwhile-danger, #{$error-color});
+    color: var(--color-brand-commu-danger, #{$error-color});
     width: 36px;
     height: 36px;
     cursor: pointer;
@@ -12558,7 +12558,7 @@ div.compose-panel .account__bio {
 
     &--danger {
       background: rgba($error-color, 0.14);
-      color: var(--color-brand-longwhile-danger, #{$error-color});
+      color: var(--color-brand-commu-danger, #{$error-color});
 
       &:hover {
         background: rgba($error-color, 0.22);
@@ -12683,7 +12683,7 @@ div.compose-panel .account__bio {
   opacity: 1;
   background: color-mix(in srgb,
       color-mix(in srgb,
-        var(--color-brand-longwhile, #{$ui-highlight-color}) 40%,
+        var(--color-brand-commu, #{$ui-highlight-color}) 40%,
         #1a1a1a 60%),
       transparent 80%);
 }
@@ -12871,8 +12871,8 @@ div.compose-panel .account__bio {
 
       /* Today is an outline so it stays legible next to the filled selection. */
       &--today {
-        border-color: var(--color-brand-longwhile, #{$ui-highlight-color});
-        color: var(--color-brand-longwhile, #{$highlight-text-color});
+        border-color: var(--color-brand-commu, #{$ui-highlight-color});
+        color: var(--color-brand-commu, #{$highlight-text-color});
       }
 
       /* Declared after the plain hover, and with the same specificity, so the
@@ -12880,8 +12880,8 @@ div.compose-panel .account__bio {
       &--selected,
       &--selected:hover:not(:disabled),
       &--selected:focus-visible:not(:disabled) {
-        background: var(--color-brand-longwhile, #{$ui-highlight-color});
-        border-color: var(--color-brand-longwhile, #{$ui-highlight-color});
+        background: var(--color-brand-commu, #{$ui-highlight-color});
+        border-color: var(--color-brand-commu, #{$ui-highlight-color});
 
         color: var(--color-on-brand, #{$primary-text-color});
         font-weight: 600;
@@ -12917,7 +12917,7 @@ div.compose-panel .account__bio {
     line-height: 20px;
 
     &:focus-visible {
-      border-color: var(--color-brand-longwhile, #{$ui-highlight-color});
+      border-color: var(--color-brand-commu, #{$ui-highlight-color});
     }
 
     .schedule-modal &:focus-visible {
@@ -12946,7 +12946,7 @@ div.compose-panel .account__bio {
     line-height: 20px;
 
     &:focus-within {
-      border-color: var(--color-brand-longwhile, #{$ui-highlight-color});
+      border-color: var(--color-brand-commu, #{$ui-highlight-color});
     }
 
     // The number and its unit read as one label: same face, same size, same line
@@ -13008,7 +13008,7 @@ div.compose-panel .account__bio {
       &:focus-visible,
       &.active {
         outline: none;
-        border-color: var(--color-brand-longwhile, #{$ui-highlight-color});
+        border-color: var(--color-brand-commu, #{$ui-highlight-color});
       }
     }
 
@@ -13045,7 +13045,7 @@ div.compose-panel .account__bio {
       }
 
       &.active {
-        background: var(--color-brand-longwhile, #{$ui-highlight-color});
+        background: var(--color-brand-commu, #{$ui-highlight-color});
         color: var(--color-on-brand, #{$primary-text-color});
       }
 
@@ -13119,7 +13119,7 @@ div.compose-panel .account__bio {
     border: 0;
     border-radius: 999px;
     padding: 9px 20px;
-    background: var(--color-brand-longwhile, #{$ui-highlight-color});
+    background: var(--color-brand-commu, #{$ui-highlight-color});
 
     color: var(--color-on-brand, #{$primary-text-color});
     font-family: inherit;
@@ -13131,7 +13131,7 @@ div.compose-panel .account__bio {
     &:hover:not(:disabled),
     &:focus-visible:not(:disabled) {
       background: var(
-        --color-brand-longwhile-hover,
+        --color-brand-commu-hover,
         #{darken($ui-highlight-color, 5%)}
       );
     }
@@ -13185,7 +13185,7 @@ div.compose-panel .account__bio {
   font-weight: 600;
 
   &__date {
-    color: var(--color-brand-longwhile, #{$highlight-text-color});
+    color: var(--color-brand-commu, #{$highlight-text-color});
   }
 
   /* Plain text colour so the tally reads as a separate fact from the date. */
@@ -13254,8 +13254,8 @@ div.compose-panel .account__bio {
       color: $darker-text-color;
 
       &--active {
-        border-color: var(--color-brand-longwhile, #{$highlight-text-color});
-        color: var(--color-brand-longwhile, #{$highlight-text-color});
+        border-color: var(--color-brand-commu, #{$highlight-text-color});
+        color: var(--color-brand-commu, #{$highlight-text-color});
       }
 
       &--warning {
@@ -13428,7 +13428,7 @@ div.compose-panel .account__bio {
   }
 
   &--draft &__preview {
-    color: var(--color-brand-longwhile, #{$highlight-text-color});
+    color: var(--color-brand-commu, #{$highlight-text-color});
   }
 
   &__badge {
@@ -13437,7 +13437,7 @@ div.compose-panel .account__bio {
     padding: 0;
     border-radius: 10px;
 
-    background: var(--color-brand-longwhile, #{$highlight-text-color});
+    background: var(--color-brand-commu, #{$highlight-text-color});
 
     color: var(--color-on-brand, #{$white});
     font-size: 12px;
@@ -13647,7 +13647,7 @@ div.compose-panel .account__bio {
     font-size: 11px;
     font-weight: 600;
     line-height: 1;
-    color: var(--color-brand-longwhile, $highlight-text-color);
+    color: var(--color-brand-commu, $highlight-text-color);
   }
 
   &__sr-label {
@@ -13747,7 +13747,7 @@ div.compose-panel .account__bio {
     }
 
     &:has(:focus-visible) {
-      outline: 1px solid var(--color-brand-longwhile, #{$highlight-text-color});
+      outline: 1px solid var(--color-brand-commu, #{$highlight-text-color});
       outline-offset: -1px;
     }
   }
@@ -14617,7 +14617,7 @@ div.compose-panel .account__bio {
 
   &:focus {
     outline: none;
-    border-color: var(--color-brand-longwhile, $highlight-text-color);
+    border-color: var(--color-brand-commu, $highlight-text-color);
   }
 }
 
@@ -14934,7 +14934,7 @@ body.app-body.layout-messages.layout-single-column {
     }
 
     &:focus-within {
-      outline: 1px solid var(--color-brand-longwhile, #{$highlight-text-color});
+      outline: 1px solid var(--color-brand-commu, #{$highlight-text-color});
     }
   }
 
@@ -15197,8 +15197,8 @@ body.layout-single-column .button.follow-button--following {
   border-color: var(--color-button-border, var(--color-border));
 }
 
-$dm-danger: var(--color-brand-longwhile-danger, #{$error-value-color});
-$dm-danger-hover: var(--color-brand-longwhile-danger-hover, #{$error-value-color});
+$dm-danger: var(--color-brand-commu-danger, #{$error-value-color});
+$dm-danger-hover: var(--color-brand-commu-danger-hover, #{$error-value-color});
 
 body.layout-single-column .follow-request-banner__action .button--destructive {
   border-color: $dm-danger;
@@ -15239,11 +15239,11 @@ body.layout-single-column .button.follow-button--following {
   &:focus-visible {
     background-color: color-mix(
       in srgb,
-      var(--color-brand-longwhile-danger, #{$error-value-color}) 12%,
+      var(--color-brand-commu-danger, #{$error-value-color}) 12%,
       transparent
     );
-    border-color: var(--color-brand-longwhile-danger, #{$error-value-color});
-    color: var(--color-brand-longwhile-danger, #{$error-value-color});
+    border-color: var(--color-brand-commu-danger, #{$error-value-color});
+    color: var(--color-brand-commu-danger, #{$error-value-color});
   }
 
   .follow-button__labels {
@@ -15286,11 +15286,11 @@ body.layout-single-column
   &:focus-visible {
     background-color: color-mix(
       in srgb,
-      var(--color-brand-longwhile-danger, #{$error-value-color}) 12%,
+      var(--color-brand-commu-danger, #{$error-value-color}) 12%,
       transparent
     );
-    border-color: var(--color-brand-longwhile-danger, #{$error-value-color});
-    color: var(--color-brand-longwhile-danger, #{$error-value-color});
+    border-color: var(--color-brand-commu-danger, #{$error-value-color});
+    color: var(--color-brand-commu-danger, #{$error-value-color});
   }
 }
 
@@ -15425,9 +15425,9 @@ body.layout-multiple-columns .column-header {
 
 body.layout-single-column,
 body.layout-multiple-columns {
-  --color-brand-longwhile-hover: color-mix(
+  --color-brand-commu-hover: color-mix(
     in srgb,
-    var(--color-brand-longwhile) 88%,
+    var(--color-brand-commu) 88%,
     #000
   );
 }
@@ -15436,7 +15436,7 @@ body.layout-single-column .compose-form__submit .button,
 body.layout-multiple-columns .compose-form__submit .button {
   background-color: var(
     --color-post-button,
-    var(--color-brand-longwhile, #{$ui-button-background-color})
+    var(--color-brand-commu, #{$ui-button-background-color})
   );
   color: var(
     --color-post-button-text,
@@ -15448,7 +15448,7 @@ body.layout-multiple-columns .compose-form__submit .button {
   &:active {
     background-color: color-mix(
       in srgb,
-      var(--color-post-button, var(--color-brand-longwhile)) 88%,
+      var(--color-post-button, var(--color-brand-commu)) 88%,
       #000
     );
   }
@@ -15466,8 +15466,8 @@ body .button.button-secondary {
   &:hover,
   &:focus,
   &:active {
-    background-color: var(--color-brand-longwhile, #{$ui-button-background-color});
-    border-color: var(--color-brand-longwhile, #{$ui-button-background-color});
+    background-color: var(--color-brand-commu, #{$ui-button-background-color});
+    border-color: var(--color-brand-commu, #{$ui-button-background-color});
     color: var(--color-on-brand, #{$ui-button-color});
   }
 }
@@ -15481,7 +15481,7 @@ body .search__popout__menu__item {
   &:focus,
   &:active,
   &.active {
-    background: var(--color-brand-longwhile, #{$ui-highlight-color});
+    background: var(--color-brand-commu, #{$ui-highlight-color});
     color: var(--color-on-brand, #{$white});
 
     mark,

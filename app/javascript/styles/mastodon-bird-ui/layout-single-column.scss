@@ -71,8 +71,8 @@
   --color-column: #10171e;
   --color-bg-compose-form-focus: #192530;
 
-  --color-brand-longwhile: #1d9bf0;
-  --color-brand-longwhile-dim: #8b98a5;
+  --color-brand-commu: #1d9bf0;
+  --color-brand-commu-dim: #8b98a5;
 
   --color-noti-hover: #17222dcf;
   --color-modal-overlay: #0a1a286b;
@@ -84,18 +84,18 @@
 
   --color-button-border: #6f7b85;
 
-  --color-brand-longwhile-threaded-line: #425364;
+  --color-brand-commu-threaded-line: #425364;
 
   --color-column-link: #ffffff;
   --color-column-link-hover: #4ab6ff;
 
-  --color-brand-longwhile-heart: #f91880;
-  --color-brand-longwhile-favourite: #ffac33;
+  --color-brand-commu-heart: #f91880;
+  --color-brand-commu-favourite: #ffac33;
 
-  --color-brand-longwhile-danger: #d32d49;
-  --color-brand-longwhile-danger-hover: #b7253d;
+  --color-brand-commu-danger: #d32d49;
+  --color-brand-commu-danger-hover: #b7253d;
 
-  --color-sent-message-background: var(--color-brand-longwhile);
+  --color-sent-message-background: var(--color-brand-commu);
   --color-sent-message-text: var(--color-post-button-text);
   --color-recieve-message-background: var(--color-bg-compose-form-focus);
   --color-recieve-message-text: var(--color-fg);
@@ -103,19 +103,19 @@
   --color-modal-panel: var(--color-bg);
   --color-bg: #10171e;
   --color-fg: #fff;
-  --color-dim: var(--color-brand-longwhile-dim);
+  --color-dim: var(--color-brand-commu-dim);
   --color-light-purple: var(--color-dim);
   --color-topaz: #e9edf0;
   --color-light-shade: var(--color-noti-hover);
   --color-light-text: #f7f9f9;
-  --color-post-button: var(--color-brand-longwhile);
+  --color-post-button: var(--color-brand-commu);
   --color-accent: var(--color-link);
-  --color-accent-dark: var(--color-brand-longwhile);
+  --color-accent-dark: var(--color-brand-commu);
   --color-accent-dark-50: (var(--color-accent-dark) 50%);
   --color-hashtag: var(--color-accent);
   --color-mention: var(--color-accent);
   --color-ghost-button-text: var(--color-button-text);
-  --color-dark: var(--color-brand-longwhile-dark);
+  --color-dark: var(--color-brand-commu-dark);
 
   /* Fixed colours used only on mobile (759px and below). The search field is
      a panel lifted slightly in brightness; the popout must be opaque, because
@@ -125,7 +125,7 @@
   --color-mud: var(--color-bg-compose-form);
   --color-bg-compose-form: rgba(25, 37, 48, 0.85);
   --color-link: #1d9bf0;
-  --color-brand-longwhile-links: var(--color-link);
+  --color-brand-commu-links: var(--color-link);
   --color-icon-button-hover: #ffffff14;
   --color-profile-button-hover: var(--color-noti-hover);
 
@@ -137,13 +137,13 @@
   --color-bg-75: #131313bf;
   --color-bg-90: #131316e6;
   --account-switcher-manage-overlay: var(--color-modal-overlay);
-  --color-thread-line: var(--color-brand-longwhile-threaded-line);
+  --color-thread-line: var(--color-brand-commu-threaded-line);
 
   --logo: var(--lw-wordmark-dark, url('../images/logos/wordmark_dark.png'));
   --m-logo: url('../images/logos/m_logo_dark.png');
 
-  --color-brand-longwhile-dark: #161e2b;
-  --color-brand-longwhile-text-light: #aab3be;
+  --color-brand-commu-dark: #161e2b;
+  --color-brand-commu-text-light: #aab3be;
 
   --icon-star-notification: url('data:image/svg+xml, %3Csvg width="24" height="24" stroke-width="0" viewBox="0 0 24 24" fill="%23ffac33" xmlns="http://www.w3.org/2000/svg" color="%23f7f9f9"%3E%3Cpath d="M8.587 8.236l2.598-5.232a.911.911 0 011.63 0l2.598 5.232 5.808.844a.902.902 0 01.503 1.542l-4.202 4.07.992 5.75c.127.738-.653 1.3-1.32.952L12 18.678l-5.195 2.716c-.666.349-1.446-.214-1.319-.953l.992-5.75-4.202-4.07a.902.902 0 01.503-1.54l5.808-.845z" stroke="%23ffac33" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"%3E%3C/path%3E%3C/svg%3E');
 
@@ -151,7 +151,7 @@
 
   --color-button-text: #f7f9f9;
 
-  --color-brand-longwhile-bg: #0d151c;
+  --color-brand-commu-bg: #0d151c;
 
 
   --color-red-75: #f91880bf;
@@ -164,9 +164,9 @@
   --color-light-fuchsia-pink: #ff8cfd;
 
 
-  --color-lighter-purple: var(--color-brand-longwhile-dim);
+  --color-lighter-purple: var(--color-brand-commu-dim);
 
-  --color-brand-longwhile-mud: var(--color-bg-compose-form);
+  --color-brand-commu-mud: var(--color-bg-compose-form);
 
   /* In the original UI this color is lighten($ui-base-color, 12%) */
   --color-outer-space: #42485a;
@@ -315,8 +315,8 @@ body.theme-mastodon-bird-ui-light {
   --color-column: #ffffff3d;
   --color-bg-compose-form-focus: #f3f3f3fc;
 
-  --color-brand-longwhile: #1d9bf0;
-  --color-brand-longwhile-dim: #6f7b85;
+  --color-brand-commu: #1d9bf0;
+  --color-brand-commu-dim: #6f7b85;
 
   --color-noti-hover: #6e7b8d0a;
   --color-modal-overlay: #20689926;
@@ -333,28 +333,28 @@ body.theme-mastodon-bird-ui-light {
   --color-column-link: #303337;
   --color-column-link-hover: #0d84d5;
 
-  --color-brand-longwhile-heart: #f91880;
-  --color-brand-longwhile-favourite: #ffac33;
+  --color-brand-commu-heart: #f91880;
+  --color-brand-commu-favourite: #ffac33;
 
-  --color-brand-longwhile-danger: #db1e2e;
-  --color-brand-longwhile-danger-hover: #c51120;
+  --color-brand-commu-danger: #db1e2e;
+  --color-brand-commu-danger-hover: #c51120;
 
-  --color-sent-message-background: var(--color-brand-longwhile);
+  --color-sent-message-background: var(--color-brand-commu);
   --color-sent-message-text: var(--color-post-button-text);
   --color-recieve-message-background: var(--color-bg-compose-form-focus);
   --color-recieve-message-text: var(--color-fg);
 
   --color-bg: #fff;
   --color-fg: #000000;
-  --color-dim: var(--color-brand-longwhile-dim);
+  --color-dim: var(--color-brand-commu-dim);
   --color-light-purple: var(--color-dim);
   --color-topaz: var(--color-dim);
   --color-light-shade: var(--color-noti-hover);
   --color-light-text: #1a1a1a;
-  --color-post-button: var(--color-brand-longwhile);
-  --color-accent: var(--color-brand-longwhile);
-  --color-accent-dark: var(--color-brand-longwhile);
-  --color-accent-dark-50: var(--color-brand-longwhile);
+  --color-post-button: var(--color-brand-commu);
+  --color-accent: var(--color-brand-commu);
+  --color-accent-dark: var(--color-brand-commu);
+  --color-accent-dark-50: var(--color-brand-commu);
   --color-hashtag: var(--color-accent-dark);
   --color-mention: var(--color-accent-dark);
   --color-ghost-button-text: var(--color-accent-dark);
@@ -364,7 +364,7 @@ body.theme-mastodon-bird-ui-light {
   --color-mud: var(--color-bg-compose-form);
   --color-bg-compose-form: #f5f5f5e0;
   --color-link: #0d86d6;
-  --color-brand-longwhile-links: var(--color-link);
+  --color-brand-commu-links: var(--color-link);
   --color-icon-button-hover: #00000014;
   --color-profile-button-hover: var(--color-noti-hover);
 
@@ -1099,11 +1099,11 @@ body.embed .status__content a,
 .layout-single-column .button:active,
 .layout-single-column .button:focus,
 .layout-single-column .button:hover {
-  background-color: var(--color-brand-longwhile-hover);
+  background-color: var(--color-brand-commu-hover);
 }
 
 .layout-single-column .button--dangerous {
-  background-color: var(--color-brand-longwhile-danger);
+  background-color: var(--color-brand-commu-danger);
 }
 
 .layout-single-column .button--dangerous:active,
@@ -1112,7 +1112,7 @@ body.embed .status__content a,
 .layout-single-column .button--destructive:active,
 .layout-single-column .button--destructive:focus,
 .layout-single-column .button--destructive:hover {
-  background-color: var(--color-brand-longwhile-danger-hover);
+  background-color: var(--color-brand-commu-danger-hover);
 }
 
 .layout-single-column .block-modal__cancel-button,
@@ -1394,7 +1394,7 @@ body .notification-ungrouped--unread::before {
 /* Lighter border colors */
 .layout-single-column .report-dialog-modal .dialog-option .poll__input,
 .layout-single-column .poll__input {
-  border-color: var(--color-brand-longwhile-text-light);
+  border-color: var(--color-brand-commu-text-light);
 }
 
 /* Light grey things */
@@ -3512,8 +3512,8 @@ body .compose-form .compose-form__uploads {
 
 .layout-single-column .button.button-secondary:hover {
   /* stylelint-disable-next-line */
-  background-color: var(--color-brand-longwhile);
-  border-color: var(--color-brand-longwhile);
+  background-color: var(--color-brand-commu);
+  border-color: var(--color-brand-commu);
   color: var(--color-on-brand);
 }
 
@@ -5195,7 +5195,7 @@ div[tabindex="-1"]+div[tabindex="-1"]>.status__wrapper>.status-reply.status--in-
 .icon-button.star-icon.active,
 .notification-group--favourite .star-icon,
 .notification-favourite .star-icon {
-  color: var(--color-brand-longwhile-heart, #f91880);
+  color: var(--color-brand-commu-heart, #f91880);
 }
 
 .layout-single-column .detailed-status__action-bar .icon-button:hover .icon-star,
@@ -5316,7 +5316,7 @@ div[tabindex="-1"]+div[tabindex="-1"]>.status__wrapper>.status-reply.status--in-
 
   .layout-single-column button.icon-button:not(.active):hover .icon-star~span,
   .layout-single-column button.icon-button:not(.active):hover .icon-star {
-    color: var(--color-brand-longwhile-heart);
+    color: var(--color-brand-commu-heart);
   }
 
   .layout-single-column button.icon-button.active:hover .icon-star~span {
@@ -5372,7 +5372,7 @@ div[tabindex="-1"]+div[tabindex="-1"]>.status__wrapper>.status-reply.status--in-
 .layout-single-column .notification__message .icon-star {
   mask-image: url('./bird-theme-svg/action-bar-heart-fill.svg');
   -webkit-mask-image: url('./bird-theme-svg/action-bar-heart-fill.svg');
-  background-color: var(--color-brand-longwhile-heart);
+  background-color: var(--color-brand-commu-heart);
 }
 
 .layout-single-column .notification-group__icon .icon-repeat,
@@ -5421,7 +5421,7 @@ div[tabindex="-1"]+div[tabindex="-1"]>.status__wrapper>.status-reply.status--in-
 
 .layout-single-column button.icon-button.activate .icon-star~span,
 .layout-single-column button.icon-button.active .icon-star~span {
-  color: var(--color-brand-longwhile-heart);
+  color: var(--color-brand-commu-heart);
 }
 
 .layout-single-column .notification__filter-bar .icon-star,
@@ -5442,7 +5442,7 @@ div[tabindex="-1"]+div[tabindex="-1"]>.status__wrapper>.status-reply.status--in-
   background-color: unset !important;
   background-image: var(--icon-star-detailed-status-action-bar-active) !important;
   background-position: center;
-  color: var(--color-brand-longwhile-heart);
+  color: var(--color-brand-commu-heart);
   left: unset !important;
   position: relative;
   top: 0;
@@ -5496,7 +5496,7 @@ div[tabindex="-1"]+div[tabindex="-1"]>.status__wrapper>.status-reply.status--in-
 
 .layout-single-column .detailed-status__action-bar button.icon-button.activate.star-icon::before,
 .layout-single-column .status__action-bar button.icon-button.activate.star-icon::before {
-  border: 0px solid var(--color-brand-longwhile-heart);
+  border: 0px solid var(--color-brand-commu-heart);
   border-radius: 10em;
   content: '';
   height: 0em;
@@ -5511,7 +5511,7 @@ div[tabindex="-1"]+div[tabindex="-1"]>.status__wrapper>.status-reply.status--in-
 .layout-single-column .icon-button.star-icon.active,
 .layout-single-column .notification-group--favourite .star-icon,
 .layout-single-column .notification-favourite .star-icon {
-  color: var(--color-brand-longwhile-heart);
+  color: var(--color-brand-commu-heart);
 }
 
 .layout-single-column .detailed-status__action-bar button.icon-button.star-icon.deactivate:hover .icon-star,
@@ -5529,7 +5529,7 @@ div[tabindex="-1"]+div[tabindex="-1"]>.status__wrapper>.status-reply.status--in-
 .layout-single-column .detailed-status button.icon-button:hover .icon-star,
 .layout-single-column .status button.icon-button:hover .icon-star {
   background-image: var(--icon-star-detailed-status-action-bar-active) !important;
-  color: var(--color-brand-longwhile-heart);
+  color: var(--color-brand-commu-heart);
   position: relative;
   top: 0;
 }
@@ -6231,7 +6231,7 @@ body.layout-single-column
   .detailed-status__action-bar
   button.icon-button:hover
   .icon-star {
-  color: var(--color-brand-longwhile-heart);
+  color: var(--color-brand-commu-heart);
   background-image: none !important;
   position: relative !important;
   top: 0 !important;
@@ -6247,7 +6247,7 @@ body.layout-single-column
   .detailed-status__action-bar
   button.icon-button.active
   .icon-star {
-  color: var(--color-brand-longwhile-heart);
+  color: var(--color-brand-commu-heart);
   background-image: none !important;
   mask-image: url('./bird-theme-svg/action-bar-heart-fill.svg');
   -webkit-mask-image: url('./bird-theme-svg/action-bar-heart-fill.svg');
@@ -6259,7 +6259,7 @@ body.layout-single-column.no-reduce-motion
 body.layout-single-column.no-reduce-motion
   button.icon-button.star-icon.deactivate
   .icon-star {
-  color: var(--color-brand-longwhile-heart);
+  color: var(--color-brand-commu-heart);
   background-color: currentcolor !important;
   background-image: none !important;
   width: 18px !important;

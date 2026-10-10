@@ -3,9 +3,9 @@
 class UnreservedUsernameValidator < ActiveModel::Validator
   # 시스템 예약 아이디(공지 계정 보호)
   # Setting.reserved_usernames 의 운영자 변경 여부와 무관하게 항상 예약되어야 하는 아이디.
-  # 공지용 계정(@longwhile) 등 시스템 단위로 보호되어야 하는 아이디만 등록한다.
+  # 공지용 계정(@manager) 등 시스템 단위로 보호되어야 하는 아이디만 등록한다.
   ALWAYS_RESERVED_USERNAMES = %w(
-    longwhile
+    manager
   ).freeze
 
   def validate(account)

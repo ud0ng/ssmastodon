@@ -15,7 +15,7 @@ class TextFormatter
 
   #   - 마크다운 서식, [color]/[bg]/[center]/[right]/[left] 정렬 태그, 자동 링크 키워드
   # 공지용 키워드 -> 자동 링크 매핑. 본문에 키워드가 포함되면 해당 키워드만
-  # 지정된 URL 의 링크(언더라인 + --color-brand-longwhile-links 색상)로 치환된다.
+  # 지정된 URL 의 링크(언더라인 + --color-brand-commu-links 색상)로 치환된다.
   AUTO_LINK_KEYWORDS = {}.freeze
 
   attr_reader :text, :options
@@ -154,7 +154,7 @@ class TextFormatter
   end
 
   def auto_link_html(keyword, url)
-    %(<a href="#{h(url)}" target="_blank" rel="#{DEFAULT_REL.join(' ')}" style="color: var(--color-brand-longwhile-links); text-decoration: underline;">#{h(keyword)}</a>)
+    %(<a href="#{h(url)}" target="_blank" rel="#{DEFAULT_REL.join(' ')}" style="color: var(--color-brand-commu-links); text-decoration: underline;">#{h(keyword)}</a>)
   end
 
   def rewrite

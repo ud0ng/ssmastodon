@@ -229,7 +229,7 @@ class UserMailer < Devise::Mailer
   private
 
   def welcome_guide_url
-    ENV.fetch('LONGWHILE_GUIDE_URL', nil).presence || DEFAULT_GUIDE_URL
+    ENV.fetch('COMMU_GUIDE_URL', nil).presence || DEFAULT_GUIDE_URL
   end
 
   def default_devise_subject

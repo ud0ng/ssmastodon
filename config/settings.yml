@@ -31,7 +31,7 @@ defaults: &defaults
     - help
     - helpdesk
     - instance
-    - longwhile
+    - manager
     - mod
     - moderator
     - moderators

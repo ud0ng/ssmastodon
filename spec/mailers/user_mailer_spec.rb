@@ -294,9 +294,9 @@ RSpec.describe UserMailer do
         .to_not include(I18n.t('user_mailer.welcome.checklist_title'))
     end
 
-    context 'when LONGWHILE_GUIDE_URL is set' do
+    context 'when COMMU_GUIDE_URL is set' do
       around do |example|
-        ClimateControl.modify(LONGWHILE_GUIDE_URL: 'https://guide.example.com/start') { example.run }
+        ClimateControl.modify(COMMU_GUIDE_URL: 'https://guide.example.com/start') { example.run }
       end
 
       it 'links the guide button to it' do

@@ -8,10 +8,10 @@
 $black: #000000; // Black
 $white: #ffffff; // White
 
-$longwhile-600: #0d86d6;
-$longwhile-500: #1d9bf0;
-$longwhile-400: #1d9bf0; // focus visible
-$longwhile-300: #1d9bf0;
+$commu-600: #0d86d6;
+$commu-500: #1d9bf0;
+$commu-400: #1d9bf0; // focus visible
+$commu-300: #1d9bf0;
 
 $grey-600: hsl(215, 10%, 63%); // Trout
 $grey-100: hsl(209, 41%, 90%); // Topaz
@@ -20,7 +20,7 @@ $classic-base-color: #212126;
 
 $classic-secondary-color: #ffffff;
 
-$classic-highlight-color: $longwhile-500;
+$classic-highlight-color: $commu-500;
 
 @use '../mastodon/variables' with (
   $success-green: #1d9bf0,
@@ -34,18 +34,18 @@ $classic-highlight-color: $longwhile-500;
 
   $ui-highlight-color: $classic-highlight-color,
 
-  $ui-button-background-color: $longwhile-500,
-  $ui-button-focus-background-color: $longwhile-600,
-  $ui-button-focus-outline-color: var(--color-brand-longwhile, #{$longwhile-400}),
-  $ui-button-tertiary-focus-background-color: $longwhile-600,
+  $ui-button-background-color: $commu-500,
+  $ui-button-focus-background-color: $commu-600,
+  $ui-button-focus-outline-color: var(--color-brand-commu, #{$commu-400}),
+  $ui-button-tertiary-focus-background-color: $commu-600,
 
   $ui-button-secondary-color: $grey-600,
   $ui-button-secondary-border-color: $grey-600,
   $ui-button-secondary-focus-color: $white,
-  $ui-button-tertiary-color: $longwhile-500,
-  $ui-button-tertiary-border-color: $longwhile-500,
+  $ui-button-tertiary-color: $commu-500,
+  $ui-button-tertiary-border-color: $commu-500,
 
-  $account-switcher-add-text-color: $longwhile-500,
+  $account-switcher-add-text-color: $commu-500,
 
   $primary-text-color: $black,
   $darker-text-color: $classic-base-color,

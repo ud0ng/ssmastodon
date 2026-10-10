@@ -12,7 +12,7 @@ namespace :mastodon do
   # SCHEDULED_STATUS_* limits, COUNT_DIRECT_STATUSES) already defaults to the
   # value documented in .env.production.sample, so it is only worth writing here
   # when the instance wants something different.
-  LONGWHILE_DEFAULTS = {
+  COMMU_DEFAULTS = {
     'DM_CHAT_ENABLED' => 'true',
   }.freeze
 
@@ -364,7 +364,7 @@ namespace :mastodon do
       env['BOT_THROTTLE_API_REQUESTS_PER_PERIOD'] ||= '5000'
       env['BOT_THROTTLE_API_PERIOD'] ||= '300'
 
-      LONGWHILE_DEFAULTS.each { |key, value| env[key] ||= value }
+      COMMU_DEFAULTS.each { |key, value| env[key] ||= value }
 
       prompt.say "\n"
       prompt.say 'Saving configuration to .env.production...'
@@ -468,8 +468,8 @@ namespace :mastodon do
     end
   end
 
-  namespace :longwhile do
-    desc 'Add any missing longwhile settings to .env.production'
+  namespace :commu do
+    desc 'Add any missing commu settings to .env.production'
     task :env do
       # mastodon:setup writes these, but it may only be run on a fresh install
       # -- it rewrites .env.production from scratch, which on a running server
@@ -484,15 +484,15 @@ namespace :mastodon do
       end
 
       contents = env_path.read
-      added = LONGWHILE_DEFAULTS.reject { |key, _| contents.match?(/^\s*#{Regexp.escape(key)}=/) }
+      added = COMMU_DEFAULTS.reject { |key, _| contents.match?(/^\s*#{Regexp.escape(key)}=/) }
 
       if added.empty?
-        puts 'Nothing to add; .env.production already has every longwhile setting.'
+        puts 'Nothing to add; .env.production already has every commu setting.'
         next
       end
 
       contents << "\n" unless contents.end_with?("\n")
-      contents << "\n# Added by mastodon:longwhile:env on #{Time.now.utc}\n"
+      contents << "\n# Added by mastodon:commu:env on #{Time.now.utc}\n"
       added.each { |key, value| contents << "#{key}=#{dotenv_escape(value)}\n" }
 
       env_path.write(contents)

@@ -7,12 +7,12 @@ $white: #ffffff; // White
 $red-600: #b7253d !default; // Deep Carmine
 $red-500: #d32d49 !default; // Cerise
 
-$long-while-600: #0981d1;
-$long-while-500: #1d9bf0;
-$long-while-400: #1d9bf0; // focus visible
-$long-while-300: #1d9bf0;
+$commu-600: #0981d1;
+$commu-500: #1d9bf0;
+$commu-400: #1d9bf0; // focus visible
+$commu-300: #1d9bf0;
 
-$account-switcher-add-text-color: $long-while-500 !default;
+$account-switcher-add-text-color: $commu-500 !default;
 
 $grey-600: hsl(215, 10%, 63%); // Trout
 $grey-100: hsl(209, 41%, 90%); // Topaz
@@ -29,7 +29,7 @@ $red-bookmark: $warning-red;
 $classic-base-color: #212126;
 $classic-primary-color: #b4bfd0;
 $classic-secondary-color: #f4f0f0;
-$classic-highlight-color: $long-while-500;
+$classic-highlight-color: $commu-500;
 
 $ui-base-lighter-color: hsl(213, 12%, 71%) !default;
 
@@ -48,11 +48,11 @@ $ui-primary-color: $classic-primary-color !default; // Lighter
 $ui-secondary-color: $classic-secondary-color !default; // Lightest
 $ui-highlight-color: $classic-highlight-color !default;
 $ui-button-color: $white !default;
-$ui-button-background-color: $long-while-500 !default;
-$ui-button-focus-background-color: $long-while-600 !default;
+$ui-button-background-color: $commu-500 !default;
+$ui-button-focus-background-color: $commu-600 !default;
 $ui-button-focus-outline-color: var(
-  --color-brand-longwhile,
-  #{$long-while-400}
+  --color-brand-commu,
+  #{$commu-400}
 ) !default;
 $ui-button-focus-outline: solid 2px $ui-button-focus-outline-color !default;
 
@@ -61,14 +61,14 @@ $ui-button-disabled-color: color.adjust(
   $alpha: -0.3
 ) !default;
 
-$ui-button-secondary-color: $long-while-500 !default;
-$ui-button-secondary-border-color: $long-while-500 !default;
-$ui-button-secondary-focus-border-color: $long-while-300 !default;
-$ui-button-secondary-focus-color: $long-while-300 !default;
+$ui-button-secondary-color: $commu-500 !default;
+$ui-button-secondary-border-color: $commu-500 !default;
+$ui-button-secondary-focus-border-color: $commu-300 !default;
+$ui-button-secondary-focus-color: $commu-300 !default;
 
-$ui-button-tertiary-color: $long-while-300 !default;
-$ui-button-tertiary-border-color: $long-while-300 !default;
-$ui-button-tertiary-focus-background-color: $long-while-600 !default;
+$ui-button-tertiary-color: $commu-300 !default;
+$ui-button-tertiary-border-color: $commu-300 !default;
+$ui-button-tertiary-focus-background-color: $commu-600 !default;
 $ui-button-tertiary-focus-color: $white !default;
 
 $ui-button-destructive-background-color: $red-500 !default;

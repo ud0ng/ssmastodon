@@ -475,13 +475,13 @@ img.logo--icon {
 }
 
 .dropdown-button.warning {
-  border-color: var(--color-brand-longwhile-danger, #{$error-value-color});
-  color: var(--color-brand-longwhile-danger, #{$error-value-color});
+  border-color: var(--color-brand-commu-danger, #{$error-value-color});
+  color: var(--color-brand-commu-danger, #{$error-value-color});
 
   &.active {
     background-color: color-mix(
       in srgb,
-      var(--color-brand-longwhile-danger, #{$error-value-color}) 14%,
+      var(--color-brand-commu-danger, #{$error-value-color}) 14%,
       transparent
     );
   }
