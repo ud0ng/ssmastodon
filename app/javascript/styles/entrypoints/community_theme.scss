@@ -5,27 +5,38 @@
 //   --community-theme-on-accent-{light,dark}    테마색 위 글자색 (흰색/검은색 자동)
 //   --community-theme-background-{light,dark}   낮/밤 배경 이미지 (없으면 단색)
 //
-// 낮은 테마색이 살짝 섞인 흰색 박스 + 검은 글자, 밤은 테마색이 섞인 검은 박스 + 흰 글자.
-// 박스는 반투명이라 배경 이미지가 비친다. 관리자 화면에는 적용하지 않는다.
+// 낮은 반투명한 흰 박스 + 검은 글자 + 테마색 메뉴, 밤은 반투명한 검은 박스 + 흰 글자.
+// 박스에 테마색을 조금만 섞고 배경이 비치게 해서, 배경·테마색과 자연스럽게 어울리게 한다.
+// 흐린 글자와 구분선에도 테마색을 섞는다. 관리자 화면에는 적용하지 않는다.
 
 @mixin community-theme-dark {
   --ct-accent: var(--community-theme-accent-dark);
   --ct-on-accent: var(--community-theme-on-accent-dark);
   --ct-background-image: var(--community-theme-background-dark, none);
-  --ct-base: color-mix(in srgb, #0c0e14 92%, var(--ct-accent));
-  --ct-raised: color-mix(in srgb, var(--ct-base) 84%, #fff 8%);
+  --ct-base: color-mix(in srgb, #0c0e14 95%, var(--ct-accent));
+  --ct-raised: color-mix(in srgb, var(--ct-base) 88%, #fff);
   --ct-text: #f4f5f7;
+  --ct-dim: color-mix(in srgb, var(--ct-accent) 35%, #9aa0ab);
+  --ct-line: color-mix(in srgb, var(--ct-accent) 18%, transparent);
+  --ct-nav: var(--ct-text);
   --ct-shade: #000;
+  --ct-panel-alpha: 80%;
+  --ct-main-alpha: 84%;
 }
 
 @mixin community-theme-light {
   --ct-accent: var(--community-theme-accent-light);
   --ct-on-accent: var(--community-theme-on-accent-light);
   --ct-background-image: var(--community-theme-background-light, none);
-  --ct-base: color-mix(in srgb, #fff 93%, var(--ct-accent));
-  --ct-raised: color-mix(in srgb, var(--ct-base) 45%, #fff);
-  --ct-text: #14161a;
+  --ct-base: color-mix(in srgb, #fff 97%, var(--ct-accent));
+  --ct-raised: color-mix(in srgb, #fff 94%, var(--ct-accent));
+  --ct-text: color-mix(in srgb, #14161a 90%, var(--ct-accent));
+  --ct-dim: color-mix(in srgb, var(--ct-accent) 45%, #6b6f78);
+  --ct-line: color-mix(in srgb, var(--ct-accent) 16%, transparent);
+  --ct-nav: color-mix(in srgb, var(--ct-accent) 82%, #14161a);
   --ct-shade: #fff;
+  --ct-panel-alpha: 70%;
+  --ct-main-alpha: 76%;
 }
 
 body.community-theme:not(.admin) {
@@ -45,13 +56,11 @@ body.community-theme:not(.admin) {
 
 body.community-theme:not(.admin) {
   // 면
-  --ct-panel: color-mix(in srgb, var(--ct-base) 86%, transparent);
-  --ct-panel-main: color-mix(in srgb, var(--ct-base) 90%, transparent);
+  --ct-panel: color-mix(in srgb, var(--ct-base) var(--ct-panel-alpha), transparent);
+  --ct-panel-main: color-mix(in srgb, var(--ct-base) var(--ct-main-alpha), transparent);
   --ct-panel-strong: color-mix(in srgb, var(--ct-base) 94%, transparent);
   --ct-panel-solid: var(--ct-base);
   --ct-hover: color-mix(in srgb, var(--ct-accent) 10%, transparent);
-  --ct-line: color-mix(in srgb, var(--ct-text) 12%, transparent);
-  --ct-dim: color-mix(in srgb, var(--ct-text) 58%, transparent);
 
   // Bird UI
   --color-bg: var(--ct-panel);
@@ -62,7 +71,7 @@ body.community-theme:not(.admin) {
   --color-mobile-popout-bg: var(--ct-panel-solid);
   --color-bg-75: color-mix(in srgb, var(--ct-base) 75%, transparent);
   --color-bg-90: color-mix(in srgb, var(--ct-base) 90%, transparent);
-  --color-bg-compose-form: color-mix(in srgb, var(--ct-raised) 90%, transparent);
+  --color-bg-compose-form: color-mix(in srgb, var(--ct-raised) var(--ct-main-alpha), transparent);
   --color-bg-compose-form-focus: var(--ct-raised);
   --color-mud: var(--color-bg-compose-form);
   --color-brand-commu-mud: var(--color-bg-compose-form);
@@ -72,7 +81,7 @@ body.community-theme:not(.admin) {
   --color-fg: var(--ct-text);
   --color-light-text: var(--ct-text);
   --color-button-text: var(--ct-text);
-  --color-column-link: var(--ct-text);
+  --color-column-link: var(--ct-nav);
   --color-dim: var(--ct-dim);
   --color-brand-commu-dim: var(--ct-dim);
   --color-light-purple: var(--ct-dim);
