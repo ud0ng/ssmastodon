@@ -42,6 +42,7 @@ class Form::AdminSettings
     min_age
     wordmark_dark
     wordmark_light
+    status_max_characters
   ).freeze
 
   INTEGER_KEYS = %i(
@@ -49,6 +50,7 @@ class Form::AdminSettings
     content_cache_retention_period
     backups_retention_period
     min_age
+    status_max_characters
   ).freeze
 
   BOOLEAN_KEYS = %i(
@@ -95,6 +97,7 @@ class Form::AdminSettings
   validates :show_domain_blocks_rationale, inclusion: { in: %w(disabled users all) }, if: -> { defined?(@show_domain_blocks_rationale) }
   validates :media_cache_retention_period, :content_cache_retention_period, :backups_retention_period, numericality: { only_integer: true }, allow_blank: true, if: -> { defined?(@media_cache_retention_period) || defined?(@content_cache_retention_period) || defined?(@backups_retention_period) }
   validates :min_age, numericality: { only_integer: true }, allow_blank: true, if: -> { defined?(@min_age) }
+  validates :status_max_characters, numericality: { only_integer: true, in: StatusLengthValidator::MAX_CHARS_RANGE }, if: -> { defined?(@status_max_characters) }
   validates :site_short_description, length: { maximum: DESCRIPTION_LIMIT }, if: -> { defined?(@site_short_description) }
   validates :status_page_url, url: true, allow_blank: true
   validate :validate_site_uploads

@@ -6,6 +6,7 @@ import AttachmentIcon from '@/images/compose-form-photo.svg?react';
 import SendIcon from '@/images/send-fill.svg?react';
 import EditIcon from '@/styles/bird-theme-svg/pencil-fill.svg?react';
 import { Icon } from 'mastodon/components/icon';
+import { useAppSelector } from 'mastodon/store';
 import type { TypographicReplacement } from 'mastodon/utils/typographic_replacements';
 import {
   applyEditToTextarea,
@@ -53,7 +54,7 @@ const messages = defineMessages({
   },
 });
 
-const MAX_CHARACTERS = 1000;
+const DEFAULT_MAX_CHARACTERS = 1000;
 
 const COUNTER_THRESHOLD = 100;
 
@@ -158,7 +159,15 @@ export const Composer: React.FC<Props> = ({
 
   const sendOnEnter = useSendOnEnter();
 
-  const remaining = MAX_CHARACTERS - reservedCharacters - value.length;
+  const maxCharacters = useAppSelector(
+    (state) =>
+      state.server.getIn(
+        ['server', 'configuration', 'statuses', 'max_characters'],
+        DEFAULT_MAX_CHARACTERS,
+      ) as number,
+  );
+
+  const remaining = maxCharacters - reservedCharacters - value.length;
   const tooLong   = remaining < 0;
 
   const hasReadyMedia = uploads.some((upload) => upload.state === 'done');

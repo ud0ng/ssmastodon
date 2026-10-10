@@ -1,20 +1,27 @@
 # frozen_string_literal: true
 
 class StatusLengthValidator < ActiveModel::Validator
-  MAX_CHARS = 1000
+  DEFAULT_MAX_CHARS = 1000
+  MAX_CHARS_RANGE = (100..10_000)
   URL_PLACEHOLDER_CHARS = 23
   URL_PLACEHOLDER = 'x' * 23
+
+  # 관리자 설정(서버 설정 > 커뮤니티 옵션)의 최대 글자수. 범위를 벗어나면 기본값을 쓴다.
+  def self.max_chars
+    value = Setting.status_max_characters.to_i
+    MAX_CHARS_RANGE.cover?(value) ? value : DEFAULT_MAX_CHARS
+  end
 
   def validate(status)
     return unless status.local? && !status.reblog?
 
-    status.errors.add(:text, I18n.t('statuses.over_character_limit', max: MAX_CHARS)) if too_long?(status)
+    status.errors.add(:text, I18n.t('statuses.over_character_limit', max: self.class.max_chars)) if too_long?(status)
   end
 
   private
 
   def too_long?(status)
-    countable_length(combined_text(status)) > MAX_CHARS
+    countable_length(combined_text(status)) > self.class.max_chars
   end
 
   def countable_length(str)

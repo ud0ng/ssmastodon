@@ -1,0 +1,15 @@
+- content_for :page_title do
+  = t('admin.settings.community.title')
+
+- content_for :heading do
+  = render partial: 'admin/settings/shared/heading'
+
+= simple_form_for @admin_settings, url: admin_settings_community_path, html: { id: 'edit_admin_settings', method: :patch } do |f|
+  = render 'shared/error_messages', object: @admin_settings
+
+  %h4= t('admin.settings.community.posting')
+
+  .fields-group
+    = f.input :status_max_characters,
+              input_html: { type: 'number', min: StatusLengthValidator::MAX_CHARS_RANGE.min, max: StatusLengthValidator::MAX_CHARS_RANGE.max },
+              wrapper: :with_block_label

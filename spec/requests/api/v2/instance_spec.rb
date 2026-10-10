@@ -52,7 +52,7 @@ RSpec.describe 'Instances' do
             max_pinned_statuses: StatusPinValidator::PIN_LIMIT
           ),
           statuses: include(
-            max_characters: StatusLengthValidator::MAX_CHARS,
+            max_characters: StatusLengthValidator.max_chars,
             max_media_attachments: Status::MEDIA_ATTACHMENTS_LIMIT
           ),
           media_attachments: include(

@@ -86,6 +86,7 @@ ko:
         site_short_description: 이 서버를 특별하게 구분할 수 있는 짧은 설명. 누가 운영하고, 누구를 위한 것인가요?
         site_terms: 자신만의 개인정보처리방침을 사용하거나 비워두는 것으로 기본값을 사용할 수 있습니다. 마크다운 문법을 사용할 수 있습니다.
         site_title: 사람들이 이 서버를 도메인 네임 대신에 부를 이름.
+        status_max_characters: 툿 하나에 쓸 수 있는 최대 글자수입니다. (100 ~ 10,000, 기본 1,000)
         status_page_url: 이 서버가 중단된 동안 사람들이 서버의 상태를 볼 수 있는 페이지 URL
         theme: 로그인 하지 않은 사용자나 새로운 사용자가 보게 될 테마.
         thumbnail: 대략 2:1 비율의 이미지가 서버 정보 옆에 표시됩니다.
@@ -259,6 +260,7 @@ ko:
         site_short_description: 서버 설명
         site_terms: 개인정보처리방침
         site_title: 서버 이름
+        status_max_characters: 툿 최대 글자수
         status_page_url: 상태 페이지 URL
         theme: 기본 테마
         thumbnail: 서버 썸네일

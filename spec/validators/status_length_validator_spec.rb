@@ -3,8 +3,22 @@
 require 'rails_helper'
 
 RSpec.describe StatusLengthValidator do
+  describe '.max_chars' do
+    it 'uses the admin setting' do
+      Setting.status_max_characters = 3000
+
+      expect(described_class.max_chars).to eq 3000
+    end
+
+    it 'falls back to the default when the setting is out of range' do
+      Setting.status_max_characters = 50
+
+      expect(described_class.max_chars).to eq described_class::DEFAULT_MAX_CHARS
+    end
+  end
+
   describe '#validate' do
-    before { stub_const("#{described_class}::MAX_CHARS", 500) } # Example values below are relative to this baseline
+    before { Setting.status_max_characters = 500 } # Example values below are relative to this baseline
 
     it 'does not add errors onto remote statuses' do
       status = instance_double(Status, local?: false)

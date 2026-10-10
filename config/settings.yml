@@ -10,6 +10,7 @@ defaults: &defaults
   site_contact_username: ''
   site_contact_email: ''
   registrations_mode: 'none'
+  status_max_characters: 1000
   profile_directory: true
   closed_registrations_message: ''
   timeline_preview: true
