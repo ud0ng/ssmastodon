@@ -47,8 +47,15 @@ ask_secret() {
   printf -v "$var" '%s' "$value"
 }
 
+# run_web [VAR=value ...] -- command ...
 run_web() {
-  docker compose run --rm -T "$@" web
+  local envs=()
+  while [[ "$1" != '--' ]]; do
+    envs+=(-e "$1")
+    shift
+  done
+  shift
+  docker compose run --rm -T "${envs[@]}" web "$@"
 }
 
 echo '== 서버 정보 =='
@@ -108,7 +115,7 @@ MA_MULTI_ACCOUNT_REDIRECT_URI=https://${LOCAL_DOMAIN}/multi_accounts/callback
 EOF
 chmod 600 "$ENV_FILE"
 
-run_web -e SECRET_KEY_BASE_DUMMY=1 bundle exec rails mastodon:webpush:generate_vapid_key | grep '^VAPID_' >> "$ENV_FILE"
+run_web SECRET_KEY_BASE_DUMMY=1 -- bundle exec rails mastodon:webpush:generate_vapid_key | grep '^VAPID_' >> "$ENV_FILE"
 echo '설정 파일을 저장했습니다.'
 
 echo
@@ -118,13 +125,13 @@ for _ in $(seq 1 30); do
   docker compose exec -T db pg_isready -U postgres >/dev/null 2>&1 && break
   sleep 2
 done
-run_web bin/rails db:create db:schema:load
-run_web -e SAFETY_ASSURED=1 bin/rails db:migrate
-run_web bin/rails db:seed
+run_web -- bin/rails db:create db:schema:load
+run_web SAFETY_ASSURED=1 -- bin/rails db:migrate
+run_web -- bin/rails db:seed
 
 echo
 echo '== 3/4 멀티계정 OAuth 클라이언트 =='
-run_web bin/rails runner '
+run_web -- bin/rails runner '
   app = Doorkeeper::Application.create!(name: "Web", redirect_uri: ENV.fetch("MA_MULTI_ACCOUNT_REDIRECT_URI"), scopes: "read write follow push")
   puts "MA_MULTI_ACCOUNT_CLIENT_ID=#{app.uid}"
   puts "MA_MULTI_ACCOUNT_CLIENT_SECRET=#{app.plaintext_secret || app.secret}"
@@ -132,9 +139,9 @@ run_web bin/rails runner '
 
 echo
 echo '== 4/4 관리자 계정 =='
-run_web bin/tootctl accounts create "$ADMIN_USERNAME" --email "$ADMIN_EMAIL" --confirmed --role Owner
-run_web bin/tootctl accounts approve "$ADMIN_USERNAME"
-run_web -e ADMIN_USERNAME="$ADMIN_USERNAME" -e ADMIN_EMAIL="$ADMIN_EMAIL" bin/rails runner '
+run_web -- bin/tootctl accounts create "$ADMIN_USERNAME" --email "$ADMIN_EMAIL" --confirmed --role Owner
+run_web -- bin/tootctl accounts approve "$ADMIN_USERNAME"
+run_web ADMIN_USERNAME="$ADMIN_USERNAME" ADMIN_EMAIL="$ADMIN_EMAIL" -- bin/rails runner '
   Setting.site_contact_username = ENV.fetch("ADMIN_USERNAME")
   Setting.site_contact_email = ENV.fetch("ADMIN_EMAIL")
 '
