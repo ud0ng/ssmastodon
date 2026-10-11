@@ -30,6 +30,12 @@
                 as: :boolean,
                 wrapper: :with_label
 
+  .community-theme-editor{ data: { community_theme_editor: true, default_color: CommunityTheme::DEFAULT_COLOR } }
+    .community-theme-editor__previews
+      - CommunityTheme::MODES.each do |mode|
+        = render 'admin/settings/community_theme/preview', mode: mode
+    %p.community-theme-editor__tip= t('admin.settings.community_theme.preview.tip')
+
   %h4= t('admin.settings.community_theme.colors')
   %p.hint= t('admin.settings.community_theme.details_hint')
 

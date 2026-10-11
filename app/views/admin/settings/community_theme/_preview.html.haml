@@ -1,0 +1,63 @@
+-# 커뮤니티 테마 미리보기 한 장 (낮 또는 밤). 색은 community_theme_editor.ts 가 --pv-* 변수로 칠한다.
+-# data-preview-item 이 붙은 곳을 누르면 그 색 칸으로 이동한다.
+- background = InstancePresenter.new.public_send(:"community_theme_background_#{mode}")
+- style = background.present? ? "--pv-background:url(\"#{background.file.url}\")" : nil
+
+.ct-preview__frame
+  .ct-preview__title= t("admin.settings.community_theme.modes.#{mode}")
+  .ct-preview{ data: { preview_mode: mode }, style: style }
+    .ct-preview__nav
+      .ct-preview__logo{ data: { preview_item: 'nav' } } commu
+      .ct-preview__nav-item.ct-preview__nav-item--active{ data: { preview_item: 'nav' } }
+        = material_symbol 'home'
+        %span= t('admin.settings.community_theme.preview.home')
+      .ct-preview__nav-item.ct-preview__nav-item--hover{ data: { preview_item: 'nav_hover' }, title: t('admin.settings.community_theme.items.nav_hover') }
+        = material_symbol 'notifications'
+        %span= t('admin.settings.community_theme.preview.notifications')
+      .ct-preview__nav-item{ data: { preview_item: 'nav' } }
+        = material_symbol 'chat'
+        %span= t('admin.settings.community_theme.preview.chats')
+      .ct-preview__nav-item{ data: { preview_item: 'nav' } }
+        = material_symbol 'bookmarks'
+        %span= t('admin.settings.community_theme.preview.bookmarks')
+
+    .ct-preview__main{ data: { preview_item: 'box' } }
+      .ct-preview__tabs
+        %span.ct-preview__tab.ct-preview__tab--active= t('admin.settings.community_theme.preview.home')
+        %span.ct-preview__tab= t('admin.settings.community_theme.preview.public')
+      - 2.times do |index|
+        .ct-preview__toot{ class: ('ct-preview__toot--hover' if index.zero?), data: { preview_item: index.zero? ? 'hover' : 'box' }, title: (t('admin.settings.community_theme.items.hover') if index.zero?) }
+          .ct-preview__avatar
+          .ct-preview__toot-body
+            .ct-preview__meta
+              %b{ data: { preview_item: 'text' } }= index.zero? ? 'Alice' : 'Bob'
+              %span{ data: { preview_item: 'dim' } }= index.zero? ? '@alice · 1분' : '@bob · 5분'
+            .ct-preview__content{ data: { preview_item: 'text' } }
+              - if index.zero?
+                = t('admin.settings.community_theme.preview.toot_1')
+                %a.ct-preview__link{ data: { preview_item: 'point' } } @bob
+              - else
+                = t('admin.settings.community_theme.preview.toot_2')
+                %a.ct-preview__link.ct-preview__link--hover{ data: { preview_item: 'link_hover' }, title: t('admin.settings.community_theme.items.link_hover') } #태그
+            .ct-preview__actions
+              %span{ data: { preview_item: 'dim' } }= material_symbol 'reply'
+              %span{ data: { preview_item: 'dim' } }= material_symbol 'repeat'
+              %span.ct-preview__action--hover{ data: { preview_item: 'dim_hover' }, title: t('admin.settings.community_theme.items.dim_hover') }= material_symbol 'star'
+              %span{ data: { preview_item: 'dim' } }= material_symbol 'bookmark'
+
+    .ct-preview__side
+      .ct-preview__search{ data: { preview_item: 'compose' } }
+        = material_symbol 'search'
+        %span= t('admin.settings.community_theme.preview.search')
+      .ct-preview__compose{ data: { preview_item: 'compose' } }
+        .ct-preview__compose-text @al
+        .ct-preview__suggestion{ data: { preview_item: 'selected' }, title: t('admin.settings.community_theme.items.selected') } @alice
+        .ct-preview__compose-bar
+          %span{ data: { preview_item: 'dim' } } 998
+          %span.ct-preview__post{ data: { preview_item: 'post_button' } }= t('admin.settings.community_theme.preview.post')
+      .ct-preview__chat
+        .ct-preview__room.ct-preview__room--active{ data: { preview_item: 'hover' }, title: t('admin.settings.community_theme.items.hover') }
+          .ct-preview__avatar.ct-preview__avatar--small
+          %span Alice
+        .ct-preview__bubble.ct-preview__bubble--theirs{ data: { preview_item: 'selected' } }= t('admin.settings.community_theme.preview.hello')
+        .ct-preview__bubble.ct-preview__bubble--mine{ data: { preview_item: 'point' } }= t('admin.settings.community_theme.preview.hi')

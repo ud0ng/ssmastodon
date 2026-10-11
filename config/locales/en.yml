@@ -884,6 +884,19 @@ en:
         modes:
           dark: Dark theme
           light: Light theme
+        preview:
+          bookmarks: Bookmarks
+          chats: Chats
+          hello: Hello!
+          hi: Hi there
+          home: Home
+          notifications: Notifications
+          post: Post
+          public: Public
+          search: Search
+          tip: Changes show in the preview straight away. Click a part of the preview to jump to its colour. Save to apply them to the site.
+          toot_1: Lovely weather today
+          toot_2: Check the new notice
         same_as_light: Blank = same as light
         same_as_main: Blank = main colour
         title: Community theme

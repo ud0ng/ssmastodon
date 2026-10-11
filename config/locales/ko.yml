@@ -873,6 +873,19 @@ ko:
         modes:
           dark: 밤 테마
           light: 낮 테마
+        preview:
+          bookmarks: 북마크
+          chats: 채팅
+          hello: 안녕하세요!
+          hi: 반가워요
+          home: 홈
+          notifications: 알림
+          post: 게시
+          public: 퍼블릭
+          search: 검색
+          tip: 색을 바꾸면 미리보기에 바로 보입니다. 미리보기에서 바꾸고 싶은 곳을 누르면 그 색 칸으로 이동합니다. 저장해야 사이트에 적용됩니다.
+          toot_1: 오늘 날씨 좋네요
+          toot_2: 새 공지 확인하세요
         same_as_light: 비우면 낮과 같게
         same_as_main: 비우면 메인색
         title: 커뮤니티 테마

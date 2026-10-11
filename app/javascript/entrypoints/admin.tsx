@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 
 import Rails from '@rails/ujs';
 
+import { setupCommunityThemeEditor } from '../mastodon/admin/community_theme_editor';
 import ready from '../mastodon/ready';
 
 const setAnnouncementEndsAttributes = (target: HTMLInputElement) => {
@@ -402,8 +403,10 @@ const attachColorPicker = (text: HTMLInputElement) => {
 
   picker.addEventListener('input', () => {
     text.value = picker.value;
+    text.dispatchEvent(new Event('input', { bubbles: true }));
   });
   text.addEventListener('input', showTextColor);
+  text.addEventListener('colorpicker:refresh', showTextColor);
 
   showTextColor();
   // simple_form 칸은 그 감싸개를, 표 칸 등은 새 감싸개를 쓴다
@@ -421,6 +424,7 @@ ready(() => {
   document
     .querySelectorAll<HTMLInputElement>('input[data-color-picker]')
     .forEach(attachColorPicker);
+  setupCommunityThemeEditor();
 
   const domainBlockSeveritySelect = document.querySelector<HTMLSelectElement>(
     'select#domain_block_severity',
