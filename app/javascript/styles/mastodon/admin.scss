@@ -98,6 +98,16 @@ $content-width: 840px;
       height: 100px;
     }
 
+    // 테마별 로고 (디자인 탭의 낮/밤 로고, 340×160)
+    .logo--community {
+      width: 100%;
+      max-width: 200px;
+      height: auto;
+      margin-top: 20px;
+      margin-left: 20px;
+      object-fit: contain;
+    }
+
     @media screen and (max-width: $no-columns-breakpoint) {
       & > a:first-child {
         display: none;

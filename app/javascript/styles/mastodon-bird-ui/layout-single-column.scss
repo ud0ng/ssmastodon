@@ -311,7 +311,8 @@ body.theme-mastodon-bird-ui-contrast {
 }
 
 /* Light theme */
-body.theme-mastodon-bird-ui-light {
+body.theme-mastodon-bird-ui-light,
+body.theme-community-light {
   --color-column: #ffffff3d;
   --color-bg-compose-form-focus: #f3f3f3fc;
 
