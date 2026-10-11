@@ -836,6 +836,7 @@ ko:
           border: 박스·글쓰기 박스·구분선 테두리
           box: 가운데 타임라인과 오른쪽 칸 박스
           box_opacity: 100이면 배경 이미지가 비치지 않음 (비우면 92)
+          bracket: 툿의 [봇 명령어] 같은 대괄호 부분 글자색
           compose: 글쓰기 박스·입력창
           dim: 아이콘·아이디·시간 같은 흐린 글자
           dim_hover: 흐린 글자·아이콘에 마우스를 올렸을 때
@@ -846,6 +847,8 @@ ko:
           nav_hover: 왼쪽 메뉴에 마우스를 올렸을 때 글자·아이콘
           on_point: 서브색 버튼 위 글자
           page: 박스 바깥 (배경 이미지가 없을 때 보이는 색)
+          paren: 툿의 (대사) 같은 소괄호 부분 글자색
+          paren_size: 툿의 (대사) 같은 소괄호 부분 글자 크기. 50~150, 비우면 100 (낮·밤 공통)
           point: 게시 버튼·링크·해시태그·보낸 채팅 같은 포인트 색
           post_button: 게시 버튼 바탕
           post_button_text: 게시 버튼 글자
@@ -855,6 +858,7 @@ ko:
           border: 테두리
           box: 박스
           box_opacity: 박스 불투명도 (%)
+          bracket: "[대괄호]"
           compose: 글쓰기·입력창
           dim: 흐린 글자
           dim_hover: 흐린 글자 (호버)
@@ -865,6 +869,8 @@ ko:
           nav_hover: 메뉴 호버
           on_point: 서브색 위 글자
           page: 바깥 배경
+          paren: "(소괄호)"
+          paren_size: "(소괄호) 글자 크기 (%)"
           point: 서브색
           post_button: 게시 버튼
           post_button_text: 게시 버튼 글자

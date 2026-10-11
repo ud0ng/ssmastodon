@@ -14,6 +14,7 @@ import { Icon }  from 'mastodon/components/icon';
 import { Poll } from 'mastodon/components/poll';
 import { identityContextPropShape, withIdentity } from 'mastodon/identity_context';
 import { autoPlayGif, languages as preloadedLanguages } from 'mastodon/initial_state';
+import { decorateDialogue } from 'mastodon/utils/dialogue';
 import { carriedOverMentionUrls, stripLeadingMentions } from 'mastodon/utils/strip_leading_mentions';
 
 const MAX_HEIGHT = 706; // 22px * 32 (+ 2px padding at the top)
@@ -134,6 +135,9 @@ class StatusContent extends PureComponent {
         }, false);
       }
     }
+
+    // [봇 명령어]·(대사) 괄호 꾸미기 (링크 처리 뒤에 해야 해시태그 판별이 안 깨진다)
+    node.querySelectorAll('.status__content__text').forEach(decorateDialogue);
 
     if (status.get('collapsed', null) === null && onCollapsedToggle) {
       const { collapsible, onClick } = this.props;

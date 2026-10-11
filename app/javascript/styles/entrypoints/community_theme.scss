@@ -32,6 +32,8 @@
   --ct-dim-hover: var(--community-theme-dim-hover-light);
   --ct-nav-hover: var(--community-theme-nav-hover-light);
   --ct-link-hover: var(--community-theme-link-hover-light);
+  --ct-bracket: var(--community-theme-bracket-light);
+  --ct-paren: var(--community-theme-paren-light);
   --ct-post-button: var(--community-theme-post-button-light);
   --ct-post-button-text: var(--community-theme-post-button-text-light);
 
@@ -64,6 +66,8 @@
   --ct-dim-hover: var(--community-theme-dim-hover-dark);
   --ct-nav-hover: var(--community-theme-nav-hover-dark);
   --ct-link-hover: var(--community-theme-link-hover-dark);
+  --ct-bracket: var(--community-theme-bracket-dark);
+  --ct-paren: var(--community-theme-paren-dark);
   --ct-post-button: var(--community-theme-post-button-dark);
   --ct-post-button-text: var(--community-theme-post-button-text-dark);
 
@@ -247,6 +251,21 @@ body.community-theme:not(.admin) {
   .dm-room-item--active:hover,
   .dm-room-item--active:focus-visible {
     background: var(--ct-hover);
+  }
+
+  // [봇 명령어]·(대사) 괄호 (mastodon/utils/dialogue.ts 가 감싼다)
+  .status__content .dialogue--bracket {
+    color: var(--ct-bracket);
+  }
+
+  .status__content .dialogue--paren {
+    color: var(--ct-paren);
+    font-size: var(--community-theme-paren-size, 100%);
+  }
+
+  // 보낸 채팅 말풍선(서브색 바탕) 안에서는 말풍선 글자색을 따른다
+  .dm-message--mine .dialogue {
+    color: inherit;
   }
 
   // 본문 링크·멘션·해시태그 호버

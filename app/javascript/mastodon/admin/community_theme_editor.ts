@@ -160,6 +160,8 @@ class Editor {
     colors.point = point;
     colors.on_point = onColor(point);
     colors.nav_hover = point;
+    colors.bracket = colors.text ?? point;
+    colors.paren = colors.text ?? point;
     colors.link_hover =
       mode === 'dark' ? mix(point, 75, '#ffffff') : mix(point, 75, '#000000');
     colors.post_button = this.postButtonMain() ? (colors.nav ?? point) : point;
@@ -182,6 +184,9 @@ class Editor {
         mode === 'dark'
           ? 'color-mix(in srgb, #fff 6%, transparent)'
           : `color-mix(in srgb, ${colors.text} 5%, transparent)`;
+
+    const parenSize = parseInt(this.value('paren_size'), 10);
+    colors.paren_size = `${Number.isNaN(parenSize) ? 100 : Math.min(150, Math.max(50, parenSize))}%`;
 
     const opacity = parseInt(this.value(`box_opacity_${mode}`), 10);
     colors.opacity = `${Number.isNaN(opacity) ? DEFAULT_BOX_OPACITY : Math.min(100, Math.max(0, opacity))}%`;

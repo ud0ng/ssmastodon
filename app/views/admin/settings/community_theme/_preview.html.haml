@@ -45,6 +45,9 @@
               - else
                 = t('admin.settings.community_theme.preview.toot_2')
                 %a.ct-preview__link.ct-preview__link--hover{ data: { preview_item: 'link_hover' }, title: t('admin.settings.community_theme.items.link_hover') } #태그
+                %br
+                %span.ct-preview__bracket{ data: { preview_item: 'bracket' }, title: t('admin.settings.community_theme.items.bracket') } [주사위]
+                %span.ct-preview__paren{ data: { preview_item: 'paren' }, title: t('admin.settings.community_theme.items.paren') } (작게 중얼거린다)
             .ct-preview__actions
               %span{ data: { preview_item: 'dim' } }= material_symbol 'reply'
               %span{ data: { preview_item: 'dim' } }= material_symbol 'repeat'

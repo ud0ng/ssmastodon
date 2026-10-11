@@ -847,6 +847,7 @@ en:
           border: Borders of panels, the compose box and dividers
           box: Panels of the timeline and the right column
           box_opacity: At 100 the background image does not show through (blank = 92)
+          bracket: Text colour of [bot commands] and other bracketed parts of posts
           compose: Compose box and inputs
           dim: Faded text such as icons, handles and times
           dim_hover: Faded text and icons on hover
@@ -857,6 +858,8 @@ en:
           nav_hover: Left menu text and icons on hover
           on_point: Text on accent-coloured buttons
           page: Outside the panels (shown when there is no background image)
+          paren: Text colour of (asides) in parentheses in posts
+          paren_size: Text size of (asides) in parentheses in posts. 50–150, blank = 100 (light and dark)
           point: "Accents: Post button, links, hashtags, sent chats"
           post_button: Post button background
           post_button_text: Post button text
@@ -866,6 +869,7 @@ en:
           border: Border
           box: Panel
           box_opacity: Panel opacity (%)
+          bracket: "[Brackets]"
           compose: Compose and inputs
           dim: Faded text
           dim_hover: Faded text (hover)
@@ -876,6 +880,8 @@ en:
           nav_hover: Menu hover
           on_point: Text on accent
           page: Page background
+          paren: "(Parentheses)"
+          paren_size: "(Parentheses) text size (%)"
           point: Accent colour
           post_button: Post button
           post_button_text: Post button text

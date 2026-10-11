@@ -2752,6 +2752,15 @@ body .image-picker {
     }
   }
 
+  &__bracket {
+    color: var(--pv-bracket);
+  }
+
+  &__paren {
+    color: var(--pv-paren);
+    font-size: var(--pv-paren-size, 100%);
+  }
+
   &__actions {
     display: flex;
     justify-content: space-between;

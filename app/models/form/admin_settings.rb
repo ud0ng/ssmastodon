@@ -56,6 +56,7 @@ class Form::AdminSettings
     community_theme_background_dark
     default_avatar
     default_header
+    community_theme_paren_size
   ).concat(CommunityTheme.detail_keys, CommunityTheme.box_opacity_keys).freeze
 
   INTEGER_KEYS = %i(
@@ -124,6 +125,7 @@ class Form::AdminSettings
   validates :community_theme_default, inclusion: { in: Themes::COMMUNITY_THEME_MODES }, if: -> { defined?(@community_theme_default) }
   validates :community_theme_main_light, :community_theme_point_light, :community_theme_main_dark, :community_theme_point_dark, format: { with: COMMUNITY_THEME_COLOR_FORMAT }, allow_blank: true
   validates(*CommunityTheme.detail_keys, format: { with: COMMUNITY_THEME_COLOR_FORMAT }, allow_blank: true)
+  validates :community_theme_paren_size, numericality: { only_integer: true, in: CommunityTheme::PAREN_SIZE_RANGE }, allow_blank: true
   validates(*CommunityTheme.box_opacity_keys, numericality: { only_integer: true, in: CommunityTheme::BOX_OPACITY_RANGE }, allow_blank: true)
   validates :site_short_description, length: { maximum: DESCRIPTION_LIMIT }, if: -> { defined?(@site_short_description) }
   validates :status_page_url, url: true, allow_blank: true

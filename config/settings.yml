@@ -20,6 +20,7 @@ defaults: &defaults
   community_theme_point_dark: ''
   community_theme_post_button_main: false
   community_theme_default: light
+  community_theme_paren_size: ''
   community_theme_page_light: ''
   community_theme_box_light: ''
   community_theme_compose_light: ''
@@ -32,6 +33,8 @@ defaults: &defaults
   community_theme_dim_light: ''
   community_theme_dim_hover_light: ''
   community_theme_link_hover_light: ''
+  community_theme_bracket_light: ''
+  community_theme_paren_light: ''
   community_theme_on_point_light: ''
   community_theme_post_button_light: ''
   community_theme_post_button_text_light: ''
@@ -48,6 +51,8 @@ defaults: &defaults
   community_theme_dim_dark: ''
   community_theme_dim_hover_dark: ''
   community_theme_link_hover_dark: ''
+  community_theme_bracket_dark: ''
+  community_theme_paren_dark: ''
   community_theme_on_point_dark: ''
   community_theme_post_button_dark: ''
   community_theme_post_button_text_dark: ''

@@ -29,6 +29,8 @@ class CommunityTheme
     dim
     dim_hover
     link_hover
+    bracket
+    paren
     on_point
     post_button
     post_button_text
@@ -36,6 +38,10 @@ class CommunityTheme
 
   DEFAULT_BOX_OPACITY = 92
   BOX_OPACITY_RANGE = (0..100)
+
+  # (소괄호 대사) 글자 크기 (%)
+  DEFAULT_PAREN_SIZE = 100
+  PAREN_SIZE_RANGE = (50..150)
 
   def self.detail_keys
     MODES.flat_map { |mode| DETAILS.map { |item| :"community_theme_#{item}_#{mode}" } }
@@ -69,6 +75,8 @@ class CommunityTheme
     colors['point'] = point
     colors['on_point'] = on_color(point)
     colors['nav_hover'] = point
+    colors['bracket'] = colors['text']
+    colors['paren'] = colors['text']
     colors['link_hover'] = mode.to_s == 'dark' ? mix(point, 75, '#ffffff') : mix(point, 75, '#000000')
     colors['post_button'] = post_main ? colors['nav'] : point
     colors['post_button_text'] = on_color(colors['post_button'])
@@ -89,6 +97,13 @@ class CommunityTheme
     return DEFAULT_BOX_OPACITY if value.blank?
 
     value.to_i.clamp(BOX_OPACITY_RANGE.min, BOX_OPACITY_RANGE.max)
+  end
+
+  def paren_size
+    value = setting('paren_size')
+    return DEFAULT_PAREN_SIZE if value.blank?
+
+    value.to_i.clamp(PAREN_SIZE_RANGE.min, PAREN_SIZE_RANGE.max)
   end
 
   def color(value)

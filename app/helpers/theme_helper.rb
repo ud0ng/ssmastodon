@@ -72,6 +72,8 @@ module ThemeHelper
       end
     end
 
+    declarations << "--community-theme-paren-size:#{community_theme.paren_size}%;"
+
     CommunityTheme::MODES.each do |mode|
       upload = InstancePresenter.new.public_send(:"community_theme_background_#{mode}")
       declarations << "--community-theme-background-#{mode}:url(\"#{css_string_escape(upload.file.url)}\");" if upload.present?
