@@ -18,21 +18,24 @@
   --ct-on-point: var(--community-theme-on-point-light);
   --ct-background-image: var(--community-theme-background-light, none);
 
-  --ct-base: color-mix(in srgb, var(--ct-main) 4%, #fff);
-  --ct-raised: color-mix(in srgb, var(--ct-main) 3%, #fff);
+  // 박스: 흰색 95% + 메인색 5%
+  --ct-base: color-mix(in srgb, var(--ct-main) 5%, #fff);
+  --ct-raised: color-mix(in srgb, var(--ct-main) 5%, #fff);
   --ct-soft: color-mix(in srgb, var(--ct-main) 10%, #fff);
   --ct-text: color-mix(in srgb, var(--ct-main) 8%, #14161a);
   --ct-nav: color-mix(in srgb, var(--ct-main) 80%, #14161a);
   --ct-dim: color-mix(in srgb, var(--ct-main) 50%, #fff);
   --ct-dim-hover: var(--ct-nav);
   --ct-on-nav: #fff;
-  --ct-line: color-mix(in srgb, var(--ct-main) 14%, transparent);
+  // 박스 테두리: 메인색을 연하게 (호버·포커스는 조금 더 진하게)
+  --ct-line: color-mix(in srgb, var(--ct-main) 22%, #fff);
+  --ct-line-strong: color-mix(in srgb, var(--ct-main) 45%, #fff);
   --ct-hover: color-mix(in srgb, var(--ct-main) 6%, transparent);
   --ct-shade: #fff;
 
   --ct-panel-alpha: 92%;
-  --ct-main-alpha: 88%;
-  --ct-raised-alpha: 72%;
+  --ct-main-alpha: 92%;
+  --ct-raised-alpha: 92%;
 }
 
 @mixin community-theme-dark {
@@ -50,6 +53,7 @@
   --ct-dim-hover: var(--ct-text);
   --ct-on-nav: #14161a;
   --ct-line: color-mix(in srgb, color-mix(in srgb, var(--ct-main) 40%, #fff) 16%, transparent);
+  --ct-line-strong: color-mix(in srgb, color-mix(in srgb, var(--ct-main) 40%, #fff) 32%, transparent);
   --ct-hover: color-mix(in srgb, color-mix(in srgb, var(--ct-main) 50%, #fff) 10%, transparent);
   --ct-shade: #000;
 
@@ -151,6 +155,16 @@ body.community-theme:not(.admin) {
   // 가운데 칸(타임라인·채팅)은 반투명 박스, 양옆은 배경이 그대로 보인다.
   .columns-area__panels__main > .columns-area {
     background: var(--ct-panel-main);
+  }
+
+  // 글쓰기 박스: 메인색 테두리, 쓰는 중에는 조금 더 진하게
+  .compose-form__highlightable {
+    border: 1px solid var(--ct-line);
+
+    &.active,
+    &:focus-within {
+      border-color: var(--ct-line-strong);
+    }
   }
 
   // 아이콘 버튼은 평소 연한 메인색, 호버하면 진한 메인색 (포인트색이 아니다)
