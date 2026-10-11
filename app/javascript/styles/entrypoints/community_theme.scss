@@ -235,12 +235,11 @@ body.community-theme:not(.admin) {
     background-color: var(--ct-hover);
   }
 
-  // 왼쪽 메뉴 호버: 호버 배경 + 메뉴 호버 색
+  // 왼쪽 메뉴 호버: 배경 없이 메뉴 호버 색만
   .navigation-panel .column-link:not(.active):hover,
   .navigation-panel .column-link:not(.active):focus-visible {
-    background-color: var(--ct-hover) !important;
+    background-color: transparent !important;
     color: var(--ct-nav-hover);
-    border-radius: 999px;
   }
 
   // 채팅(DM) 목록: 지금 연 방도 호버 배경 (받은 채팅 말풍선 색이 아니라)

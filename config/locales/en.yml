@@ -849,7 +849,7 @@ en:
           compose: Compose box and inputs
           dim: Faded text such as icons, handles and times
           dim_hover: Faded text and icons on hover
-          hover: Background when hovering posts, notifications and the menu, and of the open chat in the chat list (blank = slightly darker/lighter panel)
+          hover: Background when hovering posts and notifications, and of the open chat in the chat list (blank = slightly darker/lighter panel)
           link_hover: Links, mentions and hashtags in posts on hover
           main: "Base tones: panels, the menu, icons, handles and times"
           nav: Left menu text and icons
