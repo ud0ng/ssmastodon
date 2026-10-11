@@ -120,6 +120,10 @@ chmod 600 "$ENV_FILE"
 run_web SECRET_KEY_BASE_DUMMY=1 -- bundle exec rails mastodon:webpush:generate_vapid_key | grep '^VAPID_' >> "$ENV_FILE"
 echo '설정 파일을 저장했습니다.'
 
+# 업로드 파일(프로필 사진·배경 등) 폴더. 컨테이너 안의 mastodon 사용자(991)가 쓸 수 있어야 한다.
+mkdir -p public/system
+sudo chown -R 991:991 public/system
+
 echo
 echo '== 2/4 데이터베이스 준비 =='
 docker compose up -d db redis
