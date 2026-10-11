@@ -16,6 +16,7 @@ import postcssPresetEnv from 'postcss-preset-env';
 
 import { MastodonServiceWorkerLocales } from './config/vite/plugin-sw-locales';
 import { MastodonEmojiCompressed } from './config/vite/plugin-emoji-compressed';
+import { communityThemeColors } from './config/vite/postcss-community-theme';
 
 const jsRoot = path.resolve(__dirname, 'app/javascript');
 const themesFile = path.resolve(__dirname, 'config/themes.yml');
@@ -56,6 +57,7 @@ export const config: UserConfigFnPromise = async ({ mode, command }) => {
               'logical-properties-and-values': false,
             },
           }),
+          communityThemeColors(),
         ],
       },
     },

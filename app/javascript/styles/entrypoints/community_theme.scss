@@ -194,6 +194,30 @@ body.community-theme:not(.admin) {
     }
   }
 
+  // 검색창 팝업(빠른 작업·최근 검색)에서 고른 항목도 연한 메인색
+  .search__popout__menu__item {
+    &:hover,
+    &:focus,
+    &:active,
+    &.active,
+    &.selected {
+      background: var(--ct-soft);
+      color: var(--ct-text);
+
+      mark,
+      strong,
+      .icon-button {
+        color: var(--ct-text);
+      }
+    }
+  }
+
+  // 툿을 누르거나 키보드로 고른 표시는 서브색이 아니라 연한 메인색
+  .focusable:focus,
+  .focusable:focus-visible {
+    background-color: var(--ct-hover);
+  }
+
   // 아이콘 버튼은 평소 연한 메인색, 호버하면 진한 메인색 (포인트색이 아니다)
   .icon-button:not(.active):hover,
   .icon-button:not(.active):focus-visible {
