@@ -5,6 +5,8 @@
 //   --community-theme-<항목>-{light,dark}
 //     main, point, on-point            메인색, 서브색, 서브색 위 글자색
 //     page, box, compose, selected     바깥 배경, 박스, 글쓰기·입력창, 고른 항목·받은 채팅
+//     hover                            호버 배경 (정하지 않으면 박스를 살짝 어둡게/밝게)
+//     nav-hover, link-hover            메뉴 호버, 본문 링크·멘션·해시태그 호버
 //     border, text, nav                테두리, 글자, 왼쪽 메뉴
 //     dim, dim-hover                   아이콘·아이디·시간 (호버하면 dim-hover)
 //     post-button, post-button-text    게시 버튼
@@ -28,6 +30,8 @@
   --ct-nav: var(--community-theme-nav-light);
   --ct-dim: var(--community-theme-dim-light);
   --ct-dim-hover: var(--community-theme-dim-hover-light);
+  --ct-nav-hover: var(--community-theme-nav-hover-light);
+  --ct-link-hover: var(--community-theme-link-hover-light);
   --ct-post-button: var(--community-theme-post-button-light);
   --ct-post-button-text: var(--community-theme-post-button-text-light);
 
@@ -39,7 +43,7 @@
   // 글쓰기 박스 포커스 테두리: 테두리를 글자색 쪽으로 조금 진하게
   --ct-line-strong: color-mix(in srgb, var(--ct-line) 70%, var(--ct-text));
   // 호버 배경: 박스 색을 살짝 어둡게만 한다 (메인색을 섞으면 배경 이미지 색과 겹쳐 파랗게/탁하게 보인다)
-  --ct-hover: color-mix(in srgb, var(--ct-text) 5%, transparent);
+  --ct-hover: var(--community-theme-hover-light, color-mix(in srgb, var(--ct-text) 5%, transparent));
   --ct-shade: #fff;
 }
 
@@ -58,6 +62,8 @@
   --ct-nav: var(--community-theme-nav-dark);
   --ct-dim: var(--community-theme-dim-dark);
   --ct-dim-hover: var(--community-theme-dim-hover-dark);
+  --ct-nav-hover: var(--community-theme-nav-hover-dark);
+  --ct-link-hover: var(--community-theme-link-hover-dark);
   --ct-post-button: var(--community-theme-post-button-dark);
   --ct-post-button-text: var(--community-theme-post-button-text-dark);
 
@@ -69,7 +75,7 @@
   // 글쓰기 박스 포커스 테두리: 테두리를 글자색 쪽으로 조금 진하게
   --ct-line-strong: color-mix(in srgb, var(--ct-line) 70%, var(--ct-text));
   // 호버 배경: 박스 색을 살짝 밝게만 한다
-  --ct-hover: color-mix(in srgb, #fff 6%, transparent);
+  --ct-hover: var(--community-theme-hover-dark, color-mix(in srgb, #fff 6%, transparent));
   --ct-shade: #000;
 }
 
@@ -110,7 +116,7 @@ body.community-theme:not(.admin) {
   --color-light-text: var(--ct-text);
   --color-button-text: var(--ct-text);
   --color-column-link: var(--ct-nav);
-  --color-column-link-hover: var(--ct-dim-hover);
+  --color-column-link-hover: var(--ct-nav-hover);
   --color-dim: var(--ct-dim);
   --color-brand-commu-dim: var(--ct-dim);
   --color-light-purple: var(--ct-dim);
@@ -227,6 +233,30 @@ body.community-theme:not(.admin) {
   .focusable:focus,
   .focusable:focus-visible {
     background-color: var(--ct-hover);
+  }
+
+  // 왼쪽 메뉴 호버: 호버 배경 + 메뉴 호버 색
+  .navigation-panel .column-link:not(.active):hover,
+  .navigation-panel .column-link:not(.active):focus-visible {
+    background-color: var(--ct-hover) !important;
+    color: var(--ct-nav-hover);
+    border-radius: 999px;
+  }
+
+  // 채팅(DM) 목록: 지금 연 방도 호버 배경 (받은 채팅 말풍선 색이 아니라)
+  .dm-room-item--active,
+  .dm-room-item--active:hover,
+  .dm-room-item--active:focus-visible {
+    background: var(--ct-hover);
+  }
+
+  // 본문 링크·멘션·해시태그 호버
+  .status__content a:hover,
+  .status__content a:focus-visible,
+  .account__header__content a:hover,
+  a.mention:hover,
+  a.hashtag:hover {
+    color: var(--ct-link-hover);
   }
 
   // 아이콘 버튼은 평소 연한 메인색, 호버하면 진한 메인색 (포인트색이 아니다)

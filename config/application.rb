@@ -111,9 +111,9 @@ module Mastodon
     config.paperclip_defaults = {
       default_url: lambda { |attachment|
         if attachment.name == :avatar
-          '/avatars/:style/i_missing.png'
+          DefaultAccountImage.url(:avatar) || '/avatars/:style/i_missing.png'
         elsif attachment.name == :header
-          '/headers/:style/h_missing.png'
+          DefaultAccountImage.url(:header) || '/headers/:style/h_missing.png'
         else
           '/avatars/:style/i_missing.png'
         end

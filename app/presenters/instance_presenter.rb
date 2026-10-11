@@ -106,6 +106,18 @@ class InstancePresenter < ActiveModelSerializers::Model
     @wordmark_light = Rails.cache.fetch('site_uploads/wordmark_light') { SiteUpload.find_by(var: 'wordmark_light') }
   end
 
+  def default_avatar
+    return @default_avatar if defined?(@default_avatar)
+
+    @default_avatar = Rails.cache.fetch('site_uploads/default_avatar') { SiteUpload.find_by(var: 'default_avatar') }
+  end
+
+  def default_header
+    return @default_header if defined?(@default_header)
+
+    @default_header = Rails.cache.fetch('site_uploads/default_header') { SiteUpload.find_by(var: 'default_header') }
+  end
+
   def community_theme_background_light
     return @community_theme_background_light if defined?(@community_theme_background_light)
 

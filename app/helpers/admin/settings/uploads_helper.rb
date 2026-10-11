@@ -21,7 +21,15 @@ module Admin::Settings::UploadsHelper
     style ? upload.file.url(style) : upload.file.url
   end
 
+  # 기본 프로필 사진·헤더는 마스토돈 기본 이미지 (public 폴더)
+  DEFAULT_PUBLIC_ASSETS = {
+    default_avatar: '/avatars/original/i_missing.png',
+    default_header: '/headers/original/h_missing.png',
+  }.freeze
+
   def site_upload_default_url(var)
+    return DEFAULT_PUBLIC_ASSETS[var.to_sym] if DEFAULT_PUBLIC_ASSETS.key?(var.to_sym)
+
     path = site_upload_default_asset(var)
     frontend_asset_path(path) if path
   end

@@ -826,20 +826,26 @@ ko:
           following: 나와 팔로우한 사람
         title: 커뮤니티 옵션
       community_theme:
-        box_opacity: 박스 불투명도 (%)
-        box_opacity_hint: 100이면 배경 이미지가 비치지 않습니다. 비우면 92입니다.
+        colors: 색
         details: 세부 색
         details_hint: 비워 두면 메인색·서브색으로 자동으로 정해집니다. 칸에 흐리게 보이는 값과 색 버튼이 지금 자동으로 쓰이는 색입니다. 바꾸고 싶은 항목만 정하세요.
         hint_html: 켜면 사이트 테마 목록에 커뮤니티 테마 (낮)·(밤)이 생깁니다. 메인색은 박스·메뉴·아이콘·아이디/시간 같은 바탕 색, 서브색은 게시 버튼·링크·해시태그 같은 포인트 색이고, 나머지 색은 이 두 색으로 자동으로 만들어집니다. 로고는 <a href="%{branding_path}">브랜딩</a> 탭의 워드마크(낮/밤)를 씁니다.
+        images: 이미지
         item_hints:
           border: 박스·글쓰기 박스·구분선 테두리
           box: 가운데 타임라인과 오른쪽 칸 박스
+          box_opacity: 100이면 배경 이미지가 비치지 않음 (비우면 92)
           compose: 글쓰기 박스·입력창
           dim: 아이콘·아이디·시간 같은 흐린 글자
           dim_hover: 흐린 글자·아이콘에 마우스를 올렸을 때
+          hover: 툿·알림·메뉴에 마우스를 올렸을 때, 채팅 목록에서 연 방의 배경 (비우면 박스를 살짝 어둡게/밝게)
+          link_hover: 본문 링크·멘션·해시태그에 마우스를 올렸을 때
+          main: 박스·메뉴·아이콘·아이디/시간 같은 바탕 색
           nav: 왼쪽 메뉴 글자·아이콘
+          nav_hover: 왼쪽 메뉴에 마우스를 올렸을 때 글자·아이콘
           on_point: 서브색 버튼 위 글자
           page: 박스 바깥 (배경 이미지가 없을 때 보이는 색)
+          point: 게시 버튼·링크·해시태그·보낸 채팅 같은 포인트 색
           post_button: 게시 버튼 바탕
           post_button_text: 게시 버튼 글자
           selected: 자동완성·검색에서 고른 항목, 받은 채팅 말풍선
@@ -847,12 +853,18 @@ ko:
         items:
           border: 테두리
           box: 박스
+          box_opacity: 박스 불투명도 (%)
           compose: 글쓰기·입력창
           dim: 흐린 글자
           dim_hover: 흐린 글자 (호버)
+          hover: 호버 배경
+          link_hover: 링크 호버
+          main: 메인색
           nav: 메뉴
+          nav_hover: 메뉴 호버
           on_point: 서브색 위 글자
           page: 바깥 배경
+          point: 서브색
           post_button: 게시 버튼
           post_button_text: 게시 버튼 글자
           selected: 고른 항목
@@ -926,6 +938,8 @@ ko:
         sizes:
           app_icon: 1024×1024px
           community_theme_background: 1920×1080px 이상 권장
+          default_avatar: 400×400px
+          default_header: 1500×500px
           favicon: 48×48px
           mascot: 크기 제한 없음
           thumbnail: 1200×630px

@@ -262,6 +262,8 @@ ko:
         community_theme_post_button_main: 게시 버튼은 메인색 사용
         content_cache_retention_period: 리모트 콘텐츠 보유 기간
         custom_css: 사용자 정의 CSS
+        default_avatar: 기본 프로필 사진
+        default_header: 기본 헤더
         favicon: 파비콘
         mascot: 사용자 정의 마스코트 (legacy)
         media_cache_retention_period: 미디어 캐시 유지 기한

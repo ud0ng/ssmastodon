@@ -32,6 +32,9 @@ class SiteUpload < ApplicationRecord
 
   COMMUNITY_THEME_BACKGROUND_VARS = %w(community_theme_background_light community_theme_background_dark).freeze
 
+  # 프로필 사진·헤더를 올리지 않은 계정에 보이는 이미지
+  DEFAULT_ACCOUNT_IMAGE_VARS = %w(default_avatar default_header).freeze
+
   STYLES = {
     app_icon:
       APP_ICON_SIZES.to_h do |size|
@@ -66,6 +69,8 @@ class SiteUpload < ApplicationRecord
     wordmark_light: {}.freeze,
     community_theme_background_light: {}.freeze,
     community_theme_background_dark: {}.freeze,
+    default_avatar: { original: { geometry: '400x400#', file_geometry_parser: FastGeometryParser }.freeze }.freeze,
+    default_header: { original: { geometry: '1500x500#', file_geometry_parser: FastGeometryParser }.freeze }.freeze,
   }.freeze
 
   has_attached_file :file, styles: ->(file) { STYLES[file.instance.var.to_sym] }, convert_options: { all: '-coalesce +profile "!icc,*" +set date:modify +set date:create +set date:timestamp' }, processors: [:lazy_thumbnail, :blurhash_transcoder, :type_corrector]

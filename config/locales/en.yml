@@ -837,20 +837,26 @@ en:
           following: Me and people I follow
         title: Community options
       community_theme:
-        box_opacity: Panel opacity (%)
-        box_opacity_hint: At 100 the background image does not show through. Blank = 92.
+        colors: Colours
         details: Detailed colours
         details_hint: Leave blank to derive them from the main and accent colours. The faded value and the colour button show the colour currently used. Only set the ones you want to change.
         hint_html: Adds Community (Light) and (Dark) to the site theme list. The main colour sets the base tones (panels, the menu, icons, handles and times) and the accent colour sets accents such as the Post button, links and hashtags; every other colour is derived from these two. The logo comes from the wordmarks (light/dark) on the <a href="%{branding_path}">Branding</a> tab.
+        images: Images
         item_hints:
           border: Borders of panels, the compose box and dividers
           box: Panels of the timeline and the right column
+          box_opacity: At 100 the background image does not show through (blank = 92)
           compose: Compose box and inputs
           dim: Faded text such as icons, handles and times
           dim_hover: Faded text and icons on hover
+          hover: Background when hovering posts, notifications and the menu, and of the open chat in the chat list (blank = slightly darker/lighter panel)
+          link_hover: Links, mentions and hashtags in posts on hover
+          main: "Base tones: panels, the menu, icons, handles and times"
           nav: Left menu text and icons
+          nav_hover: Left menu text and icons on hover
           on_point: Text on accent-coloured buttons
           page: Outside the panels (shown when there is no background image)
+          point: "Accents: Post button, links, hashtags, sent chats"
           post_button: Post button background
           post_button_text: Post button text
           selected: Picked item in autocomplete and search, received chat bubbles
@@ -858,12 +864,18 @@ en:
         items:
           border: Border
           box: Panel
+          box_opacity: Panel opacity (%)
           compose: Compose and inputs
           dim: Faded text
           dim_hover: Faded text (hover)
+          hover: Hover background
+          link_hover: Link hover
+          main: Main colour
           nav: Menu
+          nav_hover: Menu hover
           on_point: Text on accent
           page: Page background
+          point: Accent colour
           post_button: Post button
           post_button_text: Post button text
           selected: Picked item
@@ -937,6 +949,8 @@ en:
         sizes:
           app_icon: 1024×1024px
           community_theme_background: 1920×1080px or larger recommended
+          default_avatar: 400×400px
+          default_header: 1500×500px
           favicon: 48×48px
           mascot: Any size
           thumbnail: 1200×630px

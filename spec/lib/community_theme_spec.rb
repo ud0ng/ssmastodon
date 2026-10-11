@@ -19,7 +19,7 @@ RSpec.describe CommunityTheme do
         'on_point' => '#ffffff',
         'box_opacity' => 92
       )
-      expect(palette.keys).to include(*described_class::DETAILS)
+      expect(palette.keys).to include(*(described_class::DETAILS - described_class::CSS_DERIVED))
     end
 
     it 'uses a detailed colour when one is set' do
@@ -28,6 +28,14 @@ RSpec.describe CommunityTheme do
 
       expect(community_theme.palette('light')).to include('box' => '#ffffff', 'box_opacity' => 100)
       expect(community_theme.palette('dark')['box']).to_not eq '#ffffff'
+    end
+
+    it 'leaves the hover background to CSS unless it is set' do
+      expect(community_theme.palette('light')).to_not have_key('hover')
+      expect(community_theme.auto_palette('light')).to have_key('hover')
+
+      Setting.community_theme_hover_light = '#EEEEEE'
+      expect(community_theme.palette('light')['hover']).to eq '#eeeeee'
     end
 
     it 'ignores an invalid colour' do

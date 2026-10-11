@@ -21,11 +21,14 @@ class CommunityTheme
     box
     compose
     selected
+    hover
     border
     text
     nav
+    nav_hover
     dim
     dim_hover
+    link_hover
     on_point
     post_button
     post_button_text
@@ -46,9 +49,12 @@ class CommunityTheme
     @settings = settings
   end
 
+  # 자동 색이 반투명이라 CSS 가 직접 만드는 항목 (정했을 때만 넘긴다)
+  CSS_DERIVED = %w(hover).freeze
+
   # 화면에 쓰는 색: 정한 세부 색 > 자동 색
   def palette(mode)
-    auto = auto_palette(mode)
+    auto = auto_palette(mode).except(*CSS_DERIVED)
     overrides = DETAILS.index_with { |item| color(setting("#{item}_#{mode}")) }.compact
     auto.merge(overrides).merge('box_opacity' => box_opacity(mode))
   end
@@ -62,6 +68,8 @@ class CommunityTheme
     colors['main'] = main
     colors['point'] = point
     colors['on_point'] = on_color(point)
+    colors['nav_hover'] = point
+    colors['link_hover'] = mode.to_s == 'dark' ? mix(point, 75, '#ffffff') : mix(point, 75, '#000000')
     colors['post_button'] = post_main ? colors['nav'] : point
     colors['post_button_text'] = on_color(colors['post_button'])
     colors
@@ -141,6 +149,7 @@ class CommunityTheme
       'box' => box,
       'compose' => box,
       'selected' => mix(main, 10, '#ffffff'),
+      'hover' => mix(mix(main, 8, '#14161a'), 5, box),
       'border' => mix(main, 22, '#ffffff'),
       'text' => mix(main, 8, '#14161a'),
       'nav' => nav,
@@ -159,6 +168,7 @@ class CommunityTheme
       'box' => box,
       'compose' => mix(main, 36, '#0d0e14'),
       'selected' => mix(main, 45, '#121318'),
+      'hover' => mix('#ffffff', 6, box),
       'border' => mix(mix(main, 40, '#ffffff'), 16, box),
       'text' => text,
       'nav' => mix(main, 12, '#ffffff'),

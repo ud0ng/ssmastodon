@@ -5,8 +5,8 @@
   = render partial: 'admin/settings/shared/heading'
 
 - community_theme = CommunityTheme.new
-- color_input = { pattern: '#[0-9a-fA-F]{6}', maxlength: 7 }
-- base_placeholders = { 'main_light' => CommunityTheme::DEFAULT_COLOR, 'point_light' => t('admin.settings.community_theme.same_as_main'), 'main_dark' => t('admin.settings.community_theme.same_as_light'), 'point_dark' => t('admin.settings.community_theme.lighter_main') }
+- auto = CommunityTheme::MODES.index_with { |mode| community_theme.auto_palette(mode) }
+- placeholders = { 'main_light' => CommunityTheme::DEFAULT_COLOR, 'point_light' => t('admin.settings.community_theme.same_as_main'), 'main_dark' => t('admin.settings.community_theme.same_as_light'), 'point_dark' => t('admin.settings.community_theme.lighter_main') }
 
 = simple_form_for @admin_settings, url: admin_settings_community_theme_path, html: { id: 'edit_admin_settings', method: :patch } do |f|
   = render 'shared/error_messages', object: @admin_settings
@@ -18,49 +18,61 @@
               as: :boolean,
               wrapper: :with_label
 
-  .fields-group
-    = f.input :community_theme_default,
-              collection: Themes::COMMUNITY_THEME_MODES,
-              include_blank: false,
-              label_method: ->(mode) { I18n.t("themes.community-#{mode}") },
-              wrapper: :with_label
-
-  .fields-group
-    = f.input :community_theme_post_button_main,
-              as: :boolean,
-              wrapper: :with_label
-
-  - CommunityTheme::MODES.each do |mode|
-    - auto = community_theme.auto_palette(mode)
-
-    %h4= t("admin.settings.community_theme.modes.#{mode}")
-
-    .fields-row
-      - %w(main point).each do |base|
-        .fields-row__column.fields-row__column-6.fields-group
-          = f.input :"community_theme_#{base}_#{mode}",
-                    input_html: color_input.merge(placeholder: base_placeholders["#{base}_#{mode}"], data: { color_picker: auto[base] }),
-                    wrapper: :with_label
-
-    .fields-group
-      = f.input :"community_theme_box_opacity_#{mode}",
-                input_html: { type: 'number', min: CommunityTheme::BOX_OPACITY_RANGE.min, max: CommunityTheme::BOX_OPACITY_RANGE.max, placeholder: CommunityTheme::DEFAULT_BOX_OPACITY },
-                label: t('admin.settings.community_theme.box_opacity'),
-                hint: t('admin.settings.community_theme.box_opacity_hint'),
+  .fields-row
+    .fields-row__column.fields-row__column-6.fields-group
+      = f.input :community_theme_default,
+                collection: Themes::COMMUNITY_THEME_MODES,
+                include_blank: false,
+                label_method: ->(mode) { I18n.t("themes.community-#{mode}") },
+                wrapper: :with_label
+    .fields-row__column.fields-row__column-6.fields-group
+      = f.input :community_theme_post_button_main,
+                as: :boolean,
                 wrapper: :with_label
 
-    %h5= t('admin.settings.community_theme.details')
-    %p.hint= t('admin.settings.community_theme.details_hint')
+  %h4= t('admin.settings.community_theme.colors')
+  %p.hint= t('admin.settings.community_theme.details_hint')
 
-    - CommunityTheme::DETAILS.each_slice(2) do |items|
-      .fields-row
-        - items.each do |item|
-          .fields-row__column.fields-row__column-6.fields-group
-            = f.input :"community_theme_#{item}_#{mode}",
-                      input_html: color_input.merge(placeholder: auto[item], data: { color_picker: auto[item] }),
-                      label: t("admin.settings.community_theme.items.#{item}"),
-                      hint: t("admin.settings.community_theme.item_hints.#{item}"),
-                      wrapper: :with_label
+  %table.community-theme-table
+    %thead
+      %tr
+        %th
+        - CommunityTheme::MODES.each do |mode|
+          %th= t("admin.settings.community_theme.modes.#{mode}")
+    %tbody
+      - %w(main point).each do |base|
+        %tr.community-theme-table__base
+          %th
+            .community-theme-table__name= t("admin.settings.community_theme.items.#{base}")
+            .community-theme-table__hint= t("admin.settings.community_theme.item_hints.#{base}")
+          - CommunityTheme::MODES.each do |mode|
+            %td
+              = f.text_field :"community_theme_#{base}_#{mode}", class: 'community-theme-table__input', placeholder: placeholders["#{base}_#{mode}"], pattern: '#[0-9a-fA-F]{6}', maxlength: 7, data: { color_picker: auto[mode][base] }, 'aria-label': "#{t("admin.settings.community_theme.items.#{base}")} (#{t("admin.settings.community_theme.modes.#{mode}")})"
 
-    .image-picker
-      = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: :"community_theme_background_#{mode}", upload: @admin_settings.public_send(:"community_theme_background_#{mode}"), frame: 'thumbnail', size: :community_theme_background }
+      %tr
+        %th
+          .community-theme-table__name= t('admin.settings.community_theme.items.box_opacity')
+          .community-theme-table__hint= t('admin.settings.community_theme.item_hints.box_opacity')
+        - CommunityTheme::MODES.each do |mode|
+          %td
+            = f.number_field :"community_theme_box_opacity_#{mode}", class: 'community-theme-table__input', min: CommunityTheme::BOX_OPACITY_RANGE.min, max: CommunityTheme::BOX_OPACITY_RANGE.max, placeholder: CommunityTheme::DEFAULT_BOX_OPACITY, 'aria-label': "#{t('admin.settings.community_theme.items.box_opacity')} (#{t("admin.settings.community_theme.modes.#{mode}")})"
+
+      %tr.community-theme-table__group
+        %th{ colspan: CommunityTheme::MODES.size + 1 }= t('admin.settings.community_theme.details')
+
+      - CommunityTheme::DETAILS.each do |item|
+        %tr
+          %th
+            .community-theme-table__name= t("admin.settings.community_theme.items.#{item}")
+            .community-theme-table__hint= t("admin.settings.community_theme.item_hints.#{item}")
+          - CommunityTheme::MODES.each do |mode|
+            %td
+              = f.text_field :"community_theme_#{item}_#{mode}", class: 'community-theme-table__input', placeholder: auto[mode][item], pattern: '#[0-9a-fA-F]{6}', maxlength: 7, data: { color_picker: auto[mode][item] }, 'aria-label': "#{t("admin.settings.community_theme.items.#{item}")} (#{t("admin.settings.community_theme.modes.#{mode}")})"
+
+  %h4= t('admin.settings.community_theme.images')
+
+  .image-picker
+    - SiteUpload::COMMUNITY_THEME_BACKGROUND_VARS.each do |var|
+      = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: var.to_sym, upload: @admin_settings.public_send(var), frame: 'thumbnail', size: :community_theme_background }
+    = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: :default_avatar, upload: @admin_settings.default_avatar, frame: 'avatar' }
+    = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: :default_header, upload: @admin_settings.default_header, frame: 'thumbnail' }

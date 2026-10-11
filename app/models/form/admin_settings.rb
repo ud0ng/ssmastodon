@@ -54,6 +54,8 @@ class Form::AdminSettings
     community_theme_default
     community_theme_background_light
     community_theme_background_dark
+    default_avatar
+    default_header
   ).concat(CommunityTheme.detail_keys, CommunityTheme.box_opacity_keys).freeze
 
   INTEGER_KEYS = %i(
@@ -91,6 +93,8 @@ class Form::AdminSettings
     wordmark_light
     community_theme_background_light
     community_theme_background_dark
+    default_avatar
+    default_header
   ).freeze
 
   DIGEST_KEYS = %i(

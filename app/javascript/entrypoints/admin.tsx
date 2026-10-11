@@ -406,8 +406,15 @@ const attachColorPicker = (text: HTMLInputElement) => {
   text.addEventListener('input', showTextColor);
 
   showTextColor();
+  // simple_form 칸은 그 감싸개를, 표 칸 등은 새 감싸개를 쓴다
+  let wrapper = text.parentElement;
+  if (!wrapper?.classList.contains('label_input__wrapper')) {
+    wrapper = document.createElement('div');
+    text.replaceWith(wrapper);
+    wrapper.append(text);
+  }
   text.after(picker);
-  text.parentElement?.classList.add('label_input__wrapper--color');
+  wrapper.classList.add('label_input__wrapper--color');
 };
 
 ready(() => {

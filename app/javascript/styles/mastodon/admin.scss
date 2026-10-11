@@ -2455,3 +2455,87 @@ body .image-picker {
     cursor: pointer;
   }
 }
+
+// 커뮤니티 테마: 항목 × 낮/밤 색 표
+.community-theme-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  font-size: 13px;
+
+  th,
+  td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--background-border-color, rgba(128, 128, 128, 20%));
+    vertical-align: middle;
+    text-align: start;
+  }
+
+  thead th {
+    font-weight: 600;
+    color: $darker-text-color;
+  }
+
+  tbody th {
+    width: 40%;
+    font-weight: 400;
+  }
+
+  &__name {
+    font-weight: 600;
+    color: $primary-text-color;
+  }
+
+  &__hint {
+    margin-top: 2px;
+    font-size: 12px;
+    line-height: 16px;
+    color: $darker-text-color;
+  }
+
+  &__base &__name {
+    font-size: 14px;
+  }
+
+  &__group th {
+    padding-top: 18px;
+    font-weight: 600;
+    color: $darker-text-color;
+  }
+
+  td .label_input__wrapper--color {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+  }
+
+  .community-theme-table__input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 6px 8px;
+    font-family: $font-monospace, monospace;
+    font-size: 13px;
+  }
+
+  .color-picker {
+    flex: 0 0 36px;
+    width: 36px;
+    min-height: 32px;
+    padding: 2px;
+    border: 1px solid var(--color-border-primary, rgba(128, 128, 128, 40%));
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+  }
+}
+
+@media screen and (width <= 600px) {
+  .community-theme-table tbody th {
+    width: auto;
+  }
+
+  .community-theme-table__hint {
+    display: none;
+  }
+}

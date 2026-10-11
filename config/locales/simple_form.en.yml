@@ -268,6 +268,8 @@ en:
         community_theme_post_button_main: Main colour for the Post button
         content_cache_retention_period: Remote content retention period
         custom_css: Custom CSS
+        default_avatar: Default profile picture
+        default_header: Default header
         favicon: Favicon
         mascot: Custom mascot (legacy)
         media_cache_retention_period: Media cache retention period
