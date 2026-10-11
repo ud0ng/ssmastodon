@@ -1,0 +1,5 @@
+.env.production
+.owner_password
+override/
+chrome-profile/
+shots/
