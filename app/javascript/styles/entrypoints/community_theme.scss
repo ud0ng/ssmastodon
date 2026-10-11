@@ -167,6 +167,33 @@ body.community-theme:not(.admin) {
     }
   }
 
+  // @아이디·:이모지:·#태그 자동완성 목록 (기본 스타일은 파란색이 고정돼 있다)
+  .autosuggest-textarea__suggestions {
+    background: var(--ct-panel-solid);
+    border-color: var(--ct-line);
+    color: var(--ct-text);
+  }
+
+  .autosuggest-textarea__suggestions__item {
+    color: var(--ct-text);
+
+    .autosuggest-account .display-name__account {
+      color: var(--ct-dim);
+    }
+
+    &:hover,
+    &:focus,
+    &:active,
+    &.selected {
+      background: var(--ct-soft);
+      color: var(--ct-text);
+
+      .autosuggest-account .display-name__account {
+        color: var(--ct-dim-hover);
+      }
+    }
+  }
+
   // 아이콘 버튼은 평소 연한 메인색, 호버하면 진한 메인색 (포인트색이 아니다)
   .icon-button:not(.active):hover,
   .icon-button:not(.active):focus-visible {
