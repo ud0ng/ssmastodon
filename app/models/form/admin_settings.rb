@@ -54,7 +54,7 @@ class Form::AdminSettings
     community_theme_default
     community_theme_background_light
     community_theme_background_dark
-  ).freeze
+  ).concat(CommunityTheme.detail_keys, CommunityTheme.box_opacity_keys).freeze
 
   INTEGER_KEYS = %i(
     media_cache_retention_period
@@ -119,6 +119,8 @@ class Form::AdminSettings
   validates :status_search_scope, inclusion: { in: STATUS_SEARCH_SCOPES }, if: -> { defined?(@status_search_scope) }
   validates :community_theme_default, inclusion: { in: Themes::COMMUNITY_THEME_MODES }, if: -> { defined?(@community_theme_default) }
   validates :community_theme_main_light, :community_theme_point_light, :community_theme_main_dark, :community_theme_point_dark, format: { with: COMMUNITY_THEME_COLOR_FORMAT }, allow_blank: true
+  validates(*CommunityTheme.detail_keys, format: { with: COMMUNITY_THEME_COLOR_FORMAT }, allow_blank: true)
+  validates(*CommunityTheme.box_opacity_keys, numericality: { only_integer: true, in: CommunityTheme::BOX_OPACITY_RANGE }, allow_blank: true)
   validates :site_short_description, length: { maximum: DESCRIPTION_LIMIT }, if: -> { defined?(@site_short_description) }
   validates :status_page_url, url: true, allow_blank: true
   validate :validate_site_uploads

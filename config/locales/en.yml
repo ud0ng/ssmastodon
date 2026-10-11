@@ -830,17 +830,51 @@ en:
         desc_html: This relies on external scripts from hCaptcha, which may be a security and privacy concern. In addition, <strong>this can make the registration process significantly less accessible to some (especially disabled) people</strong>. For these reasons, please consider alternative measures such as approval-based or invite-based registration.
         title: Require new users to solve a CAPTCHA to confirm their account
       community:
-        lighter_main: Blank = lightened main colour
         posting: Posting
-        same_as_light: Blank = same as light
-        same_as_main: Blank = main colour
         search: Search
         search_scopes:
           all: Whole server (public posts from every account)
           following: Me and people I follow
-        theme: Theme
-        theme_hint_html: The main colour sets the base tones (large panels, the menu, icons, handles and times); the accent colour sets accent buttons such as Post and links. Light mode uses translucent white panels with a hint of the main colour and dark text; dark mode uses translucent panels in a deep shade of the main colour with light text, both over the background image. The logo comes from the wordmarks (light/dark) on the <a href="%{branding_path}">Branding</a> tab.
         title: Community options
+      community_theme:
+        box_opacity: Panel opacity (%)
+        box_opacity_hint: At 100 the background image does not show through. Blank = 92.
+        details: Detailed colours
+        details_hint: Leave blank to derive them from the main and accent colours. The faded value and the colour button show the colour currently used. Only set the ones you want to change.
+        hint_html: Adds Community (Light) and (Dark) to the site theme list. The main colour sets the base tones (panels, the menu, icons, handles and times) and the accent colour sets accents such as the Post button, links and hashtags; every other colour is derived from these two. The logo comes from the wordmarks (light/dark) on the <a href="%{branding_path}">Branding</a> tab.
+        item_hints:
+          border: Borders of panels, the compose box and dividers
+          box: Panels of the timeline and the right column
+          compose: Compose box and inputs
+          dim: Faded text such as icons, handles and times
+          dim_hover: Faded text and icons on hover
+          nav: Left menu text and icons
+          on_point: Text on accent-coloured buttons
+          page: Outside the panels (shown when there is no background image)
+          post_button: Post button background
+          post_button_text: Post button text
+          selected: Picked item in autocomplete and search, received chat bubbles
+          text: Body text
+        items:
+          border: Border
+          box: Panel
+          compose: Compose and inputs
+          dim: Faded text
+          dim_hover: Faded text (hover)
+          nav: Menu
+          on_point: Text on accent
+          page: Page background
+          post_button: Post button
+          post_button_text: Post button text
+          selected: Picked item
+          text: Text
+        lighter_main: Blank = lightened main colour
+        modes:
+          dark: Dark theme
+          light: Light theme
+        same_as_light: Blank = same as light
+        same_as_main: Blank = main colour
+        title: Community theme
       content_retention:
         danger_zone: Danger zone
         preamble: Control how user-generated content is stored in Mastodon.

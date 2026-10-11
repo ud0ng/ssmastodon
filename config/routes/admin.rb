@@ -69,6 +69,7 @@ namespace :admin do
     resource :appearance, only: [:show, :update], controller: 'appearance'
     resource :discovery, only: [:show, :update], controller: 'discovery'
     resource :community, only: [:show, :update], controller: 'community'
+    resource :community_theme, only: [:show, :update], controller: 'community_theme'
   end
 
   resources :site_uploads, only: [:destroy]

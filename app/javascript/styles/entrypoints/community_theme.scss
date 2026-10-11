@@ -1,15 +1,16 @@
-// 커뮤니티 테마 (서버 설정 > 커뮤니티 옵션 > 테마)
+// 커뮤니티 테마 (서버 설정 > 커뮤니티 테마)
 //
-// 서버가 :root 에 넣어주는 변수 (빈 칸은 서버가 채워서 넘긴다)
-//   --community-theme-main-{light,dark}       메인색: 큰 박스·메뉴·아이콘·아이디/시간 같은 바탕 색
-//   --community-theme-point-{light,dark}      서브색: 게시 버튼·링크·해시태그·보낸 채팅 같은 포인트 색
-//   --community-theme-on-point-{light,dark}   서브색 위 글자색 (흰색/검은색 자동)
-//   --community-theme-background-{light,dark} 낮/밤 배경 이미지 (없으면 단색)
+// 서버(ThemeHelper#community_theme_tags)가 :root 에 낮/밤 색을 넣어 준다. 색은 CommunityTheme 이
+// 메인색·서브색으로 자동으로 만들고, 관리자가 정한 세부 색이 있으면 그 색을 쓴다.
+//   --community-theme-<항목>-{light,dark}
+//     main, point, on-point            메인색, 서브색, 서브색 위 글자색
+//     page, box, compose, selected     바깥 배경, 박스, 글쓰기·입력창, 고른 항목·받은 채팅
+//     border, text, nav                테두리, 글자, 왼쪽 메뉴
+//     dim, dim-hover                   아이콘·아이디·시간 (호버하면 dim-hover)
+//     post-button, post-button-text    게시 버튼
+//     box-opacity                      박스 불투명도 (%)
+//   --community-theme-background-{light,dark} 낮/밤 배경 이미지 (없으면 바깥 배경색)
 //
-// 낮: 메인색이 아주 살짝 섞인 반투명 흰 박스 + 검은 글자, 메뉴는 메인색 계열의 진한 색,
-//     아이콘·아이디·시간은 메인색을 연하게 → 호버하면 진하게.
-// 밤: 메인색을 깊게 어둡게 한 반투명 박스 + 흰 글자, 메뉴는 흰색에 가까운 메인색,
-//     아이콘·아이디·시간은 메인색을 탁하게 → 호버하면 흰색.
 // 관리자·환경설정 화면에는 적용하지 않는다.
 
 @mixin community-theme-light {
@@ -18,25 +19,28 @@
   --ct-on-point: var(--community-theme-on-point-light);
   --ct-background-image: var(--community-theme-background-light, none);
 
-  // 박스: 흰색 95% + 메인색 5%
-  --ct-base: color-mix(in srgb, var(--ct-main) 5%, #fff);
-  --ct-raised: color-mix(in srgb, var(--ct-main) 5%, #fff);
-  --ct-soft: color-mix(in srgb, var(--ct-main) 10%, #fff);
-  --ct-text: color-mix(in srgb, var(--ct-main) 8%, #14161a);
-  --ct-nav: color-mix(in srgb, var(--ct-main) 80%, #14161a);
-  --ct-dim: color-mix(in srgb, var(--ct-main) 50%, #fff);
-  --ct-dim-hover: var(--ct-nav);
-  --ct-on-nav: #fff;
-  // 박스 테두리: 메인색을 연하게 (호버·포커스는 조금 더 진하게)
-  --ct-line: color-mix(in srgb, var(--ct-main) 22%, #fff);
-  --ct-line-strong: color-mix(in srgb, var(--ct-main) 45%, #fff);
+  --ct-page: var(--community-theme-page-light);
+  --ct-base: var(--community-theme-box-light);
+  --ct-raised: var(--community-theme-compose-light);
+  --ct-soft: var(--community-theme-selected-light);
+  --ct-line: var(--community-theme-border-light);
+  --ct-text: var(--community-theme-text-light);
+  --ct-nav: var(--community-theme-nav-light);
+  --ct-dim: var(--community-theme-dim-light);
+  --ct-dim-hover: var(--community-theme-dim-hover-light);
+  --ct-post-button: var(--community-theme-post-button-light);
+  --ct-post-button-text: var(--community-theme-post-button-text-light);
+
+  // 박스 불투명도 (배경 이미지가 비치는 정도)
+  --ct-panel-alpha: var(--community-theme-box-opacity-light);
+  --ct-main-alpha: var(--community-theme-box-opacity-light);
+  --ct-raised-alpha: var(--community-theme-box-opacity-light);
+
+  // 글쓰기 박스 포커스 테두리: 테두리를 글자색 쪽으로 조금 진하게
+  --ct-line-strong: color-mix(in srgb, var(--ct-line) 70%, var(--ct-text));
   // 호버 배경: 박스 색을 살짝 어둡게만 한다 (메인색을 섞으면 배경 이미지 색과 겹쳐 파랗게/탁하게 보인다)
   --ct-hover: color-mix(in srgb, var(--ct-text) 5%, transparent);
   --ct-shade: #fff;
-
-  --ct-panel-alpha: 92%;
-  --ct-main-alpha: 92%;
-  --ct-raised-alpha: 92%;
 }
 
 @mixin community-theme-dark {
@@ -45,22 +49,28 @@
   --ct-on-point: var(--community-theme-on-point-dark);
   --ct-background-image: var(--community-theme-background-dark, none);
 
-  --ct-base: color-mix(in srgb, var(--ct-main) 28%, #0a0b10);
-  --ct-raised: color-mix(in srgb, var(--ct-main) 36%, #0d0e14);
-  --ct-soft: color-mix(in srgb, var(--ct-main) 45%, #121318);
-  --ct-text: color-mix(in srgb, var(--ct-main) 6%, #f4f5f8);
-  --ct-nav: color-mix(in srgb, var(--ct-main) 12%, #fff);
-  --ct-dim: color-mix(in srgb, var(--ct-main) 40%, #b9bcc8);
-  --ct-dim-hover: var(--ct-text);
-  --ct-on-nav: #14161a;
-  --ct-line: color-mix(in srgb, color-mix(in srgb, var(--ct-main) 40%, #fff) 16%, transparent);
-  --ct-line-strong: color-mix(in srgb, color-mix(in srgb, var(--ct-main) 40%, #fff) 32%, transparent);
+  --ct-page: var(--community-theme-page-dark);
+  --ct-base: var(--community-theme-box-dark);
+  --ct-raised: var(--community-theme-compose-dark);
+  --ct-soft: var(--community-theme-selected-dark);
+  --ct-line: var(--community-theme-border-dark);
+  --ct-text: var(--community-theme-text-dark);
+  --ct-nav: var(--community-theme-nav-dark);
+  --ct-dim: var(--community-theme-dim-dark);
+  --ct-dim-hover: var(--community-theme-dim-hover-dark);
+  --ct-post-button: var(--community-theme-post-button-dark);
+  --ct-post-button-text: var(--community-theme-post-button-text-dark);
+
+  // 박스 불투명도 (배경 이미지가 비치는 정도)
+  --ct-panel-alpha: var(--community-theme-box-opacity-dark);
+  --ct-main-alpha: var(--community-theme-box-opacity-dark);
+  --ct-raised-alpha: var(--community-theme-box-opacity-dark);
+
+  // 글쓰기 박스 포커스 테두리: 테두리를 글자색 쪽으로 조금 진하게
+  --ct-line-strong: color-mix(in srgb, var(--ct-line) 70%, var(--ct-text));
+  // 호버 배경: 박스 색을 살짝 밝게만 한다
   --ct-hover: color-mix(in srgb, #fff 6%, transparent);
   --ct-shade: #000;
-
-  --ct-panel-alpha: 92%;
-  --ct-main-alpha: 88%;
-  --ct-raised-alpha: 86%;
 }
 
 // 사이트 테마 목록의 커뮤니티 테마 (낮) / (밤)
@@ -126,8 +136,8 @@ body.community-theme:not(.admin) {
   --color-accent-dark-50: var(--ct-point);
   --color-hashtag: var(--ct-point);
   --color-mention: var(--ct-point);
-  --color-post-button: var(--ct-point);
-  --color-post-button-text: var(--ct-on-point);
+  --color-post-button: var(--ct-post-button);
+  --color-post-button-text: var(--ct-post-button-text);
   --color-on-brand: var(--ct-on-point);
   --color-ghost-button-text: var(--ct-point);
   --color-sent-message-background: var(--ct-point);
@@ -150,7 +160,7 @@ body.community-theme:not(.admin) {
   --input-placeholder-color: var(--ct-dim);
   --on-input-color: var(--ct-text);
 
-  background: var(--ct-background-image) center / cover no-repeat fixed, var(--ct-panel-solid);
+  background: var(--ct-background-image) center / cover no-repeat fixed, var(--ct-page);
   color: var(--ct-text);
 
   // 가운데 칸(타임라인·채팅)은 반투명 박스, 양옆은 배경이 그대로 보인다.
@@ -233,8 +243,3 @@ body.community-theme:not(.admin) {
   }
 }
 
-// 옵션: 게시 버튼만 메인색 (낮은 메뉴처럼 진한 메인색, 밤은 흰빛 메인색)
-body.community-theme.community-theme--post-main:not(.admin) {
-  --color-post-button: var(--ct-nav);
-  --color-post-button-text: var(--ct-on-nav);
-}

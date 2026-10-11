@@ -187,6 +187,8 @@ RSpec.describe ThemeHelper do
           .and include('--community-theme-main-dark:#3f4479;')
           .and include('--community-theme-point-dark:#696fb1;')
           .and include('--community-theme-on-point-light:#ffffff;')
+          .and include('--community-theme-box-opacity-light:92%;')
+          .and include('--community-theme-dim-hover-dark:')
           .and include('<link rel="stylesheet">')
       end
     end
