@@ -1,5 +1,5 @@
 - content_for :page_title do
-  = t('admin.settings.branding.title')
+  = t('admin.settings.tabs.info')
 
 - content_for :heading do
   = render partial: 'admin/settings/shared/heading'
@@ -29,6 +29,8 @@
               input_html: { rows: 2, maxlength: Form::AdminSettings::DESCRIPTION_LIMIT },
               wrapper: :with_block_label
 
+  %h4= t('admin.settings.branding.images')
+
   = render 'admin/settings/branding/guide'
 
   .image-picker
@@ -36,21 +38,19 @@
     = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: :favicon, upload: @admin_settings.favicon }
     = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: :app_icon, upload: @admin_settings.app_icon }
 
-  .branding-wordmark
-    %h4.branding-wordmark__title= t('admin.settings.uploads.guide.wordmark.name')
-    %p.image-picker__size= t('admin.settings.uploads.sizes.wordmark')
-    .branding-wordmark__rules
-      %p= t('admin.settings.uploads.wordmark_rules.format')
-      %p= t('admin.settings.uploads.wordmark_rules.themes')
-      %p= t('admin.settings.uploads.wordmark_rules.tone')
-      %p= t('admin.settings.uploads.wordmark_rules.margin')
-      %p= t('admin.settings.uploads.wordmark_rules.center')
 
-    .image-picker.branding-wordmark__pair
-      - SiteUpload::WORDMARK_VARS.each do |var|
-        = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: var.to_sym, upload: @admin_settings.public_send(var), frame: var.dasherize, size: :wordmark, show_size: false, accept: SiteUpload::WORDMARK_MIME_TYPES, input_data: wordmark_input_data, extra: 'admin/settings/branding/wordmark_extra' }
+  %h4= t('admin.settings.about.title')
 
-    %h5.branding-wordmark__subtitle= t('admin.settings.uploads.wordmark_preview')
-    .branding-wordmark__pair
-      - SiteUpload::WORDMARK_VARS.each do |var|
-        = render 'admin/settings/branding/wordmark_preview', attribute: var.to_sym, upload: @admin_settings.public_send(var)
+  .fields-group
+    = f.input :site_extended_description,
+              as: :text,
+              hint: false,
+              input_html: { rows: 8 },
+              wrapper: :with_block_label
+
+  .fields-group
+    = f.input :site_terms,
+              as: :text,
+              hint: false,
+              input_html: { rows: 8 },
+              wrapper: :with_block_label

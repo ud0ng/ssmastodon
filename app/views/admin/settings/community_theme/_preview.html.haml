@@ -2,12 +2,18 @@
 -# data-preview-item 이 붙은 곳을 누르면 그 색 칸으로 이동한다.
 - background = InstancePresenter.new.public_send(:"community_theme_background_#{mode}")
 - style = background.present? ? "--pv-background:url(\"#{background.file.url}\")" : nil
+- wordmark = :"wordmark_#{mode}"
+- wordmark_url = site_upload_preview_url(InstancePresenter.new.public_send(wordmark)) || site_upload_default_url(wordmark)
 
 .ct-preview__frame
   .ct-preview__title= t("admin.settings.community_theme.modes.#{mode}")
   .ct-preview{ data: { preview_mode: mode }, style: style }
     .ct-preview__nav
-      .ct-preview__logo{ data: { preview_item: 'nav' } } commu
+      .ct-preview__logo
+        - if wordmark_url.present?
+          = image_tag wordmark_url, alt: '', class: 'ct-preview__logo-img', data: { upload_preview: "form_admin_settings_#{wordmark}", original_src: wordmark_url }
+        - else
+          commu
       .ct-preview__nav-item.ct-preview__nav-item--active{ data: { preview_item: 'nav' } }
         = material_symbol 'home'
         %span= t('admin.settings.community_theme.preview.home')

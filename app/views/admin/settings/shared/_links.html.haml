@@ -1,11 +1,6 @@
 .content__heading__tabs
   = render_navigation renderer: :links do |primary|
     :ruby
-      primary.item :branding, safe_join([material_symbol('edit'), t('admin.settings.branding.title')]), admin_settings_branding_path
-      primary.item :about, safe_join([material_symbol('description'), t('admin.settings.about.title')]), admin_settings_about_path
-      primary.item :registrations, safe_join([material_symbol('group'), t('admin.settings.registrations.title')]), admin_settings_registrations_path
-      primary.item :discovery, safe_join([material_symbol('search'), t('admin.settings.discovery.title')]), admin_settings_discovery_path
-      primary.item :content_retention, safe_join([material_symbol('history'), t('admin.settings.content_retention.title')]), admin_settings_content_retention_path
-      primary.item :appearance, safe_join([material_symbol('computer'), t('admin.settings.appearance.title')]), admin_settings_appearance_path
-      primary.item :community, safe_join([material_symbol('tune'), t('admin.settings.community.title')]), admin_settings_community_path
-      primary.item :community_theme, safe_join([material_symbol('palette'), t('admin.settings.community_theme.title')]), admin_settings_community_theme_path
+      primary.item :branding, safe_join([material_symbol('description'), t('admin.settings.tabs.info')]), admin_settings_branding_path, highlights_on: %r{/admin/settings/(branding|about)}
+      primary.item :registrations, safe_join([material_symbol('tune'), t('admin.settings.tabs.operations')]), admin_settings_registrations_path, highlights_on: %r{/admin/settings/(registrations|discovery|content_retention|community$)}
+      primary.item :community_theme, safe_join([material_symbol('palette'), t('admin.settings.tabs.design')]), admin_settings_community_theme_path, highlights_on: %r{/admin/settings/(community_theme|appearance)}

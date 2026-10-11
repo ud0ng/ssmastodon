@@ -12,7 +12,7 @@
   - if local_assigns.fetch(:show_size, true)
     %span.image-picker__size= t("admin.settings.uploads.sizes.#{size_key}")
   .image-picker__slot
-    %label.image-picker__frame{ class: ["image-picker__frame--#{frame}", ('image-picker__frame--empty' if shown_url.blank?), ('image-picker__frame--invalid' if errors.any?)] }
+    %label.image-picker__frame{ class: ["image-picker__frame--#{frame}", ('image-picker__frame--empty' if shown_url.blank?), ('image-picker__frame--invalid' if errors.any?)], data: { pending_label: t('admin.settings.uploads.pending') } }
       - if shown_url.present?
         = image_tag shown_url, alt: '', class: 'image-picker__img', data: { upload_preview: input_id, original_src: shown_url }
       %span.image-picker__overlay

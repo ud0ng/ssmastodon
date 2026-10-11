@@ -824,6 +824,7 @@ en:
         preamble: Customize Mastodon's web interface.
         title: Appearance
       branding:
+        images: Images
         preamble: Your server's branding differentiates it from other servers in the network. This information may be displayed across a variety of environments, such as Mastodon's web interface, native applications, in link previews on other websites and within messaging apps, and so on. For this reason, it is best to keep this information clear, short and concise.
         title: Branding
       captcha_enabled:
@@ -840,7 +841,7 @@ en:
         colors: Colours
         details: Detailed colours
         details_hint: Leave blank to derive them from the main and accent colours. The faded value and the colour button show the colour currently used. Only set the ones you want to change.
-        hint_html: Adds Community (Light) and (Dark) to the site theme list. The main colour sets the base tones (panels, the menu, icons, handles and times) and the accent colour sets accents such as the Post button, links and hashtags; every other colour is derived from these two. The logo comes from the wordmarks (light/dark) on the <a href="%{branding_path}">Branding</a> tab.
+        hint_html: Adds Community (Light) and (Dark) to the site theme list. The main colour sets the base tones (panels, the menu, icons, handles and times) and the accent colour sets accents such as the Post button, links and hashtags; every other colour is derived from these two.
         images: Images
         item_hints:
           border: Borders of panels, the compose box and dividers
@@ -881,9 +882,12 @@ en:
           selected: Picked item
           text: Text
         lighter_main: Blank = lightened main colour
+        logos: Logos
+        logos_hint: 340×160px transparent PNG. The day logo sits on a light background so make it dark; the night logo sits on a dark background so make it light. The day logo is used by light themes (Community light, Mastodon light, Twitter light) and the night logo by dark themes.
         modes:
           dark: Dark theme
           light: Light theme
+        others: Other
         preview:
           bookmarks: Bookmarks
           chats: Chats
@@ -899,6 +903,8 @@ en:
           toot_2: Check the new notice
         same_as_light: Blank = same as light
         same_as_main: Blank = main colour
+        site_theme: Default theme when the community theme is off
+        site_theme_hint: While the community theme is on, the default theme (day/night) above is used.
         title: Community theme
       content_retention:
         danger_zone: Danger zone
@@ -935,6 +941,10 @@ en:
         authorized_fetch_hint: Requiring authentication from federated servers enables stricter enforcement of both user-level and server-level blocks. However, this comes at the cost of a performance penalty, reduces the reach of your replies, and may introduce compatibility issues with some federated services. In addition, this will not prevent dedicated actors from fetching your public posts and accounts.
         authorized_fetch_overridden_hint: You are currently unable to change this setting because it is overridden by an environment variable.
         federation_authentication: Federation authentication enforcement
+      tabs:
+        design: Design
+        info: Server info
+        operations: Operations
       title: Server settings
       uploads:
         default: Preview
@@ -959,6 +969,7 @@ en:
             name: Wordmark
             pc: 'Desktop web: the top left of the home screen.'
             where: The server's horizontal logo.
+        pending: Not saved yet
         sizes:
           app_icon: 1024×1024px
           community_theme_background: 1920×1080px or larger recommended

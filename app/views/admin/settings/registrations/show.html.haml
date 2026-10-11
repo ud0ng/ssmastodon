@@ -1,11 +1,13 @@
 - content_for :page_title do
-  = t('admin.settings.registrations.title')
+  = t('admin.settings.tabs.operations')
 
 - content_for :heading do
   = render partial: 'admin/settings/shared/heading'
 
 = simple_form_for @admin_settings, url: admin_settings_registrations_path, html: { id: 'edit_admin_settings', method: :patch } do |f|
   = render 'shared/error_messages', object: @admin_settings
+
+  %h4= t('admin.settings.registrations.title')
 
   .fields-row
     .fields-row__column.fields-row__column-6.fields-group
@@ -28,4 +30,52 @@
               as: :text,
               hint: false,
               input_html: { rows: 2 },
+              wrapper: :with_block_label
+
+  %h4= t('admin.settings.community.posting')
+
+  .fields-group
+    = f.input :status_max_characters,
+              input_html: { type: 'number', min: StatusLengthValidator::MAX_CHARS_RANGE.min, max: StatusLengthValidator::MAX_CHARS_RANGE.max },
+              wrapper: :with_block_label
+
+  %h4= t('admin.settings.community.search')
+
+  .fields-group
+    = f.input :status_search_enabled,
+              as: :boolean,
+              wrapper: :with_label
+
+  .fields-group
+    = f.input :status_search_scope,
+              collection: Form::AdminSettings::STATUS_SEARCH_SCOPES,
+              include_blank: false,
+              label_method: ->(scope) { I18n.t("admin.settings.community.search_scopes.#{scope}") },
+              wrapper: :with_label
+
+  %h4= t('admin.settings.discovery.title')
+
+  .fields-group
+    = f.input :timeline_preview,
+              as: :boolean,
+              hint: false,
+              wrapper: :with_label
+
+    = f.input :noindex,
+              as: :boolean,
+              hint: false,
+              label: t('admin.settings.default_noindex.title'),
+              wrapper: :with_label
+
+    = f.input :trends,
+              as: :boolean,
+              hint: false,
+              wrapper: :with_label
+
+  %h4= t('admin.settings.content_retention.title')
+
+  .fields-group
+    = f.input :backups_retention_period,
+              hint: false,
+              input_html: { pattern: '[0-9]+' },
               wrapper: :with_block_label

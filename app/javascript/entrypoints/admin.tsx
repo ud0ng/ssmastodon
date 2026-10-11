@@ -100,6 +100,35 @@ const showSiteUploadProblem = (
 };
 
 const setSiteUploadPreviews = (input: HTMLInputElement, url?: string) => {
+  const frame = input.closest<HTMLElement>('.image-picker__frame');
+
+  // 아직 아무 이미지도 없던 칸이면 미리보기 이미지를 새로 만든다 (안 그러면 고른 게 안 보인다)
+  if (
+    url &&
+    frame &&
+    !frame.querySelector(`img[data-upload-preview="${input.id}"]`)
+  ) {
+    const image = document.createElement('img');
+    image.className = 'image-picker__img';
+    image.alt = '';
+    image.dataset.uploadPreview = input.id;
+    image.dataset.created = 'true';
+    frame.prepend(image);
+  }
+
+  // 고른 파일은 저장해야 올라간다는 표시
+  if (!url)
+    frame
+      ?.querySelectorAll('img[data-created="true"]')
+      .forEach((image) => {
+        image.remove();
+      });
+  frame?.classList.toggle('image-picker__frame--pending', Boolean(url));
+  frame?.classList.toggle(
+    'image-picker__frame--empty',
+    !url && !frame.querySelector('img'),
+  );
+
   document
     .querySelectorAll<HTMLImageElement>(
       `img[data-upload-preview="${input.id}"]`,

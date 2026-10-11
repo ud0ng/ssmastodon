@@ -2843,3 +2843,31 @@ body .image-picker {
     }
   }
 }
+
+// 고른 이미지가 아직 저장 전일 때
+.image-picker__frame--pending {
+  outline: 2px dashed $highlight-text-color;
+  outline-offset: 2px;
+
+  &::before {
+    content: attr(data-pending-label);
+    position: absolute;
+    inset-inline-end: 4px;
+    top: 4px;
+    z-index: 3;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: $highlight-text-color;
+    color: $white;
+    font-size: 11px;
+    line-height: 16px;
+  }
+}
+
+.ct-preview__logo-img {
+  display: block;
+  max-width: 100%;
+  height: 16px;
+  object-fit: contain;
+  object-position: left center;
+}

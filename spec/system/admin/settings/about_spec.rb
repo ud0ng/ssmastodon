@@ -10,7 +10,7 @@ RSpec.describe 'Admin::Settings::About' do
   it 'Saves changes to about settings' do
     visit admin_settings_about_path
     expect(page)
-      .to have_title(I18n.t('admin.settings.about.title'))
+      .to have_title(I18n.t('admin.settings.tabs.info'))
 
     fill_in extended_description_field,
             with: 'new site description'

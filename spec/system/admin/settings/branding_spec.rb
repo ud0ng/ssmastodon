@@ -10,7 +10,7 @@ RSpec.describe 'Admin::Settings::Branding' do
   it 'Saves changes to branding settings' do
     visit admin_settings_branding_path
     expect(page)
-      .to have_title(I18n.t('admin.settings.branding.title'))
+      .to have_title(I18n.t('admin.settings.tabs.info'))
 
     fill_in short_description_field,
             with: 'new key value'

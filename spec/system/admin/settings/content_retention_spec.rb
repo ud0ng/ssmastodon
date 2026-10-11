@@ -10,7 +10,7 @@ RSpec.describe 'Admin::Settings::ContentRetention' do
   it 'Saves changes to content retention settings' do
     visit admin_settings_content_retention_path
     expect(page)
-      .to have_title(I18n.t('admin.settings.content_retention.title'))
+      .to have_title(I18n.t('admin.settings.tabs.operations'))
 
     fill_in backups_retention_period_field,
             with: '2'
