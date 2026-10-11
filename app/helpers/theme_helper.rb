@@ -54,14 +54,18 @@ module ThemeHelper
     Setting.community_theme_enabled
   end
 
+  def community_theme_active?(theme)
+    community_theme_enabled? && Themes.instance.community?(theme)
+  end
+
   # 커뮤니티 테마 (서버 설정 > 커뮤니티 옵션 > 테마)
   # 낮/밤 메인색(큰 박스·메뉴·비활성 색)과 서브색(포인트 버튼·링크), 배경 이미지를 CSS 변수로 넣고,
   # 그 변수를 쓰는 테마 스타일시트를 붙인다. 빈 칸은 이렇게 채운다.
   #   낮 서브색 ← 낮 메인색
   #   밤 메인색 ← 낮 메인색
   #   밤 서브색 ← 밤 메인색(없으면 낮 서브색)을 밝게 한 색 (어두운 박스 위에서 보이도록)
-  def community_theme_tags
-    return unless community_theme_enabled?
+  def community_theme_tags(theme)
+    return unless community_theme_active?(theme)
 
     colors = community_theme_colors
     declarations = colors.flat_map do |mode, (main, point)|
@@ -160,6 +164,6 @@ module ThemeHelper
   end
 
   def theme_color_for(theme)
-    theme == 'mastodon-light' ? Themes::THEME_COLORS[:light] : Themes::THEME_COLORS[:dark]
+    %w(mastodon-light community-light).include?(theme) ? Themes::THEME_COLORS[:light] : Themes::THEME_COLORS[:dark]
   end
 end

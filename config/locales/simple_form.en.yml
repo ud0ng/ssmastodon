@@ -72,7 +72,8 @@ en:
         backups_retention_period: Users have the ability to generate archives of their posts to download later. When set to a positive value, these archives will be automatically deleted from your storage after the specified number of days.
         bootstrap_timeline_accounts: These accounts will be pinned to the top of new users' follow recommendations.
         closed_registrations_message: Displayed when sign-ups are closed
-        community_theme_enabled: Turn off to go back to the default theme.
+        community_theme_default: Theme for people who have not picked one (including new sign-ups) and for logged-out visitors.
+        community_theme_enabled: Adds Community (Light) and (Dark) to the site theme list. Turning it off removes them, and people using them see Twitter (Light) or (Dark) instead.
         community_theme_main_dark: Dark-mode colour for large panels, the menu, icons and handles/times. Leave blank to use the light main colour.
         community_theme_main_light: 'Light-mode colour for large panels, the menu, icons and handles/times. Panels get a hint of it; inactive elements such as icons use a pale shade that deepens on hover. (e.g. #4a5390)'
         community_theme_point_dark: Dark-mode colour for accent buttons and links. Leave blank to use a lightened dark main colour (or light accent colour).
@@ -258,6 +259,7 @@ en:
         closed_registrations_message: Custom message when sign-ups are not available
         community_theme_background_dark: Dark background
         community_theme_background_light: Light background
+        community_theme_default: Default theme
         community_theme_enabled: Use the community theme
         community_theme_main_dark: Dark main colour
         community_theme_main_light: Light main colour

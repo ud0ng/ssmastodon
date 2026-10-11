@@ -167,7 +167,13 @@ RSpec.describe ThemeHelper do
       before { Setting.community_theme_enabled = false }
 
       it 'emits nothing' do
-        expect(helper.community_theme_tags).to be_nil
+        expect(helper.community_theme_tags('community-light')).to be_nil
+      end
+    end
+
+    context 'when the user picked another theme' do
+      it 'emits nothing' do
+        expect(helper.community_theme_tags('mastodon-bird-ui-light')).to be_nil
       end
     end
 
@@ -175,7 +181,7 @@ RSpec.describe ThemeHelper do
       before { Setting.community_theme_main_light = '#3F4479' }
 
       it 'reuses it everywhere and lightens the dark accent' do
-        expect(helper.community_theme_tags)
+        expect(helper.community_theme_tags('community-light'))
           .to include('--community-theme-main-light:#3f4479;')
           .and include('--community-theme-point-light:#3f4479;')
           .and include('--community-theme-main-dark:#3f4479;')
@@ -196,7 +202,7 @@ RSpec.describe ThemeHelper do
       end
 
       it 'uses each colour as given, with dark text on the bright accent' do
-        expect(helper.community_theme_tags)
+        expect(helper.community_theme_tags('community-light'))
           .to include('--community-theme-main-dark:#2b5f78;')
           .and include('--community-theme-point-light:#c0392b;')
           .and include('--community-theme-point-dark:#f5c518;')
@@ -213,7 +219,7 @@ RSpec.describe ThemeHelper do
       end
 
       it 'lightens the dark main colour for the dark accent' do
-        expect(helper.community_theme_tags).to include('--community-theme-point-dark:#4c9abf;')
+        expect(helper.community_theme_tags('community-light')).to include('--community-theme-point-dark:#4c9abf;')
       end
     end
 
@@ -221,7 +227,7 @@ RSpec.describe ThemeHelper do
       before { Setting.community_theme_main_light = 'red;}body{' }
 
       it 'falls back to the default colour' do
-        expect(helper.community_theme_tags)
+        expect(helper.community_theme_tags('community-light'))
           .to include("--community-theme-main-light:#{ThemeHelper::COMMUNITY_THEME_DEFAULT_COLOR};")
           .and not_include('body{')
       end

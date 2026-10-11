@@ -146,8 +146,8 @@ module ApplicationHelper
     output = []
     output << content_for(:body_classes)
     output << "theme-#{current_theme.parameterize}"
-    output << 'community-theme' if community_theme_enabled?
-    output << 'community-theme--post-main' if community_theme_enabled? && Setting.community_theme_post_button_main
+    output << 'community-theme' if community_theme_active?(current_theme)
+    output << 'community-theme--post-main' if community_theme_active?(current_theme) && Setting.community_theme_post_button_main
     output << 'system-font' if current_account&.user&.setting_system_font_ui
     output << 'custom-scrollbars' unless current_account&.user&.setting_system_scrollbars_ui
     output << (current_account&.user&.setting_reduce_motion ? 'reduce-motion' : 'no-reduce-motion')

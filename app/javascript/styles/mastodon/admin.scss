@@ -2432,3 +2432,26 @@ body .image-picker {
     display: block;
   }
 }
+
+// 커뮤니티 옵션: 색 코드 칸 + 색 고르기 버튼
+.simple_form .label_input__wrapper--color {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+
+  input[type='text'] {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .color-picker {
+    flex: 0 0 44px;
+    width: 44px;
+    min-height: 36px;
+    padding: 2px;
+    border: 1px solid var(--color-border-primary, rgba(128, 128, 128, 40%));
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+  }
+}

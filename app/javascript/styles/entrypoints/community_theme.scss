@@ -58,18 +58,12 @@
   --ct-raised-alpha: 86%;
 }
 
+// 사이트 테마 목록의 커뮤니티 테마 (낮) / (밤)
 body.community-theme:not(.admin) {
-  @include community-theme-dark;
+  @include community-theme-light;
 
-  &.theme-mastodon-light,
-  &.theme-mastodon-bird-ui-light {
-    @include community-theme-light;
-  }
-
-  @media (prefers-color-scheme: light) {
-    &.theme-system {
-      @include community-theme-light;
-    }
+  &.theme-community-dark {
+    @include community-theme-dark;
   }
 }
 

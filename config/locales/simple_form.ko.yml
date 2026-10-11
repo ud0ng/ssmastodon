@@ -71,7 +71,8 @@ ko:
         backups_retention_period: 사용자들은 나중에 다운로드하기 위해 게시물 아카이브를 생성할 수 있습니다. 양수로 설정된 경우 이 아카이브들은 지정된 일수가 지난 후에 저장소에서 자동으로 삭제될 것입니다.
         bootstrap_timeline_accounts: 이 계정들은 팔로우 추천 목록 상단에 고정됩니다.
         closed_registrations_message: 새 가입을 차단했을 때 표시됩니다
-        community_theme_enabled: 끄면 기본 테마로 돌아갑니다.
+        community_theme_default: 테마를 따로 고르지 않은 사람(새로 가입한 사람 포함)과 로그인하지 않은 방문자에게 보이는 테마입니다.
+        community_theme_enabled: 켜면 사이트 테마 목록에 커뮤니티 테마 (낮)·(밤)이 생깁니다. 끄면 목록에서 사라지고, 쓰던 사람은 유사 트위터 (밝음)·(어두움)으로 보입니다.
         community_theme_main_dark: 밤의 큰 박스·메뉴·아이콘·아이디/시간 색입니다. 비워두면 낮 메인색을 씁니다.
         community_theme_main_light: '낮의 큰 박스·메뉴·아이콘·아이디/시간 색입니다. 박스는 흰색에 살짝, 아이콘 같은 비활성 색은 연하게(호버하면 진하게) 들어갑니다. (예: #4a5390)'
         community_theme_point_dark: 밤의 포인트 버튼·링크 색입니다. 비워두면 밤 메인색(없으면 낮 서브색)을 밝게 해서 씁니다.
@@ -252,6 +253,7 @@ ko:
         closed_registrations_message: 가입이 불가능 할 때의 사용자 지정 메시지
         community_theme_background_dark: 밤 배경
         community_theme_background_light: 낮 배경
+        community_theme_default: 기본 테마
         community_theme_enabled: 커뮤니티 테마 사용
         community_theme_main_dark: 밤 메인색
         community_theme_main_light: 낮 메인색

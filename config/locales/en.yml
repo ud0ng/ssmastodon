@@ -1962,8 +1962,8 @@ en:
     mastodon-light: Mastodon (Light)
     mastodon-bird-ui-light: Twitter (Light)
     mastodon-bird-ui-dark: Twitter (Dark)
-    # theme-ui-light: Custom (Light)
-    # theme-ui-dark: Custom (Dark)
+    community-dark: Community (Dark)
+    community-light: Community (Light)
   time:
     formats:
       default: "%b %d, %Y, %H:%M"

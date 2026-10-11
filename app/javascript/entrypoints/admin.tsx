@@ -383,7 +383,38 @@ async function mountReactComponent(element: Element) {
   );
 }
 
+// 색 코드 칸 옆에 색 고르기(스포이드 포함) 버튼을 붙인다.
+// data-color-picker 는 칸을 비워 뒀을 때 실제로 쓰이는 색.
+const COLOR_CODE = /^#[0-9a-f]{6}$/i;
+
+const attachColorPicker = (text: HTMLInputElement) => {
+  const picker = document.createElement('input');
+  picker.type = 'color';
+  picker.className = 'color-picker';
+  picker.title = text.placeholder;
+
+  const showTextColor = () => {
+    const value = text.value.trim();
+    picker.value = (
+      COLOR_CODE.test(value) ? value : (text.dataset.colorPicker ?? '#000000')
+    ).toLowerCase();
+  };
+
+  picker.addEventListener('input', () => {
+    text.value = picker.value;
+  });
+  text.addEventListener('input', showTextColor);
+
+  showTextColor();
+  text.after(picker);
+  text.parentElement?.classList.add('label_input__wrapper--color');
+};
+
 ready(() => {
+  document
+    .querySelectorAll<HTMLInputElement>('input[data-color-picker]')
+    .forEach(attachColorPicker);
+
   const domainBlockSeveritySelect = document.querySelector<HTMLSelectElement>(
     'select#domain_block_severity',
   );

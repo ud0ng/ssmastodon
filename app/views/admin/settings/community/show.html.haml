@@ -36,26 +36,34 @@
               as: :boolean,
               wrapper: :with_label
 
+  .fields-group
+    = f.input :community_theme_default,
+              collection: Themes::COMMUNITY_THEME_MODES,
+              include_blank: false,
+              label_method: ->(mode) { I18n.t("themes.community-#{mode}") },
+              wrapper: :with_label
+
   - color_input = { pattern: '#[0-9a-fA-F]{6}', maxlength: 7 }
+  - (light_main, light_point), (dark_main, dark_point) = community_theme_colors.values_at(:light, :dark)
 
   .fields-row
     .fields-row__column.fields-row__column-6.fields-group
       = f.input :community_theme_main_light,
-                input_html: color_input.merge(placeholder: ThemeHelper::COMMUNITY_THEME_DEFAULT_COLOR),
+                input_html: color_input.merge(placeholder: ThemeHelper::COMMUNITY_THEME_DEFAULT_COLOR, data: { color_picker: light_main }),
                 wrapper: :with_label
     .fields-row__column.fields-row__column-6.fields-group
       = f.input :community_theme_point_light,
-                input_html: color_input.merge(placeholder: t('admin.settings.community.same_as_main')),
+                input_html: color_input.merge(placeholder: t('admin.settings.community.same_as_main'), data: { color_picker: light_point }),
                 wrapper: :with_label
 
   .fields-row
     .fields-row__column.fields-row__column-6.fields-group
       = f.input :community_theme_main_dark,
-                input_html: color_input.merge(placeholder: t('admin.settings.community.same_as_light')),
+                input_html: color_input.merge(placeholder: t('admin.settings.community.same_as_light'), data: { color_picker: dark_main }),
                 wrapper: :with_label
     .fields-row__column.fields-row__column-6.fields-group
       = f.input :community_theme_point_dark,
-                input_html: color_input.merge(placeholder: t('admin.settings.community.lighter_main')),
+                input_html: color_input.merge(placeholder: t('admin.settings.community.lighter_main'), data: { color_picker: dark_point }),
                 wrapper: :with_label
 
   .fields-group

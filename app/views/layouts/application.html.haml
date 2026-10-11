@@ -37,7 +37,7 @@
     %meta{ name: 'style-nonce', content: request.content_security_policy_nonce }
 
     = custom_wordmark_tag
-    = community_theme_tags
+    = community_theme_tags current_theme
     = custom_stylesheet
 
     = yield :header_tags

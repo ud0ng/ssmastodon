@@ -51,6 +51,7 @@ class Form::AdminSettings
     community_theme_main_dark
     community_theme_point_dark
     community_theme_post_button_main
+    community_theme_default
     community_theme_background_light
     community_theme_background_dark
   ).freeze
@@ -116,6 +117,7 @@ class Form::AdminSettings
   validates :min_age, numericality: { only_integer: true }, allow_blank: true, if: -> { defined?(@min_age) }
   validates :status_max_characters, numericality: { only_integer: true, in: StatusLengthValidator::MAX_CHARS_RANGE }, if: -> { defined?(@status_max_characters) }
   validates :status_search_scope, inclusion: { in: STATUS_SEARCH_SCOPES }, if: -> { defined?(@status_search_scope) }
+  validates :community_theme_default, inclusion: { in: Themes::COMMUNITY_THEME_MODES }, if: -> { defined?(@community_theme_default) }
   validates :community_theme_main_light, :community_theme_point_light, :community_theme_main_dark, :community_theme_point_dark, format: { with: COMMUNITY_THEME_COLOR_FORMAT }, allow_blank: true
   validates :site_short_description, length: { maximum: DESCRIPTION_LIMIT }, if: -> { defined?(@site_short_description) }
   validates :status_page_url, url: true, allow_blank: true

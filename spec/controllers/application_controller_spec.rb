@@ -93,18 +93,27 @@ RSpec.describe ApplicationController do
     end
 
     it 'returns instances\'s theme when user is not signed in' do
-      allow(Setting).to receive(:[]).with('theme').and_return 'contrast'
+      Setting.theme = 'mastodon-bird-ui-dark'
 
-      expect(controller.view_context.current_theme).to eq 'contrast'
+      expect(controller.view_context.current_theme).to eq 'mastodon-bird-ui-dark'
     end
 
     it 'returns instances\'s default theme when user didn\'t set theme' do
       current_user = Fabricate(:user)
-      current_user.settings.update(theme: 'contrast', noindex: false)
+      Setting.theme = 'mastodon-bird-ui-dark'
+      current_user.settings.update(noindex: false)
       current_user.save
       sign_in current_user
 
-      expect(controller.view_context.current_theme).to eq 'contrast'
+      expect(controller.view_context.current_theme).to eq 'mastodon-bird-ui-dark'
+    end
+
+    it 'returns the community default theme when the community theme is on' do
+      Setting.community_theme_enabled = true
+      Setting.community_theme_default = 'dark'
+      sign_in Fabricate(:user)
+
+      expect(controller.view_context.current_theme).to eq 'community-dark'
     end
 
     it 'returns user\'s theme when it is set' do
