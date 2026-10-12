@@ -13,7 +13,8 @@
 //     box-opacity                      박스 불투명도 (%)
 //   --community-theme-background-{light,dark} 낮/밤 배경 이미지 (없으면 바깥 배경색)
 //
-// 관리자·환경설정 화면에는 적용하지 않는다.
+// 관리자·환경설정 화면(body.admin)은 Bird UI 변수를 쓰지 않아서 아래쪽에 따로 칠한다.
+// 파란색(버튼·고른 탭·링크)은 postcss-community-theme 이 --ct-point 로 바꿔 두어 저절로 서브색이 된다.
 
 @mixin community-theme-light {
   --ct-main: var(--community-theme-main-light);
@@ -83,8 +84,8 @@
   --ct-shade: #000;
 }
 
-// 사이트 테마 목록의 커뮤니티 테마 (낮) / (밤)
-body.community-theme:not(.admin) {
+// 사이트 테마 목록의 커뮤니티 테마 (낮) / (밤). 관리자·환경설정 화면(body.admin)도 같은 색을 쓴다.
+body.community-theme {
   @include community-theme-light;
 
   &.theme-community-dark {
@@ -291,3 +292,234 @@ body.community-theme:not(.admin) {
   }
 }
 
+
+// 관리자·환경설정 화면 (body.admin). 색이 SCSS 에 박혀 있는 곳이 많아 하나씩 덮어쓴다.
+body.community-theme.admin {
+  --ct-panel: color-mix(in srgb, var(--ct-base) var(--ct-panel-alpha), transparent);
+
+  --background-color: var(--ct-base);
+  --background-border-color: var(--ct-line);
+  --surface-background-color: var(--ct-raised);
+  --surface-variant-background-color: var(--ct-soft);
+  --surface-variant-active-background-color: var(--ct-hover);
+  --dropdown-background-color: var(--ct-base);
+  --dropdown-border-color: var(--ct-line);
+  --input-background-color: var(--ct-raised);
+  --input-placeholder-color: var(--ct-dim);
+  --on-input-color: var(--ct-text);
+  --color-border: var(--ct-line);
+  --color-dim: var(--ct-dim);
+
+  background: var(--ct-background-image) center / cover no-repeat fixed, var(--ct-page);
+  color: var(--ct-text);
+
+  // 메인 화면처럼 왼쪽 메뉴는 배경(이미지) 위에 바로, 가운데 내용만 반투명 박스.
+  // 좁은 화면에서 접히는 메뉴는 내용 위에 펼쳐지니 박스 색을 깐다.
+  .admin-wrapper .sidebar-wrapper__inner,
+  .admin-wrapper .sidebar ul ul {
+    background: transparent;
+  }
+
+  .admin-wrapper .sidebar__toggle {
+    background: var(--ct-panel);
+  }
+
+  @media screen and (max-width: 890px) {
+    .admin-wrapper .sidebar-wrapper__inner {
+      background: var(--ct-panel);
+    }
+  }
+
+  .admin-wrapper .content-wrapper {
+    background: var(--ct-panel);
+  }
+
+  // 왼쪽 메뉴: 기본 홈 메뉴(.navigation-panel .column-link)처럼 큰 글자·아이콘, 호버는 글자색만,
+  // 지금 연 메뉴는 굵게 (서브색이 아니다)
+  .admin-wrapper .sidebar ul a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px 16px 12px;
+    font-size: 18px;
+    line-height: 18px;
+    color: var(--ct-nav);
+
+    .icon {
+      flex: 0 0 auto;
+      width: 22px;
+      height: 22px;
+      margin: 0;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: transparent;
+      color: var(--ct-nav-hover);
+    }
+  }
+
+  // 하위 메뉴는 조금 작게, 위 메뉴 글자 위치에 맞춰 들여 쓴다
+  .admin-wrapper .sidebar ul ul a {
+    padding: 12px 18px 12px 46px;
+    font-size: 16px;
+
+    .icon {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .admin-wrapper .sidebar ul .simple-navigation-active-leaf a {
+    color: var(--ct-nav);
+    font-weight: 700;
+  }
+
+  .admin-wrapper .sidebar__toggle__icon {
+    color: var(--ct-nav);
+  }
+
+  // 드롭다운 목록 (mastodon/admin/community_select.ts 가 띄운다). 사용자 화면 검색창 드롭다운처럼.
+  .ct-select-popout {
+    position: absolute;
+    z-index: 9999;
+    box-sizing: border-box;
+    max-width: min(480px, calc(100vw - 16px));
+    max-height: min(360px, 60vh);
+    overflow-y: auto;
+    padding: 15px 5px;
+    background: var(--ct-base);
+    border: 1px solid var(--ct-line);
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 15%);
+    color: var(--ct-text);
+    font-size: 13px;
+
+    h4 {
+      padding: 0 10px;
+      margin: 12px 0 6px;
+      color: var(--ct-dim);
+      font-size: 13px;
+      font-weight: 500;
+
+      &:first-child {
+        margin-top: 0;
+      }
+    }
+
+    &__item {
+      padding: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      outline: 0;
+
+      // 검색창 드롭다운처럼 마우스를 올리거나 키보드로 옮긴 항목은 고른 항목 색
+      &:hover,
+      &:focus {
+        background: var(--ct-soft);
+        color: var(--ct-text);
+      }
+
+      &[aria-selected='true'] {
+        font-weight: 700;
+      }
+
+      &[aria-disabled='true'] {
+        color: var(--ct-dim);
+        cursor: default;
+        background: transparent;
+      }
+    }
+  }
+
+  // 제목·본문 글자
+  .admin-wrapper .content {
+    h2,
+    h3,
+    h6,
+    .fields-group h6 {
+      color: var(--ct-text);
+    }
+
+    h4,
+    .content__heading h2 small {
+      color: var(--ct-dim);
+    }
+  }
+
+  .admin-wrapper .content__heading__tabs a {
+    color: var(--ct-nav);
+
+    &:hover,
+    &:focus,
+    &:active {
+      background: var(--ct-hover);
+    }
+
+    &.selected {
+      color: var(--ct-on-point);
+      background: var(--ct-point);
+    }
+  }
+
+  // 입력칸
+  .simple_form {
+    label,
+    .input.boolean .label_input > label,
+    .check_boxes label,
+    .input.radio_buttons .radio > label,
+    .fields-group h6 {
+      color: var(--ct-text);
+    }
+
+    .hint,
+    .input .hint,
+    p.hint {
+      color: var(--ct-dim);
+    }
+
+    input[type='text'],
+    input[type='number'],
+    input[type='email'],
+    input[type='password'],
+    input[type='url'],
+    input[type='datetime-local'],
+    textarea,
+    select {
+      background-color: var(--ct-raised);
+      border-color: var(--ct-line);
+      color: var(--ct-text);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: var(--ct-dim);
+    }
+  }
+
+  // 표
+  .table {
+    th,
+    td {
+      color: var(--ct-text);
+      border-color: var(--ct-line);
+    }
+
+    & > thead > tr > th {
+      color: var(--ct-dim);
+    }
+  }
+
+  // 일반 글자·링크
+  .admin-wrapper .content {
+    color: var(--ct-text);
+
+    .muted-hint,
+    .dim {
+      color: var(--ct-dim);
+    }
+  }
+}

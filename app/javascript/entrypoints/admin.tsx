@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 
 import Rails from '@rails/ujs';
 
+import { setupCommunitySelect } from '../mastodon/admin/community_select';
 import { setupCommunityThemeEditor } from '../mastodon/admin/community_theme_editor';
 import ready from '../mastodon/ready';
 
@@ -454,6 +455,7 @@ ready(() => {
     .querySelectorAll<HTMLInputElement>('input[data-color-picker]')
     .forEach(attachColorPicker);
   setupCommunityThemeEditor();
+  setupCommunitySelect();
 
   const domainBlockSeveritySelect = document.querySelector<HTMLSelectElement>(
     'select#domain_block_severity',

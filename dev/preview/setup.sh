@@ -15,9 +15,17 @@ cd "$HERE"
 compose() { docker compose -f "$HERE/docker-compose.yml" "$@"; }
 
 build() {
+  # OneDrive 폴더의 파일은 Docker 가 못 읽을 때가 있어서("invalid file request"),
+  # git 이 아는 파일(고치는 중인 것 포함)만 OneDrive 밖 폴더에 복사해서 빌드한다.
+  local ctx="${LOCALAPPDATA:-${TMPDIR:-/tmp}}/ssmastodon-build"
+  echo "== 빌드용 복사본: $ctx =="
+  rm -rf "$ctx" && mkdir -p "$ctx"
+  git -C "$ROOT" ls-files -co --exclude-standard -z |
+    tar -C "$ROOT" --null --ignore-failed-read -T - -cf - | tar -C "$ctx" -xf -
+
   echo '== 이미지 빌드 (몇 분 걸림) =='
-  docker build -t ssmastodon:local "$ROOT"
-  docker build -f "$ROOT/streaming/Dockerfile" -t ssmastodon-streaming:local "$ROOT"
+  docker build -t ssmastodon:local "$ctx"
+  docker build -f "$ctx/streaming/Dockerfile" -t ssmastodon-streaming:local "$ctx"
 }
 
 wait_web() {
