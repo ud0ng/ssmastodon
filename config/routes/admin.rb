@@ -75,7 +75,11 @@ namespace :admin do
   # 자동봇 시트 (관리 > 시트 설정)
   resource :bot_sheet_connection, path: 'sheets/connection', only: [:show, :update], controller: 'bot_sheets/connections'
   resources :bot_sheets, path: 'sheets', only: [:index, :show, :update], constraints: { id: /main|reservation|story|investigation/ } do
-    post :rows, on: :member, action: :append
+    member do
+      post :rows, action: :append
+      patch :rows, action: :update_row
+      delete :rows, action: :destroy_row
+    end
   end
 
   resources :site_uploads, only: [:destroy]

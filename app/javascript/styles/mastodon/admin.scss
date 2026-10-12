@@ -3021,6 +3021,61 @@ body .image-picker {
   white-space: pre-wrap;
 }
 
+// 표 줄마다 고치기·지우기 버튼, 고치는 줄의 입력칸
+.bot-sheet-table {
+  &__actions {
+    width: 1%;
+    min-width: 0 !important;
+    white-space: nowrap;
+    text-align: end;
+    vertical-align: middle;
+
+    .icon-button,
+    .bot-sheet-table__delete {
+      display: inline-flex;
+      vertical-align: middle;
+    }
+
+    .icon-button {
+      padding: 4px;
+      border: 0;
+      background: transparent;
+      color: $darker-text-color;
+      cursor: pointer;
+
+      .icon {
+        width: 18px;
+        height: 18px;
+      }
+
+      &:hover,
+      &:focus-visible {
+        color: $primary-text-color;
+      }
+    }
+  }
+
+  &__input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 80px;
+    padding: 6px 8px;
+    border: 1px solid var(--background-border-color);
+    border-radius: 4px;
+    background: var(--input-background-color, transparent);
+    color: inherit;
+    font: inherit;
+  }
+
+  &__editing td {
+    background: var(--surface-variant-background-color, transparent);
+  }
+
+  &__locked {
+    opacity: 0.6;
+  }
+}
+
 .bot-sheet-add-row {
   margin-top: 30px;
 }
@@ -3038,9 +3093,13 @@ body .image-picker {
     td {
       min-width: 60px;
       max-width: 360px;
-      white-space: pre-wrap;
       overflow-wrap: anywhere;
-      vertical-align: top;
+      vertical-align: middle;
+    }
+
+    // 시트 칸 안의 줄바꿈은 그대로 (버튼·입력칸이 든 칸은 제외)
+    td.bot-sheet-table__text {
+      white-space: pre-wrap;
     }
   }
 }

@@ -4,7 +4,7 @@ module Admin
   # 관리 > 시트 설정: 자동봇이 쓰는 구글 시트를 보고, 기본 시트의 설정 워크시트를 고친다.
   # (Admin::BotSheets 모듈과 헷갈리지 않게 시트 클래스는 ::BotSheets 로 부른다)
   class BotSheetsController < BaseController
-    before_action :set_bot_sheet, only: [:show, :update, :append]
+    before_action :set_bot_sheet, only: [:show, :update, :append, :update_row, :destroy_row]
 
     def index
       authorize :settings, :show?
@@ -25,6 +25,8 @@ module Admin
       elsif @worksheet
         @table = @bot_sheet.table(@worksheet)
         @rows = @bot_sheet.rows(@worksheet) if @table.nil?
+        @editing = @table&.rows&.find { |row| row.number == params[:edit].to_i }
+        @editing_formulas = @editing ? @bot_sheet.formula_columns(@worksheet, @editing.number) : []
       end
     rescue ::BotSheets::Error => e
       @error = e
@@ -62,7 +64,41 @@ module Admin
       redirect_to admin_bot_sheet_path(@bot_sheet.sheet, worksheet: worksheet)
     end
 
+    # 표의 한 줄 고치기 (row: 시트 행 번호, original[]: 고치기 전에 본 값, cells[]: 새 값)
+    def update_row
+      authorize :settings, :update?
+
+      with_row do |worksheet, number, original|
+        count = @bot_sheet.update_row(worksheet, number, original, Array(params[:cells]).map(&:to_s))
+        count.zero? ? t('admin.bot_sheets.nothing_changed') : t('admin.bot_sheets.rows.updated', count: count)
+      end
+    end
+
+    # 표의 한 줄 지우기
+    def destroy_row
+      authorize :settings, :update?
+
+      with_row do |worksheet, number, original|
+        @bot_sheet.delete_row(worksheet, number, original)
+        t('admin.bot_sheets.rows.deleted')
+      end
+    end
+
     private
+
+    def with_row
+      worksheet = params[:worksheet].to_s
+      raise ActionController::BadRequest unless @bot_sheet.worksheets.include?(worksheet)
+
+      flash[:notice] = yield worksheet, params[:row].to_i, Array(params[:original]).map(&:to_s)
+    rescue ::BotSheets::Conflict
+      flash[:alert] = t('admin.bot_sheets.rows.conflict')
+    rescue ::BotSheets::Error => e
+      flash[:alert] = t('admin.bot_sheets.errors.save_failed', message: e.message)
+    ensure
+      redirect_to admin_bot_sheet_path(@bot_sheet.sheet, worksheet: worksheet) unless performed?
+    end
+
 
     def set_bot_sheet
       @bot_sheet = ::BotSheets.new(params[:id])

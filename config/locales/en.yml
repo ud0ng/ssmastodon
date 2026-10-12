@@ -47,6 +47,12 @@ en:
       rows:
         add: Add row
         added: Added a row at the bottom of the sheet.
+        conflict: Nothing was done because this row changed or moved in the sheet meanwhile. Check the table again.
+        delete: Delete row
+        delete_confirm: Delete this row from the Google Sheet? This cannot be undone.
+        deleted: Row deleted.
+        edit: Edit row
+        updated: Updated %{count} cell(s).
         empty: Nothing to add.
         title: Add a row
       saved: Saved %{count} item(s) to the sheet. The bot picks them up within a minute.

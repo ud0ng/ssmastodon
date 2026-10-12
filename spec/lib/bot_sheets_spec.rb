@@ -77,12 +77,30 @@ RSpec.describe BotSheets do
       table = bot_sheet.table('명단')
       expect(table.notes).to eq ['안내 문구']
       expect(table.header).to eq ['이름', '아이디', '', '메모']
-      expect(table.rows).to eq [['엘레나', 'elena', '', '']]
+      expect(table.rows.map(&:cells)).to eq [['엘레나', 'elena', '', '']]
+      expect(table.rows.map(&:number)).to eq [3]
     end
 
     it 'appends a row in header order, leaving blank header columns empty' do
       expect(bot_sheet.append_row('명단', %w(카일 kyle 무시 메모))).to be true
-      expect(bot_sheet.table('명단').rows.last).to eq ['카일', 'kyle', '', '메모']
+      expect(bot_sheet.table('명단').rows.last.cells).to eq ['카일', 'kyle', '', '메모']
+    end
+
+    it 'updates only the changed cells of a row' do
+      expect(bot_sheet.update_row('명단', 3, ['엘레나', 'elena', '', ''], ['엘레나', 'elena', '무시', '새 메모'])).to eq 1
+      expect(bot_sheet.table('명단').rows.first.cells).to eq ['엘레나', 'elena', '', '새 메모']
+    end
+
+    it 'deletes a row' do
+      bot_sheet.append_row('명단', %w(카일 kyle))
+      bot_sheet.delete_row('명단', 3, ['엘레나', 'elena'])
+      expect(bot_sheet.table('명단').rows.map { |row| row.cells.first }).to eq ['카일']
+    end
+
+    it 'refuses to edit or delete a row that changed or moved meanwhile' do
+      expect { bot_sheet.update_row('명단', 3, %w(다른사람 other), %w(x y)) }.to raise_error(BotSheets::Conflict)
+      expect { bot_sheet.delete_row('명단', 4, %w(엘레나 elena)) }.to raise_error(BotSheets::Conflict)
+      expect(bot_sheet.table('명단').rows.first.cells.first).to eq '엘레나'
     end
 
     it 'does not append an empty row' do

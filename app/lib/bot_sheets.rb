@@ -40,11 +40,14 @@ class BotSheets
     end
   end
 
+  # rows: TableRow (number 는 시트의 행 번호)
   Table = Struct.new(:notes, :header_row, :header, :rows, keyword_init: true) do
     def width
-      ([header] + rows).map(&:size).max.to_i
+      ([header] + rows.map(&:cells)).map(&:size).max.to_i
     end
   end
+
+  TableRow = Struct.new(:number, :cells)
 
   class Error < StandardError; end
 
@@ -113,8 +116,36 @@ class BotSheets
       notes: rows.first(index).flatten.map(&:strip).compact_blank,
       header_row: index + 1,
       header: rows[index],
-      rows: rows.drop(index + 1).reject { |row| row.all?(&:blank?) }
+      rows: rows.each_with_index.drop(index + 1).filter_map { |row, row_index| TableRow.new(row_index + 1, row) unless row.all?(&:blank?) }
     )
+  end
+
+  # 수식이 들어 있는 칸 (열 번호 0부터) — 줄을 고칠 때 덮어쓰지 않게
+  def formula_columns(worksheet, number)
+    row = @backend.formulas(@sheet, @id, worksheet)[number - 1].to_a
+    row.each_index.select { |index| row[index].to_s.start_with?('=') }
+  end
+
+  # 표의 한 줄을 고친다. original: 고치기 시작할 때 본 그 줄 (그사이 바뀌었거나 줄이 밀렸으면 Conflict)
+  def update_row(worksheet, number, original, values)
+    header = verified_row(worksheet, number, original)
+    formulas = formula_columns(worksheet, number)
+    cells = header.each_index.filter_map do |index|
+      next if header[index].to_s.strip.empty? || formulas.include?(index)
+
+      value = values[index].to_s
+      [[number, index + 1], value] if value != original[index].to_s
+    end
+    return 0 if cells.empty?
+
+    @backend.update_cells(@sheet, @id, worksheet, cells.to_h)
+    cells.size
+  end
+
+  # 표의 한 줄을 지운다 (아래 줄이 올라온다)
+  def delete_row(worksheet, number, original)
+    verified_row(worksheet, number, original)
+    @backend.delete_row(@sheet, @id, worksheet, number)
   end
 
   # 표 맨 아래에 한 줄 더한다. values: 헤더 순서대로 (빈 헤더 칸은 비워 둔다)
@@ -179,6 +210,22 @@ class BotSheets
 
   private
 
+  # 시트의 number 번째 줄이 original 과 같은지 확인하고 헤더를 돌려준다
+  def verified_row(worksheet, number, original)
+    table = table(worksheet)
+    raise Error, worksheet if table.nil?
+
+    row = table.rows.find { |table_row| table_row.number == number }
+    raise Conflict, [worksheet] if row.nil? || !same_cells?(row.cells, original)
+
+    table.header
+  end
+
+  def same_cells?(cells, original)
+    width = [cells.size, original.size].max
+    Array.new(width) { |index| cells[index].to_s } == Array.new(width) { |index| original[index].to_s }
+  end
+
   def find_header(rows)
     rows.first(HEADER_SEARCH_ROWS).each_with_index do |row, index|
       cleaned = row.map { |cell| cell.to_s.strip }
@@ -216,6 +263,16 @@ class BotSheets
       request(:post, "#{API}/#{id}/values/#{ERB::Util.url_encode("#{quote(worksheet)}!A1")}:append",
               params: { valueInputOption: 'USER_ENTERED', insertDataOption: 'INSERT_ROWS' },
               json: { values: [row] })
+    end
+
+    def delete_row(_sheet, id, worksheet, number)
+      sheet_id = get("#{API}/#{id}", fields: 'sheets.properties(sheetId,title)')['sheets'].to_a
+                 .find { |sheet| sheet.dig('properties', 'title') == worksheet }&.dig('properties', 'sheetId')
+      raise AccessError, worksheet if sheet_id.nil?
+
+      request(:post, "#{API}/#{id}:batchUpdate", json: {
+        requests: [{ deleteDimension: { range: { sheetId: sheet_id, dimension: 'ROWS', startIndex: number - 1, endIndex: number } } }],
+      })
     end
 
     # 시트 [공유]에 넣을 이메일
@@ -312,6 +369,12 @@ class BotSheets
 
     def append_row(sheet, id, worksheet, row)
       write(sheet, worksheet, values(sheet, id, worksheet) + [row])
+    end
+
+    def delete_row(sheet, id, worksheet, number)
+      rows = values(sheet, id, worksheet)
+      rows.delete_at(number - 1)
+      write(sheet, worksheet, rows)
     end
 
     private

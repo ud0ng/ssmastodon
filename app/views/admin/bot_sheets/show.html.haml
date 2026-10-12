@@ -39,17 +39,44 @@
     - width = @table.width
     - if @table.rows.empty?
       %p.muted-hint= t('admin.bot_sheets.empty')
+    - if @editing
+      -# 고치는 줄의 입력칸은 표 안에 있고, form 속성으로 이 폼에 붙는다
+      = form_tag rows_admin_bot_sheet_path(@bot_sheet.sheet), method: :patch, id: 'edit_bot_sheet_row' do
+        = hidden_field_tag :worksheet, @worksheet, id: nil
+        = hidden_field_tag :row, @editing.number, id: nil
+        - Array.new(width) { |index| @editing.cells[index].to_s }.each do |cell|
+          = hidden_field_tag 'original[]', cell, id: nil
+
     .bot-sheet-table
       %table.table
         %thead
           %tr
-            - @table.header.fill('', @table.header.size...width).each do |cell|
+            - Array.new(width) { |index| @table.header[index].to_s }.each do |cell|
               %th= cell
+            %th.bot-sheet-table__actions
         %tbody
           - @table.rows.each do |row|
-            %tr
-              - row.fill('', row.size...width).each do |cell|
-                %td= cell
+            - cells = Array.new(width) { |index| row.cells[index].to_s }
+            - if row == @editing
+              %tr.bot-sheet-table__editing
+                - cells.each_with_index do |cell, index|
+                  %td
+                    - if @table.header[index].to_s.strip.empty? || @editing_formulas.include?(index)
+                      = hidden_field_tag 'cells[]', cell, form: 'edit_bot_sheet_row', id: nil
+                      %span.bot-sheet-table__locked{ title: (t('admin.bot_sheets.settings.formula') if @editing_formulas.include?(index)) }= cell
+                    - else
+                      = text_field_tag 'cells[]', cell, form: 'edit_bot_sheet_row', id: nil, 'aria-label': @table.header[index], class: 'bot-sheet-table__input'
+                %td.bot-sheet-table__actions
+                  = button_tag material_symbol('check'), type: :submit, form: 'edit_bot_sheet_row', class: 'icon-button', title: t('generic.save_changes')
+                  = link_to material_symbol('close'), admin_bot_sheet_path(@bot_sheet.sheet, worksheet: @worksheet), class: 'icon-button', title: t('generic.cancel')
+            - else
+              %tr
+                - cells.each do |cell|
+                  %td.bot-sheet-table__text= cell
+                %td.bot-sheet-table__actions
+                  = link_to material_symbol('edit'), admin_bot_sheet_path(@bot_sheet.sheet, worksheet: @worksheet, edit: row.number, anchor: "row-#{row.number}"), class: 'icon-button', title: t('admin.bot_sheets.rows.edit'), id: "row-#{row.number}"
+                  = button_to rows_admin_bot_sheet_path(@bot_sheet.sheet), method: :delete, params: { worksheet: @worksheet, row: row.number, original: cells }, class: 'icon-button', title: t('admin.bot_sheets.rows.delete'), form_class: 'bot-sheet-table__delete', data: { confirm: t('admin.bot_sheets.rows.delete_confirm') } do
+                    = material_symbol('delete')
 
     = form_tag rows_admin_bot_sheet_path(@bot_sheet.sheet), method: :post, class: 'simple_form bot-sheet-add-row' do
       = hidden_field_tag :worksheet, @worksheet
@@ -58,7 +85,7 @@
         - @table.header.each_with_index do |name, index|
           - if name.strip.present?
             -# 내용이 긴 열(설명·문구 등)은 넓게
-            .input.string.with_label{ class: ('bot-sheet-field--wide' if @table.rows.any? { |row| row[index].to_s.size > 20 }) }
+            .input.string.with_label{ class: ('bot-sheet-field--wide' if @table.rows.any? { |row| row.cells[index].to_s.size > 20 }) }
               .label_input
                 %label{ for: "bot_sheet_cell_#{index}" }= name
                 .label_input__wrapper

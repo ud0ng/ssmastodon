@@ -491,6 +491,25 @@ body.community-theme.admin {
     color: var(--ct-text);
   }
 
+  .bot-sheet-table__actions .icon-button {
+    color: var(--ct-dim);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--ct-dim-hover);
+    }
+  }
+
+  .bot-sheet-table__input {
+    border-color: var(--ct-line);
+    background: var(--ct-raised);
+    color: var(--ct-text);
+  }
+
+  .bot-sheet-table__editing td {
+    background: var(--ct-soft);
+  }
+
   .bot-sheet-switch__track {
     background: var(--ct-line);
   }
