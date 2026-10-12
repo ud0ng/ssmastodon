@@ -23,6 +23,48 @@ en:
     posts_tab_heading: Posts
     self_follow_error: Following your own account is not allowed
   admin:
+    bot_sheets:
+      conflict: 'Not saved because these items changed in the sheet meanwhile: %{names}. Check the new values and save again.'
+      connection:
+        hint: Enter the sheet IDs from the bot's (ssbot) .env. You can paste the whole sheet URL. Sheets left blank are hidden.
+        hints:
+          investigation: 'INVESTIGATION_SHEET_ID: entry and places'
+          main: 'MAIN_SHEET_ID: settings, roster, inventory, shop, keywords…'
+          reservation: 'RESERVATION_SHEET_ID: scheduled posts'
+          story: 'STORY_SHEET_ID: story parts'
+        placeholder: https://docs.google.com/spreadsheets/d/…/edit or sheet ID
+        share_html: For sheets the bot does not use, share them with %{email} as an editor.
+        title: Connection
+      empty: This worksheet is empty.
+      errors:
+        access: Cannot open the sheet. Check the sheet ID and its sharing settings.
+        hint_html: You can change sheet IDs in the <a href="%{path}">Connection</a> tab.
+        no_token: Cannot connect to Google Sheets. Check this server's (GCP VM) service account scopes include Google Sheets.
+        read_failed: Could not read the sheet.
+        save_failed: 'Could not save to the sheet: %{message}'
+      nothing_changed: Nothing changed.
+      open_sheet: Open in Google Sheets
+      rows:
+        add: Add row
+        added: Added a row at the bottom of the sheet.
+        empty: Nothing to add.
+        title: Add a row
+      saved: Saved %{count} item(s) to the sheet. The bot picks them up within a minute.
+      settings:
+        formula: Formula cell, edit it in Google Sheets
+        groups:
+          currency: Currency
+          features: Features
+          others: Others
+          staff: Staff
+        hint: The 'settings' worksheet of the main sheet. Saving here updates the Google Sheet right away.
+        no_header: "Could not find the %{headers} header in the settings worksheet."
+      sheets:
+        investigation: Investigation
+        main: Main sheet
+        reservation: Scheduled posts
+        story: Story
+      title: Sheet settings
     direct_messages:
       title: DM Management
       sender: Sender

@@ -14,6 +14,9 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 cd "$HERE"
 compose() { docker compose -f "$HERE/docker-compose.yml" "$@"; }
 
+# 시트 설정 화면용 가짜 시트 (구글 대신 CSV, BOT_SHEETS_LOCAL_DIR). 고치면 sheets/ 의 CSV 가 바뀐다.
+[ -d sheets ] || cp -r bot-sheets-sample sheets
+
 build() {
   # OneDrive 폴더의 파일은 Docker 가 못 읽을 때가 있어서("invalid file request"),
   # git 이 아는 파일(고치는 중인 것 포함)만 OneDrive 밖 폴더에 복사해서 빌드한다.

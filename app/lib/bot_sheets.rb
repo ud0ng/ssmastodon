@@ -1,0 +1,330 @@
+# frozen_string_literal: true
+
+require 'csv'
+
+# 자동봇(ud0ng/ssbot)이 쓰는 구글 시트를 읽고 쓴다 (관리 > 시트 설정).
+#
+# 시트 ID 는 서버 설정 bot_sheet_<시트>_id (시트 주소를 통째로 넣어도 된다).
+# 구글 시트 API 는 이 서버(GCP VM)의 서비스 계정으로 부른다. 자동봇과 같은 계정이라
+# 봇이 쓰는 시트면 따로 공유하지 않아도 된다.
+# BOT_SHEETS_LOCAL_DIR 가 있으면 구글 대신 <폴더>/<시트>/<워크시트>.csv 를 쓴다 (미리보기·테스트용).
+class BotSheets
+  SHEETS = %w(main reservation story investigation).freeze
+
+  # 기본 시트의 설정 워크시트: 항목 | 값 | 설명
+  SETTINGS_SHEET = 'main'
+  SETTINGS_WORKSHEET = '설정'
+  SETTINGS_HEADERS = { name: '항목', value: '값', description: '설명' }.freeze
+  HEADER_SEARCH_ROWS = 5
+
+  # 설정 화면에서 같이 보여 줄 항목 (자동봇 설정 워크시트의 항목 이름). 여기 없는 항목은 기타로.
+  SETTINGS_GROUPS = {
+    'currency' => ['재화 이름', '출석 보상', '툿 보상 기준', '툿 보상 재화'],
+    'features' => ['양도', '키워드 이미지', '하루 조사 횟수', '랜덤박스 명령어'],
+    'staff' => ['운영진'],
+  }.freeze
+
+  # 켜기/끄기 스위치로 보여 줄 값 (켜짐, 꺼짐)
+  SWITCH = %w(사용 미사용).freeze
+
+  # 표의 헤더: 앞쪽 몇 줄 중 칸이 두 개 이상 찬 첫 줄 (그 위는 안내 문구)
+  HEADER_MIN_CELLS = 2
+
+  SettingItem = Struct.new(:row, :column, :name, :value, :description, :formula, keyword_init: true) do
+    def switch?
+      SWITCH.include?(value)
+    end
+
+    def number?
+      value.match?(/A-?d+z/)
+    end
+  end
+
+  Table = Struct.new(:notes, :header_row, :header, :rows, keyword_init: true) do
+    def width
+      ([header] + rows).map(&:size).max.to_i
+    end
+  end
+
+  class Error < StandardError; end
+
+  # 시트를 열 수 없음 (공유 안 됨, ID 틀림)
+  class AccessError < Error; end
+
+  # 고치는 사이에 시트에서 값이 바뀜
+  class Conflict < Error
+    attr_reader :names
+
+    def initialize(names)
+      @names = names
+      super(names.join(', '))
+    end
+  end
+
+  class << self
+    def id(sheet)
+      value = Setting.public_send(:"bot_sheet_#{sheet}_id").to_s.strip
+      value[%r{/spreadsheets/d/([\w-]+)}, 1] || value
+    end
+
+    def connected
+      SHEETS.select { |sheet| id(sheet).present? }
+    end
+
+    def backend
+      dir = ENV.fetch('BOT_SHEETS_LOCAL_DIR', nil)
+      dir.present? ? LocalBackend.new(dir) : GoogleBackend.new
+    end
+  end
+
+  attr_reader :sheet
+
+  def initialize(sheet, backend: self.class.backend)
+    raise ArgumentError, sheet unless SHEETS.include?(sheet)
+
+    @sheet = sheet
+    @id = self.class.id(sheet)
+    @backend = backend
+  end
+
+  def connected?
+    @id.present?
+  end
+
+  def url
+    "https://docs.google.com/spreadsheets/d/#{@id}/edit"
+  end
+
+  def worksheets
+    @backend.titles(@sheet, @id)
+  end
+
+  def rows(worksheet)
+    @backend.values(@sheet, @id, worksheet)
+  end
+
+  # 안내 문구 / 헤더 / 내용으로 나눈 워크시트 (헤더가 없으면 nil)
+  def table(worksheet)
+    rows = rows(worksheet)
+    index = rows.first(HEADER_SEARCH_ROWS).index { |row| row.count { |cell| cell.to_s.strip.present? } >= HEADER_MIN_CELLS }
+    return if index.nil?
+
+    Table.new(
+      notes: rows.first(index).flatten.map(&:strip).compact_blank,
+      header_row: index + 1,
+      header: rows[index],
+      rows: rows.drop(index + 1).reject { |row| row.all?(&:blank?) }
+    )
+  end
+
+  # 표 맨 아래에 한 줄 더한다. values: 헤더 순서대로 (빈 헤더 칸은 비워 둔다)
+  def append_row(worksheet, values)
+    header = table(worksheet)&.header
+    raise Error, worksheet if header.nil?
+
+    row = header.each_with_index.map { |name, index| name.to_s.strip.present? ? values[index].to_s : '' }
+    return false if row.all?(&:blank?)
+
+    @backend.append_row(@sheet, @id, worksheet, row)
+    true
+  end
+
+  # 설정 항목을 SETTINGS_GROUPS 대로 묶는다: [[그룹, 항목들], ...]
+  def self.group_settings(items)
+    grouped = SETTINGS_GROUPS.map { |group, names| [group, names.filter_map { |name| items.find { |item| item.name == name } }] }
+    others = items - grouped.flat_map(&:last)
+    (grouped + [['others', others]]).reject { |_, group_items| group_items.empty? }
+  end
+
+  def settings?
+    @sheet == SETTINGS_SHEET
+  end
+
+  # 설정 워크시트의 항목들 (헤더가 없으면 nil)
+  def settings
+    rows = rows(SETTINGS_WORKSHEET)
+    formulas = @backend.formulas(@sheet, @id, SETTINGS_WORKSHEET)
+    header_row, columns = find_header(rows)
+    return if header_row.nil?
+
+    rows.each_with_index.filter_map do |row, index|
+      next if index <= header_row
+
+      name = row[columns[:name]].to_s.strip
+      next if name.empty?
+
+      SettingItem.new(
+        row: index + 1,
+        column: columns[:value] + 1,
+        name: name,
+        value: row[columns[:value]].to_s,
+        description: columns[:description] && row[columns[:description]].to_s,
+        formula: formulas.dig(index, columns[:value]).to_s.start_with?('=')
+      )
+    end
+  end
+
+  # changes: { 행 번호 => [처음 본 값, 새 값] }. 그사이 시트에서 바뀐 항목이 있으면 아무것도 쓰지 않는다.
+  def update_settings(changes)
+    items = settings.to_a.index_by(&:row)
+    changes = changes.select { |row, (original, value)| items[row] && !items[row].formula && original != value }
+    return 0 if changes.empty?
+
+    conflicts = changes.filter_map { |row, (original, _)| items[row].name if items[row].value != original }
+    raise Conflict, conflicts if conflicts.any?
+
+    @backend.update_cells(@sheet, @id, SETTINGS_WORKSHEET, changes.to_h { |row, (_, value)| [[row, items[row].column], value] })
+    changes.size
+  end
+
+  private
+
+  def find_header(rows)
+    rows.first(HEADER_SEARCH_ROWS).each_with_index do |row, index|
+      cleaned = row.map { |cell| cell.to_s.strip }
+      columns = SETTINGS_HEADERS.transform_values { |header| cleaned.index(header) }
+      return [index, columns] if columns[:name] && columns[:value]
+    end
+    nil
+  end
+
+  # 구글 시트 API (GCP VM 서비스 계정)
+  class GoogleBackend
+    API = 'https://sheets.googleapis.com/v4/spreadsheets'
+    METADATA = 'http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default'
+    TOKEN_CACHE_KEY = 'bot_sheets:access_token'
+    TIMEOUT = 10
+
+    def titles(_sheet, id)
+      get("#{API}/#{id}", fields: 'sheets.properties.title')['sheets'].to_a.map { |sheet| sheet.dig('properties', 'title') }
+    end
+
+    def values(_sheet, id, worksheet)
+      read(id, worksheet, 'FORMATTED_VALUE')
+    end
+
+    def formulas(_sheet, id, worksheet)
+      read(id, worksheet, 'FORMULA')
+    end
+
+    def update_cells(_sheet, id, worksheet, cells)
+      data = cells.map { |(row, column), value| { range: "#{quote(worksheet)}!#{a1(row, column)}", values: [[value]] } }
+      request(:post, "#{API}/#{id}/values:batchUpdate", json: { valueInputOption: 'USER_ENTERED', data: data })
+    end
+
+    def append_row(_sheet, id, worksheet, row)
+      request(:post, "#{API}/#{id}/values/#{ERB::Util.url_encode("#{quote(worksheet)}!A1")}:append",
+              params: { valueInputOption: 'USER_ENTERED', insertDataOption: 'INSERT_ROWS' },
+              json: { values: [row] })
+    end
+
+    # 시트 [공유]에 넣을 이메일
+    def self.service_account_email
+      HTTP.timeout(3).headers('Metadata-Flavor' => 'Google').get("#{METADATA}/email").then { |response| response.status.success? ? response.to_s : nil }
+    rescue HTTP::Error, OpenSSL::SSL::SSLError, Errno::ECONNREFUSED, Errno::EHOSTUNREACH
+      nil
+    end
+
+    private
+
+    def read(id, worksheet, render)
+      get("#{API}/#{id}/values/#{ERB::Util.url_encode(quote(worksheet))}", valueRenderOption: render)['values'] || []
+    end
+
+    def quote(worksheet)
+      "'#{worksheet.gsub("'", "''")}'"
+    end
+
+    def a1(row, column)
+      letters = +''
+      while column.positive?
+        column, remainder = (column - 1).divmod(26)
+        letters.prepend((65 + remainder).chr)
+      end
+      "#{letters}#{row}"
+    end
+
+    def get(url, params)
+      request(:get, url, params: params)
+    end
+
+    def request(method, url, **options)
+      response = HTTP.timeout(TIMEOUT).auth("Bearer #{token}").public_send(method, url, **options)
+      body = response.parse(:json) rescue {} # rubocop:disable Style/RescueModifier
+      return body if response.status.success?
+
+      message = body.dig('error', 'message') || response.status.to_s
+      raise AccessError, message if [403, 404].include?(response.code)
+
+      raise Error, message
+    rescue HTTP::Error, OpenSSL::SSL::SSLError => e
+      raise Error, e.message
+    end
+
+    def token
+      Rails.cache.read(TOKEN_CACHE_KEY) || fetch_token
+    end
+
+    def fetch_token
+      response = HTTP.timeout(3).headers('Metadata-Flavor' => 'Google').get("#{METADATA}/token")
+      raise Error, I18n.t('admin.bot_sheets.errors.no_token') unless response.status.success?
+
+      body = response.parse(:json)
+      Rails.cache.write(TOKEN_CACHE_KEY, body['access_token'], expires_in: [body['expires_in'].to_i - 60, 60].max.seconds)
+      body['access_token']
+    rescue HTTP::Error, Errno::ECONNREFUSED, Errno::EHOSTUNREACH
+      raise Error, I18n.t('admin.bot_sheets.errors.no_token')
+    end
+  end
+
+  # <폴더>/<시트>/<워크시트>.csv (자동봇의 LOCAL_SHEETS_DIR 과 같은 모양)
+  class LocalBackend
+    def initialize(dir)
+      @dir = Pathname.new(dir)
+    end
+
+    def titles(sheet, _id)
+      folder = @dir.join(sheet)
+      raise AccessError, folder.to_s unless folder.directory?
+
+      folder.glob('*.csv').map { |path| path.basename('.csv').to_s.unicode_normalize(:nfc) }.sort
+    end
+
+    def values(sheet, _id, worksheet)
+      CSV.read(path(sheet, worksheet), encoding: 'bom|utf-8')
+         .map { |row| row.map(&:to_s) }
+    rescue CSV::MalformedCSVError => e
+      raise Error, e.message
+    end
+
+    def formulas(sheet, id, worksheet)
+      values(sheet, id, worksheet)
+    end
+
+    def update_cells(sheet, id, worksheet, cells)
+      rows = values(sheet, id, worksheet)
+      cells.each do |(row, column), value|
+        rows[row - 1] ||= []
+        rows[row - 1][column - 1] = value
+      end
+      write(sheet, worksheet, rows)
+    end
+
+    def append_row(sheet, id, worksheet, row)
+      write(sheet, worksheet, values(sheet, id, worksheet) + [row])
+    end
+
+    private
+
+    def write(sheet, worksheet, rows)
+      CSV.open(path(sheet, worksheet), 'w') { |csv| rows.each { |row| csv << row } }
+    end
+
+    def path(sheet, worksheet)
+      path = @dir.join(sheet, "#{worksheet}.csv")
+      raise AccessError, worksheet unless path.file?
+
+      path
+    end
+  end
+end

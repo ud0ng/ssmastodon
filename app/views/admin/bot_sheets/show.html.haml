@@ -1,0 +1,76 @@
+- content_for :page_title do
+  = t("admin.bot_sheets.sheets.#{@bot_sheet.sheet}")
+
+- content_for :heading do
+  = render 'admin/bot_sheets/heading', sheet_url: @bot_sheet.url, save_form: (@settings.present? ? 'edit_bot_sheet' : nil)
+
+- if @error
+  .flash-message.alert
+    %strong= t(@error.is_a?(BotSheets::AccessError) ? 'admin.bot_sheets.errors.access' : 'admin.bot_sheets.errors.read_failed')
+    %br
+    = @error.message
+  %p.muted-hint= t('admin.bot_sheets.errors.hint_html', path: admin_bot_sheet_connection_path)
+- else
+  .bot-sheet-worksheets
+    - @worksheets.each do |worksheet|
+      = link_to worksheet, admin_bot_sheet_path(@bot_sheet.sheet, worksheet: worksheet), class: ('selected' if worksheet == @worksheet)
+
+  - if @bot_sheet.settings? && @worksheet == BotSheets::SETTINGS_WORKSHEET
+    - if @settings.nil?
+      %p.muted-hint= t('admin.bot_sheets.settings.no_header', headers: BotSheets::SETTINGS_HEADERS.values.join(' | '))
+    - else
+      %p.hint= t('admin.bot_sheets.settings.hint')
+      = form_tag admin_bot_sheet_path(@bot_sheet.sheet), method: :patch, id: 'edit_bot_sheet', class: 'simple_form bot-sheet-settings' do
+        - BotSheets.group_settings(@settings).each do |group, items|
+          %h4= t("admin.bot_sheets.settings.groups.#{group}")
+          .bot-sheet-fields
+            - items.each do |item|
+              = render 'admin/bot_sheets/setting_item', item: item
+
+        .actions
+          = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+
+  - elsif @table
+    - if @table.notes.any?
+      .bot-sheet-notes
+        - @table.notes.each do |note|
+          %p= note
+
+    - width = @table.width
+    - if @table.rows.empty?
+      %p.muted-hint= t('admin.bot_sheets.empty')
+    .bot-sheet-table
+      %table.table
+        %thead
+          %tr
+            - @table.header.fill('', @table.header.size...width).each do |cell|
+              %th= cell
+        %tbody
+          - @table.rows.each do |row|
+            %tr
+              - row.fill('', row.size...width).each do |cell|
+                %td= cell
+
+    = form_tag rows_admin_bot_sheet_path(@bot_sheet.sheet), method: :post, class: 'simple_form bot-sheet-add-row' do
+      = hidden_field_tag :worksheet, @worksheet
+      %h4= t('admin.bot_sheets.rows.title')
+      .bot-sheet-fields
+        - @table.header.each_with_index do |name, index|
+          - if name.strip.present?
+            -# 내용이 긴 열(설명·문구 등)은 넓게
+            .input.string.with_label{ class: ('bot-sheet-field--wide' if @table.rows.any? { |row| row[index].to_s.size > 20 }) }
+              .label_input
+                %label{ for: "bot_sheet_cell_#{index}" }= name
+                .label_input__wrapper
+                  = text_field_tag 'cells[]', '', id: "bot_sheet_cell_#{index}"
+          - else
+            = hidden_field_tag 'cells[]', '', id: nil
+      .actions
+        = button_tag safe_join([material_symbol('add'), t('admin.bot_sheets.rows.add')]), type: :submit, class: 'button'
+
+  - elsif @rows.blank?
+    %p.muted-hint= t('admin.bot_sheets.empty')
+  - else
+    .bot-sheet-notes
+      - @rows.flatten.compact_blank.each do |note|
+        %p= note

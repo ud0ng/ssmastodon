@@ -1,0 +1,19 @@
+-# 시트 설정 제목 + 탭 (연결된 시트들 · 연결). save_form: 저장 버튼이 제출할 폼 id, sheet_url: 구글 시트 링크
+.content__heading__row
+  %h2= t('admin.bot_sheets.title')
+
+  .content__heading__actions
+    - if local_assigns[:sheet_url]
+      = link_to sheet_url, class: 'button button-secondary', target: '_blank', rel: 'noopener' do
+        = material_symbol 'open_in_new'
+        = t('admin.bot_sheets.open_sheet')
+    - if local_assigns[:save_form]
+      = button_tag t('generic.save_changes'), class: 'button', form: save_form
+
+.content__heading__tabs
+  = render_navigation renderer: :links do |primary|
+    :ruby
+      BotSheets.connected.each do |sheet|
+        primary.item sheet.to_sym, safe_join([material_symbol('description'), t("admin.bot_sheets.sheets.#{sheet}")]), admin_bot_sheet_path(sheet), highlights_on: %r{/admin/sheets/#{sheet}}
+      end
+      primary.item :connection, safe_join([material_symbol('link'), t('admin.bot_sheets.connection.title')]), admin_bot_sheet_connection_path, highlights_on: %r{/admin/sheets/connection}

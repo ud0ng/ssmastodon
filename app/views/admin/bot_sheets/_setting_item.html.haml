@@ -1,0 +1,27 @@
+-# 설정 워크시트 한 항목: 사용/미사용은 스위치, 숫자는 좁은 칸, 수식 칸은 읽기 전용
+- field_id = "bot_sheet_item_#{item.row}"
+- name = "items[#{item.row}][value]"
+- hint = [item.description.presence, (t('admin.bot_sheets.settings.formula') if item.formula)].compact.join(' · ')
+
+- if item.switch? && !item.formula
+  .bot-sheet-field.bot-sheet-field--switch{ title: hint.presence }
+    = hidden_field_tag name, BotSheets::SWITCH.last, id: nil
+    %label.bot-sheet-switch{ for: field_id }
+      = check_box_tag name, BotSheets::SWITCH.first, item.value == BotSheets::SWITCH.first, id: field_id, role: 'switch'
+      %span.bot-sheet-switch__track
+      %span.bot-sheet-switch__label= item.name
+    - if hint.present?
+      %span.hint= hint
+- else
+  .bot-sheet-field.input.string.with_label{ class: [('bot-sheet-field--number' if item.number?), ('disabled' if item.formula), ('bot-sheet-field--wide' if item.value.size > 20)] }
+    .label_input
+      %label{ for: field_id }= item.name
+      .label_input__wrapper
+        - if item.number? && !item.formula
+          = number_field_tag name, item.value, id: field_id, step: 1
+        - else
+          = text_field_tag name, item.value, id: field_id, readonly: item.formula
+    - if hint.present?
+      %span.hint= hint
+
+= hidden_field_tag "items[#{item.row}][original]", item.value, id: nil

@@ -465,6 +465,44 @@ body.community-theme.admin {
     }
   }
 
+  // 시트 설정의 워크시트 고르기
+  .bot-sheet-worksheets a {
+    border-color: var(--ct-line);
+    color: var(--ct-nav);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--ct-nav-hover);
+    }
+
+    &.selected {
+      border-color: var(--ct-point);
+      background: var(--ct-point);
+      color: var(--ct-on-point);
+    }
+  }
+
+  .bot-sheet-table {
+    border-color: var(--ct-line);
+    background: var(--ct-panel);
+  }
+
+  .bot-sheet-switch {
+    color: var(--ct-text);
+  }
+
+  .bot-sheet-switch__track {
+    background: var(--ct-line);
+  }
+
+  .bot-sheet-switch input:checked + .bot-sheet-switch__track {
+    background: var(--ct-point);
+  }
+
+  .bot-sheet-notes {
+    color: var(--ct-dim);
+  }
+
   // 입력칸
   .simple_form {
     label,

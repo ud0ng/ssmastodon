@@ -10,15 +10,17 @@ services:
   web:
     image: ssmastodon:local
     env_file: .env.production
+    environment: [BOT_SHEETS_LOCAL_DIR=/bot-sheets]
     command: bundle exec puma -C config/puma.rb
     depends_on: [db, redis]
-    volumes: [system:/mastodon/public/system, ./override/production.rb:/opt/mastodon/config/environments/production.rb:ro, ./override/1_hosts.rb:/opt/mastodon/config/initializers/1_hosts.rb:ro]
+    volumes: [system:/mastodon/public/system, ./override/production.rb:/opt/mastodon/config/environments/production.rb:ro, ./override/1_hosts.rb:/opt/mastodon/config/initializers/1_hosts.rb:ro, ./sheets:/bot-sheets]
   sidekiq:
     image: ssmastodon:local
     env_file: .env.production
+    environment: [BOT_SHEETS_LOCAL_DIR=/bot-sheets]
     command: bundle exec sidekiq
     depends_on: [db, redis]
-    volumes: [system:/mastodon/public/system, ./override/production.rb:/opt/mastodon/config/environments/production.rb:ro, ./override/1_hosts.rb:/opt/mastodon/config/initializers/1_hosts.rb:ro]
+    volumes: [system:/mastodon/public/system, ./override/production.rb:/opt/mastodon/config/environments/production.rb:ro, ./override/1_hosts.rb:/opt/mastodon/config/initializers/1_hosts.rb:ro, ./sheets:/bot-sheets]
   streaming:
     image: ssmastodon-streaming:local
     env_file: .env.production

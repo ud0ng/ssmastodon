@@ -28,6 +28,15 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
 - 기본 프로필 사진·헤더: SiteUpload `default_avatar`/`default_header`, Paperclip default_url → `app/lib/default_account_image.rb`.
 - 관리자·설정 사이드바 로고: `BrandingHelper#render_themed_wordmark` (라이트 테마=낮 로고 `wordmark_light`, 다크=밤 로고).
 
+## 시트 설정 (관리 > 운영 > 시트 설정, /admin/sheets)
+
+- 자동봇 구글 시트 4개(기본·예약 툿·스토리·조사)를 탭으로 보여 주고, 기본 시트의 '설정' 워크시트(항목|값|설명)는 폼으로 고쳐 시트에 바로 쓴다.
+  나머지 워크시트는 아직 읽기 전용 표 (다음 단계: 표 칸 수정, 나중에 서버원용 인벤토리 창).
+- 시트 ID 는 서버 설정 `bot_sheet_<main|reservation|story|investigation>_id` (연결 탭, 주소째 넣어도 됨).
+- `app/lib/bot_sheets.rb`: 구글 시트 API 를 GCP VM 서비스 계정(메타데이터 서버 토큰)으로 부른다 — 자동봇과 같은 계정.
+  저장할 때 처음 본 값과 지금 시트 값을 비교해 그사이 바뀌었으면 저장하지 않는다. 수식 칸은 읽기 전용.
+- 미리보기는 `BOT_SHEETS_LOCAL_DIR` 로 구글 대신 `dev/preview/sheets/<시트>/<워크시트>.csv` (`bot-sheets-sample` 을 복사, 자동봇 tests/fixtures 와 같음).
+
 ## 로컬에서 확인하기
 
 Docker Desktop, Node.js, Chrome 이 있으면 된다 (PC 에 Ruby/Python 없음).
@@ -52,7 +61,7 @@ docker run -d --name sstest-db --network sstest -e POSTGRES_HOST_AUTH_METHOD=tru
 docker run -d --name sstest-redis --network sstest redis:7-alpine
 MSYS_NO_PATHCONV=1 docker run --rm --network sstest -v "$PWD:/app" -v sstest-gems:/usr/local/bundle -w /app \
   -e RAILS_ENV=test -e DB_HOST=sstest-db -e DB_USER=postgres -e REDIS_HOST=sstest-redis -e BUNDLE_WITHOUT=development -e DISABLE_SIMPLECOV=true \
-  ruby:3.4.4-slim sh -c "apt-get update -qq && apt-get install -y -qq libpq-dev libicu-dev libidn-dev libyaml-dev git >/dev/null; bundle install -q; bin/rails db:create db:migrate >/dev/null; bundle exec rspec spec/lib/community_theme_spec.rb"
+  ruby:3.4.4-slim sh -c "apt-get update -qq && apt-get install -y -qq libpq-dev libicu-dev libidn-dev libyaml-dev git build-essential zlib1g-dev >/dev/null; bundle install --quiet; bin/rails db:create db:migrate >/dev/null; bundle exec rspec spec/lib/community_theme_spec.rb"
 git checkout db/schema.rb Gemfile.lock   # 테스트가 바꿔 놓으니 되돌린다
 ```
 

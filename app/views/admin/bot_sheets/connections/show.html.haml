@@ -1,0 +1,25 @@
+- content_for :page_title do
+  = t('admin.bot_sheets.connection.title')
+
+- content_for :heading do
+  = render 'admin/bot_sheets/heading', save_form: 'edit_admin_settings'
+
+= simple_form_for @admin_settings, url: admin_bot_sheet_connection_path, html: { id: 'edit_admin_settings', method: :patch } do |f|
+  = render 'shared/error_messages', object: @admin_settings
+
+  %p.hint= t('admin.bot_sheets.connection.hint')
+
+  - if @service_account_email
+    %p.hint= t('admin.bot_sheets.connection.share_html', email: tag.code(@service_account_email))
+
+  .fields-group
+    - BotSheets::SHEETS.each do |sheet|
+      = f.input :"bot_sheet_#{sheet}_id",
+                as: :string,
+                wrapper: :with_label,
+                label: t("admin.bot_sheets.sheets.#{sheet}"),
+                hint: t("admin.bot_sheets.connection.hints.#{sheet}"),
+                input_html: { placeholder: t('admin.bot_sheets.connection.placeholder') }
+
+  .actions
+    = f.button :button, t('generic.save_changes'), type: :submit

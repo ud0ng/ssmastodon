@@ -2890,3 +2890,157 @@ body .image-picker {
   object-fit: contain;
   object-position: left center;
 }
+
+// 관리 > 시트 설정 (자동봇 구글 시트)
+.bot-sheet-worksheets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 20px;
+
+  a {
+    padding: 5px 12px;
+    border: 1px solid var(--background-border-color);
+    border-radius: 999px;
+    color: $darker-text-color;
+    font-size: 13px;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: $primary-text-color;
+    }
+
+    &.selected {
+      border-color: $ui-highlight-color;
+      background: $ui-highlight-color;
+      color: $primary-text-color;
+      font-weight: 700;
+    }
+  }
+}
+
+.bot-sheet-settings {
+  margin-top: 16px;
+
+  h4 {
+    margin-top: 24px;
+  }
+}
+
+// 설정 항목·새 줄 입력칸: 한 줄에 여러 개
+.bot-sheet-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 16px;
+
+  .input,
+  .bot-sheet-field {
+    margin-bottom: 0;
+  }
+
+  .hint {
+    font-size: 12px;
+    line-height: 16px;
+  }
+}
+
+.bot-sheet-field--wide {
+  grid-column: span 2;
+
+  @media screen and (max-width: $no-columns-breakpoint) {
+    grid-column: auto;
+  }
+}
+
+// 사용/미사용 스위치
+.bot-sheet-switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 41px;
+  margin-top: 22px;
+  cursor: pointer;
+  color: $primary-text-color;
+  font-size: 14px;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &__track {
+    position: relative;
+    flex: 0 0 auto;
+    width: 40px;
+    height: 22px;
+    border-radius: 11px;
+    background: var(--background-border-color);
+    transition: background 150ms;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      inset-inline-start: 3px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgb(0 0 0 / 25%);
+      transition: transform 150ms;
+    }
+  }
+
+  input:checked + &__track {
+    background: $ui-highlight-color;
+
+    &::after {
+      transform: translateX(18px);
+    }
+  }
+
+  input:focus-visible + &__track {
+    outline: 2px solid $ui-highlight-color;
+    outline-offset: 2px;
+  }
+}
+
+.bot-sheet-field--switch .hint {
+  display: block;
+  margin-top: 4px;
+}
+
+.bot-sheet-notes {
+  margin-bottom: 16px;
+  color: $darker-text-color;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+.bot-sheet-add-row {
+  margin-top: 30px;
+}
+
+.bot-sheet-table {
+  overflow-x: auto;
+  border: 1px solid var(--background-border-color);
+  border-radius: 4px;
+
+  .table {
+    margin-bottom: 0;
+    border: 0;
+
+    th,
+    td {
+      min-width: 60px;
+      max-width: 360px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      vertical-align: top;
+    }
+  }
+}

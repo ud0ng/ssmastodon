@@ -21,6 +21,48 @@ ko:
     posts_tab_heading: 게시물
     self_follow_error: 본인의 계정을 팔로우할 수는 없습니다
   admin:
+    bot_sheets:
+      conflict: '그사이 시트에서 바뀐 항목이 있어서 저장하지 않았습니다: %{names}. 바뀐 값을 확인하고 다시 저장하세요.'
+      connection:
+        hint: 자동봇(ssbot)의 .env 에 넣은 시트 ID 를 넣습니다. 시트 주소를 통째로 붙여 넣어도 됩니다. 비워 둔 시트는 탭에 나오지 않습니다.
+        hints:
+          investigation: 'INVESTIGATION_SHEET_ID: 진입·장소별 조사'
+          main: 'MAIN_SHEET_ID: 설정·명단·관리·상점·키워드 등'
+          reservation: 'RESERVATION_SHEET_ID: 예약 툿'
+          story: 'STORY_SHEET_ID: 스토리 파트'
+        placeholder: https://docs.google.com/spreadsheets/d/…/edit 또는 시트 ID
+        share_html: 자동봇이 쓰지 않는 시트라면 시트 [공유]에 %{email} 를 편집자로 추가하세요.
+        title: 연결
+      empty: 빈 워크시트입니다.
+      errors:
+        access: 시트를 열 수 없습니다. 시트 ID 와 시트 [공유]를 확인하세요.
+        hint_html: 시트 ID 는 <a href="%{path}">연결</a> 탭에서 바꿀 수 있습니다.
+        no_token: 구글 시트에 접속할 수 없습니다. 이 서버(GCP VM)의 서비스 계정 권한(API 액세스 범위에 Google Sheets)을 확인하세요.
+        read_failed: 시트를 읽지 못했습니다.
+        save_failed: '시트에 저장하지 못했습니다: %{message}'
+      nothing_changed: 바뀐 항목이 없습니다.
+      open_sheet: 구글 시트에서 열기
+      rows:
+        add: 줄 추가
+        added: 시트 맨 아래에 한 줄을 추가했습니다.
+        empty: 비어 있어서 추가하지 않았습니다.
+        title: 새 줄 추가
+      saved: 시트에 %{count}개 항목을 저장했습니다. 자동봇에는 1분 안에 반영됩니다 (바로 반영하려면 [캐시 리셋]).
+      settings:
+        formula: 수식 칸이라 구글 시트에서만 고칠 수 있습니다
+        groups:
+          currency: 재화
+          features: 기능
+          others: 기타
+          staff: 운영진
+        hint: 기본 시트의 '설정' 워크시트입니다. 여기서 저장하면 구글 시트가 바로 바뀝니다.
+        no_header: "'설정' 워크시트에서 %{headers} 헤더를 찾지 못했습니다."
+      sheets:
+        investigation: 조사
+        main: 기본 시트
+        reservation: 예약 툿
+        story: 스토리
+      title: 시트 설정
     direct_messages:
       title: DM 관리
       sender: 발신자

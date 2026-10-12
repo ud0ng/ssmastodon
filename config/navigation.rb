@@ -38,6 +38,7 @@ SimpleNavigation::Configuration.run do |navigation|
       s.item :announcements, safe_join([material_symbol('campaign'), t('admin.announcements.title')]), admin_announcements_path, highlights_on: %r{/admin/announcements}, if: -> { current_user.can?(:manage_announcements) }
       s.item :custom_emojis, safe_join([material_symbol('mood'), t('admin.custom_emojis.title')]), admin_custom_emojis_path, highlights_on: %r{/admin/custom_emojis}, if: -> { current_user.can?(:manage_custom_emojis) }
       s.item :settings, safe_join([material_symbol('tune'), t('admin.settings.title')]), admin_settings_path, highlights_on: %r{/admin/settings}, if: -> { current_user.can?(:manage_settings) }
+      s.item :bot_sheets, safe_join([material_symbol('list_alt'), t('admin.bot_sheets.title')]), admin_bot_sheets_path, highlights_on: %r{/admin/sheets}, if: -> { current_user.can?(:manage_settings) }
     end
 
     n.item :sidekiq, safe_join([material_symbol('diamond'), 'Sidekiq']), sidekiq_path, link_html: { target: 'sidekiq' }, if: -> { current_user.can?(:view_devops) }

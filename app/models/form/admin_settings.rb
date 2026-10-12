@@ -57,6 +57,10 @@ class Form::AdminSettings
     default_avatar
     default_header
     community_theme_paren_size
+    bot_sheet_main_id
+    bot_sheet_reservation_id
+    bot_sheet_story_id
+    bot_sheet_investigation_id
   ).concat(CommunityTheme.detail_keys, CommunityTheme.box_opacity_keys).freeze
 
   INTEGER_KEYS = %i(
