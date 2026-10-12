@@ -20,6 +20,8 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
   같은 계산이 관리 화면 실시간 미리보기용으로 `app/javascript/mastodon/admin/community_theme_editor.ts` 에도 있다 (둘 다 고칠 것).
 - `ThemeHelper#community_theme_tags` 가 `--community-theme-<항목>-<light|dark>` 를 `:root` 에 넣고,
   `app/javascript/styles/entrypoints/community_theme.scss` 가 그걸 Bird UI 변수에 연결한다 (`body.community-theme:not(.admin)`).
+  관리자·환경설정 화면(`body.community-theme.admin`)은 같은 파일 아래쪽에서 따로 칠하고(배경·메뉴·입력칸 등),
+  드롭다운 목록은 `app/javascript/mastodon/admin/community_select.ts` 가 검색창 드롭다운 모양으로 띄운다.
 - 기본 스타일에 박힌 파란색(#1d9bf0 계열)은 `config/vite/postcss-community-theme.ts` 가 community-*.scss 빌드 때
   `var(--ct-point, #1d9bf0)` 로 바꾼다. 새 파란색이 보이면 대부분 이걸로 잡히고, 아이콘 SVG data URL 안 색은 못 바꾼다.
 - 툿의 `[...]`·`(...)` 꾸미기: `app/javascript/mastodon/utils/dialogue.ts` (StatusContent 에서 호출).
@@ -37,6 +39,7 @@ node dev/preview/shot.js dev/preview/shots 1280 900 /home:home /admin/settings/c
 ```
 
 - http://127.0.0.1:8080, 관리자 비밀번호는 `dev/preview/.owner_password` (git 에 안 올라감). 사용자 대신 로그인할 때는 이 미리보기 계정만.
+- 저장소가 OneDrive 안이면 docker build 가 실패해서 setup.sh 가 `%LOCALAPPDATA%/ssmastodon-build` 에 복사해서 빌드한다.
 - `PROBE=파일.js node dev/preview/shot.js ...` 로 페이지에서 JS 를 실행해 계산된 색 등을 찍어 볼 수 있다.
 - 미리보기 계정을 더 만들 땐 `rails runner` 로 `user.save!(validate: false)` + `update_columns(approved: true)` (preview.test 는 메일 검사에 걸림).
 - redis 를 FLUSHALL 하면 홈 타임라인도 비니 프로필 페이지(/@아이디)로 확인.
