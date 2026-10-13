@@ -6,7 +6,11 @@ module Game
     module_function
 
     def registry
-      { 'jellybean' => Game::Kinds::Jellybean }
+      {
+        'jellybean' => Game::Kinds::Jellybean,
+        'gobstones' => Game::Kinds::Gobstones,
+        'duel' => Game::Kinds::Duel,
+      }
     end
 
     def keys

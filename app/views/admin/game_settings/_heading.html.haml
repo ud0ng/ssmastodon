@@ -1,6 +1,6 @@
 -# 게임 설정 제목 + 탭 (공통 · 기숙사 · 게임들). save_form: 저장 버튼이 제출할 폼 id
 .content__heading__row
-  %h2= t('admin.games.title')
+  %h2= game_t('admin.games.title')
 
   - if local_assigns[:save_form]
     .content__heading__actions
@@ -9,8 +9,9 @@
 .content__heading__tabs
   = render_navigation renderer: :links do |primary|
     :ruby
-      primary.item :common, safe_join([material_symbol('tune'), t('admin.games.common')]), admin_game_setting_path('common'), highlights_on: %r{/admin/games/common}
-      primary.item :houses, safe_join([material_symbol('shield_question'), t('admin.games.houses.title')]), admin_game_houses_path, highlights_on: %r{/admin/games/houses}
+      primary.item :common, safe_join([material_symbol('tune'), game_t('admin.games.common')]), admin_game_setting_path('common'), highlights_on: %r{/admin/games/common}
+      primary.item :tournaments, safe_join([material_symbol('flag'), game_t('admin.games.tournaments.title')]), admin_game_tournaments_path, highlights_on: %r{/admin/games/tournaments}
+      primary.item :houses, safe_join([material_symbol('shield_question'), game_t('admin.games.houses.title')]), admin_game_houses_path, highlights_on: %r{/admin/games/houses}
       Game::Kinds.all.each do |kind|
         primary.item kind.key.to_sym, safe_join([material_symbol('extension'), kind.display_name]), admin_game_setting_path(kind.key), highlights_on: %r{/admin/games/#{kind.key}}
       end

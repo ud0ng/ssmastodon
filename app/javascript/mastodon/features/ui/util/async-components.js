@@ -134,6 +134,10 @@ export function ScheduledStatuses() {
   return import('../../scheduled_statuses');
 }
 
+export function SystemPage() {
+  return import('../../system');
+}
+
 export function ScheduleModal() {
   return import('../components/schedule_modal');
 }

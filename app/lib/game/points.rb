@@ -8,11 +8,13 @@ module Game
     # 게임 결과로 점수를 준다. 지급 안내 문구를 돌려준다 (안 줬으면 nil 또는 기숙사 없음 안내)
     def award(session, player, amount)
       return if amount.to_i <= 0
+      # 토너먼트제 기간에는 평소 컨텐츠 점수가 없다 (우승 점수만)
+      return if Game::Tournament.scoring_mode?
 
       common = Game::Config.for('common')
       character = player.character
       house = character.house
-      return Game::Text.render(common['msg_no_house'], player: character.display_name) if house.nil?
+      return Game::Text.render(common['msg_no_house'], player: character.display_name, term: common['house_term']) if house.nil?
 
       opponents = session.players.reject { |other| other.id == player.id }
       return if over_daily_limit?(player.account, opponents.map(&:account_id), common['daily_pair_limit'].to_i)
@@ -22,7 +24,7 @@ module Game
       return if amount <= 0
 
       GameHousePoint.create!(house: house, account: player.account, session: session, amount: amount, reason: session.kind)
-      Game::Text.render(common['msg_points'], emoji: house.emoji, house: house.name, amount: amount, player: character.display_name)
+      Game::Text.render(common['msg_points'], emoji: house.emoji, house: house.name, amount: amount, player: character.display_name, term: common['house_term'])
     end
 
     # 오늘(한국 시간) 같은 상대와의 게임으로 이미 limit 번 점수를 받았는가
@@ -40,7 +42,7 @@ module Game
       common = Game::Config.for('common')
       houses = GameHouse.all.map { |house| [house, house.total] }.sort_by { |_, total| -total }
       lines = houses.each_with_index.map { |(house, total), index| "#{index + 1}. #{house.label} #{total}점" }
-      ([common['msg_board']] + lines).join("\n")
+      ([Game::Text.render(common['msg_board'], term: common['house_term'])] + lines).join("\n")
     end
 
     # [내전적] 답장

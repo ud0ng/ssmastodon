@@ -41,6 +41,14 @@ RSpec.describe Game::Points do
     expect(gryffindor.total).to eq 30
   end
 
+  it 'uses the configured name for houses (e.g. 진영 for the adult period)' do
+    Game::Config.update!('common', 'house_term' => '진영')
+    GameCharacter.for(alice).update!(house: nil)
+    session = finished_session
+    expect(described_class.award(session, session.players.first, 10)).to include('아직 진영이 없어')
+    expect(described_class.board).to start_with('🏆 진영 점수')
+  end
+
   it 'tells when the player has no house' do
     GameCharacter.for(alice).update!(house: nil)
     session = finished_session

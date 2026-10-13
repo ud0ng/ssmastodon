@@ -10,7 +10,7 @@ module Game
       def self.base_fields(name:, command:, points_win:, points_draw: 0)
         [
           F.new(key: 'enabled', type: :boolean, default: true, group: 'basic', label: '켜기'),
-          F.new(key: 'name', type: :string, default: name, group: 'basic', label: '게임 이름'),
+          F.new(key: 'name', type: :string, default: name, group: 'basic', label: '컨텐츠 이름'),
           F.new(key: 'command', type: :string, default: command, group: 'basic', label: '시작 명령어', hint: '[명령어] 와 상대를 태그해 신청'),
           F.new(key: 'points_win', type: :integer, default: points_win, group: 'points', label: '승리 점수'),
           F.new(key: 'points_draw', type: :integer, default: points_draw, group: 'points', label: '무승부 점수'),
@@ -36,6 +36,12 @@ module Game
 
         def display_name
           config['name']
+        end
+
+        # 턴 시간 초과가 그 컨텐츠 규칙의 일부인가 (곱스톤 빗나감, 결투 주문 실패 등).
+        # false 면 시간 초과 = 패배이고, 토너먼트 경기에서는 운영진 판정으로 넘긴다.
+        def continues_on_timeout?
+          false
         end
       end
 
@@ -84,12 +90,32 @@ module Game
 
       protected
 
+      def tournament?
+        state['tournament_match_id'].present?
+      end
+
       def render(template, **values)
         Game::Text.render(template, game: self.class.display_name, **values)
       end
 
       def post(text)
         Game::Poster.to_session(session, text)
+      end
+
+      # 한 사람에게만 DM (비밀 선택 안내). 같은 DM 스레드로 이어 보낸다.
+      def dm(player, text)
+        thread = Status.find_by(id: player.state['dm_status_id'])
+        status = Game::Poster.post(text, mentions: [player.account], thread: thread, visibility: 'direct')
+        player.update!(state: player.state.merge('dm_status_id' => status.id.to_s)) if status
+        status
+      end
+
+      # 비밀 선택은 DM 으로만 받는다 (공개 툿이면 안내만)
+      def require_dm!(player, status)
+        return true if status.direct_visibility?
+
+        dm(player, render(common['msg_secret_in_dm']))
+        false
       end
 
       # 다음 턴 시간 제한
@@ -103,6 +129,13 @@ module Game
           player.update!(result: draw ? 'draw' : (player == winner ? 'win' : 'lose'))
         end
         session.update!(status: 'finished', finished_at: Time.now.utc, deadline_at: nil)
+
+        # 토너먼트 경기: 점수 대신 승자를 다음 칸으로 (무승부면 운영진 판정)
+        if tournament?
+          post(message) if message
+          Game::Tournament.finished!(session, winner, draw: draw)
+          return
+        end
 
         point_lines = if draw
                         players.map { |player| Game::Points.award(session, player, config['points_draw']) }

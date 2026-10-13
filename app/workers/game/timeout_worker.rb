@@ -17,6 +17,9 @@ class Game::TimeoutWorker
         common = Game::Config.for('common')
         session.update!(status: 'cancelled', finished_at: Time.now.utc, deadline_at: nil)
         Game::Poster.to_session(session, Game::Text.render(common['msg_expired'], game: session.kind_class.display_name, minutes: common['invite_minutes']))
+      elsif session.state['tournament_match_id'].present? && !session.kind_class.continues_on_timeout?
+        # 토너먼트 경기는 자동으로 지게 하지 않고 운영진 판정
+        Game::Tournament.judging!(session, I18n.t('admin.games.tournaments.timed_out', minutes: Game::Config.for('common')['turn_minutes']))
       else
         session.kind_class.new(session).timeout!
       end

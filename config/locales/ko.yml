@@ -30,46 +30,92 @@ ko:
         edit: 고치기
         edit_title: '캐릭터: %{name}'
         grade: 학년
-        hint: 서버원 목록에서 자동으로 만들어집니다. 캐릭터 이름을 비워 두면 표시 이름을 씁니다. 게임 툿에는 캐릭터 이름이 나옵니다.
-        house: 기숙사
+        hint: 서버원 목록에서 자동으로 만들어집니다. 캐릭터 이름을 비워 두면 표시 이름을 씁니다. 컨텐츠 툿에는 캐릭터 이름이 나옵니다.
+        house: '%{term}'
         name: 캐릭터 이름
         name_hint: 비워 두면 표시 이름
-        no_house: 기숙사 없음
+        no_house: '%{term} 없음'
         note: 메모
         search: 찾기
         stats: 개인 값
-        stats_hint: '한 줄에 하나씩 이름=값 (예: 체력=10). 게임에서 쓸 캐릭터 스탯'
+        stats_hint: '한 줄에 하나씩 이름=값 (예: 체력=10). 컨텐츠에서 쓸 캐릭터 스탯'
         title: 캐릭터 명단
       common: 공통
-      common_hint: 모든 게임에 쓰이는 시스템 계정, 명령어, 대기 시간, 점수 규칙과 공통 문구입니다. 문구에는 %{example} 자리표시와 {이가}·{을를}·{은는} 같은 조사를 쓸 수 있습니다.
+      common_hint: 모든 컨텐츠에 쓰이는 시스템 계정, 명령어, 대기 시간, 점수 규칙과 공통 문구입니다. 문구에는 %{example} 자리표시와 {이가}·{을를}·{은는} 같은 조사를 쓸 수 있습니다.
       groups:
         account: 시스템 계정
         basic: 기본
         commands: 명령어
         flavors: 맛
         messages: 문구
-        points: 기숙사 점수
+        points: '%{term} 점수'
         rules: 규칙
+        scoring: 점수 방식
+        spells: 주문
+        tournament: 토너먼트 문구
         time: 시간
       houses:
-        add: 기숙사 추가
+        add: '%{term} 추가'
         adjust: 점수 조정
-        adjust_hint: 운영진이 기숙사 점수를 더하거나 뺍니다 (빼려면 음수).
+        adjust_hint: '운영진이 %{term} 점수를 더하거나 뺍니다 (빼려면 음수).'
         amount: 점수
         color: 색
-        delete: 기숙사 지우기
-        delete_confirm: '%{name} 기숙사를 지울까요? 이 기숙사의 점수 기록도 함께 지워집니다.'
+        delete: '%{term} 지우기'
+        delete_confirm: '%{name}(%{term}) 지울까요? 점수 기록도 함께 지워집니다.'
         emoji: 이모지
-        hint: 게임에서 이기면 캐릭터의 기숙사에 점수가 쌓입니다. 서버원의 기숙사는 캐릭터 명단에서 정합니다.
+        hint: '컨텐츠에서 이기면 캐릭터가 속한 %{term}에 점수가 쌓입니다. 서버원마다 어느 %{term} 소속인지는 캐릭터 명단에서 정합니다. 이름은 공통 탭의 소속 이름에서 바꿉니다 (예: 성인 기간에는 진영).'
         manual: 운영진 조정
-        name: 기숙사
+        name: '%{term}'
         order: 순서
         reason: 사유
         recent: 최근 점수 기록
-        title: 기숙사
+        title: '%{term}'
         total: 총점
         when: 시간
-      kind_hint: 이 게임의 켜기·명령어·규칙·문구입니다. 수락 대기, 턴 시간, 수락·거절·기권 명령어는 공통 탭에서 정합니다.
+      kind_hint: 이 컨텐츠의 켜기·명령어·규칙·문구입니다. 수락 대기, 턴 시간, 수락·거절·기권 명령어는 공통 탭에서 정합니다.
+      tournaments:
+        champion: 우승
+        champion_is: '우승: %{house}'
+        content: 컨텐츠
+        create: 대진표 만들기
+        decide: '운영진 판정 — 이긴 사람:'
+        decide_confirm: '%{name}의 승리로 정할까요?'
+        delete: 토너먼트 지우기
+        delete_confirm: '%{name} 토너먼트를 지울까요?'
+        edit: 대진표
+        hint: '대진표에는 사람이 들어갑니다. 경기마다 컨텐츠·시간·선수를 정하면 그 시간에 시스템이 경기를 열고, 이긴 사람이 다음 칸으로 올라갑니다. 이긴 경기 수가 가장 많은 %{term}이(가) 우승합니다 (동률이면 결승 승자의 %{term}). 공통 탭의 점수 방식이 토너먼트제일 때만 평소 컨텐츠 점수가 꺼집니다.'
+        locked: 이미 시작했거나 끝난 경기는 바꿀 수 없습니다.
+        match_number: '%{number}경기'
+        match_statuses:
+          done: 끝
+          judging: 판정 대기
+          playing: 진행 중
+          ready: 예약됨
+          waiting: 준비 중
+        mode_hint: 지금 점수 방식이 점수제라서 평소 컨텐츠 점수도 계속 쌓입니다. 토너먼트만 반영하려면 공통 탭에서 토너먼트제로 바꾸세요.
+        name: 토너먼트 이름
+        name_placeholder: '예: 1학기 기숙사 대항전'
+        new: 새 토너먼트
+        people:
+          one: '%{count}명'
+          other: '%{count}명'
+        pick_content: 컨텐츠 고르기
+        pick_player: 선수 고르기
+        player: 선수
+        reward: 우승 점수
+        size: 인원
+        start: 토너먼트 시작
+        start_confirm: 시작하면 정해진 시간에 경기가 자동으로 열립니다. 시작할까요?
+        start_hint: 경기마다 컨텐츠·시간·선수를 정한 뒤 시작하세요. 시작한 뒤에도 아직 열리지 않은 경기는 고칠 수 있습니다.
+        started: 토너먼트를 시작했습니다. 정해진 시간에 경기가 열립니다.
+        status: 상태
+        statuses:
+          draft: 준비 중
+          finished: 끝남
+          running: 진행 중
+        time: 시간
+        timed_out: '%{minutes}분 동안 응답 없음'
+        title: 토너먼트
       title: 컨텐츠 설정
     bot_sheets:
       conflict: '그사이 시트에서 바뀐 항목이 있어서 저장하지 않았습니다: %{names}. 바뀐 값을 확인하고 다시 저장하세요.'

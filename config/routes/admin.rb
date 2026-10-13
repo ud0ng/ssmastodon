@@ -86,6 +86,12 @@ namespace :admin do
   resources :game_houses, path: 'games/houses', only: [:index, :create, :update, :destroy] do
     post :adjust, on: :collection
   end
+  resources :game_tournaments, path: 'games/tournaments', only: [:index, :create, :show, :update, :destroy] do
+    post :start, on: :member
+  end
+  resources :game_tournament_matches, path: 'games/tournament_matches', only: [:update] do
+    post :decide, on: :member
+  end
   resources :game_settings, path: 'games', only: [:index, :show, :update]
   resources :game_characters, path: 'characters', only: [:index, :edit, :update]
 

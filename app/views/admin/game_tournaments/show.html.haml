@@ -1,0 +1,71 @@
+- content_for :page_title do
+  = @tournament.name
+
+- content_for :heading do
+  = render 'admin/game_settings/heading'
+
+- character_options = @characters.map { |character| ["#{character.house&.emoji} #{character.display_name} (@#{character.account.username})".strip, character.account_id] }
+- kind_options = @kinds.map { |kind| [kind.display_name, kind.key] }
+- seoul = ActiveSupport::TimeZone['Asia/Seoul']
+
+.game-tournament__head
+  = form_tag admin_game_tournament_path(@tournament), method: :patch, class: 'simple_form game-tournament__settings' do
+    .bot-sheet-fields
+      .input.with_label.bot-sheet-field--wide
+        .label_input
+          %label{ for: 'tournament_name' }= game_t('admin.games.tournaments.name')
+          .label_input__wrapper= text_field_tag 'game_tournament[name]', @tournament.name, id: 'tournament_name'
+      .input.with_label
+        .label_input
+          %label{ for: 'tournament_reward' }= game_t('admin.games.tournaments.reward')
+          .label_input__wrapper= number_field_tag 'game_tournament[reward]', @tournament.reward, id: 'tournament_reward', min: 0
+    .actions
+      = button_tag t('generic.save_changes'), type: :submit, class: 'button button-secondary'
+
+  .game-tournament__status
+    %strong= game_t("admin.games.tournaments.statuses.#{@tournament.status}")
+    - if @tournament.status == 'draft'
+      %p.hint= game_t('admin.games.tournaments.start_hint')
+      = button_to game_t('admin.games.tournaments.start'), start_admin_game_tournament_path(@tournament), method: :post, class: 'button', data: { confirm: game_t('admin.games.tournaments.start_confirm') }
+    - elsif @tournament.status == 'finished'
+      %p= game_t('admin.games.tournaments.champion_is', house: @tournament.winner_house&.label || '—')
+    - unless Game::Tournament.scoring_mode?
+      %p.hint= game_t('admin.games.tournaments.mode_hint')
+
+- wins = @tournament.house_wins
+- if wins.any?
+  .game-tournament__tally
+    - wins.sort_by { |_, count| -count }.each do |house, count|
+      %span= "#{house.label} #{count}승"
+
+.game-bracket
+  - (1..@tournament.rounds).each do |round|
+    .game-bracket__round
+      %h4= @tournament.round_name(round)
+      - @tournament.round_matches(round).each do |match|
+        .game-bracket__match{ id: "match-#{match.id}", class: "game-bracket__match--#{match.status}" }
+          .game-bracket__match-head
+            %span= game_t('admin.games.tournaments.match_number', number: match.position + 1)
+            %span.game-bracket__badge= game_t("admin.games.tournaments.match_statuses.#{match.status}")
+
+          - if %w(playing done).include?(match.status)
+            .game-bracket__summary
+              %div= match.kind_name
+              %div= match.scheduled_at && l(match.scheduled_at.in_time_zone(seoul), format: :short)
+              - match.players.each do |player|
+                .game-bracket__player{ class: ('game-bracket__player--winner' if match.winner_id == player.id) }
+                  = GameCharacter.for(player).house&.emoji
+                  = GameCharacter.for(player).display_name
+          - else
+            = form_tag admin_game_tournament_match_path(match), method: :patch, class: 'simple_form game-bracket__form' do
+              = select_tag 'game_tournament_match[kind]', options_for_select(kind_options, match.kind), include_blank: game_t('admin.games.tournaments.pick_content'), 'aria-label': game_t('admin.games.tournaments.content')
+              = datetime_local_field_tag 'game_tournament_match[scheduled_at]', match.scheduled_at&.in_time_zone(seoul)&.strftime('%Y-%m-%dT%H:%M'), 'aria-label': game_t('admin.games.tournaments.time')
+              = select_tag 'game_tournament_match[player_a_id]', options_for_select(character_options, match.player_a_id), include_blank: game_t('admin.games.tournaments.pick_player'), 'aria-label': game_t('admin.games.tournaments.player')
+              = select_tag 'game_tournament_match[player_b_id]', options_for_select(character_options, match.player_b_id), include_blank: game_t('admin.games.tournaments.pick_player'), 'aria-label': game_t('admin.games.tournaments.player')
+              = button_tag t('generic.save_changes'), type: :submit, class: 'button button-secondary'
+
+          - if %w(playing judging).include?(match.status) && match.players.size == 2
+            .game-bracket__decide
+              %span= game_t('admin.games.tournaments.decide')
+              - match.players.each do |player|
+                = button_to GameCharacter.for(player).display_name, decide_admin_game_tournament_match_path(match), method: :post, params: { winner_id: player.id }, class: 'button button-secondary', data: { confirm: game_t('admin.games.tournaments.decide_confirm', name: GameCharacter.for(player).display_name) }

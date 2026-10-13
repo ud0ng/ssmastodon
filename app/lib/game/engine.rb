@@ -159,7 +159,10 @@ module Game
     end
 
     # 시스템의 다음 툿은 방금 명령어를 보낸 툿에 답장한다 (신청 → 수락 → 시작 → 먹기 → 결과가 한 줄로 이어지게)
+    # (DM 으로 보낸 비밀 선택은 공개 스레드에 끼우지 않는다)
     def follow_up!(session)
+      return if status.direct_visibility? && session.visibility != 'direct'
+
       session.update!(last_status_id: status.id)
     end
 
