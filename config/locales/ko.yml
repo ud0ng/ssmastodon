@@ -23,13 +23,16 @@ ko:
   admin:
     system_menu: 시스템
     games:
+      changed: 변경됨
       characters:
         account: 계정
         account_hint: '계정: %{account} (%{display_name})'
         all: 전체
+        bulk_apply: 고른 캐릭터에 적용
         edit: 고치기
         edit_title: '캐릭터: %{name}'
         grade: 학년
+        grade_value: '%{grade}학년'
         hint: 서버원 목록에서 자동으로 만들어집니다. 캐릭터 이름을 비워 두면 표시 이름을 씁니다. 컨텐츠 툿에는 캐릭터 이름이 나옵니다.
         house: '%{term}'
         name: 캐릭터 이름
@@ -37,11 +40,19 @@ ko:
         no_house: '%{term} 없음'
         note: 메모
         search: 찾기
+        select_all: 이 쪽 전체 선택
         stats: 개인 값
         stats_hint: '한 줄에 하나씩 이름=값 (예: 체력=10). 컨텐츠에서 쓸 캐릭터 스탯'
         title: 캐릭터 명단
+      chips_placeholder: 입력 후 Enter
       common: 공통
       common_hint: 모든 컨텐츠에 쓰이는 시스템 계정, 명령어, 대기 시간, 점수 규칙과 공통 문구입니다. 문구는 아래 명령어를 눌러 넣을 수 있습니다.
+      fields_count: "%{count}개"
+      flow:
+        accept: 상대가 [수락]
+        invite: "[%{command}] @상대 로 신청"
+        play: 번갈아 또는 DM 으로 선택
+        result: 결과·%{term} 점수
       groups:
         account: 시스템 계정
         basic: 기본
@@ -77,6 +88,23 @@ ko:
       lessons: 수업 공통
       lessons_hint: '마법 수업 공통 설정입니다. [자습/과목]은 혼자, [수업/과목]은 모집 뒤 반 전체가 함께합니다. 등급(O·E·A·P·D·T)은 성적표에 쌓이고 소속 점수가 됩니다.'
       messages_hint: '문구 아래 명령어를 누르면 커서 자리에 들어갑니다. {계정명} {계정아이디} {계정 아바타}(그 사람 프로필 사진을 툿에 첨부) — 앞에 상대·승자·패자·다음 차례를 붙이면 그 사람입니다. {이가} {을를} {은는} 같은 조사는 앞 글자 받침에 맞춰 바뀝니다.'
+      overview:
+        characters_hint: "%{count}명 · 이름·%{term}·개인 값"
+        common_hint: 시스템 계정, 수락·기권 명령어, 대기 시간, 점수 규칙
+        lessons_common: 수업 공통
+        lessons_hint: 자습·수업 명령어, 등급별 점수, 모집 시간
+        matches: 1:1 대결
+        no_houses: 아직 없음
+        off: 꺼짐
+        on: 켜짐
+        open: 진행 중 %{count}
+        opponent: 상대
+        recent: 최근 1주 %{count}판
+        setup: 공통 · 운영
+        title: 전체
+        tournaments_hint: 대진표를 짜고 경기 결과를 판정
+      overview_hint: 컨텐츠를 눌러 켜기·명령어·규칙·확률·문구를 바꿉니다. 꺼진 컨텐츠는 흐리게 보입니다.
+      reset_default: 기본값으로
       tournaments:
         champion: 우승
         champion_is: '우승: %{house}'
@@ -121,6 +149,9 @@ ko:
         timed_out: '%{minutes}분 동안 응답 없음'
         title: 토너먼트
       title: 컨텐츠 설정
+      undo_all: 되돌리기
+      unknown_tokens: "이 문구에서 쓸 수 없는 명령어: {tokens}"
+      unsaved: 저장하지 않은 변경 {count}개
     bot_sheets:
       conflict: '그사이 시트에서 바뀐 항목이 있어서 저장하지 않았습니다: %{names}. 바뀐 값을 확인하고 다시 저장하세요.'
       connection:

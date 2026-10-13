@@ -93,7 +93,9 @@ namespace :admin do
     post :decide, on: :member
   end
   resources :game_settings, path: 'games', only: [:index, :show, :update]
-  resources :game_characters, path: 'characters', only: [:index, :edit, :update]
+  resources :game_characters, path: 'characters', only: [:index, :edit, :update] do
+    patch :bulk, on: :collection
+  end
 
   resources :site_uploads, only: [:destroy]
 

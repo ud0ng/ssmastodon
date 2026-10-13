@@ -1,0 +1,45 @@
+- content_for :page_title do
+  = game_t('admin.games.title')
+
+- content_for :heading do
+  = render 'admin/game_settings/heading'
+
+%p.hint= game_t('admin.games.overview_hint')
+
+%h4= game_t('admin.games.overview.setup')
+.game-overview
+  = link_to admin_game_setting_path('common'), class: 'game-overview__card game-overview__card--setup' do
+    %span.game-overview__icon{ 'aria-hidden': 'true' } ⚙️
+    %span.game-overview__body
+      %span.game-overview__name= game_t('admin.games.common')
+      %span.game-overview__command= game_t('admin.games.overview.common_hint')
+  = link_to admin_game_houses_path, class: 'game-overview__card game-overview__card--setup' do
+    %span.game-overview__icon{ 'aria-hidden': 'true' } 🛡️
+    %span.game-overview__body
+      %span.game-overview__name= game_t('admin.games.houses.title')
+      %span.game-overview__command= GameHouse.all.map(&:label).join(' · ').presence || game_t('admin.games.overview.no_houses')
+  = link_to admin_game_tournaments_path, class: 'game-overview__card game-overview__card--setup' do
+    %span.game-overview__icon{ 'aria-hidden': 'true' } 🏆
+    %span.game-overview__body
+      %span.game-overview__name= game_t('admin.games.tournaments.title')
+      %span.game-overview__command= game_t('admin.games.overview.tournaments_hint')
+  = link_to admin_game_characters_path, class: 'game-overview__card game-overview__card--setup' do
+    %span.game-overview__icon{ 'aria-hidden': 'true' } 🧙
+    %span.game-overview__body
+      %span.game-overview__name= game_t('admin.games.characters.title')
+      %span.game-overview__command= game_t('admin.games.overview.characters_hint', count: GameCharacter.count)
+
+%h4= game_t('admin.games.overview.matches')
+.game-overview
+  - Game::Kinds.matches.each do |kind|
+    = render 'admin/game_settings/kind_card', kind: kind, recent: @recent, open: @open
+
+%h4= game_t('admin.games.lessons')
+.game-overview
+  = link_to admin_game_setting_path('lessons'), class: 'game-overview__card game-overview__card--setup' do
+    %span.game-overview__icon{ 'aria-hidden': 'true' } 📜
+    %span.game-overview__body
+      %span.game-overview__name= game_t('admin.games.overview.lessons_common')
+      %span.game-overview__command= game_t('admin.games.overview.lessons_hint')
+  - Game::Lessons.all.each do |kind|
+    = render 'admin/game_settings/kind_card', kind: kind, recent: @recent, open: @open

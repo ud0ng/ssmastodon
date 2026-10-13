@@ -11,8 +11,19 @@ module Admin
       GameHouse.ensure_defaults!
       GameCharacter.sync!
       @houses = GameHouse.all
+      @house_counts = GameCharacter.where(account_id: GameCharacter.eligible_accounts.select(:id)).group(:game_house_id).count
       @characters = filtered.includes(:house, account: :user).order('game_houses.position NULLS LAST', 'accounts.username')
                             .page(params[:page]).per(PER_PAGE)
+    end
+
+    # 고른 캐릭터들의 소속을 한꺼번에 바꾼다 (game_house_id 가 'none' 이면 소속 없음)
+    def bulk
+      authorize :settings, :update?
+
+      house = params[:game_house_id] == 'none' ? nil : GameHouse.find(params[:game_house_id])
+      ids = Array(params[:ids]).compact_blank
+      GameCharacter.where(id: ids).find_each { |character| character.update!(house: house) } if ids.any?
+      redirect_to admin_game_characters_path(q: params[:q], house: params[:house]), notice: t('generic.changes_saved_msg')
     end
 
     def edit

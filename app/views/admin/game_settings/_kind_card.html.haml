@@ -1,0 +1,17 @@
+-# 컨텐츠 설정 첫 화면의 컨텐츠·과목 카드 (kind: Game::Kinds 클래스)
+- config = kind.config
+= link_to admin_game_setting_path(kind.key), class: ['game-overview__card', ('game-overview__card--off' unless config['enabled'])] do
+  %span.game-overview__icon{ 'aria-hidden': 'true' }= game_kind_icon(kind.key)
+  %span.game-overview__body
+    %span.game-overview__name= kind.display_name
+    %span.game-overview__command
+      - if kind.lesson?
+        = "[#{Game::Lessons.config['cmd_study']}/#{kind.display_name}] [#{Game::Lessons.config['cmd_class']}/#{kind.display_name}]"
+      - else
+        = "[#{config['command']}] @#{game_t('admin.games.overview.opponent')}"
+    %span.game-overview__meta
+      %span{ class: ['game-overview__state', ('game-overview__state--on' if config['enabled'])] }
+        = config['enabled'] ? game_t('admin.games.overview.on') : game_t('admin.games.overview.off')
+      %span= game_t('admin.games.overview.recent', count: recent.fetch(kind.key, 0))
+      - if open.fetch(kind.key, 0).positive?
+        %span.game-overview__live= game_t('admin.games.overview.open', count: open[kind.key])

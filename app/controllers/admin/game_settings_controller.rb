@@ -5,10 +5,12 @@ module Admin
   class GameSettingsController < BaseController
     before_action :set_key, only: [:show, :update]
 
+    # 첫 화면: 컨텐츠·수업 과목 카드 목록 (켜짐, 시작 명령어, 최근 1주 판 수)
     def index
       authorize :settings, :show?
 
-      redirect_to admin_game_setting_path('common')
+      @recent = GameSession.where(created_at: 7.days.ago..).group(:kind).count
+      @open = GameSession.open.group(:kind).count
     end
 
     def show

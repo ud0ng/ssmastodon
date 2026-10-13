@@ -4,6 +4,7 @@ import Rails from '@rails/ujs';
 
 import { setupCommunitySelect } from '../mastodon/admin/community_select';
 import { setupCommunityThemeEditor } from '../mastodon/admin/community_theme_editor';
+import { setupGameConfigEditor } from '../mastodon/admin/game_config_editor';
 import ready from '../mastodon/ready';
 
 const setAnnouncementEndsAttributes = (target: HTMLInputElement) => {
@@ -450,6 +451,17 @@ const attachColorPicker = (text: HTMLInputElement) => {
   wrapper.classList.add('label_input__wrapper--color');
 };
 
+// 캐릭터 명단: '전체 선택' 칸 (data-select-all 에 체크박스 이름)
+Rails.delegate(document, 'input[data-select-all]', 'change', ({ target }) => {
+  if (!(target instanceof HTMLInputElement)) return;
+  const name = target.dataset.selectAll ?? '';
+  target.form
+    ?.querySelectorAll<HTMLInputElement>(`input[type="checkbox"][name="${name}"]`)
+    .forEach((box) => {
+      box.checked = target.checked;
+    });
+});
+
 // 컨텐츠 설정: 문구 아래 명령어({계정명} 등)를 누르면 커서 자리에 넣는다
 Rails.delegate(document, 'button.game-token', 'click', ({ target }) => {
   const button =
@@ -470,6 +482,7 @@ ready(() => {
     .querySelectorAll<HTMLInputElement>('input[data-color-picker]')
     .forEach(attachColorPicker);
   setupCommunityThemeEditor();
+  setupGameConfigEditor();
   setupCommunitySelect();
 
   const domainBlockSeveritySelect = document.querySelector<HTMLSelectElement>(

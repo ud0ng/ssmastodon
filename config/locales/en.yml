@@ -25,13 +25,16 @@ en:
   admin:
     system_menu: System
     games:
+      changed: Changed
       characters:
         account: Account
         account_hint: 'Account: %{account} (%{display_name})'
         all: All
+        bulk_apply: Apply to selected
         edit: Edit
         edit_title: 'Character: %{name}'
         grade: Year
+        grade_value: Year %{grade}
         hint: Created automatically from the member list. A blank character name falls back to the display name.
         house: '%{term}'
         name: Character name
@@ -39,11 +42,19 @@ en:
         no_house: 'No %{term}'
         note: Note
         search: Search
+        select_all: Select all on this page
         stats: Stats
         stats_hint: 'One per line as name=value (e.g. HP=10)'
         title: Characters
+      chips_placeholder: Type and press Enter
       common: Common
       common_hint: System account, commands, time limits, point rules and shared messages used by every game.
+      fields_count: "%{count} items"
+      flow:
+        accept: Opponent replies [accept]
+        invite: Challenge with [%{command}] @opponent
+        play: Take turns or choose by DM
+        result: Result and %{term} points
       groups:
         account: System account
         basic: Basics
@@ -79,6 +90,23 @@ en:
       lessons: Lessons
       lessons_hint: 'Shared lesson settings. [study/subject] is solo, [class/subject] gathers a class first. Grades go to the report card and become points.'
       messages_hint: 'Click a token under a message to insert it. {계정명} {계정아이디} {계정 아바타} (attaches that profile picture); prefix 상대/승자/패자 for other people. Particles like {이가} follow the previous letter.'
+      overview:
+        characters_hint: "%{count} people · names, %{term}, stats"
+        common_hint: System account, accept/forfeit commands, timers, scoring
+        lessons_common: Lesson settings
+        lessons_hint: Study/class commands, points per grade, recruiting time
+        matches: 1:1 matches
+        no_houses: None yet
+        off: Off
+        on: On
+        open: "%{count} in progress"
+        opponent: opponent
+        recent: "%{count} games this week"
+        setup: Common & operations
+        title: Overview
+        tournaments_hint: Build brackets and judge matches
+      overview_hint: Pick a content to change its switch, commands, rules, chances and messages. Disabled ones are faded.
+      reset_default: Default
       tournaments:
         champion: Champion
         champion_is: 'Champion: %{house}'
@@ -123,6 +151,9 @@ en:
         timed_out: 'no reply for %{minutes} min'
         title: Tournament
       title: Content settings
+      undo_all: Undo
+      unknown_tokens: "Not available in this message: {tokens}"
+      unsaved: "{count} unsaved changes"
     bot_sheets:
       conflict: 'Not saved because these items changed in the sheet meanwhile: %{names}. Check the new values and save again.'
       connection:

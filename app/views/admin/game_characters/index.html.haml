@@ -7,38 +7,54 @@
 
 %p.hint= game_t('admin.games.characters.hint')
 
-= form_tag admin_game_characters_path, method: :get, class: 'simple_form game-characters__filter' do
-  .bot-sheet-fields
-    .input.with_label.bot-sheet-field--wide
-      .label_input
-        %label{ for: 'character_q' }= game_t('admin.games.characters.search')
-        .label_input__wrapper= text_field_tag :q, params[:q], id: 'character_q'
-    .input.with_label
-      .label_input
-        %label{ for: 'character_house' }= game_t('admin.games.characters.house')
-        .label_input__wrapper= select_tag :house, options_for_select([[game_t('admin.games.characters.all'), ''], [game_t('admin.games.characters.no_house'), 'none']] + @houses.map { |house| [house.label, house.id] }, params[:house]), id: 'character_house'
-  .actions
-    = button_tag game_t('admin.games.characters.search'), type: :submit, class: 'button button-secondary'
+-# 소속별로 보기 (칩) + 이름 찾기
+.game-roster__filters
+  - total = @house_counts.values.sum
+  = link_to admin_game_characters_path(q: params[:q]), class: ['game-switcher__chip', ('game-switcher__chip--active' if params[:house].blank?)] do
+    = game_t('admin.games.characters.all')
+    %span.game-roster__count= total
+  - @houses.each do |house|
+    = link_to admin_game_characters_path(q: params[:q], house: house.id), class: ['game-switcher__chip', ('game-switcher__chip--active' if params[:house] == house.id.to_s)], style: "--house-color: #{house.color.presence || '#6b5b3e'}" do
+      %span.game-roster__dot
+      = house.label
+      %span.game-roster__count= @house_counts.fetch(house.id, 0)
+  = link_to admin_game_characters_path(q: params[:q], house: 'none'), class: ['game-switcher__chip', ('game-switcher__chip--active' if params[:house] == 'none')] do
+    = game_t('admin.games.characters.no_house')
+    %span.game-roster__count= @house_counts.fetch(nil, 0)
 
-.bot-sheet-table
-  %table.table
-    %thead
-      %tr
-        %th= game_t('admin.games.characters.account')
-        %th= game_t('admin.games.characters.name')
-        %th= game_t('admin.games.characters.house')
-        %th= game_t('admin.games.characters.grade')
-        %th= game_t('admin.games.characters.stats')
-        %th.bot-sheet-table__actions
-    %tbody
-      - @characters.each do |character|
-        %tr
-          %td.bot-sheet-table__text= link_to "@#{character.account.username}", admin_account_path(character.account_id)
-          %td.bot-sheet-table__text= character.display_name
-          %td.bot-sheet-table__text= character.house&.label || '—'
-          %td.bot-sheet-table__text= character.grade || '—'
-          %td.bot-sheet-table__text= character.stats.map { |key, value| "#{key} #{value}" }.join(', ')
-          %td.bot-sheet-table__actions
-            = link_to material_symbol('edit'), edit_admin_game_character_path(character, q: params[:q], house: params[:house]), class: 'icon-button', title: game_t('admin.games.characters.edit')
+  = form_tag admin_game_characters_path, method: :get, class: 'game-roster__search' do
+    = hidden_field_tag :house, params[:house] if params[:house].present?
+    = search_field_tag :q, params[:q], placeholder: game_t('admin.games.characters.search'), 'aria-label': game_t('admin.games.characters.search')
+
+= form_tag bulk_admin_game_characters_path, method: :patch, class: 'game-roster' do
+  = hidden_field_tag :q, params[:q], id: nil
+  = hidden_field_tag :house, params[:house], id: nil
+
+  -# 고른 캐릭터 소속 한꺼번에 바꾸기
+  .game-roster__bulk
+    %label.game-roster__select-all
+      = check_box_tag :select_all, '1', false, data: { select_all: 'ids[]' }
+      = game_t('admin.games.characters.select_all')
+    = select_tag :game_house_id, options_for_select(@houses.map { |house| [house.label, house.id] } + [[game_t('admin.games.characters.no_house'), 'none']]), 'aria-label': game_t('admin.games.characters.house')
+    = button_tag game_t('admin.games.characters.bulk_apply'), type: :submit, class: 'button button-secondary'
+
+  .game-roster__grid
+    - @characters.each do |character|
+      - house = character.house
+      .game-roster__card{ style: "--house-color: #{house&.color.presence || '#6b5b3e'}" }
+        = check_box_tag 'ids[]', character.id, false, id: "character_#{character.id}", class: 'game-roster__check', 'aria-label': character.display_name
+        = image_tag full_asset_url(character.account.avatar_static_url), alt: '', class: 'game-roster__avatar'
+        .game-roster__body
+          %label.game-roster__name{ for: "character_#{character.id}" }= character.display_name
+          .game-roster__acct= link_to "@#{character.account.username}", admin_account_path(character.account_id)
+          .game-roster__meta
+            %span.game-roster__house= house&.label || game_t('admin.games.characters.no_house')
+            - if character.grade
+              %span= game_t('admin.games.characters.grade_value', grade: character.grade)
+          - if character.stats.any?
+            .game-roster__stats
+              - character.stats.each do |key, value|
+                %span.game-roster__stat= "#{key} #{value}"
+        = link_to material_symbol('edit'), edit_admin_game_character_path(character, q: params[:q], house: params[:house]), class: 'icon-button game-roster__edit', title: game_t('admin.games.characters.edit')
 
 = paginate @characters
