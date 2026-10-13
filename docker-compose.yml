@@ -61,7 +61,8 @@ services:
     image: ssmastodon:local
     restart: always
     env_file: .env.production
-    command: bundle exec puma -C config/puma.rb
+    # 시작할 때 DB 마이그레이션을 먼저 한다 (새 마이그레이션이 없으면 바로 넘어감). 서버 반영은 pull → build → up -d 만 하면 된다.
+    command: bash -c "bundle exec rails db:migrate && exec bundle exec puma -C config/puma.rb"
     networks:
       - external_network
       - internal_network

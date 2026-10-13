@@ -84,10 +84,10 @@ git checkout db/schema.rb Gemfile.lock   # 테스트가 바꿔 놓으니 되돌�
 ## 서버 (GCP VM, https://antagonism.site)
 
 ```bash
-cd ~/mastodon && git pull && docker compose build && docker compose run --rm web bundle exec rails db:migrate && docker compose up -d
+cd ~/mastodon && git pull && docker compose build && docker compose up -d
 ```
 
-- 마이그레이션이 없으면 `db:migrate` 는 빼도 된다. 서버 반영은 사용자가 직접 한다 (명령만 알려 준다).
+- 마이그레이션은 web 컨테이너가 시작할 때 자동으로 돈다 (docker-compose.yml 의 web command). 서버 반영은 사용자가 직접 한다 (명령만 알려 준다).
 - docker compose (build: .) + 호스트 Caddy 로 HTTPS. 새로 설치할 땐 `bin/docker-setup` (업로드 폴더 991 권한 포함).
 - 토큰·SMTP 키·.env 내용은 채팅에 붙여 달라고 하지 않는다.
 
