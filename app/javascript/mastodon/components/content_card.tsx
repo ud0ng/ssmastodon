@@ -63,6 +63,7 @@ export interface GameCard {
   live: boolean;
   tournament?: { name: string; round: string; number: number } | null;
   awards?: { house: House | null; amount: number }[];
+  rewards?: { name: string; money: number; currency: string; items: string[] }[];
 }
 
 const ICONS: Record<string, string> = {
@@ -151,6 +152,9 @@ const PlayerStat: React.FC<{ card: GameCard; player: CardPlayer }> = ({ card, pl
 const Players: React.FC<{ card: GameCard }> = ({ card }) => {
   const current = card.data.current_seat;
   const chosen = Array.isArray(card.data.chosen) ? (card.data.chosen as string[]) : [];
+  // 팀전 (퀴디치): 자리 → 팀 키, 팀 키 → 이름
+  const teams = (card.data.teams ?? {}) as Record<string, string | undefined>;
+  const teamNames = (card.data.team_names ?? {}) as Record<string, string | undefined>;
 
   return (
     <div className={card.players.length === 2 ? 'content-card__players content-card__players--versus' : 'content-card__players'}>
@@ -174,6 +178,11 @@ const Players: React.FC<{ card: GameCard }> = ({ card }) => {
                 {player.name}
               </span>
               <span className='content-card__player-sub'>
+                {teams[String(player.seat)] && (
+                  <span className={`content-card__badge content-card__badge--team-${teams[String(player.seat)]}`}>
+                    {String(teamNames[teams[String(player.seat)] ?? ''] ?? teams[String(player.seat)])}
+                  </span>
+                )}
                 <PlayerStat card={card} player={player} />
                 {isTurn && (
                   <span className='content-card__badge content-card__badge--turn'>
@@ -616,6 +625,21 @@ export const ContentCardView: React.FC<{
             </span>
           ))}
         </div>
+      )}
+
+      {card.rewards && card.rewards.length > 0 && (
+        <ul className='content-card__rewards'>
+          {card.rewards.map((reward, index) => (
+            // eslint-disable-next-line react/no-array-index-key
+            <li key={index}>
+              <span className='content-card__reward-name'>{reward.name}</span>
+              {reward.money > 0 && <span className='content-card__reward-money'>💰 {reward.money} {reward.currency}</span>}
+              {reward.items.map((item) => (
+                <span key={item} className='content-card__reward-item'>🎁 {item}</span>
+              ))}
+            </li>
+          ))}
+        </ul>
       )}
 
       {available.length > 0 && (

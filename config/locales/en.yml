@@ -27,6 +27,10 @@ en:
     games:
       changed: Changed
       characters:
+        recent_rewards: Recent rewards
+        reward_reason: Reason
+        reward_when: When
+        no_rewards: No rewards yet.
         bulk_target: Value to set
         extra_stats: Other values
         fields:
@@ -96,6 +100,7 @@ en:
         play: Take turns or choose by DM
         result: Result and %{term} points
       groups:
+        rewards: Rewards (money & items)
         account: System account
         basic: Basics
         commands: Commands
@@ -146,6 +151,8 @@ en:
         lessons_common: Lesson settings
         lessons_hint: Study/class commands, points per grade, recruiting time
         matches: 1:1 matches
+        group_games: Group games (teams & web-only)
+        up_to: 'up to %{count}'
         no_houses: None yet
         off: Off
         on: On

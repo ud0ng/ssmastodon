@@ -103,6 +103,8 @@ module Game
         key = kind.max_opponents > 1 ? 'msg_many_opponents' : 'msg_one_opponent'
         return reply(Game::Text.render(common[key], game: kind.display_name, max: kind.max_opponents))
       end
+      error = kind.invite_error(opponents.size + 1)
+      return reply(error) if error
 
       opponent = opponents.first
       if common['one_game_per_person']

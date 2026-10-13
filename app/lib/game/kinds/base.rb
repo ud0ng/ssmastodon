@@ -6,7 +6,7 @@ module Game
     class Base
       F = Game::Config::Field
 
-      # 모든 게임에 있는 설정 (켜기, 이름, 시작 명령어, 점수)
+      # 모든 게임에 있는 설정 (켜기, 이름, 시작 명령어, 점수, 보상)
       def self.base_fields(name:, command:, points_win:, points_draw: 0)
         [
           F.new(key: 'enabled', type: :boolean, default: true, group: 'basic', label: '켜기'),
@@ -14,6 +14,10 @@ module Game
           F.new(key: 'command', type: :string, default: command, group: 'basic', label: '시작 명령어', hint: '[명령어] 와 상대를 태그해 신청'),
           F.new(key: 'points_win', type: :integer, default: points_win, group: 'points', label: '승리 점수'),
           F.new(key: 'points_draw', type: :integer, default: points_draw, group: 'points', label: '무승부 점수'),
+          F.new(key: 'reward_money_win', type: :integer, default: 10, group: 'rewards', label: '승리 돈'),
+          F.new(key: 'reward_money_draw', type: :integer, default: 5, group: 'rewards', label: '무승부 돈'),
+          F.new(key: 'reward_money_lose', type: :integer, default: 2, group: 'rewards', label: '패배(참가) 돈'),
+          F.new(key: 'reward_items_win', type: :lines, default: ['초콜릿 개구리|1|30'], group: 'rewards', label: '승리 아이템', hint: Game::Rewards::ITEMS_HINT),
         ]
       end
 
@@ -62,6 +66,11 @@ module Game
         # 신청할 때 함께 태그할 수 있는 상대 수 (1:1 이면 1)
         def max_opponents
           1
+        end
+
+        # 인원이 규칙에 맞지 않으면 안내 문구 (total: 신청자 포함 인원)
+        def invite_error(_total)
+          nil
         end
       end
 
@@ -153,28 +162,39 @@ module Game
         Game::Engine.set_deadline!(session, common['turn_minutes'].to_i)
       end
 
-      # 게임 끝: 결과 기록, 점수 지급, 결과 툿
-      def finish!(winner: nil, message: nil, draw: false)
+      # 게임 끝: 결과 기록, 점수·보상 지급, 결과 툿. winners: 팀전처럼 이긴 사람이 여럿일 때
+      def finish!(winner: nil, winners: nil, message: nil, draw: false)
+        winners = draw ? [] : (winners || [winner]).compact
         players.each do |player|
-          player.update!(result: draw ? 'draw' : (player == winner ? 'win' : 'lose'))
+          player.update!(result: draw ? 'draw' : (winners.include?(player) ? 'win' : 'lose'))
         end
         session.update!(status: 'finished', finished_at: Time.now.utc, deadline_at: nil)
+        reward_lines = draw || winners.any? ? give_rewards! : []
 
-        # 토너먼트 경기: 점수 대신 승자를 다음 칸으로 (무승부면 운영진 판정)
+        # 토너먼트 경기: 점수 대신 승자를 다음 칸으로 (무승부면 운영진 판정). 돈·아이템 보상은 그대로.
         if tournament?
-          post(message) if message
-          Game::Tournament.finished!(session, winner, draw: draw)
+          text = [message, *reward_lines].compact.join("\n\n")
+          post(text) if text.present?
+          Game::Tournament.finished!(session, winners.first, draw: draw)
           return
         end
 
         point_lines = if draw
                         players.map { |player| Game::Points.award(session, player, config['points_draw']) }
-                      elsif winner
-                        [Game::Points.award(session, winner, config['points_win'])]
                       else
-                        []
+                        winners.map { |player| Game::Points.award(session, player, config['points_win']) }
                       end
-        post([message, *point_lines.compact].compact.join("\n\n"))
+        post([message, *point_lines.compact, *reward_lines].compact.join("\n\n"))
+      end
+
+      # 결과(player.result)에 따른 돈·아이템 (Game::Rewards). 안내를 한 문단으로 묶어 [문단] 또는 [] 를 돌려준다.
+      def give_rewards!
+        lines = players.filter_map do |player|
+          next if player.result.blank?
+
+          Game::Rewards.for_outcome(session, player, config, player.result, reason: "game:#{self.class.key}")
+        end
+        lines.any? ? [lines.join("\n")] : []
       end
     end
   end

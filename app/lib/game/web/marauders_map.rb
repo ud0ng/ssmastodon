@@ -277,15 +277,16 @@ module Game
         winners = student_won ? [student] : players.drop(1)
         players.each { |player| player.update!(result: winners.include?(player) ? 'win' : 'lose') }
         session.update!(status: 'finished', finished_at: Time.now.utc, deadline_at: nil)
+        reward_lines = give_rewards!
 
         if tournament?
-          post(message)
+          post([message, *reward_lines].join("\n\n"))
           Game::Tournament.finished!(session, winners.size == 1 ? winners.first : nil, draw: winners.size != 1)
           return
         end
 
         point_lines = winners.map { |player| Game::Points.give(session, player, config['points_win'], reason: "game:#{self.class.key}") }
-        post([message, *point_lines.compact].join("\n\n"))
+        post([message, *point_lines.compact, *reward_lines].join("\n\n"))
       end
     end
   end

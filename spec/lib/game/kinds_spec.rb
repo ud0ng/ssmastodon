@@ -176,7 +176,7 @@ RSpec.describe 'Game kinds' do
       toot(alice, '@system [몰이]', visibility: 'direct')
       toot(bob, '@system [추격]', visibility: 'direct')
 
-      expect(session.state['scores']).to eq('0' => 0, '1' => 0)
+      expect(session.state['scores']).to eq('A' => 0, 'B' => 0)
       expect(Status.find(session.last_status_id).text).to include('블러저가 드레이코를 덮쳤다')
     end
   end

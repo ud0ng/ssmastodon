@@ -37,9 +37,19 @@ module Game
       registry.values
     end
 
-    # 1:1 대결 컨텐츠 (마법 수업 제외)
+    # 신청해서 하는 컨텐츠 (마법 수업·서버 이벤트 제외)
     def matches
       all.reject { |kind| kind.lesson? || kind.event? }
+    end
+
+    # 1:1 대결
+    def duels
+      matches.select { |kind| kind.max_opponents == 1 }
+    end
+
+    # 여럿이 하는 컨텐츠 (퀴디치 팀전, 미로, 도둑 지도)
+    def group_games
+      matches.select { |kind| kind.max_opponents > 1 }
     end
 
     # 서버 이벤트 (비밀의방 등)

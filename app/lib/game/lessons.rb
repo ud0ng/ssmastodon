@@ -25,6 +25,10 @@ module Game
       F.new(key: 'class_bonus', type: :integer, default: 5, group: 'points', label: '수업 상위 보너스'),
       F.new(key: 'class_bonus_count', type: :integer, default: 3, group: 'points', label: '보너스 받는 상위 인원'),
 
+      *GRADE_NAMES.keys.map { |grade| F.new(key: "reward_money_#{grade}", type: :integer, default: { 'O' => 10, 'E' => 6, 'A' => 3 }.fetch(grade, 0), group: 'rewards', label: "#{grade} (#{GRADE_NAMES[grade]}) 돈") },
+      F.new(key: 'reward_items_O', type: :lines, default: ['초콜릿 개구리|1|50'], group: 'rewards', label: 'O 아이템', hint: Game::Rewards::ITEMS_HINT),
+      F.new(key: 'reward_study_percent', type: :integer, default: 50, group: 'rewards', label: '자습 돈 (%)'),
+
       F.new(key: 'msg_class_open', type: :text, group: 'messages', label: '수업 모집',
             default: "📚 %{subject} 수업이 열립니다!\n%{minutes}분 안에 이 툿에 [%{join}]으로 답하면 함께합니다."),
       F.new(key: 'msg_class_start', type: :text, group: 'messages', label: '수업 시작', default: '📚 %{subject} 수업을 시작합니다. 참가자: %{names}'),
@@ -82,6 +86,13 @@ module Game
       points = (points * cfg['study_percent'].to_i / 100.0).round if mode == 'study'
       points += cfg['class_bonus'].to_i if mode == 'class' && rank && rank <= cfg['class_bonus_count'].to_i && GameGrade.rank_of(grade) <= GameGrade.rank_of('A')
       points
+    end
+
+    # 등급별 돈 (자습은 일부만)
+    def money_for(grade, mode)
+      cfg = config
+      money = cfg["reward_money_#{grade}"].to_i
+      mode == 'study' ? (money * cfg['reward_study_percent'].to_i / 100.0).round : money
     end
 
     # [성적표]: 과목별 가장 좋은 등급, 주문 레벨, 수호령, 이번 학기 기여 점수

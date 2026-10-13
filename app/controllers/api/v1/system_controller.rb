@@ -33,7 +33,7 @@ class Api::V1::SystemController < Api::BaseController
       record: record,
       active: my_players(%w(pending active)).map { |player| game_json(player) },
       recent: my_players(%w(finished)).limit(RECENT_LIMIT).map { |player| game_json(player) },
-      games: Game::Kinds.matches.select(&:enabled?).map { |kind| { key: kind.key, name: kind.display_name, command: kind.config['command'] } },
+      games: Game::Kinds.matches.select(&:enabled?).map { |kind| { key: kind.key, name: kind.display_name, command: kind.config['command'], max_opponents: kind.max_opponents } },
       lessons: Game::Lessons.all.select(&:enabled?).map { |kind| { key: kind.key, name: kind.display_name, modes: kind.config['modes'] } },
       lesson_commands: Game::Lessons.config.slice('cmd_study', 'cmd_class', 'cmd_join', 'cmd_report').transform_keys { |key| key.delete_prefix('cmd_') },
       report: report,

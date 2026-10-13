@@ -76,6 +76,7 @@ module Admin
       @profile_fields = GameCharacterField.profile.to_a
       @stat_fields = GameCharacterField.stats.to_a
       @currency = Game::Config.for('common')['currency_name']
+      @rewards = GameReward.where(account_id: @character.account_id).order(id: :desc).limit(15)
     end
 
     def filter_params

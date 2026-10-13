@@ -104,18 +104,23 @@ module Game
 
         lessons = Game::Lessons.config
         point_lines = []
+        reward_lines = []
         lines = ranked.each_with_index.map do |player, index|
           result = grades[player.seat.to_s]
           rank = class? ? index + 1 : nil
           GameGrade.create!(account: player.account, session: session, subject: self.class.key, grade: result['grade'], mode: mode, rank: rank, detail: result.except('grade'))
           player.update!(result: index.zero? && class? ? 'win' : nil)
           point_lines << Game::Points.give(session, player, Game::Lessons.points_for(result['grade'], mode, rank), reason: "lesson:#{self.class.key}")
+          reward_lines << Game::Rewards.give(session, player, money: Game::Lessons.money_for(result['grade'], mode),
+                                                             items: result['grade'] == 'O' ? Game::Rewards.roll(lessons['reward_items_O']) : [],
+                                                             reason: "lesson:#{self.class.key}")
           render(lessons['msg_grade_line'], rank: rank ? "#{rank}. " : '', player: player, grade: result['grade'],
                                             grade_name: Game::Lessons::GRADE_NAMES[result['grade']], detail: result['detail'].present? ? " · #{result['detail']}" : '')
         end
 
         session.update!(status: 'finished', finished_at: Time.now.utc, deadline_at: nil)
-        post([intro, render(lessons['msg_grades'], subject: subject, mode: Game::Lessons.mode_name(mode), lines: lines.join("\n")), *point_lines].compact.join("\n\n"))
+        reward_text = reward_lines.compact.join("\n").presence
+        post([intro, render(lessons['msg_grades'], subject: subject, mode: Game::Lessons.mode_name(mode), lines: lines.join("\n")), *point_lines, reward_text].compact.join("\n\n"))
       end
 
       # 그 사람의 툿에만 답장 (수업 중 각자 진행할 때 다른 사람에게 알림이 가지 않게)

@@ -12,6 +12,12 @@ module Admin::GameHelper
     'levitation' => '🪶', 'flying' => '🧹', 'transfiguration' => '🐈', 'practice' => '✨', 'secret_chamber' => '🐍', 'maze' => '🏆', 'marauders_map' => '🗺️',
   }.freeze
 
+  # 보상 사유 'game:jellybean' → 컨텐츠 이름
+  def game_reward_reason(reason)
+    key = reason.to_s.split(':').last
+    Game::Kinds.keys.include?(key) ? "#{game_kind_icon(key)} #{Game::Kinds.fetch(key).display_name}" : reason
+  end
+
   def game_kind_icon(key)
     GAME_ICONS.fetch(key, '📜')
   end

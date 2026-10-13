@@ -72,6 +72,20 @@ class GameCharacter < ApplicationRecord
     end
   end
 
+  # 받은 아이템을 더한다 (이름이 같으면 개수만)
+  def add_items(items)
+    list = Array(inventory).map(&:dup)
+    items.each do |item|
+      existing = list.find { |entry| entry['name'] == item['name'] }
+      if existing
+        existing['count'] = existing['count'].to_i + item['count'].to_i
+      else
+        list << { 'name' => item['name'], 'count' => item['count'].to_i, 'note' => '' }
+      end
+    end
+    self.inventory = list
+  end
+
   def item_count
     Array(inventory).sum { |item| item['count'].to_i }
   end

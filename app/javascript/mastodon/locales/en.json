@@ -1038,6 +1038,8 @@
   "system.houses": "{term} points",
   "system.how_to": "How to join",
   "system.how_to.common": "Reply with [{accept}] or [{decline}] to an invite, [{forfeit}] to give up. [{points}] shows {term} points, [{record}] your record.",
+  "system.how_to.group": "Up to {max} people",
+  "system.how_to.teams": "1:1 or teams (2, 4, 6 players). You and the first half you tag are one team.",
   "system.how_to.lessons": "[{study}/subject] studies alone (once a day per subject). When a class opens, reply [{join}] to take part. [{report}] shows your report card.",
   "system.inventory": "Inventory",
   "system.inventory_empty": "No items yet.",

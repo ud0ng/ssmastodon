@@ -36,6 +36,7 @@ module Game
         'data' => safe { kind&.card_data } || {},
         'tournament' => safe { tournament_info(session) },
         'awards' => safe { awards(session) } || [],
+        'rewards' => safe { rewards(session) } || [],
         'actions' => session.open? ? (safe { actions_for(session, kind) } || []) : [],
       }
     end
@@ -53,6 +54,15 @@ module Game
     def awards(session)
       GameHousePoint.where(game_session_id: session.id).includes(:house).order(:id).map do |point|
         { 'house' => house_card(point.house), 'amount' => point.amount }
+      end
+    end
+
+    # 이 판으로 받은 돈·아이템 (사람마다 한 줄)
+    def rewards(session)
+      currency = Game::Config.for('common')['currency_name']
+      GameReward.where(game_session_id: session.id).includes(:account).order(:id).map do |reward|
+        { 'name' => GameCharacter.for(reward.account).display_name, 'money' => reward.money, 'currency' => currency,
+          'items' => reward.items.map { |item| Game::Rewards.item_label(item) } }
       end
     end
 

@@ -232,6 +232,17 @@
     font-weight: 600;
     line-height: 18px;
 
+    // 퀴디치 팀전
+    &--team-A {
+      background: color-mix(in srgb, #c0392b 22%, transparent);
+      color: inherit;
+    }
+
+    &--team-B {
+      background: color-mix(in srgb, #2e6fb7 22%, transparent);
+      color: inherit;
+    }
+
     &--turn,
     &--win {
       background: var(--sys-gold);
@@ -530,6 +541,33 @@
   font-family: var(--sys-serif);
   font-size: 16px;
   font-weight: 800;
+}
+
+.content-card__rewards {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 13px;
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+.content-card__reward-name {
+  font-weight: 700;
+}
+
+.content-card__reward-money,
+.content-card__reward-item {
+  padding: 1px 8px;
+  border: 1px solid var(--sys-gold-soft);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sys-gold) 10%, transparent);
 }
 
 .content-card__champion {

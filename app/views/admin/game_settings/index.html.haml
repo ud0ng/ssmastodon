@@ -31,7 +31,12 @@
 
 %h4= game_t('admin.games.overview.matches')
 .game-overview
-  - Game::Kinds.matches.each do |kind|
+  - Game::Kinds.duels.each do |kind|
+    = render 'admin/game_settings/kind_card', kind: kind, recent: @recent, open: @open
+
+%h4= game_t('admin.games.overview.group_games')
+.game-overview
+  - Game::Kinds.group_games.each do |kind|
     = render 'admin/game_settings/kind_card', kind: kind, recent: @recent, open: @open
 
 %h4= game_t('admin.games.overview.events')

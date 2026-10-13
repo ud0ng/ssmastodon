@@ -129,6 +129,7 @@ module Game
 
 과목별 수석
 %{toppers}"),
+      Field.new(key: 'msg_reward', type: :text, group: 'messages', label: '보상 지급', default: '💰 %{player} 보상: %{rewards}'),
       Field.new(key: 'msg_no_house', type: :text, group: 'messages', label: '소속 없음', default: '%{player}{은는} 아직 %{term}{이가} 없어 점수를 받지 못했습니다.'),
       Field.new(key: 'msg_board', type: :text, group: 'messages', label: '[점수] 머리말', default: '🏆 %{term} 점수'),
       Field.new(key: 'round_final', type: :string, default: '결승', group: 'tournament', label: '결승 이름'),

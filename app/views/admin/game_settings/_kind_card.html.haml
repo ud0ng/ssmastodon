@@ -9,6 +9,8 @@
         = "[#{config['command']}] → [#{config['cmd_join']}]"
       - elsif kind.lesson?
         = "[#{Game::Lessons.config['cmd_study']}/#{kind.display_name}] [#{Game::Lessons.config['cmd_class']}/#{kind.display_name}]"
+      - elsif kind.max_opponents > 1
+        = "[#{config['command']}] @#{game_t('admin.games.overview.opponent')} … (#{game_t('admin.games.overview.up_to', count: kind.max_opponents + 1)})"
       - else
         = "[#{config['command']}] @#{game_t('admin.games.overview.opponent')}"
     %span.game-overview__meta

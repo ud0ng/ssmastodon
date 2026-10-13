@@ -25,6 +25,10 @@ ko:
     games:
       changed: 변경됨
       characters:
+        recent_rewards: 최근 받은 보상
+        reward_reason: 사유
+        reward_when: 때
+        no_rewards: 아직 받은 보상이 없습니다.
         bulk_target: 바꿀 값
         extra_stats: 그 밖의 값
         fields:
@@ -94,6 +98,7 @@ ko:
         play: 번갈아 또는 DM 으로 선택
         result: 결과·%{term} 점수
       groups:
+        rewards: 보상 (돈·아이템)
         account: 시스템 계정
         basic: 기본
         commands: 명령어
@@ -144,6 +149,8 @@ ko:
         lessons_common: 수업 공통
         lessons_hint: 자습·수업 명령어, 등급별 점수, 모집 시간
         matches: 1:1 대결
+        group_games: 여럿이 하는 컨텐츠 (팀전·웹 전용)
+        up_to: '최대 %{count}명'
         no_houses: 아직 없음
         off: 꺼짐
         on: 켜짐

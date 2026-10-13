@@ -421,6 +421,7 @@ module Game
           point_lines << Game::Points.give(session, player, amount, reason: "event:#{self.class.key}") if amount.positive?
         end
         session.update!(status: 'finished', finished_at: Time.now.utc, deadline_at: nil)
+        point_lines.concat(give_rewards!)
 
         roles = players.map { |player| "#{player.name} — #{role_name(role_of(player.seat))}" }.join("\n")
         text = render(config[side == 'dark' ? 'msg_win_dark' : 'msg_win_light'], traitor: role_name('traitor'),

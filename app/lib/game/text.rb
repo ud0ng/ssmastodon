@@ -51,6 +51,7 @@ module Game
       protect: '보호 명령어', prophecy: '예언 명령어',
       room: '방', zone: '구역', targets: '목표 장소', student: '학생 이름', prefect: '사감 이름',
       link: '링크', creature: '마법 생물', item: '아이템',
+      teams: '팀 구성', rewards: '보상', money: '돈', currency: '돈 이름', items: '아이템 목록',
       range: '기간', houses: '소속 점수', games: '판 수', winners: '최다 승리', toppers: '과목별 수석',
       **ROLES.transform_values { |prefix| "#{prefix}계정명" },
     }.freeze

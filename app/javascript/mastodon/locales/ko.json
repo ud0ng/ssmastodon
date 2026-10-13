@@ -1224,6 +1224,8 @@
   "system.inventory_empty": "아직 아이템이 없습니다.",
   "system.how_to": "컨텐츠 이용 방법",
   "system.how_to.common": "신청을 받으면 [{accept}] 또는 [{decline}], 진행 중 포기는 [{forfeit}]. [{points}]는 {term} 점수, [{record}]는 내 전적을 알려 줍니다.",
+  "system.how_to.group": "최대 {max}명",
+  "system.how_to.teams": "1:1 또는 팀전(2·4·6명). 나와 앞쪽 절반이 한 팀",
   "system.load_failed": "불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.",
   "system.me": "내 캐릭터",
   "system.no_house": "{term} 없음",

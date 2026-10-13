@@ -6,6 +6,7 @@ class GameSession < ApplicationRecord
 
   has_many :players, -> { order(:seat) }, class_name: 'GamePlayer', dependent: :destroy, inverse_of: :session
   has_many :house_points, class_name: 'GameHousePoint', dependent: :nullify
+  has_many :rewards, class_name: 'GameReward', dependent: :nullify, inverse_of: :session
   has_many :events, class_name: 'GameEvent', dependent: :destroy, inverse_of: :session
 
   validates :status, inclusion: { in: STATUSES }

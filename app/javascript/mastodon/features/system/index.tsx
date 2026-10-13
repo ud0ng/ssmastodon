@@ -84,7 +84,7 @@ interface Overview {
   record: { win: number; lose: number; draw: number };
   active: Game[];
   recent: Game[];
-  games: { key: string; name: string; command: string }[];
+  games: { key: string; name: string; command: string; max_opponents: number }[];
   lessons: { key: string; name: string; modes: 'both' | 'study' | 'class' }[];
   lesson_commands: Record<'study' | 'class' | 'join' | 'report', string>;
   report: {
@@ -448,7 +448,16 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                 {data.games.map((game) => (
                   <li key={game.key}>
                     <strong>{game.name}</strong>
-                    <code>@{data.system_acct} @상대 [{game.command}]</code>
+                    <code>@{data.system_acct} {game.max_opponents > 1 ? '@상대1 @상대2 …' : '@상대'} [{game.command}]</code>
+                    {game.max_opponents > 1 && (
+                      <span className='system-howto__note'>
+                        {game.key === 'quidditch' ? (
+                          <FormattedMessage id='system.how_to.teams' defaultMessage='1:1 or teams (2, 4, 6 players). You and the first half you tag are one team.' />
+                        ) : (
+                          <FormattedMessage id='system.how_to.group' defaultMessage='Up to {max} people' values={{ max: game.max_opponents + 1 }} />
+                        )}
+                      </span>
+                    )}
                   </li>
                 ))}
                 {data.lessons.map((lesson) => (

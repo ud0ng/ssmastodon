@@ -15888,6 +15888,11 @@ body .search__popout__menu__item {
     font-size: 13px;
     line-height: 1.7;
   }
+
+  &__note {
+    color: var(--color-dim, $darker-text-color);
+    font-size: 12px;
+  }
 }
 
 // 토너먼트 대진표

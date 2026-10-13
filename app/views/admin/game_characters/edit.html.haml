@@ -53,6 +53,26 @@
   .fields-group
     = f.input :inventory_text, as: :text, wrapper: :with_label, label: game_t('admin.games.characters.inventory'), hint: game_t('admin.games.characters.inventory_hint'), input_html: { rows: 3, data: { stats_editor: { columns: [game_t('admin.games.characters.item_name'), game_t('admin.games.characters.item_count'), game_t('admin.games.characters.item_note')], sep: '|' }.to_json } }
 
+  %h5= game_t('admin.games.characters.recent_rewards')
+  - if @rewards.any?
+    .bot-sheet-table.game-rewards
+      %table.table
+        %thead
+          %tr
+            %th= game_t('admin.games.characters.reward_when')
+            %th= game_t('admin.games.characters.reward_reason')
+            %th= game_t('admin.games.characters.money', currency: @currency)
+            %th= game_t('admin.games.characters.inventory')
+        %tbody
+          - @rewards.each do |reward|
+            %tr
+              %td.bot-sheet-table__text= l(reward.created_at.in_time_zone('Asia/Seoul'), format: :short)
+              %td.bot-sheet-table__text= game_reward_reason(reward.reason)
+              %td.bot-sheet-table__text= reward.money.positive? ? "+#{reward.money}" : '-'
+              %td.bot-sheet-table__text= reward.items.map { |item| Game::Rewards.item_label(item) }.join(', ').presence || '-'
+  - else
+    %p.hint= game_t('admin.games.characters.no_rewards')
+
   .fields-group
     = f.input :note, as: :text, wrapper: :with_label, label: game_t('admin.games.characters.note'), input_html: { rows: 3 }
 
