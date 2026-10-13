@@ -25,7 +25,10 @@ class Api::V1::SystemController < Api::BaseController
       record: record,
       active: my_players(%w(pending active)).map { |player| game_json(player) },
       recent: my_players(%w(finished)).limit(RECENT_LIMIT).map { |player| game_json(player) },
-      games: Game::Kinds.all.select(&:enabled?).map { |kind| { key: kind.key, name: kind.display_name, command: kind.config['command'] } },
+      games: Game::Kinds.matches.select(&:enabled?).map { |kind| { key: kind.key, name: kind.display_name, command: kind.config['command'] } },
+      lessons: Game::Lessons.all.select(&:enabled?).map { |kind| { key: kind.key, name: kind.display_name, modes: kind.config['modes'] } },
+      lesson_commands: Game::Lessons.config.slice('cmd_study', 'cmd_class', 'cmd_join', 'cmd_report').transform_keys { |key| key.delete_prefix('cmd_') },
+      report: report,
       commands: common.slice('cmd_accept', 'cmd_decline', 'cmd_forfeit', 'cmd_points', 'cmd_record').transform_keys { |key| key.delete_prefix('cmd_') },
     }
   end
@@ -63,6 +66,21 @@ class Api::V1::SystemController < Api::BaseController
         character = GameCharacter.for(account)
         { acct: account.acct, name: character.display_name, house_id: character.game_house_id&.to_s }
       end,
+    }
+  end
+
+  # 성적표: 과목별 가장 좋은 등급, 주문 레벨, 수호령, 이번 학기 기여 점수
+  def report
+    character = GameCharacter.for(current_account)
+    grades = GameGrade.where(account: current_account).group_by(&:subject)
+    {
+      subjects: Game::Lessons.all.map do |kind|
+        list = grades.fetch(kind.key, [])
+        { key: kind.key, name: kind.display_name, best: GameGrade.best(list.map(&:grade)), count: list.size }
+      end,
+      spells: (character.progress['spells'] || {}).map { |spell, level| { name: spell, level: level } },
+      patronus: character.progress['patronus'],
+      points: GameHousePoint.where(account: current_account).sum(:amount),
     }
   end
 

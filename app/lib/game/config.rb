@@ -23,11 +23,13 @@ module Game
       end
 
       def schema(key)
+        return Game::Lessons::FIELDS if key == 'lessons'
+
         SCHEMAS.fetch(key) { Game::Kinds.fetch(key).schema }
       end
 
       def keys
-        SCHEMAS.keys + Game::Kinds.keys
+        SCHEMAS.keys + ['lessons'] + Game::Kinds.keys
       end
 
       # 관리 화면에서 받은 값 저장 (기본값과 같은 값은 지운다)

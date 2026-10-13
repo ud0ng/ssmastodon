@@ -24,7 +24,7 @@ module Admin
       authorize :settings, :show?
 
       @characters = GameCharacter.where(account_id: GameCharacter.eligible_accounts.select(:id)).includes(:house, :account).order(:game_house_id, :name)
-      @kinds = Game::Kinds.all
+      @kinds = Game::Kinds.matches
     end
 
     def update

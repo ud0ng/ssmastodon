@@ -15919,3 +15919,76 @@ body .search__popout__menu__item {
     white-space: nowrap;
   }
 }
+
+// 성적표 (양피지 장부): 과목 — 점선 — 등급
+.system-report {
+  @extend %system-parchment;
+
+  padding: 16px 20px;
+  font-family: var(--sys-serif);
+
+  &__grades {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+  }
+
+  &__row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 14px;
+
+    dt {
+      flex: 0 0 auto;
+    }
+
+    // 과목과 등급 사이 점선
+    &::after {
+      content: '';
+      order: 1;
+      flex: 1;
+      border-bottom: 1px dotted var(--sys-gold-soft);
+    }
+
+    dd {
+      order: 2;
+      margin: 0;
+    }
+  }
+
+  &__grade {
+    min-width: 1.6em;
+    color: var(--color-dim, $darker-text-color);
+    font-size: 17px;
+    font-weight: 700;
+    text-align: center;
+
+    &--O,
+    &--E {
+      color: var(--sys-gold);
+    }
+
+    &--T,
+    &--D {
+      color: #8b3a3a;
+    }
+  }
+
+  &__extra {
+    display: grid;
+    gap: 4px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--sys-gold-soft);
+    font-size: 13px;
+  }
+
+  &__points {
+    margin-top: 10px;
+    color: var(--sys-gold);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: end;
+  }
+}

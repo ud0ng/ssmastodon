@@ -12,7 +12,7 @@ class GameTournamentMatch < ApplicationRecord
   belongs_to :session, class_name: 'GameSession', foreign_key: :game_session_id, optional: true
 
   validates :status, inclusion: { in: STATUSES }
-  validates :kind, inclusion: { in: ->(_) { Game::Kinds.keys } }, allow_blank: true
+  validates :kind, inclusion: { in: ->(_) { Game::Kinds.matches.map(&:key) } }, allow_blank: true
 
   def players
     [player_a, player_b].compact

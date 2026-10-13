@@ -12,6 +12,11 @@ module Game
         'duel' => Game::Kinds::Duel,
         'potion' => Game::Kinds::Potion,
         'quidditch' => Game::Kinds::Quidditch,
+        # 마법 수업
+        'levitation' => Game::Lessons::Levitation,
+        'transfiguration' => Game::Lessons::Transfiguration,
+        'flying' => Game::Lessons::Flying,
+        'practice' => Game::Lessons::Practice,
       }
     end
 
@@ -27,14 +32,19 @@ module Game
       registry.values
     end
 
+    # 1:1 대결 컨텐츠 (마법 수업 제외)
+    def matches
+      all.reject(&:lesson?)
+    end
+
     # 이 명령어로 시작하는 켜진 게임
     def by_command(command)
-      all.find { |kind| kind.enabled? && kind.config['command'] == command }
+      matches.find { |kind| kind.enabled? && kind.config['command'] == command }
     end
 
     # 명령어는 같지만 꺼져 있는 게임 (안내용)
     def disabled_by_command(command)
-      all.find { |kind| !kind.enabled? && kind.config['command'] == command }
+      matches.find { |kind| !kind.enabled? && kind.config['command'] == command }
     end
   end
 end

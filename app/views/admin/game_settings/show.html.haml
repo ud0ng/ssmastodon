@@ -1,10 +1,11 @@
 - content_for :page_title do
-  = @key == 'common' ? game_t('admin.games.common') : Game::Kinds.fetch(@key).display_name
+  = { 'common' => game_t('admin.games.common'), 'lessons' => game_t('admin.games.lessons') }.fetch(@key) { Game::Kinds.fetch(@key).display_name }
 
 - content_for :heading do
   = render 'admin/game_settings/heading', save_form: 'edit_game_config'
 
-%p.hint= t(@key == 'common' ? 'admin.games.common_hint' : 'admin.games.kind_hint', example: '%{이름}')
+- hint_key = { 'common' => 'admin.games.common_hint', 'lessons' => 'admin.games.lessons_hint' }.fetch(@key) { Game::Kinds.fetch(@key).lesson? ? 'admin.games.lesson_hint' : 'admin.games.kind_hint' }
+%p.hint= game_t(hint_key, example: '%{이름}')
 
 = form_tag admin_game_setting_path(@key), method: :patch, id: 'edit_game_config', class: 'simple_form game-config' do
   - @fields.group_by(&:group).each do |group, fields|

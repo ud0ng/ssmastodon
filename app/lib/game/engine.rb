@@ -22,7 +22,12 @@ module Game
 
     # 시간 제한을 걸고 그 시각에 Game::TimeoutWorker 를 예약한다
     def self.set_deadline!(session, minutes)
-      session.update!(deadline_at: minutes.to_i.clamp(1, 24 * 60).minutes.from_now)
+      set_deadline_in!(session, minutes.to_i.clamp(1, 24 * 60).minutes)
+    end
+
+    # 초 단위 (레비오사 신호 등)
+    def self.set_deadline_in!(session, duration)
+      session.update!(deadline_at: duration.from_now)
       Game::TimeoutWorker.perform_at(session.deadline_at, session.id, session.deadline_token)
     end
 
@@ -37,7 +42,12 @@ module Game
       command, args = self.class.parse(status.text)
       return if command.nil?
 
+      lessons = Game::Lessons.config
       case command
+      when lessons['cmd_study'] then study(args)
+      when lessons['cmd_class'] then open_class(args)
+      when lessons['cmd_join'] then join
+      when lessons['cmd_report'] then reply(Game::Lessons.report(actor))
       when common['cmd_accept'] then accept
       when common['cmd_decline'] then decline
       when common['cmd_forfeit'] then forfeit
@@ -155,6 +165,72 @@ module Game
 
         follow_up!(session)
         session.kind_class.new(session).forfeit!(player)
+      end
+    end
+
+    # 마법 수업 과목 찾기 (없거나 잠겼으면 안내하고 nil)
+    def lesson_kind(name, mode)
+      lessons = Game::Lessons.config
+      kind = Game::Lessons.by_subject(name)
+      message = if kind.nil?
+                  Game::Text.render(lessons['msg_unknown_subject'], subjects: Game::Lessons.subjects)
+                elsif !kind.enabled?
+                  Game::Text.render(lessons['msg_locked'], subject: kind.display_name)
+                elsif !kind.allows?(mode)
+                  Game::Text.render(lessons[mode == 'study' ? 'msg_class_only' : 'msg_study_only'], subject: kind.display_name)
+                end
+      return kind if message.nil?
+
+      reply(message)
+      nil
+    end
+
+    # [자습/과목] 혼자 바로 시작 (과목당 하루 N번)
+    def study(args)
+      kind = lesson_kind(args.first, 'study')
+      return if kind.nil?
+
+      lessons = Game::Lessons.config
+      limit = lessons['study_daily_limit'].to_i
+      return reply(Game::Text.render(lessons['msg_study_limit'], subject: kind.display_name, limit: limit)) if limit.positive? && Game::Lessons.studied_today(actor, kind) >= limit
+      return reply(Game::Text.render(common['msg_busy'], player: name_of(actor))) if common['one_game_per_person'] && open_player(actor)
+
+      session = GameSession.transaction do
+        GameSession.create!(kind: kind.key, status: 'active', visibility: visibility, root_status_id: status.id, last_status_id: status.id,
+                            state: { 'mode' => 'study', 'args' => args.drop(1) }).tap do |created|
+          created.players.create!(account: actor, seat: 0, state: { 'accepted' => true })
+        end
+      end
+      kind.new(session).start!
+    end
+
+    # [수업/과목] 참가자 모집 → 시간이 되면 시작 (Game::TimeoutWorker → recruitment_over!)
+    def open_class(args)
+      kind = lesson_kind(args.first, 'class')
+      return if kind.nil?
+
+      lessons = Game::Lessons.config
+      unless Game::Lessons.can_open_class?(actor)
+        return reply(Game::Text.render(lessons['msg_not_opener'], study: lessons['cmd_study'], subject: kind.display_name))
+      end
+
+      session = GameSession.create!(kind: kind.key, status: 'pending', visibility: visibility, root_status_id: status.id, last_status_id: status.id,
+                                    state: { 'mode' => 'class', 'args' => args.drop(1) })
+      text = Game::Text.render(lessons['msg_class_open'], subject: kind.display_name, minutes: lessons['join_minutes'], join: lessons['cmd_join'])
+      Game::Poster.to_session(session, text, mentions: [actor])
+      self.class.set_deadline!(session, lessons['join_minutes'])
+    end
+
+    # [참가] 모집 중인 수업 (가장 최근 것)
+    def join
+      session = GameSession.where(status: 'pending').where("state->>'mode' = 'class'").order(id: :desc).first
+      return if session.nil? || session.players.exists?(account_id: actor.id)
+      return reply(Game::Text.render(common['msg_busy'], player: name_of(actor))) if common['one_game_per_person'] && open_player(actor)
+
+      session.with_lock do
+        next unless session.status == 'pending'
+
+        session.players.create!(account: actor, seat: session.players.count, state: { 'accepted' => true })
       end
     end
 

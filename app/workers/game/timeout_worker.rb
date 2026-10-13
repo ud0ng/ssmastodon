@@ -13,7 +13,9 @@ class Game::TimeoutWorker
     session.with_lock do
       next unless session.open? && session.deadline_token == token && session.deadline_at&.past?
 
-      if session.status == 'pending'
+      if session.status == 'pending' && session.state['mode'] == 'class'
+        session.kind_class.new(session).recruitment_over!
+      elsif session.status == 'pending'
         common = Game::Config.for('common')
         session.update!(status: 'cancelled', finished_at: Time.now.utc, deadline_at: nil)
         Game::Poster.to_session(session, Game::Text.render(common['msg_expired'], game: session.kind_class.display_name, minutes: common['invite_minutes']))

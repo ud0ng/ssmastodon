@@ -12,6 +12,7 @@
       primary.item :common, safe_join([material_symbol('tune'), game_t('admin.games.common')]), admin_game_setting_path('common'), highlights_on: %r{/admin/games/common}
       primary.item :tournaments, safe_join([material_symbol('flag'), game_t('admin.games.tournaments.title')]), admin_game_tournaments_path, highlights_on: %r{/admin/games/tournaments}
       primary.item :houses, safe_join([material_symbol('shield_question'), game_t('admin.games.houses.title')]), admin_game_houses_path, highlights_on: %r{/admin/games/houses}
+      primary.item :lessons, safe_join([material_symbol('description'), game_t('admin.games.lessons')]), admin_game_setting_path('lessons'), highlights_on: %r{/admin/games/lessons}
       Game::Kinds.all.each do |kind|
         primary.item kind.key.to_sym, safe_join([material_symbol('extension'), kind.display_name]), admin_game_setting_path(kind.key), highlights_on: %r{/admin/games/#{kind.key}}
       end

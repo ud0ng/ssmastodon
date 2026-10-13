@@ -75,6 +75,9 @@ en:
         total: Total
         when: When
       kind_hint: This game's switch, commands, rules and messages. Time limits and accept/decline/forfeit commands are in the Common tab.
+      lesson_hint: This subject's unlock, commands, rules and messages. Study/class commands and grade points are in the Lessons tab.
+      lessons: Lessons
+      lessons_hint: 'Shared lesson settings. [study/subject] is solo, [class/subject] gathers a class first. Grades go to the report card and become points.'
       tournaments:
         champion: Champion
         champion_is: 'Champion: %{house}'

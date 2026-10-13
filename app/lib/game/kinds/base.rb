@@ -43,6 +43,11 @@ module Game
         def continues_on_timeout?
           false
         end
+
+        # 마법 수업 과목인가 (Game::Lessons::Base)
+        def lesson?
+          false
+        end
       end
 
       attr_reader :session

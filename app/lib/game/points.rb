@@ -27,6 +27,20 @@ module Game
       Game::Text.render(common['msg_points'], emoji: house.emoji, house: house.name, amount: amount, player: character.display_name, term: common['house_term'])
     end
 
+    # 상대 없이 주는 점수 (마법 수업 등). 같은 상대·같은 소속 규칙은 없다.
+    def give(session, player, amount, reason:)
+      return if amount.to_i <= 0
+      return if Game::Tournament.scoring_mode?
+
+      common = Game::Config.for('common')
+      character = player.character
+      house = character.house
+      return Game::Text.render(common['msg_no_house'], player: character.display_name, term: common['house_term']) if house.nil?
+
+      GameHousePoint.create!(house: house, account: player.account, session: session, amount: amount.to_i, reason: reason)
+      Game::Text.render(common['msg_points'], emoji: house.emoji, house: house.name, amount: amount.to_i, player: character.display_name, term: common['house_term'])
+    end
+
     # 오늘(한국 시간) 같은 상대와의 게임으로 이미 limit 번 점수를 받았는가
     def over_daily_limit?(account, opponent_ids, limit)
       return false if limit <= 0 || opponent_ids.empty?

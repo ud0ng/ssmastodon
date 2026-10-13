@@ -1191,5 +1191,10 @@
   "system.tournament": "토너먼트",
   "system.tournament.champion": "우승: {house}",
   "system.tournament.reward": "우승하면 {points}점",
-  "system.tournament.wins": "{house} {wins}승"
+  "system.tournament.wins": "{house} {wins}승",
+  "system.report": "성적표",
+  "system.report.spells": "주문 숙련",
+  "system.report.patronus": "수호령: {patronus}",
+  "system.report.points": "이번 학기 기여: {points}점",
+  "system.how_to.lessons": "[{study}/과목]은 혼자 하는 자습(과목당 하루 1번)입니다. 수업이 열리면 [{join}]으로 답해 함께하세요. [{report}]는 성적표를 보여 줍니다."
 }

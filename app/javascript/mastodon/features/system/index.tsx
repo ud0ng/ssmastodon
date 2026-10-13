@@ -75,6 +75,14 @@ interface Overview {
   active: Game[];
   recent: Game[];
   games: { key: string; name: string; command: string }[];
+  lessons: { key: string; name: string; modes: 'both' | 'study' | 'class' }[];
+  lesson_commands: Record<'study' | 'class' | 'join' | 'report', string>;
+  report: {
+    subjects: { key: string; name: string; best: string | null; count: number }[];
+    spells: { name: string; level: number }[];
+    patronus: string | null;
+    points: number;
+  };
   commands: Record<'accept' | 'decline' | 'forfeit' | 'points' | 'record', string>;
 }
 
@@ -180,6 +188,39 @@ const Bracket: React.FC<{ tournament: Tournament; houses: House[]; systemAcct: s
     </div>
   );
 };
+
+// 성적표 (양피지): 과목별 가장 좋은 등급, 주문 숙련, 수호령, 이번 학기 기여
+const ReportCard: React.FC<{ report: Overview['report'] }> = ({ report }) => (
+  <div className='system-report'>
+    <dl className='system-report__grades'>
+      {report.subjects.map((subject) => (
+        <div key={subject.key} className='system-report__row'>
+          <dt>{subject.name}</dt>
+          <dd className={subject.best ? `system-report__grade system-report__grade--${subject.best}` : 'system-report__grade'}>{subject.best ?? '—'}</dd>
+        </div>
+      ))}
+    </dl>
+    {(report.spells.length > 0 || report.patronus) && (
+      <div className='system-report__extra'>
+        {report.spells.length > 0 && (
+          <div>
+            <FormattedMessage id='system.report.spells' defaultMessage='Spells' />
+            {': '}
+            {report.spells.map((spell) => `${spell.name} Lv.${spell.level}`).join(' · ')}
+          </div>
+        )}
+        {report.patronus && (
+          <div>
+            <FormattedMessage id='system.report.patronus' defaultMessage='Patronus: {patronus}' values={{ patronus: report.patronus }} />
+          </div>
+        )}
+      </div>
+    )}
+    <div className='system-report__points'>
+      <FormattedMessage id='system.report.points' defaultMessage='Contribution this term: {points}' values={{ points: report.points }} />
+    </div>
+  </div>
+);
 
 const GameRow: React.FC<{ game: Game; systemAcct: string }> = ({ game, systemAcct }) => {
   const intl = useIntl();
@@ -325,6 +366,13 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
 
             <section className='system-section'>
               <h2 className='system-section__title'>
+                <FormattedMessage id='system.report' defaultMessage='Report card' />
+              </h2>
+              <ReportCard report={data.report} />
+            </section>
+
+            <section className='system-section'>
+              <h2 className='system-section__title'>
                 <FormattedMessage id='system.active' defaultMessage='In progress' />
               </h2>
               {data.active.length > 0 ? (
@@ -347,12 +395,26 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                     <code>@{data.system_acct} @상대 [{game.command}]</code>
                   </li>
                 ))}
+                {data.lessons.map((lesson) => (
+                  <li key={lesson.key}>
+                    <strong>{lesson.name}</strong>
+                    {lesson.modes !== 'class' && <code>@{data.system_acct} [{data.lesson_commands.study}/{lesson.name}]</code>}
+                    {lesson.modes !== 'study' && <code>@{data.system_acct} [{data.lesson_commands.class}/{lesson.name}]</code>}
+                  </li>
+                ))}
               </ul>
               <p className='system-howto__common'>
                 <FormattedMessage
                   id='system.how_to.common'
                   defaultMessage='Reply with [{accept}] or [{decline}] to an invite, [{forfeit}] to give up. [{points}] shows {term} points, [{record}] your record.'
                   values={{ ...data.commands, term: data.house_term }}
+                />
+              </p>
+              <p className='system-howto__common'>
+                <FormattedMessage
+                  id='system.how_to.lessons'
+                  defaultMessage='[{study}/subject] studies alone (once a day per subject). When a class opens, reply [{join}] to take part. [{report}] shows your report card.'
+                  values={data.lesson_commands}
                 />
               </p>
             </section>
