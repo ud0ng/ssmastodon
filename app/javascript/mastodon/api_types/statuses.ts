@@ -119,6 +119,9 @@ export interface ApiStatusJSON {
 
   card?: ApiPreviewCardJSON;
   poll?: ApiPollJSON;
+
+  // 시스템 계정의 컨텐츠 툿 (components/content_card.tsx 의 GameCard)
+  game_card?: Record<string, unknown>;
 }
 
 export interface ApiContextJSON {

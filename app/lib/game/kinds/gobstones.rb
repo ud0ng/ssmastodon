@@ -61,8 +61,25 @@ module Game
         true
       end
 
+      def card_data
+        {
+          'scores' => state['scores'] || {},
+          'rounds' => rounds,
+          'throws' => state['throws'].to_i,
+          'current_seat' => state['seat'],
+          'last_throw' => state['last_throw'],
+        }
+      end
+
+      def card_actions
+        return [] if state['seat'].nil?
+
+        STRENGTHS.map { |key| Game::Card.action(config["cmd_#{key}"], seats: [state['seat']]) }
+      end
+
       # 시간 초과는 그 차례 0점으로 넘어간다
       def timeout!
+        state['last_throw'] = { 'seat' => current.seat, 'strength' => nil, 'score' => 0, 'hit' => false }
         advance!(current, render(config['msg_timeout_throw'], player: current))
       end
 
@@ -93,6 +110,7 @@ module Game
                      (score.negative? ? 'msg_splash' : 'msg_miss')
                    end
         state['scores'][player.seat.to_s] += score
+        state['last_throw'] = { 'seat' => player.seat, 'strength' => config["cmd_#{strength}"], 'score' => score, 'hit' => hit }
         advance!(player, render(config[template], player: player, strength: config["cmd_#{strength}"], score: score))
       end
 

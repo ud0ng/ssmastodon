@@ -33,7 +33,7 @@ module Game
         bag = Array.new(worst) { { 'flavor' => config['worst_flavor'], 'worst' => true } } +
               Array.new(count - worst) { { 'flavor' => flavors.sample, 'worst' => false } }
 
-        state.merge!('bag' => bag.shuffle, 'seat' => players.map(&:seat).sample)
+        state.merge!('bag' => bag.shuffle, 'seat' => players.map(&:seat).sample, 'total' => count, 'worst_total' => worst)
         session.update!(turn: 1)
         post(render(config['msg_start'], count: count, worst: worst, player: current, eat: config['cmd_eat'], max: config['max_per_turn']))
         wait_for_turn!
@@ -52,8 +52,10 @@ module Game
         count = [count, bag.size].min
         eaten = []
         worst = false
+        state['last_eaten'] = { 'seat' => player.seat, 'beans' => [] }
         count.times do
           bean = bag.shift
+          state['last_eaten']['beans'] << bean
           eaten << render(config['msg_eat'], player: player, flavor: bean['flavor'])
           if bean['worst']
             worst = true
@@ -73,8 +75,31 @@ module Game
         true
       end
 
+      def card_data
+        bag = state['bag'] || []
+        {
+          'remaining' => bag.size,
+          'total' => state['total'] || config['beans'].to_i,
+          'worst_total' => state['worst_total'] || config['worst_count'].to_i,
+          'worst_flavor' => config['worst_flavor'],
+          'current_seat' => state['seat'],
+          'last_eaten' => state['last_eaten'],
+        }
+      end
+
+      def card_actions
+        return [] if state['seat'].nil?
+
+        max = [[config['max_per_turn'].to_i, 1].max, (state['bag'] || []).size].min
+        (1..max).map do |count|
+          command = count == 1 ? config['cmd_eat'] : "#{config['cmd_eat']}/#{count}"
+          Game::Card.action(command, label: count == 1 ? config['cmd_eat'] : "#{config['cmd_eat']} #{count}", seats: [state['seat']], style: count == 1 ? 'primary' : 'secondary')
+        end
+      end
+
       # 차례인 사람이 시간 안에 먹지 않으면 패배
       def timeout!
+        state['last_eaten'] = nil
         loser = current
         winner = session.opponent_of(loser)
         finish!(winner: winner, message: render(config['msg_timeout'], player: loser, winner: winner, minutes: common['turn_minutes']))

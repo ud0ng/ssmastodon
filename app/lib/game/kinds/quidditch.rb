@@ -69,6 +69,21 @@ module Game
         resolve!
       end
 
+      def card_data
+        {
+          'scores' => state['scores'] || {},
+          'seek' => state['seek'] || {},
+          'max_turns' => max_turns,
+          'chosen' => (state['choices'] || {}).keys,
+          'last_round' => state['last_round'],
+        }
+      end
+
+      def card_actions
+        seats = players.map(&:seat)
+        ACTIONS.map { |key| Game::Card.action(config["cmd_#{key}"], seats: seats, dm: true) }
+      end
+
       private
 
       def max_turns
@@ -141,6 +156,7 @@ module Game
 
         board = players.map { |player| "#{player.name} #{state['scores'][player.seat.to_s]}" }.join(' : ')
         turn_text = render(config['msg_turn'], turn: session.turn, lines: lines.join("\n"), board: board)
+        state['last_round'] = { 'choices' => choices.transform_values { |action| config["cmd_#{action}"] }, 'blocked' => blocked, 'caught' => caught.map(&:seat) }
         state['choices'] = {}
 
         if caught.any? || session.turn >= max_turns

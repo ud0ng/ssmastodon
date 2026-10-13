@@ -41,6 +41,16 @@ module Game
         start!
       end
 
+      # PC 웹 카드: 과목·방식, 지금까지 받은 등급 (등급 순)
+      def card_data
+        {
+          'subject' => subject,
+          'mode_name' => Game::Lessons.mode_name(mode),
+          'grades' => (state['grades'] || {}).transform_values { |result| result.slice('grade', 'detail') },
+          'grade_names' => Game::Lessons::GRADE_NAMES,
+        }
+      end
+
       # 수업 중 [기권] = 나가기 (가장 낮은 등급)
       def forfeit!(player)
         grade!(player, fallback_grade) unless graded?(player)

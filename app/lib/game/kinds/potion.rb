@@ -87,6 +87,22 @@ module Game
         end_turn!
       end
 
+      # 정답은 끝난 뒤에만. 이번 턴 결과(맞은 자리 수·자리만 틀린 수)는 공개된 것.
+      def card_data
+        finished = session.status == 'finished'
+        {
+          'potion' => state['potion'],
+          'ingredients' => state['shown'] || [],
+          'answer_size' => (state['answer'] || []).size,
+          'answer' => finished ? state['answer'] : nil,
+          'tries' => state['tries'] || {},
+          'max_tries' => max_tries,
+          'guesses' => (state['guesses'] || {}).transform_values { |result| result.slice('strike', 'ball') },
+          'solved' => state['solved'] || [],
+          'brew' => config['cmd_brew'],
+        }
+      end
+
       private
 
       def answer

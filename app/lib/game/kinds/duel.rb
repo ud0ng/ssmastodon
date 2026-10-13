@@ -76,6 +76,26 @@ module Game
         resolve!
       end
 
+      def card_data
+        {
+          'hp' => state['hp'] || {},
+          'max_hp' => config['hp'].to_i,
+          'max_turns' => config['max_turns'].to_i,
+          'special_used' => state['special_used'] || {},
+          'chosen' => (state['choices'] || {}).keys,
+          'last_round' => state['last_round'],
+        }
+      end
+
+      # 주문은 DM 으로 고른다. 필살기는 아직 안 쓴 사람만.
+      def card_actions
+        seats = players.map(&:seat)
+        spells = SPELLS.map { |key| Game::Card.action(config["cmd_#{key}"], seats: seats, dm: true) }
+        fresh = seats.reject { |seat| state.dig('special_used', seat.to_s) }
+        specials = fresh.empty? ? [] : SPELLS.map { |key| Game::Card.action("#{config["cmd_#{key}"]}/#{config['cmd_special']}", label: "#{config["cmd_#{key}"]}·#{config['cmd_special']}", seats: fresh, dm: true, style: 'secondary') }
+        spells + specials
+      end
+
       private
 
       def ask_all!
@@ -122,6 +142,10 @@ module Game
 
         round_text = render(config['msg_round'], turn: session.turn, player_a: a, player_b: b,
                                                  choice_a: choice_label(choice_a), choice_b: choice_label(choice_b), outcome: outcome, hearts: hearts)
+        state['last_round'] = {
+          'choices' => { a.seat.to_s => choice_label(choice_a), b.seat.to_s => choice_label(choice_b) },
+          'winner_seat' => winner&.seat,
+        }
         state['choices'] = {}
 
         fallen = players.find { |player| state['hp'][player.seat.to_s].zero? }

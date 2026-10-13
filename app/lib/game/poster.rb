@@ -37,12 +37,23 @@ module Game
       end
     end
 
-    # 게임 판의 스레드에 이어서 올린다 (참가자 모두 멘션)
-    def to_session(session, text, mentions: nil)
+    # 게임 판의 스레드에 이어서 올린다 (참가자 모두 멘션). kind: 지금 진행 중인 Kinds 객체 (카드용, 없으면 새로 만든다)
+    def to_session(session, text, mentions: nil, kind: nil)
       thread = Status.find_by(id: session.last_status_id || session.root_status_id)
       status = post(text, mentions: mentions || session.players.map(&:account), thread: thread, visibility: session.visibility)
-      session.update!(last_status_id: status.id) if status
+      return if status.nil?
+
+      session.update!(last_status_id: status.id)
+      record_card(session, status, kind)
       status
+    end
+
+    # PC 웹 카드용으로 그 순간의 상태를 남긴다 (Game::Card)
+    def record_card(session, status, kind)
+      GameEvent.create!(session: session, status: status, payload: Game::Card.build(session, kind))
+    rescue => e
+      Rails.logger.warn { "Game::Poster card failed for #{status.id}: #{e.class} #{e.message}" }
+      nil
     end
   end
 end

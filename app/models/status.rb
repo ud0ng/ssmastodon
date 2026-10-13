@@ -109,6 +109,7 @@ class Status < ApplicationRecord
   has_one :poll, inverse_of: :status, dependent: :destroy
   has_one :trend, class_name: 'StatusTrend', inverse_of: :status, dependent: nil
   has_one :quote, inverse_of: :status, dependent: :destroy
+  has_one :game_event, inverse_of: :status, dependent: nil # 시스템 계정의 컨텐츠 툿 (DB 에서 같이 지워짐)
 
   validates :uri, uniqueness: true, presence: true, unless: :local?
   validates :text, presence: true, unless: -> { with_media? || reblog? }

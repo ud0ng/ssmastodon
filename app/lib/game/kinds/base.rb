@@ -72,6 +72,16 @@ module Game
         session.state
       end
 
+      # PC 웹 카드에 보일 공개 상태 (Game::Card). 하위 클래스가 채운다.
+      def card_data
+        {}
+      end
+
+      # PC 웹 카드의 행동 버튼 (진행 중일 때). Game::Card.action 으로 만든다.
+      def card_actions
+        []
+      end
+
       # 수락되어 게임이 시작될 때
       def start!
         raise NotImplementedError
@@ -104,7 +114,7 @@ module Game
       end
 
       def post(text)
-        Game::Poster.to_session(session, text)
+        Game::Poster.to_session(session, text, kind: self)
       end
 
       # 한 사람에게만 DM (비밀 선택 안내). 같은 DM 스레드로 이어 보낸다.

@@ -50,6 +50,11 @@ async function main() {
     const [p, name] = target.split(':');
     await send('Page.navigate', { url: `${BASE}${p}` });
     await sleep(4500);
+    // SETUP=파일.js 면 캡처 전에 실행 (칸 열기·값 넣기 등)
+    if (process.env.SETUP) {
+      console.log(JSON.stringify(await evaluate(fs.readFileSync(process.env.SETUP, 'utf8')), null, 1));
+      await sleep(800);
+    }
     const shot = await send('Page.captureScreenshot', { format: 'png' });
     fs.writeFileSync(path.join(outDir, `${name}.png`), Buffer.from(shot.result.data, 'base64'));
     console.log('saved', name);
