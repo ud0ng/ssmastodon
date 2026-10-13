@@ -89,3 +89,9 @@
               = point.reason
               - if point.account
                 = "· @#{point.account.username}"
+
+%h4= game_t('admin.games.houses.announcements')
+%p.hint= game_t('admin.games.houses.announcements_hint_html', path: admin_game_setting_path('common'))
+.game-houses__announce
+  = button_to game_t('admin.games.houses.weekly_now'), weekly_admin_game_houses_path, method: :post, class: 'button button-secondary', data: { confirm: game_t('admin.games.houses.weekly_confirm') }
+  = button_to game_t('admin.games.houses.term_end'), term_end_admin_game_houses_path, method: :post, class: 'button', data: { confirm: game_t('admin.games.houses.term_end_confirm') }

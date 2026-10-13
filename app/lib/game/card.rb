@@ -34,7 +34,49 @@ module Game
         'deadline_at' => session.deadline_at&.iso8601,
         'players' => session.players.map { |player| player_card(player) },
         'data' => safe { kind&.card_data } || {},
+        'tournament' => safe { tournament_info(session) },
+        'awards' => safe { awards(session) } || [],
         'actions' => session.open? ? (safe { actions_for(session, kind) } || []) : [],
+      }
+    end
+
+    # 토너먼트 경기면 대회 이름·라운드·경기 번호
+    def tournament_info(session)
+      match = GameTournamentMatch.find_by(id: session.state['tournament_match_id']) if session.state['tournament_match_id']
+      return if match.nil?
+
+      tournament = match.tournament
+      { 'name' => tournament.name, 'round' => tournament.round_name(match.round), 'number' => match.position + 1 }
+    end
+
+    # 이 판으로 받은 소속 점수 (결과 툿 아래에 '🦁 그리핀도르 +5')
+    def awards(session)
+      GameHousePoint.where(game_session_id: session.id).includes(:house).order(:id).map do |point|
+        { 'house' => house_card(point.house), 'amount' => point.amount }
+      end
+    end
+
+    def house_card(house)
+      house && { 'name' => house.name, 'color' => house.color, 'emoji' => house.emoji }
+    end
+
+    # 토너먼트 우승 발표 (판이 없는 카드)
+    def champion(tournament, wins, champion)
+      {
+        'version' => VERSION,
+        'kind' => 'tournament',
+        'name' => tournament.name,
+        'lesson' => false,
+        'phase' => 'finished',
+        'turn' => 0,
+        'players' => [],
+        'data' => {
+          'champion' => house_card(champion),
+          'reward' => tournament.reward,
+          'tally' => wins.sort_by { |_, count| -count }.map { |house, count| { 'house' => house_card(house), 'wins' => count } },
+        },
+        'actions' => [],
+        'awards' => [],
       }
     end
 
@@ -47,7 +89,7 @@ module Game
         'acct' => account.acct,
         'name' => player.name,
         'avatar' => account.avatar_static_url,
-        'house' => house && { 'name' => house.name, 'color' => house.color, 'emoji' => house.emoji },
+        'house' => house_card(house),
         'result' => player.result,
         'accepted' => player.state['accepted'] ? true : false,
       }
@@ -59,6 +101,8 @@ module Game
       if session.status == 'pending'
         if session.state['mode'] == 'class'
           [action(Game::Lessons.config['cmd_join'], seats: 'others')]
+        elsif session.state['mode'] == 'event'
+          [action(session.kind_class.config['cmd_join'], seats: 'others')]
         else
           waiting = session.players.reject { |player| player.state['accepted'] }.map(&:seat)
           waiting.empty? ? [] : [action(common['cmd_accept'], seats: waiting), action(common['cmd_decline'], seats: waiting, style: 'secondary')]

@@ -51,6 +51,7 @@ interface TournamentMatch {
   scheduled_at: string | null;
   winner_acct: string | null;
   status_id: string | null;
+  session_id?: string | null;
   players: { acct: string; name: string; house_id: string | null }[];
 }
 
@@ -177,7 +178,7 @@ const Bracket: React.FC<{ tournament: Tournament; houses: House[]; systemAcct: s
               );
               const className = `system-bracket__match system-bracket__match--${match.status}`;
               return match.status_id ? (
-                <Link key={match.id} className={className} to={`/@${systemAcct}/${match.status_id}`}>{body}</Link>
+                <Link key={match.id} className={className} to={match.session_id ? `/system/sessions/${match.session_id}` : `/@${systemAcct}/${match.status_id}`}>{body}</Link>
               ) : (
                 <div key={match.id} className={className}>{body}</div>
               );
@@ -266,7 +267,7 @@ const GameRow: React.FC<{ game: Game; systemAcct: string }> = ({ game, systemAcc
   );
 
   return game.status_id ? (
-    <Link className='system-game' to={`/@${systemAcct}/${game.status_id}`}>{body}</Link>
+    <Link className='system-game' to={`/system/sessions/${game.id}`}>{body}</Link>
   ) : (
     <div className='system-game'>{body}</div>
   );

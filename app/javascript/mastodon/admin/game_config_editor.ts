@@ -223,6 +223,27 @@ const attachChips = (field: FieldState, placeholder: string) => {
       const chip = document.createElement('span');
       chip.className = 'game-chips__chip';
       chip.textContent = item;
+      // 끌어서 순서 바꾸기
+      chip.draggable = true;
+      chip.addEventListener('dragstart', (event) => {
+        event.dataTransfer?.setData('text/plain', String(index));
+        chip.classList.add('game-chips__chip--dragging');
+      });
+      chip.addEventListener('dragend', () => {
+        chip.classList.remove('game-chips__chip--dragging');
+      });
+      chip.addEventListener('dragover', (event) => {
+        event.preventDefault();
+      });
+      chip.addEventListener('drop', (event) => {
+        event.preventDefault();
+        const from = Number(event.dataTransfer?.getData('text/plain'));
+        if (Number.isNaN(from) || from === index) return;
+        const list = items();
+        const [moved] = list.splice(from, 1);
+        if (moved !== undefined) list.splice(index, 0, moved);
+        write(list);
+      });
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'game-chips__remove';
@@ -276,6 +297,39 @@ const attachSlider = (field: FieldState) => {
   number.before(slider);
 };
 
+// '…_perfect' + '…_half' 확률 → 완벽·어중간·실패(나머지) 막대. 합이 100 을 넘으면 경고.
+const attachSplitBars = (form: HTMLFormElement, labels: string[]) => {
+  form.querySelectorAll<HTMLInputElement>('input[name$="_half]"]').forEach((half) => {
+    const prefix = half.name.replace(/_half]$/, '');
+    const perfect = form.querySelector<HTMLInputElement>(`input[name="${prefix}_perfect]"]`);
+    const field = half.closest<HTMLElement>('.game-field');
+    if (!perfect || !field) return;
+
+    const bar = document.createElement('div');
+    bar.className = 'game-split';
+    field.append(bar);
+
+    const update = () => {
+      const a = Math.max(0, Number(perfect.value) || 0);
+      const b = Math.max(0, Number(half.value) || 0);
+      const rest = 100 - a - b;
+      bar.replaceChildren();
+      [[a, 'perfect'], [b, 'half'], [Math.max(rest, 0), 'fail']].forEach(([value, kind], index) => {
+        const segment = document.createElement('span');
+        segment.className = `game-split__segment game-split__segment--${kind}`;
+        segment.style.flexGrow = String(value);
+        segment.textContent = Number(value) > 0 ? `${labels[index] ?? ''} ${value}%` : '';
+        bar.append(segment);
+      });
+      bar.classList.toggle('game-split--over', rest < 0);
+      bar.title = rest < 0 ? (labels[3] ?? '') : '';
+    };
+    perfect.addEventListener('input', update);
+    half.addEventListener('input', update);
+    update();
+  });
+};
+
 export const setupGameConfigEditor = () => {
   const form = document.querySelector<HTMLFormElement>('form[data-game-config]');
   if (!form) return;
@@ -326,6 +380,8 @@ export const setupGameConfigEditor = () => {
     }
   });
 
+  attachSplitBars(form, JSON.parse(form.dataset.splitLabels ?? '[]') as string[]);
+
   const savebar = form.querySelector<HTMLElement>('.game-savebar');
   const savebarText = savebar?.querySelector<HTMLElement>('.game-savebar__text');
   let submitting = false;
@@ -367,4 +423,127 @@ export const setupGameConfigEditor = () => {
   });
 
   refresh();
+};
+
+// 캐릭터 개인 값: '이름=값' 줄 → 표 (textarea 는 숨기고 값은 그대로 쓴다)
+export const setupStatsEditor = () => {
+  document.querySelectorAll<HTMLTextAreaElement>('textarea[data-stats-editor]').forEach((textarea) => {
+    const labels = JSON.parse(textarea.dataset.statsEditor ?? '{}') as Record<string, string>;
+    const table = document.createElement('div');
+    table.className = 'game-stats';
+
+    const rows = () =>
+      textarea.value
+        .split('\n')
+        .map((line) => line.split('='))
+        .filter(([key]) => key?.trim())
+        .map(([key, ...rest]) => [key?.trim() ?? '', rest.join('=').trim()]);
+
+    const write = (list: string[][]) => {
+      textarea.value = list.filter(([key]) => key).map(([key, value]) => `${key}=${value}`).join('\n');
+    };
+
+    const render = () => {
+      table.replaceChildren();
+      const list = rows();
+      [...list, ['', '']].forEach((row, index) => {
+        const line = document.createElement('div');
+        line.className = 'game-stats__row';
+        row.forEach((cell, column) => {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = cell ?? '';
+          input.placeholder = column === 0 ? (labels.key ?? '') : (labels.value ?? '');
+          input.addEventListener('change', () => {
+            const next = rows();
+            const current = next[index] ?? ['', ''];
+            current[column] = input.value.trim();
+            next[index] = current;
+            write(next);
+            render();
+          });
+          line.append(input);
+        });
+        if (index < list.length) {
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.className = 'game-stats__remove';
+          remove.textContent = '×';
+          remove.addEventListener('click', () => {
+            const next = rows();
+            next.splice(index, 1);
+            write(next);
+            render();
+          });
+          line.append(remove);
+        }
+        table.append(line);
+      });
+    };
+
+    textarea.classList.add('game-chips__source');
+    textarea.after(table);
+    render();
+  });
+};
+
+// 토너먼트 대진표 (admin/game_tournaments/show): 경기를 누르면 오른쪽 패널에 그 경기 편집,
+// 선수 칩을 경기 칸에 끌어다 놓으면 그 경기 폼에 넣고 바로 저장한다.
+export const setupBracketEditor = () => {
+  const root = document.querySelector<HTMLElement>('[data-bracket-editor]');
+  if (!root) return;
+
+  const select = (id: string) => {
+    root.querySelectorAll<HTMLElement>('.game-bracket__match').forEach((match) => {
+      match.classList.toggle('game-bracket__match--selected', match.dataset.match === id);
+    });
+    root.querySelectorAll<HTMLElement>('[data-edit]').forEach((panel) => {
+      panel.hidden = panel.dataset.edit !== id;
+    });
+    const hint = root.querySelector<HTMLElement>('.game-bracket__panel-hint');
+    if (hint) hint.hidden = true;
+  };
+
+  root.querySelectorAll<HTMLElement>('.game-bracket__match').forEach((match) => {
+    const open = () => {
+      if (match.dataset.match) select(match.dataset.match);
+    };
+    match.addEventListener('click', open);
+    match.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        open();
+      }
+    });
+  });
+
+  // 저장하고 돌아오면 (#match-3) 그 경기를 연다
+  const fromHash = /^#match-(\d+)$/.exec(window.location.hash)?.[1];
+  if (fromHash) select(fromHash);
+
+  root.querySelectorAll<HTMLElement>('.game-bracket__chip').forEach((chip) => {
+    chip.addEventListener('dragstart', (event) => {
+      event.dataTransfer?.setData('text/plain', chip.dataset.accountId ?? '');
+    });
+  });
+
+  root.querySelectorAll<HTMLElement>('.game-bracket__slot[data-droppable]').forEach((slot) => {
+    slot.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      slot.classList.add('game-bracket__slot--over');
+    });
+    slot.addEventListener('dragleave', () => {
+      slot.classList.remove('game-bracket__slot--over');
+    });
+    slot.addEventListener('drop', (event) => {
+      event.preventDefault();
+      slot.classList.remove('game-bracket__slot--over');
+      const accountId = event.dataTransfer?.getData('text/plain');
+      const form = root.querySelector<HTMLFormElement>(`form[data-match-form="${slot.dataset.match}"]`);
+      const field = form?.querySelector<HTMLSelectElement>(`select[data-slot="${slot.dataset.slot}"]`);
+      if (!accountId || !form || !field) return;
+      field.value = accountId;
+      form.requestSubmit();
+    });
+  });
 };

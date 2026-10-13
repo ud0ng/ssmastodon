@@ -41,6 +41,8 @@ ko:
         note: 메모
         search: 찾기
         select_all: 이 쪽 전체 선택
+        stat_name: '이름 (예: 체력)'
+        stat_value: '값 (예: 10)'
         stats: 개인 값
         stats_hint: '한 줄에 하나씩 이름=값 (예: 체력=10). 컨텐츠에서 쓸 캐릭터 스탯'
         title: 캐릭터 명단
@@ -60,9 +62,11 @@ ko:
         flavors: 맛
         messages: 문구
         points: '%{term} 점수'
+        roles: 역할·진영 이름
         rules: 규칙
         scoring: 점수 방식
         spells: 주문
+        summary: 정기 툿
         tournament: 토너먼트 문구
         time: 시간
       houses:
@@ -70,6 +74,8 @@ ko:
         adjust: 점수 조정
         adjust_hint: '운영진이 %{term} 점수를 더하거나 뺍니다 (빼려면 음수).'
         amount: 점수
+        announcements: 정기 툿
+        announcements_hint_html: 주간 결산은 <a href="%{path}">공통</a> 탭의 요일·시각에 자동으로 올라갑니다. 여기서는 지금 바로 올릴 수 있습니다.
         color: 색
         delete: '%{term} 지우기'
         delete_confirm: '%{name}(%{term}) 지울까요? 점수 기록도 함께 지워집니다.'
@@ -78,10 +84,15 @@ ko:
         manual: 운영진 조정
         name: '%{term}'
         order: 순서
+        posted: 시스템 계정으로 올렸습니다.
         reason: 사유
         recent: 최근 점수 기록
+        term_end: 학기 마감 발표
+        term_end_confirm: 소속 순위·우승 소속·과목별 수석을 지금 발표할까요? (점수는 그대로입니다)
         title: '%{term}'
         total: 총점
+        weekly_confirm: 이번 주 결산을 지금 올릴까요?
+        weekly_now: 주간 결산 지금 올리기
         when: 시간
       kind_hint: 이 컨텐츠의 켜기·명령어·규칙·문구입니다. 수락 대기, 턴 시간, 수락·거절·기권 명령어는 공통 탭에서 정합니다.
       lesson_hint: 이 과목의 해금·명령어·규칙·문구입니다. 자습/수업 명령어, 등급별 점수, 수업 모집 시간은 수업 공통 탭에서 정합니다.
@@ -91,6 +102,7 @@ ko:
       overview:
         characters_hint: "%{count}명 · 이름·%{term}·개인 값"
         common_hint: 시스템 계정, 수락·기권 명령어, 대기 시간, 점수 규칙
+        events: 서버 이벤트
         lessons_common: 수업 공통
         lessons_hint: 자습·수업 명령어, 등급별 점수, 모집 시간
         matches: 1:1 대결
@@ -105,6 +117,11 @@ ko:
         tournaments_hint: 대진표를 짜고 경기 결과를 판정
       overview_hint: 컨텐츠를 눌러 켜기·명령어·규칙·확률·문구를 바꿉니다. 꺼진 컨텐츠는 흐리게 보입니다.
       reset_default: 기본값으로
+      split:
+        fail: 실패
+        half: 어중간
+        over: 합이 100%를 넘습니다
+        perfect: 완벽
       tournaments:
         champion: 우승
         champion_is: '우승: %{house}'
@@ -114,6 +131,7 @@ ko:
         decide_confirm: '%{name}의 승리로 정할까요?'
         delete: 토너먼트 지우기
         delete_confirm: '%{name} 토너먼트를 지울까요?'
+        drop_player: 선수를 끌어다 놓기
         edit: 대진표
         hint: '대진표에는 사람이 들어갑니다. 경기마다 컨텐츠·시간·선수를 정하면 그 시간에 시스템이 경기를 열고, 이긴 사람이 다음 칸으로 올라갑니다. 이긴 경기 수가 가장 많은 %{term}이(가) 우승합니다 (동률이면 결승 승자의 %{term}). 공통 탭의 점수 방식이 토너먼트제일 때만 평소 컨텐츠 점수가 꺼집니다.'
         locked: 이미 시작했거나 끝난 경기는 바꿀 수 없습니다.
@@ -128,6 +146,7 @@ ko:
         name: 토너먼트 이름
         name_placeholder: '예: 1학기 기숙사 대항전'
         new: 새 토너먼트
+        panel_hint: 경기를 누르면 여기서 컨텐츠·시간·선수를 고칩니다. 아래 선수 칩을 대진표 칸에 끌어다 놓으면 바로 배치됩니다.
         people:
           one: '%{count}명'
           other: '%{count}명'

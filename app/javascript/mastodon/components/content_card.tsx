@@ -9,6 +9,8 @@ import { FormattedMessage } from 'react-intl';
 
 import type { Map as ImmutableMap } from 'immutable';
 
+import { Link } from 'react-router-dom';
+
 import {
   changeCompose,
   directCompose,
@@ -35,9 +37,10 @@ interface CardPlayer {
   accepted: boolean;
 }
 
-interface CardAction {
+export interface CardAction {
   label: string;
   command: string;
+  mention?: string;
   seats: number[] | 'others';
   dm: boolean;
   style: 'primary' | 'secondary';
@@ -46,6 +49,7 @@ interface CardAction {
 type Data = Record<string, unknown>;
 
 export interface GameCard {
+  session_id?: string;
   kind: string;
   name: string;
   lesson: boolean;
@@ -57,6 +61,8 @@ export interface GameCard {
   data: Data;
   actions: CardAction[];
   live: boolean;
+  tournament?: { name: string; round: string; number: number } | null;
+  awards?: { house: House | null; amount: number }[];
 }
 
 const ICONS: Record<string, string> = {
@@ -69,6 +75,11 @@ const ICONS: Record<string, string> = {
   flying: '🧹',
   transfiguration: '🐈',
   practice: '✨',
+  tournament: '🏆',
+  secret_chamber: '🐍',
+  maze: '🏆',
+  weekly: '📜',
+  term: '🏰',
 };
 
 const num = (value: unknown) => (typeof value === 'number' ? value : 0);
@@ -203,7 +214,7 @@ const Players: React.FC<{ card: GameCard }> = ({ card }) => {
 const Board: React.FC<{ card: GameCard }> = ({ card }) => {
   const { data } = card;
   // 신청·모집 중에는 아직 판이 없다
-  if (card.phase === 'pending' && !card.lesson) return null;
+  if (card.phase === 'pending' && !card.lesson && card.kind !== 'secret_chamber') return null;
   const names = Object.fromEntries(card.players.map((player) => [String(player.seat), player.name]));
 
   switch (card.kind) {
@@ -348,6 +359,153 @@ const Board: React.FC<{ card: GameCard }> = ({ card }) => {
       );
     }
 
+    case 'secret_chamber': {
+      const alive = Array.isArray(data.alive) ? (data.alive as number[]) : [];
+      const out = Array.isArray(data.out) ? (data.out as { seat: number; role_name: string; faction: string; by: string; day: number }[]) : [];
+      const votes = bySeat(data.votes);
+      const roles = data.roles ? bySeat(data.roles) : null;
+      const bySeatPlayer = Object.fromEntries(card.players.map((player) => [String(player.seat), player]));
+      const phase = String(data.phase ?? '');
+      return (
+        <div className='content-card__board'>
+          <div className='content-card__line content-card__line--title'>
+            {phase === 'day' && <FormattedMessage id='content_card.chamber.day' defaultMessage='☀️ Day {day}' values={{ day: num(data.day) }} />}
+            {phase === 'night' && <FormattedMessage id='content_card.chamber.night' defaultMessage='🌙 Night {day}' values={{ day: num(data.day) }} />}
+            {data.winner ? (
+              <FormattedMessage id='content_card.chamber.winner' defaultMessage='{faction} wins' values={{ faction: String(data.winner === 'dark' ? data.faction_dark : data.faction_light) }} />
+            ) : null}
+            {card.phase === 'pending' ? (
+              <FormattedMessage id='content_card.chamber.joined' defaultMessage='{count} joined' values={{ count: card.players.length }} />
+            ) : (
+            <span className='content-card__dim'>
+              <FormattedMessage id='content_card.chamber.counts' defaultMessage='{alive} left · {traitors} {traitor}' values={{ alive: alive.length, traitors: num(data.traitors), traitor: String(data.traitor_name ?? '') }} />
+            </span>
+            )}
+          </div>
+          <div className='content-card__roster'>
+            {card.players.map((player) => {
+              const isOut = !alive.includes(player.seat) && phase !== 'recruit' && card.phase !== 'pending';
+              const voteCount = num(votes[String(player.seat)]);
+              return (
+                <span key={player.seat} className={isOut ? 'content-card__member content-card__member--out' : 'content-card__member'} style={{ '--house-color': player.house?.color || '#6b5b3e' } as React.CSSProperties}>
+                  <Crest house={player.house} />
+                  {player.name}
+                  {roles && <span className='content-card__role'>{String(roles[String(player.seat)] ?? '')}</span>}
+                  {voteCount > 0 && <span className='content-card__votes'>{voteCount}</span>}
+                </span>
+              );
+            })}
+          </div>
+          {out.length > 0 && (
+            <div className='content-card__chips'>
+              {out.map((entry) => (
+                <span key={entry.seat} className={entry.faction === data.faction_dark ? 'content-card__chip content-card__chip--bad' : 'content-card__chip'}>
+                  {bySeatPlayer[String(entry.seat)]?.name} · {entry.role_name}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    case 'maze': {
+      const log = Array.isArray(data.log) ? (data.log as string[]) : [];
+      const status = bySeat(data.status);
+      return (
+        <div className='content-card__board'>
+          <div className='content-card__chips'>
+            {card.players.map((player) => {
+              const flags = bySeat(status[String(player.seat)]);
+              const marks = [num(flags.stunned) > 0 && '💫', flags.hostile && '⚔️', flags.boost && '🤝', num(flags.lumos) > 0 && '💡'].filter(Boolean).join('');
+              return marks ? <span key={player.seat} className='content-card__chip'>{player.name} {marks}</span> : null;
+            })}
+          </div>
+          {log.length > 0 && (
+            <ul className='content-card__log'>
+              {log.map((line, index) => <li key={index}>{line}</li>)}
+            </ul>
+          )}
+          {card.live && card.session_id && (
+            <Link className='content-card__action' to={`/system/sessions/${card.session_id}`}>
+              <FormattedMessage id='content_card.play_web' defaultMessage='Play on the web' />
+            </Link>
+          )}
+        </div>
+      );
+    }
+
+    case 'weekly':
+    case 'term': {
+      const rows = Array.isArray(data.houses) ? (data.houses as { house: House | null; gained?: number; total: number }[]) : [];
+      const weekly = card.kind === 'weekly';
+      const most = Math.max(1, ...rows.map((row) => Math.abs(weekly ? num(row.gained) : num(row.total))));
+      const toppers = Array.isArray(data.toppers) ? (data.toppers as { subject: string; name: string; best: string }[]) : [];
+      const champion = data.champion as House | null | undefined;
+      return (
+        <div className='content-card__board content-card__board--champion'>
+          {weekly && <div className='content-card__line'>{String(data.range ?? '')}</div>}
+          {champion && (
+            <div className='content-card__champion'>
+              <Crest house={champion} />
+              <span>{champion.name}</span>
+            </div>
+          )}
+          <div className='content-card__tally'>
+            {rows.map((row) => (
+              <div key={row.house?.name ?? '?'} className='content-card__tally-row' style={{ '--house-color': row.house?.color || '#6b5b3e' } as React.CSSProperties}>
+                <span className='content-card__tally-name'>{row.house?.name}</span>
+                <span className='content-card__tally-bar'><span style={{ width: `${(Math.abs(weekly ? num(row.gained) : num(row.total)) / most) * 100}%` }} /></span>
+                <span>{weekly ? `+${num(row.gained)} / ${num(row.total)}` : num(row.total)}</span>
+              </div>
+            ))}
+          </div>
+          {weekly && (
+            <div className='content-card__line'>
+              <FormattedMessage
+                id='content_card.weekly'
+                defaultMessage='{games} games · most wins: {winners}'
+                values={{ games: num(data.games), winners: Array.isArray(data.winners) && data.winners.length > 0 ? `${(data.winners as string[]).join(', ')} (${num(data.best)})` : '-' }}
+              />
+            </div>
+          )}
+          {toppers.length > 0 && (
+            <div className='content-card__chips'>
+              {toppers.map((row) => (
+                <span key={row.subject} className='content-card__chip'>{row.subject}: {row.name} ({row.best})</span>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    case 'tournament': {
+      const champion = data.champion as House | null;
+      const tally = Array.isArray(data.tally) ? (data.tally as { house: House | null; wins: number }[]) : [];
+      const most = Math.max(1, ...tally.map((row) => row.wins));
+      return (
+        <div className='content-card__board content-card__board--champion'>
+          {champion && (
+            <div className='content-card__champion' style={{ '--house-color': champion.color || '#6b5b3e' } as React.CSSProperties}>
+              <Crest house={champion} />
+              <span>{champion.name}</span>
+              {num(data.reward) > 0 && <span className='content-card__award-amount'>+{num(data.reward)}</span>}
+            </div>
+          )}
+          <div className='content-card__tally'>
+            {tally.map((row) => (
+              <div key={row.house?.name ?? '?'} className='content-card__tally-row' style={{ '--house-color': row.house?.color || '#6b5b3e' } as React.CSSProperties}>
+                <span className='content-card__tally-name'>{row.house?.name}</span>
+                <span className='content-card__tally-bar'><span style={{ width: `${(row.wins / most) * 100}%` }} /></span>
+                <FormattedMessage id='content_card.wins' defaultMessage='{wins} wins' values={{ wins: row.wins }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     default:
       if (card.lesson)
         return (
@@ -382,38 +540,28 @@ const PhaseBadge: React.FC<{ card: GameCard }> = ({ card }) => {
   }
 };
 
-export const ContentCard: React.FC<{
-  status: ImmutableMap<string, unknown>;
-}> = ({ status }) => {
-  const dispatch = useAppDispatch();
-  const raw = status.get('game_card') as { toJS?: () => GameCard } | undefined;
-  const card = raw?.toJS ? raw.toJS() : (raw as unknown as GameCard | undefined);
-  const system = status.get('account') as ImmutableMap<string, unknown> | undefined;
-
-  const mySeat = card?.players.find((player) => player.account_id === me)?.seat;
-  const available = (card?.live ? card.actions : []).filter((action) =>
+// 카드 한 장 (진행 화면에서도 쓴다). onAction 이 없으면 버튼을 그리지 않는다.
+export const ContentCardView: React.FC<{
+  card: GameCard;
+  onAction?: (action: CardAction) => void;
+  sessionLink?: boolean;
+}> = ({ card, onAction, sessionLink }) => {
+  const mySeat = card.players.find((player) => player.account_id === me)?.seat;
+  const available = (card.live && onAction ? card.actions : []).filter((action) =>
     action.seats === 'others' ? mySeat === undefined && !!me : mySeat !== undefined && action.seats.includes(mySeat),
   );
-
-  const handleAction = useCallback(
-    (action: CardAction) => {
-      if (!system) return;
-      const text = `@${String(system.get('acct'))} [${action.command}]`;
-      if (action.dm) dispatch(directCompose(system));
-      else dispatch(replyCompose(status));
-      dispatch(changeCompose(text));
-    },
-    [dispatch, status, system],
-  );
-
-  if (!card || card.players === undefined) return null;
 
   return (
     <div className={`content-card content-card--${card.phase} content-card--${card.kind}`}>
       <div className='content-card__head'>
         <span className='content-card__icon' aria-hidden>{ICONS[card.kind] ?? '📜'}</span>
         <span className='content-card__name'>{card.name}</span>
-        <span className='content-card__phase'><PhaseBadge card={card} /></span>
+        {!['weekly', 'term', 'tournament'].includes(card.kind) && <span className='content-card__phase'><PhaseBadge card={card} /></span>}
+        {card.tournament && (
+          <span className='content-card__tournament'>
+            🏆 {card.tournament.name} · {card.tournament.round} {card.tournament.number}
+          </span>
+        )}
         {card.live && card.deadline_at && (
           <span className='content-card__deadline'>
             <FormattedMessage
@@ -423,19 +571,36 @@ export const ContentCard: React.FC<{
             />
           </span>
         )}
+        {sessionLink && card.session_id && (
+          <Link className='content-card__open' to={`/system/sessions/${card.session_id}`}>
+            <FormattedMessage id='content_card.open' defaultMessage='Whole game' />
+          </Link>
+        )}
       </div>
 
-      <Players card={card} />
+      {card.kind !== 'secret_chamber' && <Players card={card} />}
       <Board card={card} />
+
+      {card.awards && card.awards.length > 0 && (
+        <div className='content-card__awards'>
+          {card.awards.map((award, index) => (
+            <span key={index} className='content-card__award' style={{ '--house-color': award.house?.color || '#6b5b3e' } as React.CSSProperties}>
+              <Crest house={award.house} />
+              {award.house?.name}
+              <span className='content-card__award-amount'>{award.amount >= 0 ? `+${award.amount}` : award.amount}</span>
+            </span>
+          ))}
+        </div>
+      )}
 
       {available.length > 0 && (
         <div className='content-card__actions'>
           {available.map((action) => (
             <button
-              key={action.command}
+              key={`${action.command}${action.mention ?? ''}`}
               type='button'
               className={action.style === 'primary' ? 'content-card__action' : 'content-card__action content-card__action--secondary'}
-              onClick={() => { handleAction(action); }}
+              onClick={() => { onAction?.(action); }}
               title={action.dm ? `DM: [${action.command}]` : `[${action.command}]`}
             >
               {action.label}
@@ -451,4 +616,29 @@ export const ContentCard: React.FC<{
       )}
     </div>
   );
+};
+
+// 툿 안의 카드 (status.game_card). 버튼은 그 툿에 답장하거나 시스템 계정에 DM.
+export const ContentCard: React.FC<{
+  status: ImmutableMap<string, unknown>;
+}> = ({ status }) => {
+  const dispatch = useAppDispatch();
+  const raw = status.get('game_card') as { toJS?: () => GameCard } | undefined;
+  const card = raw?.toJS ? raw.toJS() : (raw as unknown as GameCard | undefined);
+  const system = status.get('account') as ImmutableMap<string, unknown> | undefined;
+
+  const handleAction = useCallback(
+    (action: CardAction) => {
+      if (!system) return;
+      const text = `@${String(system.get('acct'))} [${action.command}]${action.mention ? ` @${action.mention}` : ''}`;
+      if (action.dm) dispatch(directCompose(system));
+      else dispatch(replyCompose(status));
+      dispatch(changeCompose(text));
+    },
+    [dispatch, status, system],
+  );
+
+  if (!card || card.players === undefined) return null;
+
+  return <ContentCardView card={card} onAction={handleAction} sessionLink />;
 };

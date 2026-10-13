@@ -38,34 +38,67 @@
     - wins.sort_by { |_, count| -count }.each do |house, count|
       %span= "#{house.label} #{count}승"
 
-.game-bracket
-  - (1..@tournament.rounds).each do |round|
-    .game-bracket__round
-      %h4= @tournament.round_name(round)
-      - @tournament.round_matches(round).each do |match|
-        .game-bracket__match{ id: "match-#{match.id}", class: "game-bracket__match--#{match.status}" }
-          .game-bracket__match-head
-            %span= game_t('admin.games.tournaments.match_number', number: match.position + 1)
-            %span.game-bracket__badge= game_t("admin.games.tournaments.match_statuses.#{match.status}")
+-# 대진표: 라운드끼리 선으로 잇고, 경기를 누르면 오른쪽 패널에서 편집. 선수 칩을 칸에 끌어다 놓으면 바로 배치된다 (game_config_editor.ts)
+- editable = ->(match) { %w(playing done).exclude?(match.status) }
+.game-bracket-editor{ data: { bracket_editor: true } }
+  .game-bracket.game-bracket--tree
+    - (1..@tournament.rounds).each do |round|
+      - matches = @tournament.round_matches(round)
+      .game-bracket__round{ class: ('game-bracket__round--last' if round == @tournament.rounds) }
+        %h4= @tournament.round_name(round)
+        .game-bracket__pairs
+          - matches.each_slice(2) do |pair|
+            .game-bracket__pair{ class: ('game-bracket__pair--single' if pair.size == 1) }
+              - pair.each do |match|
+                .game-bracket__match{ id: "match-#{match.id}", class: "game-bracket__match--#{match.status}", tabindex: 0, role: 'button', data: { match: match.id } }
+                  .game-bracket__match-head
+                    %span= game_t('admin.games.tournaments.match_number', number: match.position + 1)
+                    %span.game-bracket__badge= game_t("admin.games.tournaments.match_statuses.#{match.status}")
+                  .game-bracket__meta
+                    = match.kind_name || game_t('admin.games.tournaments.pick_content')
+                    - if match.scheduled_at
+                      = "· #{l(match.scheduled_at.in_time_zone(seoul), format: :short)}"
+                  - [[:a, match.player_a], [:b, match.player_b]].each do |slot, player|
+                    - character = player && GameCharacter.for(player)
+                    .game-bracket__slot{ class: [('game-bracket__slot--winner' if player && match.winner_id == player.id), ('game-bracket__slot--empty' unless player)], style: "--house-color: #{character&.house&.color.presence || '#8a8f98'}", data: { slot: slot, match: match.id, droppable: editable.call(match) ? true : nil } }
+                      - if character
+                        %span.game-bracket__dot
+                        = character.display_name
+                      - else
+                        %span.game-bracket__placeholder= game_t('admin.games.tournaments.drop_player')
 
-          - if %w(playing done).include?(match.status)
-            .game-bracket__summary
-              %div= match.kind_name
-              %div= match.scheduled_at && l(match.scheduled_at.in_time_zone(seoul), format: :short)
-              - match.players.each do |player|
-                .game-bracket__player{ class: ('game-bracket__player--winner' if match.winner_id == player.id) }
-                  = GameCharacter.for(player).house&.emoji
-                  = GameCharacter.for(player).display_name
-          - else
-            = form_tag admin_game_tournament_match_path(match), method: :patch, class: 'simple_form game-bracket__form' do
-              = select_tag 'game_tournament_match[kind]', options_for_select(kind_options, match.kind), include_blank: game_t('admin.games.tournaments.pick_content'), 'aria-label': game_t('admin.games.tournaments.content')
-              = datetime_local_field_tag 'game_tournament_match[scheduled_at]', match.scheduled_at&.in_time_zone(seoul)&.strftime('%Y-%m-%dT%H:%M'), 'aria-label': game_t('admin.games.tournaments.time')
-              = select_tag 'game_tournament_match[player_a_id]', options_for_select(character_options, match.player_a_id), include_blank: game_t('admin.games.tournaments.pick_player'), 'aria-label': game_t('admin.games.tournaments.player')
-              = select_tag 'game_tournament_match[player_b_id]', options_for_select(character_options, match.player_b_id), include_blank: game_t('admin.games.tournaments.pick_player'), 'aria-label': game_t('admin.games.tournaments.player')
-              = button_tag t('generic.save_changes'), type: :submit, class: 'button button-secondary'
+  %aside.game-bracket__panel
+    %p.hint.game-bracket__panel-hint= game_t('admin.games.tournaments.panel_hint')
+    .game-bracket__pool
+      - @characters.each do |character|
+        %span.game-bracket__chip{ draggable: 'true', data: { account_id: character.account_id }, style: "--house-color: #{character.house&.color.presence || '#8a8f98'}" }
+          %span.game-bracket__dot
+          = character.display_name
 
-          - if %w(playing judging).include?(match.status) && match.players.size == 2
-            .game-bracket__decide
-              %span= game_t('admin.games.tournaments.decide')
-              - match.players.each do |player|
-                = button_to GameCharacter.for(player).display_name, decide_admin_game_tournament_match_path(match), method: :post, params: { winner_id: player.id }, class: 'button button-secondary', data: { confirm: game_t('admin.games.tournaments.decide_confirm', name: GameCharacter.for(player).display_name) }
+    - (1..@tournament.rounds).flat_map { |round| @tournament.round_matches(round) }.each do |match|
+      .game-bracket__edit{ hidden: true, data: { edit: match.id } }
+        %h4= "#{@tournament.round_name(match.round)} · #{game_t('admin.games.tournaments.match_number', number: match.position + 1)}"
+        - if editable.call(match)
+          = form_tag admin_game_tournament_match_path(match), method: :patch, class: 'simple_form game-bracket__form', data: { match_form: match.id } do
+            %label= game_t('admin.games.tournaments.content')
+            = select_tag 'game_tournament_match[kind]', options_for_select(kind_options, match.kind), include_blank: game_t('admin.games.tournaments.pick_content'), 'aria-label': game_t('admin.games.tournaments.content')
+            %label= game_t('admin.games.tournaments.time')
+            = datetime_local_field_tag 'game_tournament_match[scheduled_at]', match.scheduled_at&.in_time_zone(seoul)&.strftime('%Y-%m-%dT%H:%M'), 'aria-label': game_t('admin.games.tournaments.time')
+            %label= game_t('admin.games.tournaments.player')
+            = select_tag 'game_tournament_match[player_a_id]', options_for_select(character_options, match.player_a_id), include_blank: game_t('admin.games.tournaments.pick_player'), 'aria-label': game_t('admin.games.tournaments.player'), data: { slot: 'a' }
+            = select_tag 'game_tournament_match[player_b_id]', options_for_select(character_options, match.player_b_id), include_blank: game_t('admin.games.tournaments.pick_player'), 'aria-label': game_t('admin.games.tournaments.player'), data: { slot: 'b' }
+            = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+        - else
+          .game-bracket__summary
+            %div= match.kind_name
+            %div= match.scheduled_at && l(match.scheduled_at.in_time_zone(seoul), format: :short)
+            - match.players.each do |player|
+              .game-bracket__player{ class: ('game-bracket__player--winner' if match.winner_id == player.id) }
+                = GameCharacter.for(player).house&.emoji
+                = GameCharacter.for(player).display_name
+
+        - if %w(playing judging).include?(match.status) && match.players.size == 2
+          .game-bracket__decide
+            %span= game_t('admin.games.tournaments.decide')
+            - match.players.each do |player|
+              = button_to GameCharacter.for(player).display_name, decide_admin_game_tournament_match_path(match), method: :post, params: { winner_id: player.id }, class: 'button button-secondary', data: { confirm: game_t('admin.games.tournaments.decide_confirm', name: GameCharacter.for(player).display_name) }

@@ -43,6 +43,8 @@ en:
         note: Note
         search: Search
         select_all: Select all on this page
+        stat_name: Name (e.g. HP)
+        stat_value: Value (e.g. 10)
         stats: Stats
         stats_hint: 'One per line as name=value (e.g. HP=10)'
         title: Characters
@@ -62,9 +64,11 @@ en:
         flavors: Flavors
         messages: Messages
         points: '%{term} points'
+        roles: Roles & factions
         rules: Rules
         scoring: Scoring
         spells: Spells
+        summary: Scheduled posts
         tournament: Tournament messages
         time: Time
       houses:
@@ -72,6 +76,8 @@ en:
         adjust: Adjust points
         adjust_hint: Add or subtract house points (negative to subtract).
         amount: Points
+        announcements: Announcements
+        announcements_hint_html: The weekly summary is posted automatically at the day and hour set on the <a href="%{path}">Common</a> tab. You can also post it now.
         color: Color
         delete: 'Delete %{term}'
         delete_confirm: 'Delete %{name}? Its point records are deleted too.'
@@ -80,10 +86,15 @@ en:
         manual: Manual adjustment
         name: '%{term}'
         order: Order
+        posted: Posted from the system account.
         reason: Reason
         recent: Recent points
+        term_end: Announce end of term
+        term_end_confirm: Announce the standings, the winning house and subject toppers now? (Points stay as they are)
         title: '%{term}'
         total: Total
+        weekly_confirm: Post this week's summary now?
+        weekly_now: Post weekly summary now
         when: When
       kind_hint: This game's switch, commands, rules and messages. Time limits and accept/decline/forfeit commands are in the Common tab.
       lesson_hint: This subject's unlock, commands, rules and messages. Study/class commands and grade points are in the Lessons tab.
@@ -93,6 +104,7 @@ en:
       overview:
         characters_hint: "%{count} people · names, %{term}, stats"
         common_hint: System account, accept/forfeit commands, timers, scoring
+        events: Server events
         lessons_common: Lesson settings
         lessons_hint: Study/class commands, points per grade, recruiting time
         matches: 1:1 matches
@@ -107,6 +119,11 @@ en:
         tournaments_hint: Build brackets and judge matches
       overview_hint: Pick a content to change its switch, commands, rules, chances and messages. Disabled ones are faded.
       reset_default: Default
+      split:
+        fail: Fail
+        half: So-so
+        over: Adds up to more than 100%
+        perfect: Perfect
       tournaments:
         champion: Champion
         champion_is: 'Champion: %{house}'
@@ -116,6 +133,7 @@ en:
         decide_confirm: 'Make %{name} the winner?'
         delete: Delete tournament
         delete_confirm: 'Delete %{name}?'
+        drop_player: Drop a player here
         edit: Bracket
         hint: 'People fill the bracket. Set content, time and players for each match; the system opens it on time and the winner moves up. The %{term} with the most match wins is champion (ties go to the final winner).'
         locked: A match that started or ended cannot be changed.
@@ -130,6 +148,7 @@ en:
         name: Tournament name
         name_placeholder: 'e.g. House cup'
         new: New tournament
+        panel_hint: Click a match to edit its content, time and players here. Drag a player chip onto a bracket slot to place them.
         people:
           one: '%{count} person'
           other: '%{count} people'

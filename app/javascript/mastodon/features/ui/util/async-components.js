@@ -138,6 +138,10 @@ export function SystemPage() {
   return import('../../system');
 }
 
+export function SystemSession() {
+  return import('../../system/session');
+}
+
 export function ScheduleModal() {
   return import('../components/schedule_modal');
 }

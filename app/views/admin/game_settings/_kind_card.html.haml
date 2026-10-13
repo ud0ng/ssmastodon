@@ -5,7 +5,9 @@
   %span.game-overview__body
     %span.game-overview__name= kind.display_name
     %span.game-overview__command
-      - if kind.lesson?
+      - if kind.event?
+        = "[#{config['command']}] → [#{config['cmd_join']}]"
+      - elsif kind.lesson?
         = "[#{Game::Lessons.config['cmd_study']}/#{kind.display_name}] [#{Game::Lessons.config['cmd_class']}/#{kind.display_name}]"
       - else
         = "[#{config['command']}] @#{game_t('admin.games.overview.opponent')}"

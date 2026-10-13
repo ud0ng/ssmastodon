@@ -34,6 +34,7 @@
   /scheduled_statuses
   /search
   /system
+  /system/(*any)
   /start/(*any)
   /statuses/(*any)
 ).each { |path| get path, to: 'home#index' }

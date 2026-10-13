@@ -12,11 +12,15 @@ module Game
         'duel' => Game::Kinds::Duel,
         'potion' => Game::Kinds::Potion,
         'quidditch' => Game::Kinds::Quidditch,
+        # 웹 전용
+        'maze' => Game::Web::Maze,
         # 마법 수업
         'levitation' => Game::Lessons::Levitation,
         'transfiguration' => Game::Lessons::Transfiguration,
         'flying' => Game::Lessons::Flying,
         'practice' => Game::Lessons::Practice,
+        # 서버 이벤트
+        'secret_chamber' => Game::Events::SecretChamber,
       }
     end
 
@@ -34,7 +38,12 @@ module Game
 
     # 1:1 대결 컨텐츠 (마법 수업 제외)
     def matches
-      all.reject(&:lesson?)
+      all.reject { |kind| kind.lesson? || kind.event? }
+    end
+
+    # 서버 이벤트 (비밀의방 등)
+    def events
+      all.select(&:event?)
     end
 
     # 이 명령어로 시작하는 켜진 게임

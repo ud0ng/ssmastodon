@@ -98,11 +98,35 @@ module Game
       Field.new(key: 'msg_forfeit', type: :text, group: 'messages', label: '기권', default: '%{player}{이가} 기권했습니다. %{winner}의 승리!'),
       Field.new(key: 'msg_busy', type: :text, group: 'messages', label: '이미 진행 중', default: '%{player}{은는} 이미 진행 중인 컨텐츠가 있습니다.'),
       Field.new(key: 'msg_one_opponent', type: :text, group: 'messages', label: '상대가 여러 명', default: '%{game}{은는} 1:1로만 할 수 있습니다. 상대를 한 명만 태그해 주세요.'),
+      Field.new(key: 'msg_many_opponents', type: :text, group: 'messages', label: '상대가 너무 많음', default: '%{game}에는 상대를 %{max}명까지 태그할 수 있습니다.'),
       Field.new(key: 'msg_no_opponent', type: :text, group: 'messages', label: '상대 없음', default: '%{game}{을를} 함께할 상대를 태그해 주세요.'),
       Field.new(key: 'msg_disabled', type: :text, group: 'messages', label: '꺼진 컨텐츠', default: '%{game}{은는} 지금 열려 있지 않습니다.'),
+      Field.new(key: 'msg_event_not_opener', type: :text, group: 'messages', label: '이벤트를 열 수 없음', default: '%{game}{은는} 운영진만 열 수 있습니다.'),
+      Field.new(key: 'msg_event_running', type: :text, group: 'messages', label: '이벤트 진행 중', default: '%{game}{이가} 이미 열려 있습니다.'),
       Field.new(key: 'msg_secret_in_dm', type: :text, group: 'messages', label: '비밀 선택은 DM으로',
                 default: '선택은 상대가 보지 못하게 시스템 계정에게 DM으로 보내 주세요.'),
       Field.new(key: 'msg_points', type: :text, group: 'messages', label: '점수 지급', default: '%{emoji} %{house} +%{amount}점! (%{player})'),
+
+      Field.new(key: 'weekly_enabled', type: :boolean, default: true, group: 'summary', label: '주간 결산 툿', hint: '정한 요일·시각에 이번 주 소속 점수 변화와 최다 승리를 올린다'),
+      Field.new(key: 'weekly_wday', type: :select, default: '0', group: 'summary', label: '주간 결산 요일',
+                choices: [%w(0 일요일), %w(1 월요일), %w(2 화요일), %w(3 수요일), %w(4 목요일), %w(5 금요일), %w(6 토요일)]),
+      Field.new(key: 'weekly_hour', type: :integer, default: 21, group: 'summary', label: '주간 결산 시각 (0~23시, 한국 시간)'),
+      Field.new(key: 'msg_weekly', type: :text, group: 'summary', label: '주간 결산',
+                default: "📜 이번 주 결산 (%{range})
+
+%{houses}
+
+이번 주 컨텐츠 %{games}판
+최다 승리: %{winners}"),
+      Field.new(key: 'msg_term', type: :text, group: 'summary', label: '학기 마감',
+                default: "🏰 학기 마감!
+
+%{houses}
+
+우승 %{term}: %{emoji} %{house}
+
+과목별 수석
+%{toppers}"),
       Field.new(key: 'msg_no_house', type: :text, group: 'messages', label: '소속 없음', default: '%{player}{은는} 아직 %{term}{이가} 없어 점수를 받지 못했습니다.'),
       Field.new(key: 'msg_board', type: :text, group: 'messages', label: '[점수] 머리말', default: '🏆 %{term} 점수'),
       Field.new(key: 'round_final', type: :string, default: '결승', group: 'tournament', label: '결승 이름'),

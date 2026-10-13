@@ -16,7 +16,7 @@
     = f.input :grade, as: :integer, wrapper: :with_label, label: game_t('admin.games.characters.grade'), input_html: { min: 1, max: 7 }
 
   .fields-group
-    = f.input :stats_text, as: :text, wrapper: :with_label, label: game_t('admin.games.characters.stats'), hint: game_t('admin.games.characters.stats_hint'), input_html: { rows: 4 }
+    = f.input :stats_text, as: :text, wrapper: :with_label, label: game_t('admin.games.characters.stats'), hint: game_t('admin.games.characters.stats_hint'), input_html: { rows: 4, data: { stats_editor: { key: game_t('admin.games.characters.stat_name'), value: game_t('admin.games.characters.stat_value') }.to_json } }
     = f.input :note, as: :text, wrapper: :with_label, label: game_t('admin.games.characters.note'), input_html: { rows: 3 }
 
   .actions

@@ -449,3 +449,311 @@
 .status .content-card {
   margin-inline-start: calc(var(--size-avatar, 46px) + var(--gap-default, 10px));
 }
+
+.content-card__open {
+  margin-inline-start: auto;
+  color: var(--sys-gold);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.content-card__deadline + .content-card__open {
+  margin-inline-start: 8px;
+}
+
+// 컨텐츠 진행 화면 (features/system/session.tsx)
+.system-session {
+  &__events {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    list-style: none;
+  }
+
+  &__meta {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 4px;
+    color: var(--color-dim, #{$darker-text-color});
+    font-size: 12px;
+
+    a {
+      color: inherit;
+    }
+  }
+
+  &__event .content-card {
+    margin: 0;
+  }
+
+  &__text {
+    margin-top: 8px;
+    padding: 0 4px;
+    white-space: pre-wrap;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+}
+
+// 토너먼트 경기 표시, 소속 점수 지급, 우승 카드
+.content-card__tournament {
+  color: var(--sys-gold);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.content-card__awards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.content-card__award {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 6px;
+  border: 1px solid var(--house-color);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--house-color) 14%, transparent);
+  font-size: 13px;
+  font-weight: 700;
+
+  .system-crest {
+    --crest-size: 14px;
+  }
+}
+
+.content-card__award-amount {
+  color: var(--sys-gold);
+  font-family: var(--sys-serif);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.content-card__champion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px;
+  font-family: var(--sys-serif);
+  font-size: 22px;
+  font-weight: 800;
+
+  .system-crest {
+    --crest-size: 34px;
+  }
+}
+
+.content-card__tally {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.content-card__tally-row {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.content-card__tally-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--card-dim) 18%, transparent);
+
+  span {
+    display: block;
+    height: 100%;
+    background: var(--house-color);
+  }
+}
+
+// 비밀의방: 참가자 명단 (퇴학·석화는 흐리게), 고발 표 수, 끝나면 역할
+.content-card__roster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.content-card__member {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px 2px 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--house-color) 14%, transparent);
+  font-size: 12px;
+  font-weight: 600;
+
+  .system-crest {
+    --crest-size: 13px;
+  }
+
+  &--out {
+    opacity: 0.45;
+    text-decoration: line-through;
+  }
+}
+
+.content-card__role {
+  color: var(--card-dim);
+  font-weight: 400;
+}
+
+.content-card__votes {
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #b8443a;
+  color: #fff;
+  font-size: 11px;
+  text-align: center;
+}
+
+// 트라이위저드 미로 진행판 (features/system/maze.tsx)
+.maze-play {
+  --sys-gold: #b08d3c;
+  --maze-wall: color-mix(in srgb, var(--color-fg, #{$primary-text-color}) 70%, transparent);
+
+  margin-bottom: 20px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--sys-gold) 45%, transparent);
+  border-radius: 6px;
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+
+  &__compass {
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(var(--maze-size), minmax(0, 1fr));
+    max-width: 480px;
+    margin: 0 auto;
+    aspect-ratio: 1;
+    border: 2px solid var(--maze-wall);
+  }
+
+  &__cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    padding: 0;
+    border: 0 solid var(--maze-wall);
+    background: color-mix(in srgb, #2f5d3a 22%, transparent);
+    color: inherit;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+
+    &--wall-n {
+      border-top-width: 2px;
+    }
+
+    &--wall-e {
+      border-right-width: 2px;
+    }
+
+    &--wall-s {
+      border-bottom-width: 2px;
+    }
+
+    &--wall-w {
+      border-left-width: 2px;
+    }
+
+    &--memory {
+      background: color-mix(in srgb, #2f5d3a 10%, transparent);
+      filter: grayscale(0.6);
+    }
+
+    &--fog {
+      border-color: transparent;
+      background: color-mix(in srgb, #000 55%, transparent);
+      cursor: default;
+    }
+
+    &--trail {
+      background: color-mix(in srgb, var(--sys-gold) 45%, transparent);
+    }
+  }
+
+  &__token {
+    color: #3f7fd0;
+    font-size: 14px;
+
+    &--me {
+      color: var(--sys-gold);
+      font-size: 16px;
+    }
+
+    &--hostile {
+      color: #c0392b;
+    }
+  }
+
+  &__controls {
+    margin-top: 12px;
+    font-size: 13px;
+  }
+
+  &__hint {
+    color: var(--color-dim, #{$darker-text-color});
+  }
+
+  &__stance,
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  &__toggle {
+    padding: 5px 12px;
+    border: 1px solid color-mix(in srgb, var(--sys-gold) 55%, transparent);
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+
+    &--on {
+      border-color: var(--sys-gold);
+      background: color-mix(in srgb, var(--sys-gold) 25%, transparent);
+      font-weight: 700;
+    }
+  }
+
+  .content-card__action {
+    --sys-gold: #b08d3c;
+  }
+}
+
+.content-card__log {
+  margin: 0;
+  padding-inline-start: 18px;
+  font-size: 13px;
+  list-style: disc;
+}
+
+.content-card__board > .content-card__action {
+  align-self: flex-start;
+  text-decoration: none;
+}

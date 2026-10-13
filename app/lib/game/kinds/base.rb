@@ -48,6 +48,21 @@ module Game
         def lesson?
           false
         end
+
+        # 여러 날 진행하는 서버 이벤트인가 (Game::Events)
+        def event?
+          false
+        end
+
+        # 웹 진행 화면에서만 하는 컨텐츠인가 (Game::Web)
+        def web?
+          false
+        end
+
+        # 신청할 때 함께 태그할 수 있는 상대 수 (1:1 이면 1)
+        def max_opponents
+          1
+        end
       end
 
       attr_reader :session

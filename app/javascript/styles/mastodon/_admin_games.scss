@@ -622,3 +622,258 @@ $game-gold: #b08d3c;
     flex: 0 0 auto;
   }
 }
+
+// 완벽·어중간·실패 확률 막대 (변신술)
+.game-split {
+  display: flex;
+  height: 22px;
+  margin-top: 6px;
+  overflow: hidden;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 22px;
+  color: #fff;
+
+  &__segment {
+    flex-basis: 0;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0 4px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    &--perfect {
+      background: #3f8f5a;
+    }
+
+    &--half {
+      background: $game-gold;
+    }
+
+    &--fail {
+      background: #8a8f98;
+    }
+  }
+
+  &--over {
+    outline: 2px solid #df405a;
+  }
+}
+
+.game-chips__chip {
+  cursor: grab;
+
+  &--dragging {
+    opacity: 0.4;
+  }
+}
+
+// 캐릭터 개인 값 표
+.game-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 28px;
+    gap: 6px;
+
+    input {
+      min-width: 0;
+      padding: 6px 8px;
+    }
+  }
+
+  &__remove {
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    font-size: 16px;
+    cursor: pointer;
+
+    &:hover {
+      background: color-mix(in srgb, #df405a 25%, transparent);
+    }
+  }
+}
+
+// 토너먼트 대진표: 왼쪽 대진표(선으로 이음) + 오른쪽 편집 패널
+.game-bracket-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 16px;
+  align-items: start;
+
+  @media screen and (width <= 900px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.game-bracket--tree {
+  gap: 28px;
+
+  .game-bracket__round {
+    flex: 0 0 200px;
+  }
+
+  .game-bracket__pairs {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  .game-bracket__pair {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: space-around;
+    gap: 12px;
+    padding: 6px 0;
+
+    // 두 경기를 잇는 세로선 (오른쪽)
+    &::after {
+      content: '';
+      position: absolute;
+      top: 25%;
+      bottom: 25%;
+      inset-inline-end: -15px;
+      border-inline-end: 2px solid color-mix(in srgb, #{$game-gold} 55%, transparent);
+    }
+
+    &--single::after {
+      display: none;
+    }
+  }
+
+  .game-bracket__match {
+    position: relative;
+    cursor: pointer;
+
+    // 오른쪽 가지
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      inset-inline-end: -15px;
+      width: 14px;
+      border-top: 2px solid color-mix(in srgb, #{$game-gold} 55%, transparent);
+    }
+
+    &:hover,
+    &:focus-visible {
+      border-color: $game-gold;
+    }
+
+    &--selected {
+      border-color: $game-gold;
+      box-shadow: 0 0 0 2px color-mix(in srgb, #{$game-gold} 40%, transparent);
+    }
+  }
+
+  // 다음 라운드 경기의 왼쪽 가지
+  .game-bracket__round:not(:first-child) .game-bracket__match::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    inset-inline-start: -15px;
+    width: 14px;
+    border-top: 2px solid color-mix(in srgb, #{$game-gold} 55%, transparent);
+  }
+
+  .game-bracket__round--last .game-bracket__match::after,
+  .game-bracket__round--last .game-bracket__pair::after {
+    display: none;
+  }
+}
+
+.game-bracket__meta {
+  color: $darker-text-color;
+  font-size: 12px;
+}
+
+.game-bracket__slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 3px 6px;
+  border: 1px dashed transparent;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--house-color) 10%, transparent);
+  box-shadow: inset 3px 0 0 var(--house-color);
+
+  &--winner {
+    font-weight: 700;
+    background: color-mix(in srgb, #{$game-gold} 22%, transparent);
+  }
+
+  &--empty {
+    border-color: color-mix(in srgb, #{$darker-text-color} 50%, transparent);
+    box-shadow: none;
+    background: transparent;
+  }
+
+  &--over {
+    border-color: $game-gold;
+    background: color-mix(in srgb, #{$game-gold} 18%, transparent);
+  }
+}
+
+.game-bracket__placeholder {
+  color: $darker-text-color;
+  font-size: 12px;
+}
+
+.game-bracket__dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--house-color);
+}
+
+.game-bracket__panel {
+  position: sticky;
+  top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--background-border-color, #{$ui-base-lighter-color});
+  border-radius: 8px;
+
+  .game-bracket__form label {
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+}
+
+.game-bracket__pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.game-bracket__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border: 1px solid var(--house-color);
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: grab;
+}
+
+.game-houses__announce {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}

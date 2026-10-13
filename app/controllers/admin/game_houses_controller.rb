@@ -46,6 +46,22 @@ module Admin
       redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
     end
 
+    # 주간 결산 툿을 지금 올린다 (정기 결산과 별개)
+    def weekly
+      authorize :settings, :update?
+
+      Game::Summary.post_weekly!
+      redirect_to admin_game_houses_path, notice: t('admin.games.houses.posted')
+    end
+
+    # 학기 마감 발표 (점수는 그대로 둔다)
+    def term_end
+      authorize :settings, :update?
+
+      Game::Summary.term_end!
+      redirect_to admin_game_houses_path, notice: t('admin.games.houses.posted')
+    end
+
     private
 
     def house_params

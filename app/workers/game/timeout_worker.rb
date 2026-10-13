@@ -13,7 +13,7 @@ class Game::TimeoutWorker
     session.with_lock do
       next unless session.open? && session.deadline_token == token && session.deadline_at&.past?
 
-      if session.status == 'pending' && session.state['mode'] == 'class'
+      if session.status == 'pending' && %w(class event).include?(session.state['mode'])
         session.kind_class.new(session).recruitment_over!
       elsif session.status == 'pending'
         common = Game::Config.for('common')

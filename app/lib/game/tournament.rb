@@ -47,6 +47,7 @@ module Game
                                player_a: match.player_a, player_b: match.player_b, game: kind.display_name)
       announcement = Game::Poster.post(text, mentions: match.players, thread: nil, visibility: 'private')
       session.update!(root_status_id: announcement&.id, last_status_id: announcement&.id)
+      Game::Poster.record_card(session, announcement, nil) if announcement
       kind.new(session).start!
     end
 
@@ -112,9 +113,10 @@ module Game
 
       common = Game::Config.for('common')
       tally = wins.sort_by { |_, count| -count }.map { |house, count| "#{house.label} #{count}승" }.join("\n")
-      Game::Poster.post(Game::Text.render(common['msg_tournament_champion'],
-                                          tournament: tournament.name, tally: tally, emoji: champion.emoji, house: champion.name, reward: tournament.reward),
-                        mentions: [], thread: nil, visibility: 'private')
+      status = Game::Poster.post(Game::Text.render(common['msg_tournament_champion'],
+                                                   tournament: tournament.name, tally: tally, emoji: champion.emoji, house: champion.name, reward: tournament.reward),
+                                 mentions: [], thread: nil, visibility: 'private')
+      GameEvent.create!(status: status, payload: Game::Card.champion(tournament, wins, champion)) if status
     end
 
     def name(account)

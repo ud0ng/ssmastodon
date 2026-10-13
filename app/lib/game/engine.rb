@@ -54,6 +54,12 @@ module Game
       when common['cmd_points'] then reply(Game::Points.board)
       when common['cmd_record'] then reply(Game::Points.record(actor))
       else
+        event = Game::Kinds.events.find { |each| each.enabled? && each.config['command'] == command }
+        return open_event(event) if event
+
+        join_event = Game::Kinds.events.find { |each| each.config['cmd_join'] == command }
+        return join if join_event && pending_event
+
         kind = Game::Kinds.by_command(command)
         if kind
           invite(kind)
@@ -93,24 +99,29 @@ module Game
       opponents = status.mentions.map(&:account).uniq.reject { |account| account.id == actor.id || account.id == system&.id || !account.local? }
 
       return reply(Game::Text.render(common['msg_no_opponent'], game: kind.display_name)) if opponents.empty?
-      return reply(Game::Text.render(common['msg_one_opponent'], game: kind.display_name)) if opponents.size > 1
+      if opponents.size > kind.max_opponents
+        key = kind.max_opponents > 1 ? 'msg_many_opponents' : 'msg_one_opponent'
+        return reply(Game::Text.render(common[key], game: kind.display_name, max: kind.max_opponents))
+      end
 
       opponent = opponents.first
       if common['one_game_per_person']
-        busy = [actor, opponent].find { |account| open_player(account) }
+        busy = [actor, *opponents].find { |account| open_player(account) }
         return reply(Game::Text.render(common['msg_busy'], player: busy)) if busy
       end
 
       session = GameSession.transaction do
         GameSession.create!(kind: kind.key, visibility: visibility, root_status_id: status.id).tap do |created|
           created.players.create!(account: actor, seat: 0, state: { 'accepted' => true })
-          created.players.create!(account: opponent, seat: 1)
+          opponents.each_with_index { |account, index| created.players.create!(account: account, seat: index + 1) }
         end
       end
 
+      # 여러 명이면 이름을 이어서 (상대 아이디·아바타 명령어는 첫 사람)
+      opponent_value = opponents.size > 1 ? opponents.map { |account| GameCharacter.for(account).display_name }.join(', ') : opponent
       Game::Poster.to_session(session, Game::Text.render(
         common['msg_invite'],
-        game: kind.display_name, player: actor, opponent: opponent,
+        game: kind.display_name, player: actor, opponent: opponent_value,
         accept: common['cmd_accept'], decline: common['cmd_decline'], minutes: common['invite_minutes']
       ))
       self.class.set_deadline!(session, common['invite_minutes'])
@@ -221,8 +232,31 @@ module Game
       self.class.set_deadline!(session, lessons['join_minutes'])
     end
 
-    # [참가] 모집 중인 수업 (가장 최근 것)
+    # 모집 중인 서버 이벤트 (비밀의방 등)
+    def pending_event
+      GameSession.where(status: 'pending').where("state->>'mode' = 'event'").order(id: :desc).first
+    end
+
+    # [비밀의방] 서버 이벤트 열기 (한 번에 하나)
+    def open_event(kind)
+      return reply(Game::Text.render(common['msg_event_not_opener'], game: kind.display_name)) unless kind.can_open?(actor)
+      return reply(Game::Text.render(common['msg_event_running'], game: kind.display_name)) if GameSession.open.exists?(kind: kind.key)
+
+      session = GameSession.create!(kind: kind.key, status: 'pending', visibility: visibility, root_status_id: status.id, last_status_id: status.id,
+                                    state: { 'mode' => 'event' })
+      kind.new(session).open!
+    end
+
+    # [참가] 모집 중인 서버 이벤트가 있으면 그쪽, 아니면 모집 중인 수업 (가장 최근 것)
     def join
+      if (event = pending_event)
+        return if event.players.exists?(account_id: actor.id)
+        return reply(Game::Text.render(common['msg_busy'], player: actor)) if common['one_game_per_person'] && open_player(actor)
+
+        event.with_lock { event.kind_class.new(event).join!(actor, status) if event.status == 'pending' }
+        return
+      end
+
       session = GameSession.where(status: 'pending').where("state->>'mode' = 'class'").order(id: :desc).first
       return if session.nil? || session.players.exists?(account_id: actor.id)
       return reply(Game::Text.render(common['msg_busy'], player: actor)) if common['one_game_per_person'] && open_player(actor)

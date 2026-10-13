@@ -23,7 +23,7 @@
   .game-intro__body
     %h3.game-intro__title= title
     %p.game-intro__hint= game_t(hint_key, example: '%{이름}')
-    - if kind && !kind.lesson?
+    - if kind && !kind.lesson? && !kind.event?
       %ol.game-intro__flow
         %li= game_t('admin.games.flow.invite', command: kind.config['command'])
         %li= game_t('admin.games.flow.accept')
@@ -35,7 +35,8 @@
   data: { game_config: true, samples: game_preview_samples(title).to_json,
           system_name: system&.display_name.presence || system&.username || 'system', system_avatar: system ? full_asset_url(system.avatar_static_url) : '',
           changed_label: game_t('admin.games.changed'), reset_label: game_t('admin.games.reset_default'),
-          chips_placeholder: game_t('admin.games.chips_placeholder'), unknown_label: game_t('admin.games.unknown_tokens') } do
+          chips_placeholder: game_t('admin.games.chips_placeholder'), unknown_label: game_t('admin.games.unknown_tokens'),
+          split_labels: [game_t('admin.games.split.perfect'), game_t('admin.games.split.half'), game_t('admin.games.split.fail'), game_t('admin.games.split.over')].to_json } do
   - @fields.group_by(&:group).each do |group, fields|
     - many_messages = group == 'messages' && fields.size > 6
     %details.game-group{ open: !many_messages, data: { group: group } }

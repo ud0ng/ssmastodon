@@ -34,6 +34,11 @@
   - Game::Kinds.matches.each do |kind|
     = render 'admin/game_settings/kind_card', kind: kind, recent: @recent, open: @open
 
+%h4= game_t('admin.games.overview.events')
+.game-overview
+  - Game::Kinds.events.each do |kind|
+    = render 'admin/game_settings/kind_card', kind: kind, recent: @recent, open: @open
+
 %h4= game_t('admin.games.lessons')
 .game-overview
   = link_to admin_game_setting_path('lessons'), class: 'game-overview__card game-overview__card--setup' do

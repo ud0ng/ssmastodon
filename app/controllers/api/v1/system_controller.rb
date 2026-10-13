@@ -62,6 +62,7 @@ class Api::V1::SystemController < Api::BaseController
       scheduled_at: match.scheduled_at&.iso8601,
       winner_acct: match.winner&.acct,
       status_id: match.session && (match.session.last_status_id || match.session.root_status_id)&.to_s,
+      session_id: match.session&.id&.to_s,
       players: match.players.map do |account|
         character = GameCharacter.for(account)
         { acct: account.acct, name: character.display_name, house_id: character.game_house_id&.to_s }

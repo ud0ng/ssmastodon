@@ -85,6 +85,8 @@ namespace :admin do
   # 게임 (시스템 계정)
   resources :game_houses, path: 'games/houses', only: [:index, :create, :update, :destroy] do
     post :adjust, on: :collection
+    post :weekly, on: :collection
+    post :term_end, on: :collection
   end
   resources :game_tournaments, path: 'games/tournaments', only: [:index, :create, :show, :update, :destroy] do
     post :start, on: :member

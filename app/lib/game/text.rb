@@ -46,6 +46,11 @@ module Game
       seek: '수색 명령어', attack: '공격 명령어', disarm: '무장해제 명령어', defend: '방어 명령어',
       special: '필살 명령어', fly: '비행 명령어', brew: '조합 명령어', cast: '주문 명령어', practice: '연습 명령어',
       study: '자습 명령어', join: '참가 명령어',
+      day: '일차', traitor: '배신자 이름', traitors: '배신자 수', faction: '진영', role: '역할', roles: '역할 공개',
+      mates: '동료 배신자', how: '할 일', accuse: '고발 명령어', petrify: '석화 명령어', investigate: '조사 명령어',
+      protect: '보호 명령어', prophecy: '예언 명령어',
+      link: '링크', creature: '마법 생물', item: '아이템',
+      range: '기간', houses: '소속 점수', games: '판 수', winners: '최다 승리', toppers: '과목별 수석',
       **ROLES.transform_values { |prefix| "#{prefix}계정명" },
     }.freeze
 

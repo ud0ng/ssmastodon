@@ -167,8 +167,7 @@ class REST::StatusSerializer < ActiveModel::Serializer
   end
 
   def game_card
-    event = object.game_event
-    event.payload.merge('live' => event.live?)
+    object.game_event.current_payload
   end
 
   def source_requested?
