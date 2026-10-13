@@ -889,3 +889,50 @@
     font-weight: 700;
   }
 }
+
+// 타임라인의 짧은 카드 (한 줄)
+.content-card--compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 8px 12px;
+
+  .content-card__icon {
+    font-size: 18px;
+  }
+
+  .content-card__open {
+    margin-inline-start: auto;
+  }
+}
+
+.content-card__compact-players {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 13px;
+}
+
+.content-card__compact-player {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+
+  &--win {
+    font-weight: 700;
+  }
+
+  &--lose {
+    opacity: 0.6;
+  }
+}
+
+.content-card__open--turn {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--sys-gold, #c9a227);
+  color: #1c1408;
+  font-weight: 700;
+  text-decoration: none;
+}

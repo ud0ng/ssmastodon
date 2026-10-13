@@ -1,16 +1,20 @@
-// 웹 '시스템' 메뉴: 기숙사 모래시계, 내 캐릭터·전적, 진행 중인 컨텐츠, 최근 컨텐츠, 이용 방법.
-// 컨텐츠는 시스템 계정(@system)을 멘션한 툿으로 진행하고, 여기서는 상황을 모아 보여 준다 (앱에서는 툿 알림으로 충분).
+// 웹 '시스템' 메뉴
+//   /system         컨텐츠 고르기 (묶음별 타일) + 내 캐릭터·소속 점수 짧은 줄 + 내가 하는 판
+//   /system/me      내 캐릭터·스탯·돈·인벤토리·성적표·최근 판
+//   /system/houses  소속 점수 모래시계·토너먼트
+// 컨텐츠를 고르면 게임 화면(game.tsx). 진행은 시스템 계정에게 보내는 툿이라 앱에서는 멘션 알림으로 한다.
 import { useCallback, useEffect, useState } from 'react';
 
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
 import { Helmet } from 'react-helmet';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 
 import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
 import { apiRequestGet } from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
+import { ICONS } from 'mastodon/components/content_card';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 
@@ -22,6 +26,13 @@ const messages = defineMessages({
 });
 
 const REFRESH_MS = 30_000;
+
+const GROUP_TITLES: Record<string, React.ReactNode> = {
+  duel: <FormattedMessage id='system.group.duel' defaultMessage='1:1 duels' />,
+  group: <FormattedMessage id='system.group.group' defaultMessage='Group games' />,
+  lesson: <FormattedMessage id='system.group.lesson' defaultMessage='Lessons' />,
+  event: <FormattedMessage id='system.group.event' defaultMessage='Server events' />,
+};
 
 interface House {
   id: string;
@@ -94,6 +105,7 @@ interface Overview {
     points: number;
   };
   commands: Record<'accept' | 'decline' | 'forfeit' | 'points' | 'record', string>;
+  catalog: { key: string; games: { key: string; name: string; summary: string; open: number; mine: boolean }[] }[];
 }
 
 // 소속 문장: 소속 색 방패에 이름 첫 글자 (이모지 대신)
@@ -286,6 +298,7 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
   const intl = useIntl();
   const [data, setData] = useState<Overview | null>(null);
   const [failed, setFailed] = useState(false);
+  const { section } = useParams<{ section?: 'me' | 'houses' }>();
 
   const load = useCallback(() => {
     apiRequestGet<Overview>('v1/system')
@@ -313,7 +326,7 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
 
   return (
     <Column bindToDocument={!multiColumn} label={title}>
-      <ColumnHeader icon='system' iconComponent={StarIcon} title={title} multiColumn={multiColumn} />
+      <ColumnHeader icon='system' iconComponent={StarIcon} title={title} multiColumn={multiColumn} showBackButton={!!section} />
 
       <div className='system-page scrollable'>
         {!data && !failed && <LoadingIndicator />}
@@ -323,7 +336,72 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
           </p>
         )}
 
-        {data && (
+        {data && !section && (
+          <>
+            {/* 위: 내 캐릭터 · 소속 점수 짧게 (누르면 각 화면) */}
+            <div className='system-strips'>
+              <Link className='system-strip' to='/system/me'>
+                <Crest house={myHouse} />
+                <span className='system-strip__main'>
+                  <strong>{data.character.name}</strong>
+                  <span className='system-strip__sub'>
+                    <FormattedMessage id='system.record' defaultMessage='{win} W · {lose} L · {draw} D' values={data.record} />
+                    {' · 💰 '}{data.character.money.toLocaleString()} {data.character.currency}
+                  </span>
+                </span>
+                <span className='system-strip__go'>
+                  <FormattedMessage id='system.me' defaultMessage='My character' /> ›
+                </span>
+              </Link>
+              <Link className='system-strip' to='/system/houses'>
+                <span className='system-strip__houses'>
+                  {[...data.houses].sort((a, b) => b.total - a.total).map((house) => (
+                    <span key={house.id} className='system-strip__house' style={{ '--house-color': house.color || '#6b5b3e' } as React.CSSProperties}>
+                      <Crest house={house} /> {house.total}
+                    </span>
+                  ))}
+                </span>
+                <span className='system-strip__go'>
+                  {data.scoring_mode === 'tournament' && data.tournament ? (
+                    <FormattedMessage id='system.tournament' defaultMessage='Tournament' />
+                  ) : (
+                    <FormattedMessage id='system.houses' defaultMessage='{term} points' values={{ term: data.house_term }} />
+                  )} ›
+                </span>
+              </Link>
+            </div>
+
+            {data.active.length > 0 && (
+              <section className='system-section'>
+                <h2 className='system-section__title'>
+                  <FormattedMessage id='system.active' defaultMessage='In progress' />
+                </h2>
+                {data.active.map((game) => <GameRow key={game.id} game={game} systemAcct={data.system_acct} />)}
+              </section>
+            )}
+
+            {data.catalog.filter((group) => group.games.length > 0).map((group) => (
+              <section className='system-section' key={group.key}>
+                <h2 className='system-section__title'>{GROUP_TITLES[group.key]}</h2>
+                <div className='system-tiles'>
+                  {group.games.map((game) => (
+                    <Link key={game.key} className={game.mine ? 'system-tile system-tile--mine' : 'system-tile'} to={`/system/games/${game.key}`}>
+                      <span className='system-tile__icon' aria-hidden>{ICONS[game.key] ?? '📜'}</span>
+                      <span className='system-tile__name'>{game.name}</span>
+                      <span className='system-tile__summary'>{game.summary}</span>
+                      <span className='system-tile__meta'>
+                        {game.mine && <span className='system-tile__badge'><FormattedMessage id='system.tile.mine' defaultMessage='Playing' /></span>}
+                        {game.open > 0 && <FormattedMessage id='system.tile.open' defaultMessage='{count} in progress' values={{ count: game.open }} />}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </>
+        )}
+
+        {data && section === 'houses' && (
           <>
             {data.scoring_mode === 'tournament' && data.tournament && (
               <section className='system-section'>
@@ -344,7 +422,11 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                 ))}
               </div>
             </section>
+          </>
+        )}
 
+        {data && section === 'me' && (
+          <>
             <section className='system-section'>
               <h2 className='system-section__title'>
                 <FormattedMessage id='system.me' defaultMessage='My character' />
@@ -438,50 +520,6 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                   <FormattedMessage id='system.active.empty' defaultMessage='No game in progress.' />
                 </p>
               )}
-            </section>
-
-            <section className='system-section'>
-              <h2 className='system-section__title'>
-                <FormattedMessage id='system.how_to' defaultMessage='How to join' />
-              </h2>
-              <ul className='system-howto'>
-                {data.games.map((game) => (
-                  <li key={game.key}>
-                    <strong>{game.name}</strong>
-                    <code>@{data.system_acct} {game.max_opponents > 1 ? '@상대1 @상대2 …' : '@상대'} [{game.command}]</code>
-                    {game.max_opponents > 1 && (
-                      <span className='system-howto__note'>
-                        {game.key === 'quidditch' ? (
-                          <FormattedMessage id='system.how_to.teams' defaultMessage='1:1 or teams (2, 4, 6 players). You and the first half you tag are one team.' />
-                        ) : (
-                          <FormattedMessage id='system.how_to.group' defaultMessage='Up to {max} people' values={{ max: game.max_opponents + 1 }} />
-                        )}
-                      </span>
-                    )}
-                  </li>
-                ))}
-                {data.lessons.map((lesson) => (
-                  <li key={lesson.key}>
-                    <strong>{lesson.name}</strong>
-                    {lesson.modes !== 'class' && <code>@{data.system_acct} [{data.lesson_commands.study}/{lesson.name}]</code>}
-                    {lesson.modes !== 'study' && <code>@{data.system_acct} [{data.lesson_commands.class}/{lesson.name}]</code>}
-                  </li>
-                ))}
-              </ul>
-              <p className='system-howto__common'>
-                <FormattedMessage
-                  id='system.how_to.common'
-                  defaultMessage='Reply with [{accept}] or [{decline}] to an invite, [{forfeit}] to give up. [{points}] shows {term} points, [{record}] your record.'
-                  values={{ ...data.commands, term: data.house_term }}
-                />
-              </p>
-              <p className='system-howto__common'>
-                <FormattedMessage
-                  id='system.how_to.lessons'
-                  defaultMessage='[{study}/subject] studies alone (once a day per subject). When a class opens, reply [{join}] to take part. [{report}] shows your report card.'
-                  values={data.lesson_commands}
-                />
-              </p>
             </section>
 
             {data.recent.length > 0 && (

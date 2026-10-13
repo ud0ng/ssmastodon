@@ -1,24 +1,16 @@
 // 시스템 계정의 컨텐츠 툿을 PC 웹에서 카드로 보여 준다 (툿의 game_card, 서버 Game::Card).
 // 카드 아래에는 툿 본문(진행 문구)이 그대로 이어진다. 앱은 game_card 를 모르니 지금처럼 텍스트로 보인다.
 //
-// 아직 진행 중인 판의 가장 최근 툿(live)이고 내 차례면 행동 버튼이 나온다.
-// 누르면 '@시스템 [명령어]' 를 쓰는 창이 열린다 (비밀 선택은 DM 으로). 게시는 직접 누른다.
-import { useCallback } from 'react';
-
+// 타임라인에서는 한 줄로 간단히(ContentCard), 게임 화면(features/system)에서는 판 전체와 버튼(ContentCardView).
+// 버튼은 서버원 대신 '@시스템 [명령어]' 툿을 올린다 (features/system/board.tsx).
 import { FormattedMessage } from 'react-intl';
 
 import type { Map as ImmutableMap } from 'immutable';
 
 import { Link } from 'react-router-dom';
 
-import {
-  changeCompose,
-  directCompose,
-  replyCompose,
-} from 'mastodon/actions/compose';
 import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 import { me } from 'mastodon/initial_state';
-import { useAppDispatch } from 'mastodon/store';
 
 interface House {
   name: string;
@@ -66,7 +58,7 @@ export interface GameCard {
   rewards?: { name: string; money: number; currency: string; items: string[] }[];
 }
 
-const ICONS: Record<string, string> = {
+export const ICONS: Record<string, string> = {
   jellybean: '🍬',
   gobstones: '🔮',
   duel: '⚡',
@@ -667,35 +659,47 @@ export const ContentCardView: React.FC<{
   );
 };
 
-// 툿 안의 카드 (status.game_card). 버튼은 그 툿에 답장하거나 시스템 계정에 DM.
-// 버튼으로 채우는 답장 글. 공개 답장이면 다른 참가자도 태그해 알림이 가게 한다.
-// 대상을 고르는 명령어(비밀의방 [고발] @누구 등)는 태그로 대상을 읽으니 대상만 붙인다. DM 은 시스템에게만.
-export const actionText = (systemAcct: string, card: GameCard, action: CardAction) => {
-  const others = action.dm || action.mention ? [] : card.players.filter((player) => player.account_id !== me).map((player) => `@${player.acct}`);
-  const target = action.mention ? ` @${action.mention}` : '';
-  return `${[`@${systemAcct}`, ...new Set(others)].join(' ')} [${action.command}]${target}`;
-};
-
+// 타임라인 안의 카드 (status.game_card): 컨텐츠·단계·참가자 한 줄과 게임 화면 링크만.
+// 판 그림과 버튼은 게임 화면(/system/games/:key, /system/sessions/:id)에서.
 export const ContentCard: React.FC<{
   status: ImmutableMap<string, unknown>;
 }> = ({ status }) => {
-  const dispatch = useAppDispatch();
   const raw = status.get('game_card') as { toJS?: () => GameCard } | undefined;
   const card = raw?.toJS ? raw.toJS() : (raw as unknown as GameCard | undefined);
-  const system = status.get('account') as ImmutableMap<string, unknown> | undefined;
-
-  const handleAction = useCallback(
-    (action: CardAction) => {
-      if (!system || !card) return;
-      const text = actionText(String(system.get('acct')), card, action);
-      if (action.dm) dispatch(directCompose(system));
-      else dispatch(replyCompose(status));
-      dispatch(changeCompose(text));
-    },
-    [dispatch, status, system, card],
-  );
 
   if (!card || card.players === undefined) return null;
 
-  return <ContentCardView card={card} onAction={handleAction} sessionLink />;
+  // 판이 없는 발표(주간 결산·학기 마감·토너먼트 우승)는 그대로 크게
+  if (!card.session_id) return <ContentCardView card={card} />;
+
+  const mySeat = card.players.find((player) => player.account_id === me)?.seat;
+  const myTurn = card.live && mySeat !== undefined && card.actions.some((action) => action.seats !== 'others' && action.seats.includes(mySeat));
+  const canJoin = card.live && mySeat === undefined && card.actions.some((action) => action.seats === 'others');
+
+  return (
+    <div className={`content-card content-card--compact content-card--${card.phase} content-card--${card.kind}`}>
+      <span className='content-card__icon' aria-hidden>{ICONS[card.kind] ?? '📜'}</span>
+      <span className='content-card__name'>{card.name}</span>
+      <span className='content-card__phase'><PhaseBadge card={card} /></span>
+      {card.kind !== 'secret_chamber' && (
+        <span className='content-card__compact-players'>
+          {card.players.map((player) => (
+            <span key={player.seat} className={player.result ? `content-card__compact-player content-card__compact-player--${player.result}` : 'content-card__compact-player'}>
+              <Crest house={player.house} />
+              {player.name}
+            </span>
+          ))}
+        </span>
+      )}
+      <Link className={myTurn || canJoin ? 'content-card__open content-card__open--turn' : 'content-card__open'} to={`/system/sessions/${card.session_id}`}>
+        {myTurn ? (
+          <FormattedMessage id='content_card.open_turn' defaultMessage='Your move — open game' />
+        ) : canJoin ? (
+          <FormattedMessage id='content_card.open_join' defaultMessage='Join in the game page' />
+        ) : (
+          <FormattedMessage id='content_card.open_game' defaultMessage='Game page' />
+        )}
+      </Link>
+    </div>
+  );
 };

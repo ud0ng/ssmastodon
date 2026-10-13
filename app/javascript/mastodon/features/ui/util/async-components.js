@@ -142,6 +142,10 @@ export function SystemSession() {
   return import('../../system/session');
 }
 
+export function SystemGame() {
+  return import('../../system/game');
+}
+
 export function ScheduleModal() {
   return import('../components/schedule_modal');
 }

@@ -21,10 +21,7 @@ class Api::V1::SystemController < Api::BaseController
         name: character.display_name,
         house_id: character.group_id&.to_s,
         grade: character.grade,
-        profile: GameCharacterField.profile.filter_map do |field|
-          value = character.profile_value(field)
-          { name: field.name, value: value, color: field.choice(value)&.dig('color').presence } if value.present?
-        end,
+        profile: profile_tags(character),
         stats: GameCharacterField.stats.pluck(:name).then { |names| character.stats.slice(*names).merge(character.stats.except(*names)) }.map { |name, value| { name: name, value: value } },
         money: character.money,
         currency: common['currency_name'],
@@ -37,11 +34,37 @@ class Api::V1::SystemController < Api::BaseController
       lessons: Game::Lessons.all.select(&:enabled?).map { |kind| { key: kind.key, name: kind.display_name, modes: kind.config['modes'] } },
       lesson_commands: Game::Lessons.config.slice('cmd_study', 'cmd_class', 'cmd_join', 'cmd_report').transform_keys { |key| key.delete_prefix('cmd_') },
       report: report,
+      catalog: catalog,
       commands: common.slice('cmd_accept', 'cmd_decline', 'cmd_forfeit', 'cmd_points', 'cmd_record').transform_keys { |key| key.delete_prefix('cmd_') },
     }
   end
 
   private
+
+  # 내 캐릭터 칩: 점수 단위가 아닌 쪽 소속(기숙사 또는 진영) + 고르기·글·숫자 항목
+  def profile_tags(character)
+    groups = [character.house, character.faction].compact.reject { |group| group.id == character.group_id }
+    fields = GameCharacterField.profile.filter_map do |field|
+      value = character.profile_value(field)
+      { name: field.name, value: value, color: field.choice(value)&.dig('color').presence } if value.present?
+    end
+    groups.map { |group| { name: group.category, value: group.label, color: group.color.presence } } + fields
+  end
+
+  # 컨텐츠 고르기 (묶음별): 진행 중 판 수, 내가 하는 중인지
+  def catalog
+    open = GameSession.where(status: %w(pending active)).group(:kind).count
+    mine = GamePlayer.joins(:session).where(account: current_account, game_sessions: { status: %w(pending active) }).distinct.pluck('game_sessions.kind')
+    kinds = Game::Kinds.all.select(&:enabled?)
+    Game::Guide::GROUPS.map do |group|
+      {
+        key: group,
+        games: kinds.select { |kind| Game::Guide.group_of(kind) == group }.map do |kind|
+          { key: kind.key, name: kind.display_name, summary: Game::Guide.for(kind)[:summary], open: open.fetch(kind.key, 0), mine: mine.include?(kind.key) }
+        end,
+      }
+    end
+  end
 
   def tournament_json(tournament)
     return if tournament.nil?
