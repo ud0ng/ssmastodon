@@ -14,6 +14,7 @@ module Game
         'quidditch' => Game::Kinds::Quidditch,
         # 웹 전용
         'maze' => Game::Web::Maze,
+        'marauders_map' => Game::Web::MaraudersMap,
         # 마법 수업
         'levitation' => Game::Lessons::Levitation,
         'transfiguration' => Game::Lessons::Transfiguration,

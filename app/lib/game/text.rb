@@ -49,6 +49,7 @@ module Game
       day: '일차', traitor: '배신자 이름', traitors: '배신자 수', faction: '진영', role: '역할', roles: '역할 공개',
       mates: '동료 배신자', how: '할 일', accuse: '고발 명령어', petrify: '석화 명령어', investigate: '조사 명령어',
       protect: '보호 명령어', prophecy: '예언 명령어',
+      room: '방', zone: '구역', targets: '목표 장소', student: '학생 이름', prefect: '사감 이름',
       link: '링크', creature: '마법 생물', item: '아이템',
       range: '기간', houses: '소속 점수', games: '판 수', winners: '최다 승리', toppers: '과목별 수석',
       **ROLES.transform_values { |prefix| "#{prefix}계정명" },

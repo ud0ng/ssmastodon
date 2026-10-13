@@ -25,6 +25,7 @@ import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 import { useAppDispatch } from 'mastodon/store';
 
+import { MaraudersMapPlay } from './marauders_map';
 import { MazePlay } from './maze';
 
 const messages = defineMessages({
@@ -119,6 +120,7 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
         )}
 
         {data?.kind === 'maze' && data.status === 'active' && <MazePlay sessionId={data.id} onMoved={load} />}
+        {data?.kind === 'marauders_map' && data.status === 'active' && <MaraudersMapPlay sessionId={data.id} onMoved={load} />}
 
         {data && (
           <ol className='system-session__events'>

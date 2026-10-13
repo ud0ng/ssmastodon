@@ -757,3 +757,97 @@
   align-self: flex-start;
   text-decoration: none;
 }
+
+// 도둑 지도 진행판 (features/system/marauders_map.tsx): 양피지 지도 위 방·길
+.map-play {
+  --sys-gold: #b08d3c;
+
+  margin-bottom: 20px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--sys-gold) 45%, transparent);
+  border-radius: 6px;
+
+  &__svg {
+    display: block;
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+    border-radius: 6px;
+    background: color-mix(in srgb, #c9a96a 30%, transparent);
+  }
+
+  &__edge {
+    stroke: color-mix(in srgb, #6b4a1e 70%, transparent);
+    stroke-width: 6;
+
+    &--stairs {
+      stroke-dasharray: 10 6;
+    }
+
+    &--secret {
+      stroke: #7a3cff;
+      stroke-dasharray: 3 6;
+      stroke-width: 4;
+    }
+  }
+
+  &__room {
+    rect {
+      fill: color-mix(in srgb, #f3e6c4 85%, transparent);
+      stroke: #6b4a1e;
+      stroke-width: 1.5;
+    }
+
+    text {
+      font-size: 14px;
+      fill: #3b2a12;
+    }
+
+    &--target rect {
+      stroke: var(--sys-gold);
+      stroke-width: 3;
+    }
+
+    &--reachable {
+      cursor: pointer;
+
+      rect {
+        fill: #fff6d6;
+        stroke: #2f7d4a;
+        stroke-width: 3;
+      }
+    }
+
+    &--selected rect {
+      fill: #ffe38a;
+      stroke: #b08d3c;
+      stroke-width: 4;
+    }
+  }
+
+  &__name {
+    font-weight: 700;
+    font-size: 13px !important;
+  }
+
+  &__token {
+    fill: #3f7fd0;
+    stroke: #fff;
+    stroke-width: 2;
+
+    &--me {
+      fill: #b08d3c;
+    }
+
+    &--student {
+      fill: #c0392b;
+    }
+  }
+
+  &__role {
+    padding: 0 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--sys-gold) 25%, transparent);
+    font-weight: 700;
+  }
+}

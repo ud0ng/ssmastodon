@@ -78,6 +78,7 @@ const ICONS: Record<string, string> = {
   tournament: '🏆',
   secret_chamber: '🐍',
   maze: '🏆',
+  marauders_map: '🗺️',
   weekly: '📜',
   term: '🏰',
 };
@@ -404,6 +405,30 @@ const Board: React.FC<{ card: GameCard }> = ({ card }) => {
                 </span>
               ))}
             </div>
+          )}
+        </div>
+      );
+    }
+
+    case 'marauders_map': {
+      const targets = Array.isArray(data.targets) ? (data.targets as { room: string; visited: boolean }[]) : [];
+      const log = Array.isArray(data.log) ? (data.log as string[]) : [];
+      return (
+        <div className='content-card__board'>
+          <div className='content-card__chips'>
+            {targets.map((target) => (
+              <span key={target.room} className={target.visited ? 'content-card__chip content-card__chip--good' : 'content-card__chip'}>{target.visited ? '✅' : '⭐'} {target.room}</span>
+            ))}
+          </div>
+          {log.length > 0 && (
+            <ul className='content-card__log'>
+              {log.map((line, index) => <li key={index}>{line}</li>)}
+            </ul>
+          )}
+          {card.live && card.session_id && (
+            <Link className='content-card__action' to={`/system/sessions/${card.session_id}`}>
+              <FormattedMessage id='content_card.play_web' defaultMessage='Play on the web' />
+            </Link>
           )}
         </div>
       );
