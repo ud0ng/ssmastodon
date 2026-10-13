@@ -92,7 +92,7 @@ module Game
 
     def player_card(player)
       account = player.account
-      house = player.character.house
+      house = player.character.group
       {
         'seat' => player.seat,
         'account_id' => account.id.to_s,

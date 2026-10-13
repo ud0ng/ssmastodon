@@ -25,7 +25,10 @@ module Game
       def for(key)
         fields = schema(key)
         stored = GameConfig.find_by(key: key)&.data || {}
-        fields.to_h { |field| [field.key, stored.key?(field.key) ? stored[field.key] : field.default] }
+        values = fields.to_h { |field| [field.key, stored.key?(field.key) ? stored[field.key] : field.default] }
+        # 문구의 {소속 이름}: 지금 점수 단위의 이름
+        values['house_term'] = values['group_mode'] == 'faction' ? values['faction_label'] : values['house_label'] if key == 'common'
+        values
       end
 
       def [](key)
@@ -53,13 +56,19 @@ module Game
         GameConfig.find_or_initialize_by(key: key).update!(data: data)
       end
 
+      # 일부 값만 바꾼다 (나머지 저장된 값은 그대로)
+      def merge!(key, params)
+        stored = GameConfig.find_by(key: key)&.data || {}
+        update!(key, stored.merge(params.to_h.transform_keys(&:to_s)))
+      end
+
       private
 
       def coerce(field, value)
         case field.type
         when :integer then value.to_s.strip.empty? ? field.default : value.to_i
         when :boolean then ActiveModel::Type::Boolean.new.cast(value) || false
-        when :lines then value.to_s.lines.map(&:strip).compact_blank
+        when :lines then (value.is_a?(Array) ? value : value.to_s.lines).map { |line| line.to_s.strip }.compact_blank
         when :select then field.choices.to_h.key?(value.to_s) ? value.to_s : field.default
         else value.to_s.strip
         end
@@ -71,8 +80,11 @@ module Game
       Field.new(key: 'system_username', type: :string, default: 'system', group: 'account',
                 label: '시스템 계정 아이디', hint: '컨텐츠를 진행하는 계정. 이 계정을 멘션한 툿의 [명령어]를 처리합니다.'),
 
-      Field.new(key: 'house_term', type: :string, default: '기숙사', group: 'account',
-                label: '소속 이름', hint: '점수를 모으는 단위. 학생 기간은 기숙사, 성인 기간은 진영처럼 바꿔 쓸 수 있습니다.'),
+      Field.new(key: 'group_mode', type: :select, default: 'house', group: 'scoring',
+                choices: [['house', '기숙사'], ['faction', '진영']],
+                label: '점수 단위', hint: '점수·토너먼트·모래시계·결산에 쓸 소속. 바꿔도 다른 쪽 점수는 그대로 남습니다. 목록은 캐릭터 명단 > 소속 탭.'),
+      Field.new(key: 'house_label', type: :string, default: '기숙사', group: 'scoring', label: '기숙사 부르는 이름'),
+      Field.new(key: 'faction_label', type: :string, default: '진영', group: 'scoring', label: '진영 부르는 이름'),
       Field.new(key: 'currency_name', type: :string, default: '갈레온', group: 'account',
                 label: '돈 이름', hint: '캐릭터 명단의 돈 단위 (예: 갈레온)'),
 

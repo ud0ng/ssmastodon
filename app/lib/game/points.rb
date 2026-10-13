@@ -13,14 +13,14 @@ module Game
 
       common = Game::Config.for('common')
       character = player.character
-      house = character.house
+      house = character.group
       return Game::Text.render(common['msg_no_house'], player: player, term: common['house_term']) if house.nil?
 
       opponents = session.players.reject { |other| other.id == player.id }
       return if over_daily_limit?(player.account, opponents.map(&:account_id), common['daily_pair_limit'].to_i)
 
       amount = amount.to_i
-      amount = (amount * common['same_house_percent'].to_i / 100.0).round if opponents.any? { |other| other.character.game_house_id == house.id }
+      amount = (amount * common['same_house_percent'].to_i / 100.0).round if opponents.any? { |other| other.character.group_id == house.id }
       return if amount <= 0
 
       GameHousePoint.create!(house: house, account: player.account, session: session, amount: amount, reason: session.kind)
@@ -34,7 +34,7 @@ module Game
 
       common = Game::Config.for('common')
       character = player.character
-      house = character.house
+      house = character.group
       return Game::Text.render(common['msg_no_house'], player: player, term: common['house_term']) if house.nil?
 
       GameHousePoint.create!(house: house, account: player.account, session: session, amount: amount.to_i, reason: reason)
@@ -54,7 +54,7 @@ module Game
     # [점수] 답장
     def board
       common = Game::Config.for('common')
-      houses = GameHouse.all.map { |house| [house, house.total] }.sort_by { |_, total| -total }
+      houses = GameHouse.active.map { |house| [house, house.total] }.sort_by { |_, total| -total }
       lines = houses.each_with_index.map { |(house, total), index| "#{index + 1}. #{house.label} #{total}점" }
       ([Game::Text.render(common['msg_board'], term: common['house_term'])] + lines).join("\n")
     end

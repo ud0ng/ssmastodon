@@ -3,12 +3,10 @@
 require 'rails_helper'
 
 RSpec.describe GameCharacterField do
-  it 'creates the default fields once, including factions' do
+  it 'creates the default combat stats once' do
     described_class.ensure_defaults!
     described_class.ensure_defaults!
 
-    faction = described_class.find_by(name: '진영')
-    expect(faction.choices.pluck('name')).to eq ['불사조 기사단', '죽음을 먹는 자들']
     expect(described_class.stats.pluck(:name)).to eq %w(체력 공격 방어)
   end
 

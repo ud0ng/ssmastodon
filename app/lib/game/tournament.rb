@@ -103,7 +103,7 @@ module Game
       wins = tournament.house_wins
       best = wins.values.max
       leaders = wins.select { |_, count| count == best }.keys
-      final_house = tournament.final&.winner && GameCharacter.for(tournament.final.winner).house
+      final_house = tournament.final&.winner && GameCharacter.for(tournament.final.winner).group
       champion = leaders.include?(final_house) ? final_house : leaders.first
 
       tournament.update!(status: 'finished', finished_at: Time.now.utc, winner_house: champion)

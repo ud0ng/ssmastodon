@@ -975,3 +975,148 @@ $game-gold: #b08d3c;
     inset-inline-end: 8px;
   }
 }
+
+// 소속 탭: 점수 단위 스위치 + 기숙사·진영 두 목록
+.game-groups__mode {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 18px;
+
+  .hint {
+    flex-basis: 100%;
+    margin: 0;
+  }
+}
+
+.game-groups__mode-label {
+  font-weight: 700;
+}
+
+.game-groups__mode-form {
+  display: inline;
+}
+
+.game-groups__mode-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border: 1px solid var(--background-border-color, #{$ui-base-lighter-color});
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  cursor: pointer;
+
+  &--active {
+    border-color: $game-gold;
+    background: color-mix(in srgb, #{$game-gold} 18%, transparent);
+    cursor: default;
+  }
+}
+
+.game-groups__mode-on {
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.game-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+
+  h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+}
+
+.game-groups__list {
+  padding: 12px;
+  border: 1px solid var(--background-border-color, #{$ui-base-lighter-color});
+  border-radius: 10px;
+
+  &--active {
+    border-color: $game-gold;
+  }
+}
+
+.game-groups__badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #{$game-gold} 22%, transparent);
+  font-size: 11px;
+}
+
+.game-groups__items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.game-groups__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  box-shadow: inset 3px 0 0 var(--house-color);
+  background: color-mix(in srgb, var(--house-color) 8%, transparent);
+}
+
+.game-groups__form,
+.game-groups__add {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+
+  input[type='text'],
+  input[type='number'] {
+    padding: 4px 8px;
+    border: 1px solid var(--background-border-color, #{$ui-base-lighter-color});
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+  }
+}
+
+.game-groups__emoji {
+  width: 44px;
+  text-align: center;
+}
+
+.game-groups__name {
+  flex: 1;
+  min-width: 100px;
+}
+
+.game-groups__color {
+  width: 34px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.game-groups__order {
+  width: 56px;
+}
+
+.game-groups__meta {
+  color: $darker-text-color;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.game-groups__delete {
+  display: inline;
+}

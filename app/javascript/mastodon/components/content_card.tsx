@@ -668,6 +668,14 @@ export const ContentCardView: React.FC<{
 };
 
 // 툿 안의 카드 (status.game_card). 버튼은 그 툿에 답장하거나 시스템 계정에 DM.
+// 버튼으로 채우는 답장 글. 공개 답장이면 다른 참가자도 태그해 알림이 가게 한다.
+// 대상을 고르는 명령어(비밀의방 [고발] @누구 등)는 태그로 대상을 읽으니 대상만 붙인다. DM 은 시스템에게만.
+export const actionText = (systemAcct: string, card: GameCard, action: CardAction) => {
+  const others = action.dm || action.mention ? [] : card.players.filter((player) => player.account_id !== me).map((player) => `@${player.acct}`);
+  const target = action.mention ? ` @${action.mention}` : '';
+  return `${[`@${systemAcct}`, ...new Set(others)].join(' ')} [${action.command}]${target}`;
+};
+
 export const ContentCard: React.FC<{
   status: ImmutableMap<string, unknown>;
 }> = ({ status }) => {
@@ -678,13 +686,13 @@ export const ContentCard: React.FC<{
 
   const handleAction = useCallback(
     (action: CardAction) => {
-      if (!system) return;
-      const text = `@${String(system.get('acct'))} [${action.command}]${action.mention ? ` @${action.mention}` : ''}`;
+      if (!system || !card) return;
+      const text = actionText(String(system.get('acct')), card, action);
       if (action.dm) dispatch(directCompose(system));
       else dispatch(replyCompose(status));
       dispatch(changeCompose(text));
     },
-    [dispatch, status, system],
+    [dispatch, status, system, card],
   );
 
   if (!card || card.players === undefined) return null;

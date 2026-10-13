@@ -16,8 +16,8 @@
   = link_to admin_game_houses_path, class: 'game-overview__card game-overview__card--setup' do
     %span.game-overview__icon{ 'aria-hidden': 'true' } 🛡️
     %span.game-overview__body
-      %span.game-overview__name= game_t('admin.games.houses.title')
-      %span.game-overview__command= GameHouse.all.map(&:label).join(' · ').presence || game_t('admin.games.overview.no_houses')
+      %span.game-overview__name= "#{game_t('admin.games.houses.tab')} · #{game_t('admin.games.houses.scoring')}: #{Game::Config.for('common')['house_term']}"
+      %span.game-overview__command= GameHouse.active.map(&:label).join(' · ').presence || game_t('admin.games.overview.no_houses')
   = link_to admin_game_tournaments_path, class: 'game-overview__card game-overview__card--setup' do
     %span.game-overview__icon{ 'aria-hidden': 'true' } 🏆
     %span.game-overview__body

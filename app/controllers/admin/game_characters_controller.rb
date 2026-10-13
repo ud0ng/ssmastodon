@@ -11,17 +11,21 @@ module Admin
       GameHouse.ensure_defaults!
       GameCharacterField.ensure_defaults!
       GameCharacter.sync!
-      @houses = GameHouse.all
+      @houses = GameHouse.houses.to_a
+      @factions = GameHouse.factions.to_a
+      @labels = Game::Config.for('common').slice('house_label', 'faction_label')
       @select_fields = GameCharacterField.profile.where(kind: 'select').to_a
       @stat_fields = GameCharacterField.stats.pluck(:name)
       @currency = Game::Config.for('common')['currency_name']
-      @house_counts = GameCharacter.where(account_id: GameCharacter.eligible_accounts.select(:id)).group(:game_house_id).count
-      @characters = filtered.includes(:house, account: :user).order('game_houses.position NULLS LAST', 'accounts.username')
+      eligible = GameCharacter.where(account_id: GameCharacter.eligible_accounts.select(:id))
+      @house_counts = eligible.group(:game_house_id).count
+      @faction_counts = eligible.group(:game_faction_id).count
+      @characters = filtered.includes(:house, :faction, account: :user).order('game_houses.position NULLS LAST', 'accounts.username')
                             .page(params[:page]).per(PER_PAGE)
     end
 
-    # 고른 캐릭터들의 소속이나 고르기 항목(진영 등)을 한꺼번에 바꾼다
-    #   target: 'house:<id>' / 'house:none' / 'field:<항목 id>:<값>' (값이 비면 지움)
+    # 고른 캐릭터들의 기숙사·진영이나 고르기 항목을 한꺼번에 바꾼다
+    #   target: 'house:<id>' / 'house:none' / 'faction:<id>' / 'faction:none' / 'field:<항목 id>:<값>' (값이 비면 지움)
     def bulk
       authorize :settings, :update?
 
@@ -31,6 +35,9 @@ module Admin
       if ids.any? && kind == 'house'
         house = id == 'none' ? nil : GameHouse.find(id)
         characters.find_each { |character| character.update!(house: house) }
+      elsif ids.any? && kind == 'faction'
+        faction = id == 'none' ? nil : GameHouse.factions.find(id)
+        characters.find_each { |character| character.update!(faction: faction) }
       elsif ids.any? && kind == 'field'
         field = GameCharacterField.find(id)
         characters.find_each do |character|
@@ -72,7 +79,9 @@ module Admin
     private
 
     def prepare_form
-      @houses = GameHouse.all
+      @houses = GameHouse.houses.to_a
+      @factions = GameHouse.factions.to_a
+      @labels = Game::Config.for('common').slice('house_label', 'faction_label')
       @profile_fields = GameCharacterField.profile.to_a
       @stat_fields = GameCharacterField.stats.to_a
       @currency = Game::Config.for('common')['currency_name']
@@ -80,7 +89,7 @@ module Admin
     end
 
     def filter_params
-      { q: params[:q], house: params[:house], field: params[:field] }.compact_blank
+      { q: params[:q], house: params[:house], faction: params[:faction], field: params[:field] }.compact_blank
     end
 
     # 정보 항목 값: 있는 항목만, 고르기는 목록에 있는 값만, 숫자는 숫자로
@@ -112,6 +121,7 @@ module Admin
         scope = scope.where('game_characters.name ILIKE :q OR accounts.username ILIKE :q OR accounts.display_name ILIKE :q', q: query)
       end
       scope = params[:house] == 'none' ? scope.where(game_house_id: nil) : scope.where(game_house_id: params[:house]) if params[:house].present?
+      scope = params[:faction] == 'none' ? scope.where(game_faction_id: nil) : scope.where(game_faction_id: params[:faction]) if params[:faction].present?
       if params[:field].present?
         id, value = params[:field].to_s.split(':', 2)
         scope = value.present? ? scope.where('game_characters.profile ->> ? = ?', id, value) : scope.where('NOT game_characters.profile ? :key', key: id)
@@ -120,7 +130,7 @@ module Admin
     end
 
     def character_params
-      params.require(:game_character).permit(:name, :game_house_id, :grade, :note, :money, :inventory_text, :extra_stats_text, profile: {}, stat_values: {})
+      params.require(:game_character).permit(:name, :game_house_id, :game_faction_id, :grade, :note, :money, :inventory_text, :extra_stats_text, profile: {}, stat_values: {})
     end
   end
 end

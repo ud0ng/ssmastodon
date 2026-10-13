@@ -20,7 +20,7 @@ import api from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
 import type { CardAction, GameCard } from 'mastodon/components/content_card';
-import { ContentCardView } from 'mastodon/components/content_card';
+import { actionText, ContentCardView } from 'mastodon/components/content_card';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 import { useAppDispatch } from 'mastodon/store';
@@ -83,7 +83,7 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   const handleAction = useCallback(
     (event: SessionEvent, action: CardAction) => {
       if (!data) return;
-      const text = `@${data.system_acct} [${action.command}]${action.mention ? ` @${action.mention}` : ''}`;
+      const text = actionText(data.system_acct, event.card, action);
 
       if (action.dm) {
         dispatch(resetCompose());

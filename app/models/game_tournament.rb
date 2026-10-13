@@ -45,7 +45,7 @@ class GameTournament < ApplicationRecord
   # 소속별 이긴 경기 수 { GameHouse => 승수 }
   def house_wins
     matches.select { |match| match.status == 'done' && match.winner }
-           .filter_map { |match| GameCharacter.for(match.winner).house }
+           .filter_map { |match| GameCharacter.for(match.winner).group }
            .tally
   end
 

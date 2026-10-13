@@ -115,6 +115,17 @@ en:
         tournament: Tournament messages
         time: Time
       houses:
+        add_named: 'Add %{name}'
+        delete_confirm_named: 'Delete %{name} (%{term})? Its point history is deleted too.'
+        delete_named: 'Delete %{name}'
+        members: '%{count} members'
+        mode: Scoring by
+        mode_hint: Points, tournaments, hourglasses and summaries use the chosen one only. The other keeps its points.
+        mode_on: In use
+        name_label: Name
+        points: '%{count} pts'
+        scoring: Scoring
+        tab: Groups
         add: 'Add %{term}'
         adjust: Adjust points
         adjust_hint: Add or subtract house points (negative to subtract).
@@ -125,7 +136,7 @@ en:
         delete: 'Delete %{term}'
         delete_confirm: 'Delete %{name}? Its point records are deleted too.'
         emoji: Emoji
-        hint: Winning a game adds points to the character's house. Set each member's house in Characters.
+        hint: 'Each character can have a %{house} and a %{faction} (set on the roster). Wins add points to whichever is chosen as the scoring unit. Rename them in the Common tab.'
         manual: Manual adjustment
         name: '%{term}'
         order: Order

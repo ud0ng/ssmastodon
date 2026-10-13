@@ -42,7 +42,7 @@ RSpec.describe Game::Points do
   end
 
   it 'uses the configured name for houses (e.g. 진영 for the adult period)' do
-    Game::Config.update!('common', 'house_term' => '진영')
+    Game::Config.update!('common', 'house_label' => '진영')
     GameCharacter.for(alice).update!(house: nil)
     session = finished_session
     expect(described_class.award(session, session.players.first, 10)).to include('아직 진영이 없어')
@@ -63,5 +63,26 @@ RSpec.describe Game::Text do
     expect(described_class.render('%{a}{과와}', a: 'Ron')).to eq 'Ron과(와)'
     expect(described_class.render('「%{a}」{이가} 완성', a: '진실의 약')).to eq '「진실의 약」이 완성'
     expect(described_class.render('[%{a}]{으로로}', a: '강')).to eq '[강]으로'
+  end
+end
+
+RSpec.describe 'Game::Points by faction' do
+  let(:alice) { Fabricate(:account) }
+  let(:bob) { Fabricate(:account) }
+
+  it 'pays the faction when factions are the scoring unit' do
+    GameHouse.ensure_defaults!
+    order = GameHouse.factions.first
+    house = GameHouse.houses.first
+    GameCharacter.for(alice).update!(house: house, faction: order)
+    Game::Config.merge!('common', 'group_mode' => 'faction')
+    session = GameSession.create!(kind: 'jellybean', status: 'finished')
+    session.players.create!(account: alice, seat: 0)
+    session.players.create!(account: bob, seat: 1)
+
+    expect(Game::Points.award(session, session.players.first, 10)).to include('진영').or include(order.name)
+    expect(order.total).to eq 10
+    expect(house.total).to eq 0
+    expect(Game::Points.board).to include(order.name)
   end
 end

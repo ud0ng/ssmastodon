@@ -4,7 +4,7 @@
 - content_for :heading do
   = render 'admin/game_settings/heading'
 
-- character_options = @characters.map { |character| ["#{character.house&.emoji} #{character.display_name} (@#{character.account.username})".strip, character.account_id] }
+- character_options = @characters.map { |character| ["#{character.group&.emoji} #{character.display_name} (@#{character.account.username})".strip, character.account_id] }
 - kind_options = @kinds.map { |kind| [kind.display_name, kind.key] }
 - seoul = ActiveSupport::TimeZone['Asia/Seoul']
 
@@ -60,7 +60,7 @@
                       = "· #{l(match.scheduled_at.in_time_zone(seoul), format: :short)}"
                   - [[:a, match.player_a], [:b, match.player_b]].each do |slot, player|
                     - character = player && GameCharacter.for(player)
-                    .game-bracket__slot{ class: [('game-bracket__slot--winner' if player && match.winner_id == player.id), ('game-bracket__slot--empty' unless player)], style: "--house-color: #{character&.house&.color.presence || '#8a8f98'}", data: { slot: slot, match: match.id, droppable: editable.call(match) ? true : nil } }
+                    .game-bracket__slot{ class: [('game-bracket__slot--winner' if player && match.winner_id == player.id), ('game-bracket__slot--empty' unless player)], style: "--house-color: #{character&.group&.color.presence || '#8a8f98'}", data: { slot: slot, match: match.id, droppable: editable.call(match) ? true : nil } }
                       - if character
                         %span.game-bracket__dot
                         = character.display_name
@@ -71,7 +71,7 @@
     %p.hint.game-bracket__panel-hint= game_t('admin.games.tournaments.panel_hint')
     .game-bracket__pool
       - @characters.each do |character|
-        %span.game-bracket__chip{ draggable: 'true', data: { account_id: character.account_id }, style: "--house-color: #{character.house&.color.presence || '#8a8f98'}" }
+        %span.game-bracket__chip{ draggable: 'true', data: { account_id: character.account_id }, style: "--house-color: #{character.group&.color.presence || '#8a8f98'}" }
           %span.game-bracket__dot
           = character.display_name
 
@@ -94,7 +94,7 @@
             %div= match.scheduled_at && l(match.scheduled_at.in_time_zone(seoul), format: :short)
             - match.players.each do |player|
               .game-bracket__player{ class: ('game-bracket__player--winner' if match.winner_id == player.id) }
-                = GameCharacter.for(player).house&.emoji
+                = GameCharacter.for(player).group&.emoji
                 = GameCharacter.for(player).display_name
 
         - if %w(playing judging).include?(match.status) && match.players.size == 2

@@ -4,6 +4,7 @@
 class GameCharacter < ApplicationRecord
   belongs_to :account
   belongs_to :house, class_name: 'GameHouse', foreign_key: :game_house_id, optional: true, inverse_of: :characters
+  belongs_to :faction, class_name: 'GameHouse', foreign_key: :game_faction_id, optional: true, inverse_of: :faction_characters
 
   validates :name, length: { maximum: 50 }
   validates :note, length: { maximum: 2_000 }
@@ -26,6 +27,15 @@ class GameCharacter < ApplicationRecord
   def self.sync!
     existing = pluck(:account_id)
     eligible_accounts.where.not(id: existing).find_each { |account| create!(account: account) }
+  end
+
+  # 점수를 모으는 소속 (공통 설정의 점수 단위에 따라 기숙사 또는 진영)
+  def group
+    GameHouse.faction_mode? ? faction : house
+  end
+
+  def group_id
+    GameHouse.faction_mode? ? game_faction_id : game_house_id
   end
 
   def display_name

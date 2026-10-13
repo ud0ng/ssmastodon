@@ -12,7 +12,7 @@ module Game
 
       prefix = mentions.uniq.reject { |account| account.id == system.id }.map { |account| "@#{account.acct}" }.join(' ')
       media_ids = avatar_media(system, text)
-      PostStatusService.new.call(
+      status = PostStatusService.new.call(
         system,
         text: [prefix.presence, text.gsub(Game::Text::AVATAR_PATTERN, '').strip].compact.join("\n"),
         thread: thread,
@@ -20,6 +20,17 @@ module Game
         media_ids: media_ids.presence,
         with_rate_limit: false
       )
+      redistribute_after_commit(status)
+      status
+    end
+
+    # 컨텐츠는 판을 잠근 트랜잭션 안에서 툿을 올린다. 그러면 PostStatusService 가 넣은 DistributionWorker 가
+    # 커밋 전에 돌아 툿을 못 찾고 조용히 끝나서 멘션 알림·홈 타임라인이 빠진다.
+    # 커밋된 뒤 한 번 더 넣는다 (알림·피드는 중복을 막으니 두 번 돌아도 괜찮다).
+    def redistribute_after_commit(status)
+      return if status.nil? || !ActiveRecord::Base.connection.transaction_open?
+
+      ActiveRecord.after_all_transactions_commit { DistributionWorker.perform_async(status.id) }
     end
 
     MAX_MEDIA = 4

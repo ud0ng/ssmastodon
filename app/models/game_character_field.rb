@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # 캐릭터 명단 항목 (관리 > 캐릭터 명단 > 항목 설정). 기숙사·학년 말고 운영진이 더하는 값.
-#   kind:  select(고르기, 예: 진영) / text(글) / number(숫자)
+#   kind:  select(고르기, 예: 혈통) / text(글) / number(숫자)
 #   section: profile(정보) / stat(전투 스탯 — 값은 캐릭터 stats 에 이름으로 저장)
 class GameCharacterField < ApplicationRecord
   KINDS = %w(select text number).freeze
@@ -9,7 +9,6 @@ class GameCharacterField < ApplicationRecord
 
   # 처음 만들 때 넣는 항목
   DEFAULTS = [
-    { name: '진영', kind: 'select', section: 'profile', choices: [{ 'name' => '불사조 기사단', 'color' => '#b7410e' }, { 'name' => '죽음을 먹는 자들', 'color' => '#4f7a52' }] },
     { name: '체력', kind: 'number', section: 'stat' },
     { name: '공격', kind: 'number', section: 'stat' },
     { name: '방어', kind: 'number', section: 'stat' },

@@ -16,10 +16,10 @@ class Api::V1::SystemController < Api::BaseController
       house_term: common['house_term'],
       scoring_mode: common['scoring_mode'],
       tournament: tournament_json(GameTournament.current),
-      houses: GameHouse.all.map { |house| house_json(house) },
+      houses: GameHouse.active.map { |house| house_json(house) },
       character: {
         name: character.display_name,
-        house_id: character.game_house_id&.to_s,
+        house_id: character.group_id&.to_s,
         grade: character.grade,
         profile: GameCharacterField.profile.filter_map do |field|
           value = character.profile_value(field)
@@ -73,7 +73,7 @@ class Api::V1::SystemController < Api::BaseController
       session_id: match.session&.id&.to_s,
       players: match.players.map do |account|
         character = GameCharacter.for(account)
-        { acct: account.acct, name: character.display_name, house_id: character.game_house_id&.to_s }
+        { acct: account.acct, name: character.display_name, house_id: character.group_id&.to_s }
       end,
     }
   end

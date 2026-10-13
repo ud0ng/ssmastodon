@@ -29,7 +29,7 @@ module Game
       common = Game::Config.for('common')
       since = now - 7.days
       week = GameHousePoint.where(created_at: since..now).group(:game_house_id).sum(:amount)
-      houses = GameHouse.all.map { |house| [house, week.fetch(house.id, 0), house.total] }.sort_by { |_, gained, total| [-gained, -total] }
+      houses = GameHouse.active.map { |house| [house, week.fetch(house.id, 0), house.total] }.sort_by { |_, gained, total| [-gained, -total] }
       games = GameSession.where(status: 'finished', finished_at: since..now).count
       wins = GamePlayer.joins(:session).where(result: 'win', game_sessions: { finished_at: since..now }).group(:account_id).count
       best = wins.values.max
@@ -58,7 +58,7 @@ module Game
     # 학기 마감: 소속 순위, 우승 소속, 과목별 수석 (O 가 가장 많은 사람, 같으면 평균 등급이 좋은 사람)
     def term_end!
       common = Game::Config.for('common')
-      houses = GameHouse.all.map { |house| [house, house.total] }.sort_by { |_, total| -total }
+      houses = GameHouse.active.map { |house| [house, house.total] }.sort_by { |_, total| -total }
       champion = houses.first&.first
       toppers = Game::Lessons.all.filter_map do |kind|
         grades = GameGrade.where(subject: kind.key).group_by(&:account_id)
