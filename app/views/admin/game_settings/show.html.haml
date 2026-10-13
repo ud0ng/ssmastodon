@@ -10,6 +10,8 @@
 = form_tag admin_game_setting_path(@key), method: :patch, id: 'edit_game_config', class: 'simple_form game-config' do
   - @fields.group_by(&:group).each do |group, fields|
     %h4= game_t("admin.games.groups.#{group}", default: group)
+    - if %w(messages tournament).include?(group) && fields.any? { |field| field.type == :text }
+      %p.hint.game-tokens__hint= game_t('admin.games.messages_hint')
     .bot-sheet-fields
       - fields.each do |field|
         - name = "config[#{field.key}]"
@@ -42,6 +44,11 @@
                   = text_field_tag name, value, id: field_id
             - if field.hint
               %span.hint= field.hint
+            - if field.type == :text
+              -# 누르면 커서 자리에 들어가는 명령어 (admin.tsx)
+              .game-tokens
+                - (field.tokens + Game::Text::PARTICLES.keys).each do |token|
+                  %button.game-token{ type: 'button', data: { insert: "{#{token}}", target: field_id }, class: ('game-token--particle' if Game::Text::PARTICLES.key?(token)) }= "{#{token}}"
 
   .actions
     = button_tag t('generic.save_changes'), type: :submit, class: 'button'

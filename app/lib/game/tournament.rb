@@ -44,7 +44,7 @@ module Game
       tournament = match.tournament
       text = Game::Text.render(common['msg_tournament_open'],
                                tournament: tournament.name, round: tournament.round_name(match.round), number: match.position + 1,
-                               player_a: name(match.player_a), player_b: name(match.player_b), game: kind.display_name)
+                               player_a: match.player_a, player_b: match.player_b, game: kind.display_name)
       announcement = Game::Poster.post(text, mentions: match.players, thread: nil, visibility: 'private')
       session.update!(root_status_id: announcement&.id, last_status_id: announcement&.id)
       kind.new(session).start!
@@ -80,7 +80,7 @@ module Game
         session.update!(status: 'cancelled', finished_at: Time.now.utc, deadline_at: nil)
       end
       if session
-        Game::Poster.to_session(session, Game::Text.render(Game::Config.for('common')['msg_tournament_decided'], winner: name(winner)))
+        Game::Poster.to_session(session, Game::Text.render(Game::Config.for('common')['msg_tournament_decided'], winner: winner))
       end
       win!(match, winner)
     end

@@ -37,10 +37,10 @@ module Game
         if state['phase'] == 'signal'
           seconds = [(status.created_at - Time.iso8601(state['signal_at'])).round(1), 0.0].max
           grade!(player, grade_for(seconds), detail: "반응 #{seconds}초", sort: seconds)
-          intro = render(config['msg_success'], player: player.name)
+          intro = render(config['msg_success'], player: player)
         else
           grade!(player, 'T', detail: '신호 전', sort: 9999)
-          intro = render(config['msg_early'], player: player.name)
+          intro = render(config['msg_early'], player: player)
         end
 
         if everyone_graded?

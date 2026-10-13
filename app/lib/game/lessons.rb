@@ -98,7 +98,7 @@ module Game
       levels = character.progress['spells'] || {}
       extra << "주문 숙련: #{levels.map { |spell, level| "#{spell} Lv.#{level}" }.join(', ')}" if levels.any?
       extra << "수호령: #{character.progress['patronus']}" if character.progress['patronus'].present?
-      Game::Text.render(config['msg_report'], player: character.display_name, lines: lines.join("\n"),
+      Game::Text.render(config['msg_report'], player: account, lines: lines.join("\n"),
                                               extra: extra.any? ? "\n\n#{extra.join("\n")}" : '',
                                               points: GameHousePoint.where(account: account).sum(:amount))
     end

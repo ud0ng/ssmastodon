@@ -37,7 +37,7 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
   저장할 때 처음 본 값과 지금 시트 값을 비교해 그사이 바뀌었으면 저장하지 않는다. 수식 칸은 읽기 전용.
 - 미리보기는 `BOT_SHEETS_LOCAL_DIR` 로 구글 대신 `dev/preview/sheets/<시트>/<워크시트>.csv` (`bot-sheets-sample` 을 복사, 자동봇 tests/fixtures 와 같음).
 
-> 다음 작업 계획: `docs/컨텐츠-다음-계획.md` (PC 웹 컨텐츠 카드 UI → 비밀의방 → 웹 전용 → 정기 툿)
+> 다음 작업 계획: `docs/컨텐츠-다음-계획.md` (PC 웹 컨텐츠 카드 UI + 관리 화면 UI 개선 → 비밀의방 → 웹 전용 → 정기 툿)
 
 ## 컨텐츠(게임) — 시스템 계정 @system 이 진행 (관리 > 시스템 > 컨텐츠 설정 /admin/games, 캐릭터 명단 /admin/characters)
 
@@ -47,6 +47,7 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
 - 흐름: PostStatusService#enqueue_game_command! → `Game::MentionWorker` → `Game::Engine` (첫 [명령어]).
   모르는 명령어는 조용히 넘긴다 (자동봇 ssbot 과 겹치지 않게). 시간 제한은 `Game::TimeoutWorker` (deadline_token 으로 묵은 작업 무시).
 - 시스템 답장은 방금 명령어를 보낸 툿에 단다 (한 스레드로 이어지게). 공개 범위는 신청 툿 (팔로워 공개 / DM). 앱에서도 멘션 알림만으로 알 수 있게 툿 텍스트로 진행.
+- 문구는 한글 명령어 (`Game::Text`): {계정명} {계정아이디} {계정 아바타}(사진 첨부, `Game::Poster`), 앞에 상대·승자·패자 등, {이가} 조사. 예전 %{player} 도 됨. 문구에 이름 대신 GamePlayer/Account 를 넘긴다.
 - 모든 규칙·명령어·시간·문구는 `Game::Config` (항목 정의 + game_configs 에 바뀐 값만). 새 게임: `app/lib/game/kinds/<게임>.rb` (Base 상속, KEY·FIELDS·start!·handle·timeout!) + `Game::Kinds.registry`.
 - 기숙사 점수: `Game::Points` (같은 상대 하루 N판, 같은 기숙사 %). 캐릭터 이름·기숙사는 `GameCharacter` (회원 목록에서 자동 생성).
 - 미리보기에서 시험: `rails runner` 로 `PostStatusService.new.call(계정, text: "@system @상대 [젤리빈]", visibility: "private")` (sidekiq 이 처리).

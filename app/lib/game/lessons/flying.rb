@@ -85,7 +85,7 @@ module Game
             lines << render(config['msg_idle'], players: group.map(&:name).join(', '))
           elsif group.size == 1
             state['wins'][group.first.seat.to_s] = state['wins'][group.first.seat.to_s].to_i + 1
-            lines << render(config['msg_success'], route: route, player: group.first.name)
+            lines << render(config['msg_success'], route: route, player: group.first)
           else
             lines << render(config['msg_crash'], route: route, players: group.map(&:name).join('·'))
           end

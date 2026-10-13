@@ -105,7 +105,7 @@ module Game
 
         if state['spell'] == config['patronus_spell'] && progress['patronus'].blank?
           progress['patronus'] = config['patronuses'].sample.to_s
-          lines << render(config['msg_patronus'], patronus: progress['patronus'], player: player.name)
+          lines << render(config['msg_patronus'], patronus: progress['patronus'], player: player)
         end
         character.update!(progress: progress)
 

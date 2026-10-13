@@ -100,7 +100,7 @@ module Game
           GameGrade.create!(account: player.account, session: session, subject: self.class.key, grade: result['grade'], mode: mode, rank: rank, detail: result.except('grade'))
           player.update!(result: index.zero? && class? ? 'win' : nil)
           point_lines << Game::Points.give(session, player, Game::Lessons.points_for(result['grade'], mode, rank), reason: "lesson:#{self.class.key}")
-          render(lessons['msg_grade_line'], rank: rank ? "#{rank}. " : '', player: player.name, grade: result['grade'],
+          render(lessons['msg_grade_line'], rank: rank ? "#{rank}. " : '', player: player, grade: result['grade'],
                                             grade_name: Game::Lessons::GRADE_NAMES[result['grade']], detail: result['detail'].present? ? " · #{result['detail']}" : '')
         end
 

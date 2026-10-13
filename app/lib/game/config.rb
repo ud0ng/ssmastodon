@@ -6,7 +6,17 @@
 # 문구에는 %{이름} 자리표시와 {이가}{을를}{은는}{과와}{으로로}{아야} 조사를 쓸 수 있다.
 module Game
   class Config
-    Field = Struct.new(:key, :type, :default, :label, :hint, :group, :choices, keyword_init: true)
+    Field = Struct.new(:key, :type, :default, :label, :hint, :group, :choices, keyword_init: true) do
+      # 문구 기본값은 한글 명령어로 ({계정명} 등, Game::Text)
+      def default
+        %i(text string).include?(type) ? Game::Text.koreanize(self[:default]) : self[:default]
+      end
+
+      # 관리 화면에서 이 문구에 쓸 수 있는 명령어
+      def tokens
+        type == :text ? Game::Text.tokens_for(default) : []
+      end
+    end
 
     TYPES = %i(string integer boolean lines text select).freeze
 

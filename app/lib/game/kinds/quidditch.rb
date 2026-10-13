@@ -106,9 +106,9 @@ module Game
           target = session.opponent_of(player)
           if chance?(config['beat_rate'])
             blocked << target.seat.to_s
-            lines << render(config['msg_beat_hit'], player: player.name, target: target.name)
+            lines << render(config['msg_beat_hit'], player: player, target: target)
           else
-            lines << render(config['msg_beat_miss'], player: player.name)
+            lines << render(config['msg_beat_miss'], player: player)
           end
         end
 
@@ -117,24 +117,24 @@ module Game
           seat = player.seat.to_s
           action = choices[seat]
           if action.nil?
-            lines << render(config['msg_idle'], player: player.name)
+            lines << render(config['msg_idle'], player: player)
           elsif blocked.include?(seat)
-            lines << render(config['msg_blocked'], player: player.name)
+            lines << render(config['msg_blocked'], player: player)
           elsif action == 'chase'
             if chance?(config['chase_rate'])
               state['scores'][seat] += config['chase_score'].to_i
-              lines << render(config['msg_goal'], player: player.name, score: config['chase_score'])
+              lines << render(config['msg_goal'], player: player, score: config['chase_score'])
             else
-              lines << render(config['msg_no_goal'], player: player.name)
+              lines << render(config['msg_no_goal'], player: player)
             end
           elsif action == 'seek'
             if chance?(state['seek'][seat])
               state['scores'][seat] += config['snitch_score'].to_i
               caught << player
-              lines << render(config['msg_snitch'], player: player.name, score: config['snitch_score'])
+              lines << render(config['msg_snitch'], player: player, score: config['snitch_score'])
             else
               state['seek'][seat] += config['seek_step'].to_i
-              lines << render(config['msg_seek_fail'], player: player.name)
+              lines << render(config['msg_seek_fail'], player: player)
             end
           end
         end
@@ -158,7 +158,7 @@ module Game
           finish!(draw: true, message: "#{turn_text}\n\n#{render(config['msg_end'], outcome: render(config['msg_draw']))}")
         else
           winner = players.max_by { |player| state['scores'][player.seat.to_s] }
-          finish!(winner: winner, message: "#{turn_text}\n\n#{render(config['msg_end'], outcome: render(config['msg_winner'], winner: winner.name))}")
+          finish!(winner: winner, message: "#{turn_text}\n\n#{render(config['msg_end'], outcome: render(config['msg_winner'], winner: winner))}")
         end
       end
     end

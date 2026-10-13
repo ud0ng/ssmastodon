@@ -90,7 +90,7 @@ module Game
       # 기권 → 상대 승리
       def forfeit!(player)
         winner = session.opponent_of(player)
-        finish!(winner: winner, message: render(common['msg_forfeit'], player: player.name, winner: winner&.name))
+        finish!(winner: winner, message: render(common['msg_forfeit'], player: player, winner: winner))
       end
 
       protected

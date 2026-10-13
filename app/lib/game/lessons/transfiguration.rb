@@ -31,7 +31,7 @@ module Game
               ]),
         F.new(key: 'msg_task', type: :text, group: 'messages', label: '과제',
               default: "✨ 과제: %{task}\n집중도를 골라 주세요: [%{low}] [%{mid}] [%{high}] (기회 %{tries}번)"),
-        F.new(key: 'msg_perfect', type: :text, group: 'messages', label: '완벽', default: '%{try}번째 — 완벽한 변신! %{target}{이가} 되었다.'),
+        F.new(key: 'msg_perfect', type: :text, group: 'messages', label: '완벽', default: '%{try}번째 — 완벽한 변신! %{target_name}{이가} 되었다.'),
         F.new(key: 'msg_half', type: :text, group: 'messages', label: '어중간', default: '%{try}번째 — 음… %{half}.'),
         F.new(key: 'msg_fail', type: :text, group: 'messages', label: '실패', default: '%{try}번째 — 아무 일도 일어나지 않았다.'),
       ]).freeze
@@ -51,7 +51,7 @@ module Game
         attempts = (state['attempts'][player.seat.to_s] ||= [])
         result = roll(level)
         attempts << result
-        line = render(config["msg_#{result}"], try: attempts.size, target: target_name, half: half_results.sample)
+        line = render(config["msg_#{result}"], try: attempts.size, target_name: target_name, half: half_results.sample)
 
         if result == 'perfect' || attempts.size >= tries
           grade!(player, grade_from(attempts), detail: line_detail(attempts))

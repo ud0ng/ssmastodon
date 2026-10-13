@@ -98,7 +98,7 @@ module Game
       opponent = opponents.first
       if common['one_game_per_person']
         busy = [actor, opponent].find { |account| open_player(account) }
-        return reply(Game::Text.render(common['msg_busy'], player: name_of(busy))) if busy
+        return reply(Game::Text.render(common['msg_busy'], player: busy)) if busy
       end
 
       session = GameSession.transaction do
@@ -110,7 +110,7 @@ module Game
 
       Game::Poster.to_session(session, Game::Text.render(
         common['msg_invite'],
-        game: kind.display_name, player: name_of(actor), opponent: name_of(opponent),
+        game: kind.display_name, player: actor, opponent: opponent,
         accept: common['cmd_accept'], decline: common['cmd_decline'], minutes: common['invite_minutes']
       ))
       self.class.set_deadline!(session, common['invite_minutes'])
@@ -151,7 +151,7 @@ module Game
 
         follow_up!(session)
         session.update!(status: 'cancelled', finished_at: Time.now.utc, deadline_at: nil)
-        Game::Poster.to_session(session, Game::Text.render(common['msg_declined'], player: player.name, game: session.kind_class.display_name))
+        Game::Poster.to_session(session, Game::Text.render(common['msg_declined'], player: player, game: session.kind_class.display_name))
       end
     end
 
@@ -193,7 +193,7 @@ module Game
       lessons = Game::Lessons.config
       limit = lessons['study_daily_limit'].to_i
       return reply(Game::Text.render(lessons['msg_study_limit'], subject: kind.display_name, limit: limit)) if limit.positive? && Game::Lessons.studied_today(actor, kind) >= limit
-      return reply(Game::Text.render(common['msg_busy'], player: name_of(actor))) if common['one_game_per_person'] && open_player(actor)
+      return reply(Game::Text.render(common['msg_busy'], player: actor)) if common['one_game_per_person'] && open_player(actor)
 
       session = GameSession.transaction do
         GameSession.create!(kind: kind.key, status: 'active', visibility: visibility, root_status_id: status.id, last_status_id: status.id,
@@ -225,7 +225,7 @@ module Game
     def join
       session = GameSession.where(status: 'pending').where("state->>'mode' = 'class'").order(id: :desc).first
       return if session.nil? || session.players.exists?(account_id: actor.id)
-      return reply(Game::Text.render(common['msg_busy'], player: name_of(actor))) if common['one_game_per_person'] && open_player(actor)
+      return reply(Game::Text.render(common['msg_busy'], player: actor)) if common['one_game_per_person'] && open_player(actor)
 
       session.with_lock do
         next unless session.status == 'pending'

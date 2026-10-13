@@ -122,7 +122,7 @@ module Game
       def end_turn!
         lines = players.map do |player|
           result = state['guesses'][player.seat.to_s]
-          result ? render(config['msg_line'], player: player.name, **result.transform_keys(&:to_sym)) : render(config['msg_skip'], player: player.name)
+          result ? render(config['msg_line'], player: player, **result.transform_keys(&:to_sym)) : render(config['msg_skip'], player: player)
         end
         turn_text = render(config['msg_turn'], turn: session.turn, lines: lines.join("\n"))
         answer_text = answer.join(' → ')
@@ -131,7 +131,7 @@ module Game
         if solved.size > 1
           finish!(draw: true, message: "#{turn_text}\n\n#{render(config['msg_both_solved'], potion: state['potion'], answer: answer_text)}")
         elsif solved.size == 1
-          finish!(winner: solved.first, message: "#{turn_text}\n\n#{render(config['msg_solved'], player: solved.first.name, potion: state['potion'], answer: answer_text)}")
+          finish!(winner: solved.first, message: "#{turn_text}\n\n#{render(config['msg_solved'], player: solved.first, potion: state['potion'], answer: answer_text)}")
         elsif session.turn >= max_tries
           finish!(draw: true, message: "#{turn_text}\n\n#{render(config['msg_explode'], answer: answer_text)}")
         else

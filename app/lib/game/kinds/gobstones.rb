@@ -44,7 +44,7 @@ module Game
         state.merge!('seat' => players.map(&:seat).sample, 'throws' => 0, 'scores' => players.to_h { |player| [player.seat.to_s, 0] })
         state['first_seat'] = state['seat']
         session.update!(turn: 1)
-        post(render(config['msg_start'], rounds: rounds, player: current.name, **command_names))
+        post(render(config['msg_start'], rounds: rounds, player: current, **command_names))
         wait_for_turn!
       end
 
@@ -53,7 +53,7 @@ module Game
         return false if strength.nil?
 
         if player.seat != state['seat']
-          post(render(config['msg_not_turn'], player: current.name))
+          post(render(config['msg_not_turn'], player: current))
           return true
         end
 
@@ -63,7 +63,7 @@ module Game
 
       # 시간 초과는 그 차례 0점으로 넘어간다
       def timeout!
-        advance!(current, render(config['msg_timeout_throw'], player: current.name))
+        advance!(current, render(config['msg_timeout_throw'], player: current))
       end
 
       private
@@ -93,7 +93,7 @@ module Game
                      (score.negative? ? 'msg_splash' : 'msg_miss')
                    end
         state['scores'][player.seat.to_s] += score
-        advance!(player, render(config[template], player: player.name, strength: config["cmd_#{strength}"], score: score))
+        advance!(player, render(config[template], player: player, strength: config["cmd_#{strength}"], score: score))
       end
 
       def advance!(player, result)
@@ -107,7 +107,7 @@ module Game
             finish!(draw: true, message: render(config['msg_end'], round: round, result: result, board: board, outcome: render(config['msg_draw'])))
           else
             winner = players.max_by { |each| state['scores'][each.seat.to_s] }
-            finish!(winner: winner, message: render(config['msg_end'], round: round, result: result, board: board, outcome: render(config['msg_winner'], winner: winner.name)))
+            finish!(winner: winner, message: render(config['msg_end'], round: round, result: result, board: board, outcome: render(config['msg_winner'], winner: winner)))
           end
           return
         end
@@ -115,7 +115,7 @@ module Game
         state['seat'] = session.opponent_of(player).seat
         # 두 사람이 한 번씩 던지면 다음 라운드
         session.turn += 1 if (state['throws'] % players.size).zero?
-        post(render(config['msg_turn'], round: round, result: result, board: board, next: current.name))
+        post(render(config['msg_turn'], round: round, result: result, board: board, next: current))
         session.save!
         wait_for_turn!
       end

@@ -14,7 +14,7 @@ module Game
       common = Game::Config.for('common')
       character = player.character
       house = character.house
-      return Game::Text.render(common['msg_no_house'], player: character.display_name, term: common['house_term']) if house.nil?
+      return Game::Text.render(common['msg_no_house'], player: player, term: common['house_term']) if house.nil?
 
       opponents = session.players.reject { |other| other.id == player.id }
       return if over_daily_limit?(player.account, opponents.map(&:account_id), common['daily_pair_limit'].to_i)
@@ -24,7 +24,7 @@ module Game
       return if amount <= 0
 
       GameHousePoint.create!(house: house, account: player.account, session: session, amount: amount, reason: session.kind)
-      Game::Text.render(common['msg_points'], emoji: house.emoji, house: house.name, amount: amount, player: character.display_name, term: common['house_term'])
+      Game::Text.render(common['msg_points'], emoji: house.emoji, house: house.name, amount: amount, player: player, term: common['house_term'])
     end
 
     # 상대 없이 주는 점수 (마법 수업 등). 같은 상대·같은 소속 규칙은 없다.
@@ -35,10 +35,10 @@ module Game
       common = Game::Config.for('common')
       character = player.character
       house = character.house
-      return Game::Text.render(common['msg_no_house'], player: character.display_name, term: common['house_term']) if house.nil?
+      return Game::Text.render(common['msg_no_house'], player: player, term: common['house_term']) if house.nil?
 
       GameHousePoint.create!(house: house, account: player.account, session: session, amount: amount.to_i, reason: reason)
-      Game::Text.render(common['msg_points'], emoji: house.emoji, house: house.name, amount: amount.to_i, player: character.display_name, term: common['house_term'])
+      Game::Text.render(common['msg_points'], emoji: house.emoji, house: house.name, amount: amount.to_i, player: player, term: common['house_term'])
     end
 
     # 오늘(한국 시간) 같은 상대와의 게임으로 이미 limit 번 점수를 받았는가
@@ -63,7 +63,7 @@ module Game
     def record(account)
       results = GamePlayer.joins(:session).where(account: account, game_sessions: { status: 'finished' }).group(:result).count
       Game::Text.render(Game::Config.for('common')['msg_record'],
-                        player: GameCharacter.for(account).display_name,
+                        player: account,
                         win: results['win'].to_i, lose: results['lose'].to_i, draw: results['draw'].to_i)
     end
   end

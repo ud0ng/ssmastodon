@@ -3258,3 +3258,37 @@ body .image-picker {
     }
   }
 }
+
+// 컨텐츠 설정: 문구 아래 명령어 버튼 (누르면 문구에 들어감)
+.game-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+
+  &__hint {
+    margin-bottom: 12px;
+  }
+}
+
+.game-token {
+  padding: 2px 8px;
+  border: 1px solid var(--background-border-color);
+  border-radius: 4px;
+  background: transparent;
+  color: $darker-text-color;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    border-color: $ui-highlight-color;
+    color: $primary-text-color;
+  }
+
+  &--particle {
+    border-style: dashed;
+    opacity: 0.8;
+  }
+}

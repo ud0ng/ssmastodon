@@ -35,7 +35,7 @@ module Game
 
         state.merge!('bag' => bag.shuffle, 'seat' => players.map(&:seat).sample)
         session.update!(turn: 1)
-        post(render(config['msg_start'], count: count, worst: worst, player: current.name, eat: config['cmd_eat'], max: config['max_per_turn']))
+        post(render(config['msg_start'], count: count, worst: worst, player: current, eat: config['cmd_eat'], max: config['max_per_turn']))
         wait_for_turn!
       end
 
@@ -43,7 +43,7 @@ module Game
         return false unless command == config['cmd_eat']
 
         if player.seat != state['seat']
-          post(render(config['msg_not_turn'], player: current.name))
+          post(render(config['msg_not_turn'], player: current))
           return true
         end
 
@@ -54,7 +54,7 @@ module Game
         worst = false
         count.times do
           bean = bag.shift
-          eaten << render(config['msg_eat'], player: player.name, flavor: bean['flavor'])
+          eaten << render(config['msg_eat'], player: player, flavor: bean['flavor'])
           if bean['worst']
             worst = true
             break
@@ -63,10 +63,10 @@ module Game
 
         if worst
           winner = session.opponent_of(player)
-          finish!(winner: winner, message: render(config['msg_worst'], turn: session.turn, eaten: eaten.join("\n"), player: player.name, winner: winner.name))
+          finish!(winner: winner, message: render(config['msg_worst'], turn: session.turn, eaten: eaten.join("\n"), player: player, winner: winner))
         else
           state['seat'] = session.opponent_of(player).seat
-          post(render(config['msg_turn'], turn: session.turn, eaten: eaten.join("\n"), remaining: bag.size, next: current.name))
+          post(render(config['msg_turn'], turn: session.turn, eaten: eaten.join("\n"), remaining: bag.size, next: current))
           session.update!(turn: session.turn + 1)
           wait_for_turn!
         end
@@ -77,7 +77,7 @@ module Game
       def timeout!
         loser = current
         winner = session.opponent_of(loser)
-        finish!(winner: winner, message: render(config['msg_timeout'], player: loser.name, winner: winner.name, minutes: common['turn_minutes']))
+        finish!(winner: winner, message: render(config['msg_timeout'], player: loser, winner: winner, minutes: common['turn_minutes']))
       end
 
       private

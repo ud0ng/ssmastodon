@@ -117,17 +117,17 @@ module Game
                     backfire = losing_choice&.dig('special') && !winning_choice&.dig('special')
                     damage *= multiplier if winning_choice&.dig('special') || backfire
                     state['hp'][loser.seat.to_s] = [state['hp'][loser.seat.to_s] - damage, 0].max
-                    render(config[backfire ? 'msg_round_backfire' : 'msg_round_win'], winner: winner.name, loser: loser.name, damage: damage)
+                    render(config[backfire ? 'msg_round_backfire' : 'msg_round_win'], winner: winner, loser: loser, damage: damage)
                   end
 
-        round_text = render(config['msg_round'], turn: session.turn, player_a: a.name, player_b: b.name,
+        round_text = render(config['msg_round'], turn: session.turn, player_a: a, player_b: b,
                                                  choice_a: choice_label(choice_a), choice_b: choice_label(choice_b), outcome: outcome, hearts: hearts)
         state['choices'] = {}
 
         fallen = players.find { |player| state['hp'][player.seat.to_s].zero? }
         if fallen
           survivor = session.opponent_of(fallen)
-          finish!(winner: survivor, message: "#{round_text}\n\n#{render(config['msg_win'], winner: survivor.name, loser: fallen.name)}")
+          finish!(winner: survivor, message: "#{round_text}\n\n#{render(config['msg_win'], winner: survivor, loser: fallen)}")
         elsif session.turn >= config['max_turns'].to_i
           finish_by_hp!(round_text)
         else
@@ -163,7 +163,7 @@ module Game
           finish!(draw: true, message: "#{round_text}\n\n#{render(config['msg_limit'], turns: session.turn, outcome: render(config['msg_draw']))}")
         else
           winner = hp_a > hp_b ? a : b
-          finish!(winner: winner, message: "#{round_text}\n\n#{render(config['msg_limit'], turns: session.turn, outcome: render(config['msg_win'], winner: winner.name, loser: session.opponent_of(winner).name))}")
+          finish!(winner: winner, message: "#{round_text}\n\n#{render(config['msg_limit'], turns: session.turn, outcome: render(config['msg_win'], winner: winner, loser: session.opponent_of(winner)))}")
         end
       end
     end
