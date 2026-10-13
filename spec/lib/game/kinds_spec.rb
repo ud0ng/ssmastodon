@@ -113,4 +113,71 @@ RSpec.describe 'Game kinds' do
       expect(Status.find(session.last_status_id).text).to include('주문 실패', '쓰러졌습니다')
     end
   end
+
+  describe Game::Kinds::Potion do
+    before do
+      Game::Config.update!('potion', 'answer_min' => '3', 'answer_max' => '3')
+      start('물약')
+    end
+
+    def answer_numbers
+      session.state['answer'].map { |name| session.state['shown'].index(name) + 1 }
+    end
+
+    it 'shows ingredients in public and by DM' do
+      expect(session.state['shown'].size).to eq 9
+      expect(session.state['answer'].size).to eq 3
+      expect(@replies.find { |status| status.visibility == 'private' }.text).to include('재료:', '[조합]')
+      expect(replies_to(alice, 'direct')).to be_present
+    end
+
+    it 'gives strike/ball hints by DM and ends the turn in public when both tried' do
+      wrong = (1..9).to_a - answer_numbers
+      toot(alice, "@system [조합] #{answer_numbers.reverse.join(' ')}", visibility: 'direct')
+      hint = @replies.last.text
+      expect(hint).to include('1번째 시도', '순서가 틀린 재료')
+
+      toot(bob, "@system [조합] #{wrong.first(3).join(' ')}", visibility: 'direct')
+      result = @replies.find { |status| status.visibility == 'private' }
+      expect(result.text).to include('1턴', '드레이코: 정답 0 · 순서 틀림 0')
+      expect(session.turn).to eq 2
+    end
+
+    it 'lets the first to brew the right order win' do
+      toot(alice, "@system [조합] #{answer_numbers.join(' ')}", visibility: 'direct')
+      toot(bob, '@system [조합] 1 2 3', visibility: 'direct') unless answer_numbers == [1, 2, 3]
+      expect(session.status).to eq 'finished'
+      expect(session.player_for(alice).result).to eq 'win'
+    end
+
+    it 'rejects a guess with the wrong number of ingredients' do
+      toot(alice, '@system [조합] 1 2', visibility: 'direct')
+      expect(@replies.last.text).to include('겹치지 않게')
+      expect(session.state['tries']).to be_empty
+    end
+  end
+
+  describe Game::Kinds::Quidditch do
+    before { start('퀴디치') }
+
+    it 'scores a guaranteed snitch catch and ends the match' do
+      Game::Config.update!('quidditch', 'seek_start' => '100', 'chase_rate' => '100')
+      session.update!(state: session.state.merge('seek' => { '0' => 100, '1' => 0 }))
+      toot(alice, '@system [수색]', visibility: 'direct')
+      toot(bob, '@system [추격]', visibility: 'direct')
+
+      expect(session.status).to eq 'finished'
+      expect(session.player_for(alice).result).to eq 'win'
+      expect(Status.find(session.last_status_id).text).to include('골든 스니치', '+150')
+    end
+
+    it 'lets a beater cancel the other action' do
+      Game::Config.update!('quidditch', 'beat_rate' => '100', 'chase_rate' => '100')
+      toot(alice, '@system [몰이]', visibility: 'direct')
+      toot(bob, '@system [추격]', visibility: 'direct')
+
+      expect(session.state['scores']).to eq('0' => 0, '1' => 0)
+      expect(Status.find(session.last_status_id).text).to include('블러저가 드레이코를 덮쳤다')
+    end
+  end
 end

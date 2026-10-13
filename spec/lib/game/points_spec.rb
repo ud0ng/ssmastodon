@@ -61,5 +61,7 @@ RSpec.describe Game::Text do
     expect(described_class.render('%{a}{이가} %{b}{을를} 먹었다', a: '해리', b: '젤리빈')).to eq '해리가 젤리빈을 먹었다'
     expect(described_class.render('%{a}{은는} %{b}{으로로}', a: '론', b: '교실')).to eq '론은 교실로'
     expect(described_class.render('%{a}{과와}', a: 'Ron')).to eq 'Ron과(와)'
+    expect(described_class.render('「%{a}」{이가} 완성', a: '진실의 약')).to eq '「진실의 약」이 완성'
+    expect(described_class.render('[%{a}]{으로로}', a: '강')).to eq '[강]으로'
   end
 end

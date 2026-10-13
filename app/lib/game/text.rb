@@ -9,14 +9,17 @@ module Game
     }.freeze
 
     HANGUL = (0xAC00..0xD7A3)
+    CLOSERS = /[\s」』)\]}>'"”’》〉]+\z/
 
     module_function
 
     def render(template, **values)
       text = template.to_s.gsub(/%\{(\w+)\}/) { values.fetch(Regexp.last_match(1).to_sym, '').to_s }
-      text.gsub(/(.)?\{(#{PARTICLES.keys.join('|')})\}/) do
-        before = Regexp.last_match(1).to_s
-        "#{before}#{particle(before, Regexp.last_match(2))}"
+      text.gsub(/\{(#{PARTICLES.keys.join('|')})\}/) do
+        # 닫는 괄호·따옴표 뒤면 그 안의 마지막 글자를 본다: 「진실의 약」{이가} → 「진실의 약」이
+        match = Regexp.last_match
+        before = match.pre_match.sub(CLOSERS, '')[-1].to_s
+        particle(before, match[1])
       end
     end
 

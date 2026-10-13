@@ -10,6 +10,8 @@ module Game
         'jellybean' => Game::Kinds::Jellybean,
         'gobstones' => Game::Kinds::Gobstones,
         'duel' => Game::Kinds::Duel,
+        'potion' => Game::Kinds::Potion,
+        'quidditch' => Game::Kinds::Quidditch,
       }
     end
 
