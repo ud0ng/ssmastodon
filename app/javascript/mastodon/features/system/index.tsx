@@ -71,7 +71,16 @@ interface Overview {
   scoring_mode: 'points' | 'tournament';
   tournament: Tournament | null;
   houses: House[];
-  character: { name: string; house_id: string | null; grade: number | null };
+  character: {
+    name: string;
+    house_id: string | null;
+    grade: number | null;
+    profile: { name: string; value: string; color: string | null }[];
+    stats: { name: string; value: string }[];
+    money: number;
+    currency: string;
+    inventory: { name: string; count: number; note: string }[];
+  };
   record: { win: number; lose: number; draw: number };
   active: Game[];
   recent: Game[];
@@ -354,6 +363,15 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                   <div className='system-card__house'>
                     {myHouse ? myHouse.name : <FormattedMessage id='system.no_house' defaultMessage='No {term} yet' values={{ term: data.house_term }} />}
                   </div>
+                  {data.character.profile.length > 0 && (
+                    <div className='system-card__tags'>
+                      {data.character.profile.map((item) => (
+                        <span key={item.name} className='system-card__tag' style={{ '--tag-color': item.color ?? 'var(--ct-point, #6b5b3e)' } as React.CSSProperties} title={item.name}>
+                          {item.value}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <div className='system-card__record'>
                     <FormattedMessage
                       id='system.record'
@@ -361,6 +379,43 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                       values={data.record}
                     />
                   </div>
+                </div>
+              </div>
+
+              <div className='system-sheet'>
+                {data.character.stats.length > 0 && (
+                  <div className='system-sheet__stats'>
+                    {data.character.stats.map((stat) => (
+                      <div key={stat.name} className='system-sheet__stat'>
+                        <span>{stat.name}</span>
+                        <strong>{stat.value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className='system-sheet__money'>
+                  💰 <strong>{data.character.money.toLocaleString()}</strong> {data.character.currency}
+                </div>
+                <div className='system-sheet__inventory'>
+                  <h3>
+                    <FormattedMessage id='system.inventory' defaultMessage='Inventory' />
+                  </h3>
+                  {data.character.inventory.length > 0 ? (
+                    <ul>
+                      {data.character.inventory.map((item, index) => (
+                        // eslint-disable-next-line react/no-array-index-key
+                        <li key={index}>
+                          <span className='system-sheet__item'>{item.name}</span>
+                          <span className='system-sheet__count'>×{item.count}</span>
+                          {item.note && <span className='system-sheet__note'>{item.note}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className='system-sheet__empty'>
+                      <FormattedMessage id='system.inventory_empty' defaultMessage='No items yet.' />
+                    </p>
+                  )}
                 </div>
               </div>
             </section>

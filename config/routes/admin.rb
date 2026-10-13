@@ -83,7 +83,8 @@ namespace :admin do
   end
 
   # 게임 (시스템 계정)
-  resources :game_houses, path: 'games/houses', only: [:index, :create, :update, :destroy] do
+  get 'games/houses', to: redirect('/admin/characters/houses')
+  resources :game_houses, path: 'characters/houses', only: [:index, :create, :update, :destroy] do
     post :adjust, on: :collection
     post :weekly, on: :collection
     post :term_end, on: :collection
@@ -95,6 +96,7 @@ namespace :admin do
     post :decide, on: :member
   end
   resources :game_settings, path: 'games', only: [:index, :show, :update]
+  resources :game_character_fields, path: 'characters/fields', only: [:index, :create, :update, :destroy]
   resources :game_characters, path: 'characters', only: [:index, :edit, :update] do
     patch :bulk, on: :collection
   end

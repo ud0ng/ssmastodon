@@ -426,38 +426,54 @@ export const setupGameConfigEditor = () => {
 };
 
 // 캐릭터 개인 값: '이름=값' 줄 → 표 (textarea 는 숨기고 값은 그대로 쓴다)
+// 이름=값 / 이름|개수|메모 같은 줄 글을 칸 표로 (data-stats-editor: { key, value } 또는 { columns: [...], sep })
 export const setupStatsEditor = () => {
   document.querySelectorAll<HTMLTextAreaElement>('textarea[data-stats-editor]').forEach((textarea) => {
-    const labels = JSON.parse(textarea.dataset.statsEditor ?? '{}') as Record<string, string>;
+    const options = JSON.parse(textarea.dataset.statsEditor ?? '{}') as { key?: string; value?: string; columns?: string[]; sep?: string };
+    const columns = options.columns ?? [options.key ?? '', options.value ?? ''];
+    const sep = options.sep ?? '=';
     const table = document.createElement('div');
-    table.className = 'game-stats';
+    table.className = `game-stats game-stats--${columns.length}`;
+
+    const split = (line: string) => {
+      const parts = line.split(sep);
+      const head = parts.slice(0, columns.length - 1);
+      const rest = parts.slice(columns.length - 1).join(sep);
+      return [...head, rest].map((cell) => cell.trim()).concat(Array(columns.length).fill('')).slice(0, columns.length);
+    };
 
     const rows = () =>
       textarea.value
         .split('\n')
-        .map((line) => line.split('='))
-        .filter(([key]) => key?.trim())
-        .map(([key, ...rest]) => [key?.trim() ?? '', rest.join('=').trim()]);
+        .filter((line) => line.split(sep)[0]?.trim())
+        .map(split);
 
     const write = (list: string[][]) => {
-      textarea.value = list.filter(([key]) => key).map(([key, value]) => `${key}=${value}`).join('\n');
+      textarea.value = list
+        .filter(([key]) => key)
+        .map((row) => {
+          const cells = [...row];
+          while (cells.length > 2 && !cells[cells.length - 1]) cells.pop();
+          return cells.join(sep);
+        })
+        .join('\n');
     };
 
     const render = () => {
       table.replaceChildren();
       const list = rows();
-      [...list, ['', '']].forEach((row, index) => {
+      [...list, columns.map(() => '')].forEach((row, index) => {
         const line = document.createElement('div');
         line.className = 'game-stats__row';
         row.forEach((cell, column) => {
           const input = document.createElement('input');
           input.type = 'text';
-          input.value = cell ?? '';
-          input.placeholder = column === 0 ? (labels.key ?? '') : (labels.value ?? '');
+          input.value = cell;
+          input.placeholder = columns[column] ?? '';
           input.addEventListener('change', () => {
             const next = rows();
-            const current = next[index] ?? ['', ''];
-            current[column] = input.value.trim();
+            const current = next[index] ?? columns.map(() => '');
+            current[column] = input.value.trim().replaceAll(sep, ' ');
             next[index] = current;
             write(next);
             render();

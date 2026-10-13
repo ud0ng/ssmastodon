@@ -877,3 +877,101 @@ $game-gold: #b08d3c;
   flex-wrap: wrap;
   gap: 10px;
 }
+
+// 캐릭터 명단: 진영 등 고르기 항목 칩·돈·아이템
+.game-roster__filters--field {
+  margin-top: -6px;
+}
+
+.game-roster__filter-name {
+  min-width: 48px;
+  color: $darker-text-color;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.game-roster__tag {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tag-color) 22%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tag-color) 55%, transparent);
+  color: inherit;
+  font-weight: 700;
+}
+
+.game-roster__stat--money {
+  background: color-mix(in srgb, #{$game-gold} 22%, transparent);
+}
+
+.game-stats--3 .game-stats__row {
+  grid-template-columns: 2fr 70px 3fr 28px;
+}
+
+// 캐릭터 편집 머리
+.game-character-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  .game-roster__avatar {
+    width: 56px;
+    height: 56px;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .hint {
+    margin: 2px 0 0;
+  }
+}
+
+// 항목 설정 카드
+.game-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+
+  &__card {
+    position: relative;
+    padding: 12px;
+    border: 1px solid var(--background-border-color, #{$ui-base-lighter-color});
+    border-radius: 10px;
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-inline-end: 34px;
+  }
+
+  &__badge {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, #{$game-gold} 18%, transparent);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  &__kind {
+    color: $darker-text-color;
+    font-size: 12px;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &__delete {
+    position: absolute;
+    top: 8px;
+    inset-inline-end: 8px;
+  }
+}

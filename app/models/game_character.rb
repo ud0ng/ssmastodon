@@ -8,6 +8,7 @@ class GameCharacter < ApplicationRecord
   validates :name, length: { maximum: 50 }
   validates :note, length: { maximum: 2_000 }
   validates :grade, numericality: { only_integer: true, in: 1..7 }, allow_nil: true
+  validates :money, numericality: { only_integer: true }
 
   # 게임에 낄 수 있는 서버원 (시스템 계정·정지된 계정 제외)
   def self.eligible_accounts
@@ -37,9 +38,41 @@ class GameCharacter < ApplicationRecord
   end
 
   def stats_text=(text)
-    self.stats = text.to_s.lines.filter_map do |line|
+    self.stats = self.class.parse_pairs(text)
+  end
+
+  # 항목 설정의 전투 스탯 말고 더 적은 값만 (편집 화면의 '추가 값')
+  def extra_stats_text(field_names)
+    stats.except(*field_names).map { |key, value| "#{key}=#{value}" }.join("\n")
+  end
+
+  def self.parse_pairs(text)
+    text.to_s.lines.filter_map do |line|
       key, value = line.split('=', 2).map(&:strip)
       [key, value.to_s] if key.present?
     end.to_h
+  end
+
+  # 정보 항목 값 (항목 설정의 select/text/number, 항목 id 로 저장)
+  def profile_value(field)
+    profile[field.id.to_s]
+  end
+
+  # 인벤토리: [{ name, count, note }] ↔ "이름|개수|메모" 줄
+  def inventory_text
+    Array(inventory).map { |item| [item['name'], item['count'], item['note'].presence].compact.join('|') }.join("\n")
+  end
+
+  def inventory_text=(text)
+    self.inventory = text.to_s.lines.filter_map do |line|
+      name, count, note = line.split('|', 3).map(&:strip)
+      next if name.blank?
+
+      { 'name' => name, 'count' => [count.to_i, 1].max, 'note' => note.to_s }
+    end
+  end
+
+  def item_count
+    Array(inventory).sum { |item| item['count'].to_i }
   end
 end

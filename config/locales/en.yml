@@ -27,6 +27,44 @@ en:
     games:
       changed: Changed
       characters:
+        bulk_target: Value to set
+        extra_stats: Other values
+        fields:
+          add: Add field
+          choice_color: 'Colour (#b7410e)'
+          choice_name: Name
+          choices: Choices
+          choices_hint: Pick one of these when editing a character. The colour is used for the roster chip.
+          choices_new_hint: Only used when the type is 'Choice'.
+          delete: Delete field
+          delete_confirm: "Delete the '%{name}' field? Values saved on characters will no longer show."
+          hint: 'Extra values for characters besides %{term} and year. Info fields (e.g. faction) show as chips and filters on the roster; combat stats are numbers for content. Money (%{currency}) and inventory belong to each character. Rename money under Content settings > Common.'
+          kind: Type
+          kinds:
+            number: Number
+            select: Choice
+            text: Text
+          manage: Add or edit fields in Field settings
+          name: Field name
+          name_placeholder: 'e.g. Faction, Wand, Blood status'
+          section: Section
+          sections:
+            profile: Info
+            stat: Combat stat
+          title: Field settings
+        inventory: Inventory
+        inventory_hint: 'Item name, count, note. (As text: name|count|note per line)'
+        item_count: Count
+        item_name: Item
+        item_note: Note
+        items_count: '%{count} items'
+        money: 'Money (%{currency})'
+        none: None
+        roster: Roster
+        sections:
+          basic: Basics
+          inventory: Money & inventory
+          stats: Combat stats
         account: Account
         account_hint: 'Account: %{account} (%{display_name})'
         all: All

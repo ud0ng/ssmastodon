@@ -73,6 +73,8 @@ module Game
 
       Field.new(key: 'house_term', type: :string, default: '기숙사', group: 'account',
                 label: '소속 이름', hint: '점수를 모으는 단위. 학생 기간은 기숙사, 성인 기간은 진영처럼 바꿔 쓸 수 있습니다.'),
+      Field.new(key: 'currency_name', type: :string, default: '갈레온', group: 'account',
+                label: '돈 이름', hint: '캐릭터 명단의 돈 단위 (예: 갈레온)'),
 
       Field.new(key: 'scoring_mode', type: :select, default: 'points', group: 'scoring',
                 choices: [['points', '점수제 (컨텐츠마다 이기면 점수)'], ['tournament', '토너먼트제 (대진표 경기의 승수가 가장 많은 소속만 우승 점수)']],

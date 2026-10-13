@@ -21,6 +21,14 @@ class Api::V1::SystemController < Api::BaseController
         name: character.display_name,
         house_id: character.game_house_id&.to_s,
         grade: character.grade,
+        profile: GameCharacterField.profile.filter_map do |field|
+          value = character.profile_value(field)
+          { name: field.name, value: value, color: field.choice(value)&.dig('color').presence } if value.present?
+        end,
+        stats: GameCharacterField.stats.pluck(:name).then { |names| character.stats.slice(*names).merge(character.stats.except(*names)) }.map { |name, value| { name: name, value: value } },
+        money: character.money,
+        currency: common['currency_name'],
+        inventory: Array(character.inventory).map { |item| item.slice('name', 'count', 'note') },
       },
       record: record,
       active: my_players(%w(pending active)).map { |player| game_json(player) },

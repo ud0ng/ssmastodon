@@ -15720,6 +15720,100 @@ body .search__popout__menu__item {
     font-size: 13px;
     letter-spacing: 0.04em;
   }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  &__tag {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--tag-color) 20%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tag-color) 55%, transparent);
+    font-size: 12px;
+    font-weight: 700;
+  }
+}
+
+// 내 캐릭터: 전투 스탯·돈·인벤토리
+.system-sheet {
+  @extend %system-parchment;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 14px 18px;
+  font-family: var(--sys-serif);
+
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 6px;
+  }
+
+  &__stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 4px;
+    border: 1px dashed var(--sys-gold-soft);
+    border-radius: 3px;
+
+    span {
+      color: var(--color-dim, $darker-text-color);
+      font-size: 12px;
+    }
+
+    strong {
+      font-size: 18px;
+    }
+  }
+
+  &__money strong {
+    font-size: 17px;
+  }
+
+  &__inventory {
+    h3 {
+      margin-bottom: 4px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    ul {
+      display: flex;
+      flex-direction: column;
+    }
+
+    li {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 8px;
+      align-items: baseline;
+      padding: 5px 2px;
+      border-bottom: 1px dashed var(--sys-gold-soft);
+    }
+  }
+
+  &__count {
+    color: var(--color-dim, $darker-text-color);
+    font-size: 13px;
+  }
+
+  &__note {
+    flex-basis: 100%;
+    color: var(--color-dim, $darker-text-color);
+    font-size: 12px;
+  }
+
+  &__empty {
+    color: var(--color-dim, $darker-text-color);
+    font-size: 13px;
+  }
 }
 
 .system-game {

@@ -1220,6 +1220,8 @@
   "system.game.vs": "vs {names}",
   "system.grade": "{grade}학년",
   "system.houses": "{term} 점수",
+  "system.inventory": "인벤토리",
+  "system.inventory_empty": "아직 아이템이 없습니다.",
   "system.how_to": "컨텐츠 이용 방법",
   "system.how_to.common": "신청을 받으면 [{accept}] 또는 [{decline}], 진행 중 포기는 [{forfeit}]. [{points}]는 {term} 점수, [{record}]는 내 전적을 알려 줍니다.",
   "system.load_failed": "불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.",

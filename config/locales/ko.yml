@@ -25,6 +25,44 @@ ko:
     games:
       changed: 변경됨
       characters:
+        bulk_target: 바꿀 값
+        extra_stats: 그 밖의 값
+        fields:
+          add: 항목 추가
+          choice_color: '색 (#b7410e)'
+          choice_name: 이름
+          choices: 고를 값
+          choices_hint: 캐릭터 편집에서 이 중 하나를 고릅니다. 색은 명단 칩 색입니다.
+          choices_new_hint: 종류가 '고르기'일 때만 씁니다.
+          delete: 항목 지우기
+          delete_confirm: "'%{name}' 항목을 지울까요? 캐릭터에 넣은 값은 보이지 않게 됩니다."
+          hint: '%{term}·학년 말고 캐릭터에 더 넣을 값입니다. 정보 항목(예: 진영)은 명단에서 칩과 거르기로 보이고, 전투 스탯은 컨텐츠에서 쓸 숫자입니다. 돈(%{currency})과 인벤토리는 캐릭터마다 따로 있습니다. 돈 이름은 컨텐츠 설정 > 공통에서 바꿉니다.'
+          kind: 종류
+          kinds:
+            number: 숫자
+            select: 고르기
+            text: 글
+          manage: 항목 설정에서 항목 더하기·고치기
+          name: 항목 이름
+          name_placeholder: '예: 진영, 지팡이, 혈통'
+          section: 구분
+          sections:
+            profile: 정보
+            stat: 전투 스탯
+          title: 항목 설정
+        inventory: 인벤토리
+        inventory_hint: '아이템 이름, 개수, 메모. (글로는 한 줄에 이름|개수|메모)'
+        item_count: 개수
+        item_name: 아이템
+        item_note: 메모
+        items_count: '아이템 %{count}개'
+        money: '돈 (%{currency})'
+        none: 없음
+        roster: 명단
+        sections:
+          basic: 기본 정보
+          inventory: 돈·인벤토리
+          stats: 전투 스탯
         account: 계정
         account_hint: '계정: %{account} (%{display_name})'
         all: 전체
