@@ -1,0 +1,23 @@
+- content_for :page_title do
+  = t('admin.games.characters.edit_title', name: @character.display_name)
+
+- content_for :heading do
+  .content__heading__row
+    %h2= t('admin.games.characters.edit_title', name: @character.display_name)
+
+= simple_form_for @character, url: admin_game_character_path(@character, q: params[:q], house: params[:house]), method: :patch do |f|
+  = render 'shared/error_messages', object: @character
+
+  %p.hint= t('admin.games.characters.account_hint', account: "@#{@character.account.username}", display_name: @character.account.display_name)
+
+  .bot-sheet-fields
+    = f.input :name, wrapper: :with_label, label: t('admin.games.characters.name'), placeholder: @character.account.display_name.presence || @character.account.username, hint: t('admin.games.characters.name_hint')
+    = f.input :game_house_id, as: :select, collection: @houses.map { |house| [house.label, house.id] }, include_blank: t('admin.games.characters.no_house'), wrapper: :with_label, label: t('admin.games.characters.house')
+    = f.input :grade, as: :integer, wrapper: :with_label, label: t('admin.games.characters.grade'), input_html: { min: 1, max: 7 }
+
+  .fields-group
+    = f.input :stats_text, as: :text, wrapper: :with_label, label: t('admin.games.characters.stats'), hint: t('admin.games.characters.stats_hint'), input_html: { rows: 4 }
+    = f.input :note, as: :text, wrapper: :with_label, label: t('admin.games.characters.note'), input_html: { rows: 3 }
+
+  .actions
+    = f.button :button, t('generic.save_changes'), type: :submit

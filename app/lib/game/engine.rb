@@ -1,0 +1,180 @@
+# frozen_string_literal: true
+
+module Game
+  # 시스템 계정을 멘션한 툿의 [명령어]를 처리한다 (Game::MentionWorker 가 부른다).
+  #
+  #   [젤리빈] @상대    게임 신청 (게임별 시작 명령어)
+  #   [수락] [거절]     신청에 답하기
+  #   [기권]            진행 중인 게임 포기
+  #   [점수] [내전적]   기숙사 점수, 내 전적
+  #   그 밖의 명령어는 진행 중인 게임이 처리한다 (예: [먹기/2]). 모르는 명령어는 조용히 넘긴다.
+  class Engine
+    COMMAND = /\[([^\[\]\n]{1,60})\]/
+
+    # "[먹기/2]" → ["먹기", ["2"]]
+    def self.parse(text)
+      match = text.to_s.match(COMMAND)
+      return if match.nil?
+
+      name, *args = match[1].split('/').map(&:strip)
+      [name, args]
+    end
+
+    # 시간 제한을 걸고 그 시각에 Game::TimeoutWorker 를 예약한다
+    def self.set_deadline!(session, minutes)
+      session.update!(deadline_at: minutes.to_i.clamp(1, 24 * 60).minutes.from_now)
+      Game::TimeoutWorker.perform_at(session.deadline_at, session.id, session.deadline_token)
+    end
+
+    attr_reader :status, :actor
+
+    def initialize(status)
+      @status = status
+      @actor = status.account
+    end
+
+    def call
+      command, args = self.class.parse(status.text)
+      return if command.nil?
+
+      case command
+      when common['cmd_accept'] then accept
+      when common['cmd_decline'] then decline
+      when common['cmd_forfeit'] then forfeit
+      when common['cmd_points'] then reply(Game::Points.board)
+      when common['cmd_record'] then reply(Game::Points.record(actor))
+      else
+        kind = Game::Kinds.by_command(command)
+        if kind
+          invite(kind)
+        elsif (disabled = Game::Kinds.disabled_by_command(command))
+          reply(Game::Text.render(common['msg_disabled'], game: disabled.display_name))
+        else
+          play(command, args)
+        end
+      end
+    end
+
+    private
+
+    def common
+      @common ||= Game::Config.for('common')
+    end
+
+    def visibility
+      status.direct_visibility? ? 'direct' : 'private'
+    end
+
+    def name_of(account)
+      GameCharacter.for(account).display_name
+    end
+
+    def reply(text, mentions: [actor])
+      Game::Poster.post(text, mentions: mentions, thread: status, visibility: visibility)
+    end
+
+    def open_player(account, statuses = %w(pending active))
+      GamePlayer.joins(:session).where(account: account, game_sessions: { status: statuses }).order(id: :desc).first
+    end
+
+    # 게임 신청: 상대 한 명을 태그해야 한다
+    def invite(kind)
+      system = Game::System.account
+      opponents = status.mentions.map(&:account).uniq.reject { |account| account.id == actor.id || account.id == system&.id || !account.local? }
+
+      return reply(Game::Text.render(common['msg_no_opponent'], game: kind.display_name)) if opponents.empty?
+      return reply(Game::Text.render(common['msg_one_opponent'], game: kind.display_name)) if opponents.size > 1
+
+      opponent = opponents.first
+      if common['one_game_per_person']
+        busy = [actor, opponent].find { |account| open_player(account) }
+        return reply(Game::Text.render(common['msg_busy'], player: name_of(busy))) if busy
+      end
+
+      session = GameSession.transaction do
+        GameSession.create!(kind: kind.key, visibility: visibility, root_status_id: status.id).tap do |created|
+          created.players.create!(account: actor, seat: 0, state: { 'accepted' => true })
+          created.players.create!(account: opponent, seat: 1)
+        end
+      end
+
+      Game::Poster.to_session(session, Game::Text.render(
+        common['msg_invite'],
+        game: kind.display_name, player: name_of(actor), opponent: name_of(opponent),
+        accept: common['cmd_accept'], decline: common['cmd_decline'], minutes: common['invite_minutes']
+      ))
+      self.class.set_deadline!(session, common['invite_minutes'])
+    end
+
+    # 나에게 온 신청 중 가장 최근 것
+    def pending_invite
+      GamePlayer.joins(:session)
+                .where(account: actor, game_sessions: { status: 'pending' })
+                .where("game_players.state->>'accepted' IS NULL")
+                .order(id: :desc).first
+    end
+
+    def accept
+      player = pending_invite
+      return if player.nil?
+
+      session = player.session
+      session.with_lock do
+        next unless session.status == 'pending'
+
+        follow_up!(session)
+        player.update!(state: player.state.merge('accepted' => true))
+        next unless session.players.reload.all? { |each| each.state['accepted'] }
+
+        session.update!(status: 'active', deadline_at: nil)
+        session.kind_class.new(session).start!
+      end
+    end
+
+    def decline
+      player = pending_invite
+      return if player.nil?
+
+      session = player.session
+      session.with_lock do
+        next unless session.status == 'pending'
+
+        follow_up!(session)
+        session.update!(status: 'cancelled', finished_at: Time.now.utc, deadline_at: nil)
+        Game::Poster.to_session(session, Game::Text.render(common['msg_declined'], player: player.name, game: session.kind_class.display_name))
+      end
+    end
+
+    def forfeit
+      player = open_player(actor, %w(active))
+      return if player.nil?
+
+      session = player.session
+      session.with_lock do
+        next unless session.status == 'active'
+
+        follow_up!(session)
+        session.kind_class.new(session).forfeit!(player)
+      end
+    end
+
+    # 시스템의 다음 툿은 방금 명령어를 보낸 툿에 답장한다 (신청 → 수락 → 시작 → 먹기 → 결과가 한 줄로 이어지게)
+    def follow_up!(session)
+      session.update!(last_status_id: status.id)
+    end
+
+    # 진행 중인 게임의 명령어
+    def play(command, args)
+      player = open_player(actor, %w(active))
+      return if player.nil?
+
+      session = player.session
+      session.with_lock do
+        next unless session.status == 'active'
+
+        follow_up!(session)
+        session.kind_class.new(session).handle(session.player_for(actor), command, args, status)
+      end
+    end
+  end
+end

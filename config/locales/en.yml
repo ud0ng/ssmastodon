@@ -23,6 +23,56 @@ en:
     posts_tab_heading: Posts
     self_follow_error: Following your own account is not allowed
   admin:
+    system_menu: System
+    games:
+      characters:
+        account: Account
+        account_hint: 'Account: %{account} (%{display_name})'
+        all: All
+        edit: Edit
+        edit_title: 'Character: %{name}'
+        grade: Year
+        hint: Created automatically from the member list. A blank character name falls back to the display name.
+        house: House
+        name: Character name
+        name_hint: Blank = display name
+        no_house: No house
+        note: Note
+        search: Search
+        stats: Stats
+        stats_hint: 'One per line as name=value (e.g. HP=10)'
+        title: Characters
+      common: Common
+      common_hint: System account, commands, time limits, point rules and shared messages used by every game.
+      groups:
+        account: System account
+        basic: Basics
+        commands: Commands
+        flavors: Flavors
+        messages: Messages
+        points: House points
+        rules: Rules
+        time: Time
+      houses:
+        add: Add house
+        adjust: Adjust points
+        adjust_hint: Add or subtract house points (negative to subtract).
+        amount: Points
+        color: Color
+        delete: Delete house
+        delete_confirm: 'Delete %{name}? Its point records are deleted too.'
+        emoji: Emoji
+        hint: Winning a game adds points to the character's house. Set each member's house in Characters.
+        manual: Manual adjustment
+        name: House
+        order: Order
+        reason: Reason
+        recent: Recent points
+        title: Houses
+        total: Total
+        when: When
+      kind_hint: This game's switch, commands, rules and messages. Time limits and accept/decline/forfeit commands are in the Common tab.
+      title: Content settings
     bot_sheets:
       conflict: 'Not saved because these items changed in the sheet meanwhile: %{names}. Check the new values and save again.'
       connection:

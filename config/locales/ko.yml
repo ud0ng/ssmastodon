@@ -21,6 +21,56 @@ ko:
     posts_tab_heading: 게시물
     self_follow_error: 본인의 계정을 팔로우할 수는 없습니다
   admin:
+    system_menu: 시스템
+    games:
+      characters:
+        account: 계정
+        account_hint: '계정: %{account} (%{display_name})'
+        all: 전체
+        edit: 고치기
+        edit_title: '캐릭터: %{name}'
+        grade: 학년
+        hint: 서버원 목록에서 자동으로 만들어집니다. 캐릭터 이름을 비워 두면 표시 이름을 씁니다. 게임 툿에는 캐릭터 이름이 나옵니다.
+        house: 기숙사
+        name: 캐릭터 이름
+        name_hint: 비워 두면 표시 이름
+        no_house: 기숙사 없음
+        note: 메모
+        search: 찾기
+        stats: 개인 값
+        stats_hint: '한 줄에 하나씩 이름=값 (예: 체력=10). 게임에서 쓸 캐릭터 스탯'
+        title: 캐릭터 명단
+      common: 공통
+      common_hint: 모든 게임에 쓰이는 시스템 계정, 명령어, 대기 시간, 점수 규칙과 공통 문구입니다. 문구에는 %{example} 자리표시와 {이가}·{을를}·{은는} 같은 조사를 쓸 수 있습니다.
+      groups:
+        account: 시스템 계정
+        basic: 기본
+        commands: 명령어
+        flavors: 맛
+        messages: 문구
+        points: 기숙사 점수
+        rules: 규칙
+        time: 시간
+      houses:
+        add: 기숙사 추가
+        adjust: 점수 조정
+        adjust_hint: 운영진이 기숙사 점수를 더하거나 뺍니다 (빼려면 음수).
+        amount: 점수
+        color: 색
+        delete: 기숙사 지우기
+        delete_confirm: '%{name} 기숙사를 지울까요? 이 기숙사의 점수 기록도 함께 지워집니다.'
+        emoji: 이모지
+        hint: 게임에서 이기면 캐릭터의 기숙사에 점수가 쌓입니다. 서버원의 기숙사는 캐릭터 명단에서 정합니다.
+        manual: 운영진 조정
+        name: 기숙사
+        order: 순서
+        reason: 사유
+        recent: 최근 점수 기록
+        title: 기숙사
+        total: 총점
+        when: 시간
+      kind_hint: 이 게임의 켜기·명령어·규칙·문구입니다. 수락 대기, 턴 시간, 수락·거절·기권 명령어는 공통 탭에서 정합니다.
+      title: 컨텐츠 설정
     bot_sheets:
       conflict: '그사이 시트에서 바뀐 항목이 있어서 저장하지 않았습니다: %{names}. 바뀐 값을 확인하고 다시 저장하세요.'
       connection:

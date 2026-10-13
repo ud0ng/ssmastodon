@@ -1,0 +1,44 @@
+- content_for :page_title do
+  = @key == 'common' ? t('admin.games.common') : Game::Kinds.fetch(@key).display_name
+
+- content_for :heading do
+  = render 'admin/game_settings/heading', save_form: 'edit_game_config'
+
+%p.hint= t(@key == 'common' ? 'admin.games.common_hint' : 'admin.games.kind_hint', example: '%{이름}')
+
+= form_tag admin_game_setting_path(@key), method: :patch, id: 'edit_game_config', class: 'simple_form game-config' do
+  - @fields.group_by(&:group).each do |group, fields|
+    %h4= t("admin.games.groups.#{group}", default: group)
+    .bot-sheet-fields
+      - fields.each do |field|
+        - name = "config[#{field.key}]"
+        - field_id = "game_config_#{field.key}"
+        - value = @values[field.key]
+        - if field.type == :boolean
+          .bot-sheet-field.bot-sheet-field--switch
+            = hidden_field_tag name, '0', id: nil
+            %label.bot-sheet-switch{ for: field_id }
+              = check_box_tag name, '1', value, id: field_id, role: 'switch'
+              %span.bot-sheet-switch__track
+              %span.bot-sheet-switch__label= field.label
+            - if field.hint
+              %span.hint= field.hint
+        - else
+          .bot-sheet-field.input.with_label{ class: ('game-config__full' if %i(text lines).include?(field.type)) }
+            .label_input
+              %label{ for: field_id }= field.label
+              .label_input__wrapper
+                - case field.type
+                - when :integer
+                  = number_field_tag name, value, id: field_id, step: 1
+                - when :lines
+                  = text_area_tag name, Array(value).join("\n"), id: field_id, rows: [Array(value).size + 1, 4].max
+                - when :text
+                  = text_area_tag name, value, id: field_id, rows: [value.to_s.lines.size + 1, 2].max
+                - else
+                  = text_field_tag name, value, id: field_id
+            - if field.hint
+              %span.hint= field.hint
+
+  .actions
+    = button_tag t('generic.save_changes'), type: :submit, class: 'button'

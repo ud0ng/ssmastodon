@@ -28,7 +28,7 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
 - 기본 프로필 사진·헤더: SiteUpload `default_avatar`/`default_header`, Paperclip default_url → `app/lib/default_account_image.rb`.
 - 관리자·설정 사이드바 로고: `BrandingHelper#render_themed_wordmark` (라이트 테마=낮 로고 `wordmark_light`, 다크=밤 로고).
 
-## 시트 설정 (관리 > 운영 > 시트 설정, /admin/sheets)
+## 시트 설정 (관리 > 시스템 > 시트 설정, /admin/sheets)
 
 - 자동봇 구글 시트 4개(기본·예약 툿·스토리·조사)를 탭으로 보여 주고, 기본 시트의 '설정' 워크시트(항목|값|설명)는 폼으로 고쳐 시트에 바로 쓴다.
   나머지 워크시트는 아직 읽기 전용 표 (다음 단계: 표 칸 수정, 나중에 서버원용 인벤토리 창).
@@ -36,6 +36,17 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
 - `app/lib/bot_sheets.rb`: 구글 시트 API 를 GCP VM 서비스 계정(메타데이터 서버 토큰)으로 부른다 — 자동봇과 같은 계정.
   저장할 때 처음 본 값과 지금 시트 값을 비교해 그사이 바뀌었으면 저장하지 않는다. 수식 칸은 읽기 전용.
 - 미리보기는 `BOT_SHEETS_LOCAL_DIR` 로 구글 대신 `dev/preview/sheets/<시트>/<워크시트>.csv` (`bot-sheets-sample` 을 복사, 자동봇 tests/fixtures 와 같음).
+
+## 컨텐츠(게임) — 시스템 계정 @system 이 진행 (관리 > 시스템 > 컨텐츠 설정 /admin/games, 캐릭터 명단 /admin/characters)
+
+- 해리포터 세계관 게임. 기획: 2인 대결(젤리빈·곱스톤·마법결투·물약·퀴디치), 마법 수업, 비밀의방(마피아), 웹 전용(도둑 지도·미로) 등.
+  현재 0단계(공통 틀) + 젤리빈 룰렛. 게임 데이터는 마스토돈 DB (구글 시트 아님), 엔진은 서버 안 (Python 자동봇 아님).
+- 흐름: PostStatusService#enqueue_game_command! → `Game::MentionWorker` → `Game::Engine` (첫 [명령어]).
+  모르는 명령어는 조용히 넘긴다 (자동봇 ssbot 과 겹치지 않게). 시간 제한은 `Game::TimeoutWorker` (deadline_token 으로 묵은 작업 무시).
+- 시스템 답장은 방금 명령어를 보낸 툿에 단다 (한 스레드로 이어지게). 공개 범위는 신청 툿 (팔로워 공개 / DM). 앱에서도 멘션 알림만으로 알 수 있게 툿 텍스트로 진행.
+- 모든 규칙·명령어·시간·문구는 `Game::Config` (항목 정의 + game_configs 에 바뀐 값만). 새 게임: `app/lib/game/kinds/<게임>.rb` (Base 상속, KEY·FIELDS·start!·handle·timeout!) + `Game::Kinds.registry`.
+- 기숙사 점수: `Game::Points` (같은 상대 하루 N판, 같은 기숙사 %). 캐릭터 이름·기숙사는 `GameCharacter` (회원 목록에서 자동 생성).
+- 미리보기에서 시험: `rails runner` 로 `PostStatusService.new.call(계정, text: "@system @상대 [젤리빈]", visibility: "private")` (sidekiq 이 처리).
 
 ## 로컬에서 확인하기
 

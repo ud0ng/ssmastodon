@@ -158,6 +158,14 @@ class PostStatusService < BaseService
     PollExpirationNotifyWorker.perform_at(@status.poll.expires_at, @status.poll.id) if @status.poll
 
     attach_to_dm_room!
+    enqueue_game_command!
+  end
+
+  # 시스템 계정을 멘션한 툿이면 게임 명령어 처리 (Game::Engine)
+  def enqueue_game_command!
+    Game::MentionWorker.perform_async(@status.id) if Game::System.mentioned_in?(@status)
+  rescue => e
+    Rails.logger.error { "Game::MentionWorker enqueue failed for status #{@status.id}: #{e.class} #{e.message}" }
   end
 
   def attach_to_dm_room!

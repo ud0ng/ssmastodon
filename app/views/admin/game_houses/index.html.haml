@@ -1,0 +1,91 @@
+- content_for :page_title do
+  = t('admin.games.houses.title')
+
+- content_for :heading do
+  = render 'admin/game_settings/heading'
+
+%p.hint= t('admin.games.houses.hint')
+
+.bot-sheet-table
+  %table.table
+    %thead
+      %tr
+        %th= t('admin.games.houses.emoji')
+        %th= t('admin.games.houses.name')
+        %th= t('admin.games.houses.color')
+        %th= t('admin.games.houses.order')
+        %th= t('admin.games.houses.total')
+        %th.bot-sheet-table__actions
+    %tbody
+      - @houses.each do |house|
+        - form_id = "edit_game_house_#{house.id}"
+        %tr
+          %td= text_field_tag 'game_house[emoji]', house.emoji, form: form_id, id: nil, class: 'bot-sheet-table__input', size: 3
+          %td= text_field_tag 'game_house[name]', house.name, form: form_id, id: nil, class: 'bot-sheet-table__input'
+          %td= text_field_tag 'game_house[color]', house.color, form: form_id, id: nil, class: 'bot-sheet-table__input', placeholder: '#ae0001', size: 8
+          %td= number_field_tag 'game_house[position]', house.position, form: form_id, id: nil, class: 'bot-sheet-table__input game-houses__order'
+          %td.bot-sheet-table__text
+            %strong= house.total
+          %td.bot-sheet-table__actions
+            = form_tag admin_game_house_path(house), method: :patch, id: form_id, class: 'bot-sheet-table__delete' do
+              = button_tag material_symbol('check'), type: :submit, class: 'icon-button', title: t('generic.save_changes')
+            = button_to admin_game_house_path(house), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: t('admin.games.houses.delete'), data: { confirm: t('admin.games.houses.delete_confirm', name: house.name) } do
+              = material_symbol('delete')
+
+= form_tag admin_game_houses_path, method: :post, class: 'simple_form bot-sheet-add-row' do
+  %h4= t('admin.games.houses.add')
+  .bot-sheet-fields
+    .input.with_label
+      .label_input
+        %label{ for: 'new_house_emoji' }= t('admin.games.houses.emoji')
+        .label_input__wrapper= text_field_tag 'game_house[emoji]', '', id: 'new_house_emoji'
+    .input.with_label
+      .label_input
+        %label{ for: 'new_house_name' }= t('admin.games.houses.name')
+        .label_input__wrapper= text_field_tag 'game_house[name]', '', id: 'new_house_name', required: true
+    .input.with_label
+      .label_input
+        %label{ for: 'new_house_color' }= t('admin.games.houses.color')
+        .label_input__wrapper= text_field_tag 'game_house[color]', '', id: 'new_house_color', placeholder: '#ae0001'
+  .actions
+    = button_tag safe_join([material_symbol('add'), t('admin.games.houses.add')]), type: :submit, class: 'button'
+
+= form_tag adjust_admin_game_houses_path, method: :post, class: 'simple_form bot-sheet-add-row' do
+  %h4= t('admin.games.houses.adjust')
+  %p.hint= t('admin.games.houses.adjust_hint')
+  .bot-sheet-fields
+    .input.with_label
+      .label_input
+        %label{ for: 'adjust_house' }= t('admin.games.houses.name')
+        .label_input__wrapper= select_tag :house_id, options_from_collection_for_select(@houses, :id, :label), id: 'adjust_house'
+    .input.with_label
+      .label_input
+        %label{ for: 'adjust_amount' }= t('admin.games.houses.amount')
+        .label_input__wrapper= number_field_tag :amount, nil, id: 'adjust_amount', step: 1, required: true
+    .input.with_label.bot-sheet-field--wide
+      .label_input
+        %label{ for: 'adjust_reason' }= t('admin.games.houses.reason')
+        .label_input__wrapper= text_field_tag :reason, '', id: 'adjust_reason'
+  .actions
+    = button_tag t('admin.games.houses.adjust'), type: :submit, class: 'button'
+
+- if @recent_points.any?
+  %h4.game-houses__recent= t('admin.games.houses.recent')
+  .bot-sheet-table
+    %table.table
+      %thead
+        %tr
+          %th= t('admin.games.houses.when')
+          %th= t('admin.games.houses.name')
+          %th= t('admin.games.houses.amount')
+          %th= t('admin.games.houses.reason')
+      %tbody
+        - @recent_points.each do |point|
+          %tr
+            %td.bot-sheet-table__text= l(point.created_at.in_time_zone('Asia/Seoul'), format: :short)
+            %td.bot-sheet-table__text= point.house.label
+            %td.bot-sheet-table__text= format('%+d', point.amount)
+            %td.bot-sheet-table__text
+              = point.reason
+              - if point.account
+                = "· @#{point.account.username}"

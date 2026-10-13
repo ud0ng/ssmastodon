@@ -3103,3 +3103,28 @@ body .image-picker {
     }
   }
 }
+
+// 관리 > 게임 설정
+.game-config__full {
+  grid-column: 1 / -1;
+
+  textarea {
+    font-family: inherit;
+  }
+}
+
+.game-houses__order {
+  width: 64px;
+}
+
+.game-houses__recent {
+  margin-top: 30px;
+}
+
+.game-characters__filter {
+  margin-bottom: 20px;
+
+  .actions {
+    margin-top: 0;
+  }
+}

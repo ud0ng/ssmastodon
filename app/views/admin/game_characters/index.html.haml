@@ -1,0 +1,44 @@
+- content_for :page_title do
+  = t('admin.games.characters.title')
+
+- content_for :heading do
+  .content__heading__row
+    %h2= t('admin.games.characters.title')
+
+%p.hint= t('admin.games.characters.hint')
+
+= form_tag admin_game_characters_path, method: :get, class: 'simple_form game-characters__filter' do
+  .bot-sheet-fields
+    .input.with_label.bot-sheet-field--wide
+      .label_input
+        %label{ for: 'character_q' }= t('admin.games.characters.search')
+        .label_input__wrapper= text_field_tag :q, params[:q], id: 'character_q'
+    .input.with_label
+      .label_input
+        %label{ for: 'character_house' }= t('admin.games.characters.house')
+        .label_input__wrapper= select_tag :house, options_for_select([[t('admin.games.characters.all'), ''], [t('admin.games.characters.no_house'), 'none']] + @houses.map { |house| [house.label, house.id] }, params[:house]), id: 'character_house'
+  .actions
+    = button_tag t('admin.games.characters.search'), type: :submit, class: 'button button-secondary'
+
+.bot-sheet-table
+  %table.table
+    %thead
+      %tr
+        %th= t('admin.games.characters.account')
+        %th= t('admin.games.characters.name')
+        %th= t('admin.games.characters.house')
+        %th= t('admin.games.characters.grade')
+        %th= t('admin.games.characters.stats')
+        %th.bot-sheet-table__actions
+    %tbody
+      - @characters.each do |character|
+        %tr
+          %td.bot-sheet-table__text= link_to "@#{character.account.username}", admin_account_path(character.account_id)
+          %td.bot-sheet-table__text= character.display_name
+          %td.bot-sheet-table__text= character.house&.label || '—'
+          %td.bot-sheet-table__text= character.grade || '—'
+          %td.bot-sheet-table__text= character.stats.map { |key, value| "#{key} #{value}" }.join(', ')
+          %td.bot-sheet-table__actions
+            = link_to material_symbol('edit'), edit_admin_game_character_path(character, q: params[:q], house: params[:house]), class: 'icon-button', title: t('admin.games.characters.edit')
+
+= paginate @characters

@@ -82,6 +82,13 @@ namespace :admin do
     end
   end
 
+  # 게임 (시스템 계정)
+  resources :game_houses, path: 'games/houses', only: [:index, :create, :update, :destroy] do
+    post :adjust, on: :collection
+  end
+  resources :game_settings, path: 'games', only: [:index, :show, :update]
+  resources :game_characters, path: 'characters', only: [:index, :edit, :update]
+
   resources :site_uploads, only: [:destroy]
 
   resources :invites, only: [:index, :create, :destroy] do
