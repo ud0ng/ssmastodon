@@ -1,10 +1,11 @@
--# 캐릭터 명단 제목 + 탭 (명단 · 항목 설정 · 소속: 기숙사·진영)
+-# 캐릭터 관리 제목 + 탭 (명단 · 소속 · 스탯 · 항목)
 .content__heading__row
-  %h2= game_t('admin.games.characters.title')
+  %h2= game_t('admin.games.manage.title')
 
 .content__heading__tabs
   = render_navigation renderer: :links do |primary|
     :ruby
-      primary.item :roster, safe_join([material_symbol('badge'), game_t('admin.games.characters.roster')]), admin_game_characters_path, highlights_on: %r{/admin/characters(/\d+/edit)?\z}
-      primary.item :fields, safe_join([material_symbol('tune'), game_t('admin.games.characters.fields.title')]), admin_game_character_fields_path, highlights_on: %r{/admin/characters/fields}
-      primary.item :houses, safe_join([material_symbol('shield_question'), game_t('admin.games.houses.tab')]), admin_game_houses_path, highlights_on: %r{/admin/characters/houses}
+      primary.item :roster, safe_join([material_symbol('badge'), game_t('admin.games.manage.tabs.roster')]), admin_game_characters_path, highlights_on: %r{/admin/characters(/\d+/edit)?\z}
+      primary.item :houses, safe_join([material_symbol('shield_question'), game_t('admin.games.manage.tabs.houses')]), admin_game_houses_path, highlights_on: %r{/admin/characters/houses}
+      primary.item :stats, safe_join([material_symbol('bar_chart_4_bars'), game_t('admin.games.manage.tabs.stats')]), admin_game_character_stats_path, highlights_on: %r{/admin/characters/stats}
+      primary.item :fields, safe_join([material_symbol('tune'), game_t('admin.games.manage.tabs.fields')]), admin_game_character_fields_path, highlights_on: %r{/admin/characters/fields}

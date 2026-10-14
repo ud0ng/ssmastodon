@@ -7,14 +7,14 @@ class GameHouse < ApplicationRecord
 
   DEFAULTS = {
     'house' => [
-      { name: '그리핀도르', emoji: '🦁', color: '#ae0001' },
-      { name: '슬리데린', emoji: '🐍', color: '#2a623d' },
-      { name: '래번클로', emoji: '🦅', color: '#222f5b' },
-      { name: '후플푸프', emoji: '🦡', color: '#ecb939' },
+      { name: '그리핀도르', color: '#ae0001' },
+      { name: '슬리데린', color: '#2a623d' },
+      { name: '래번클로', color: '#222f5b' },
+      { name: '후플푸프', color: '#ecb939' },
     ],
     'faction' => [
-      { name: '불사조 기사단', emoji: '🔥', color: '#b7410e' },
-      { name: '죽음을 먹는 자들', emoji: '💀', color: '#4f7a52' },
+      { name: '불사조 기사단', color: '#b7410e' },
+      { name: '죽음을 먹는 자들', color: '#4f7a52' },
     ],
   }.freeze
 
@@ -63,7 +63,8 @@ class GameHouse < ApplicationRecord
     points.sum(:amount)
   end
 
+  # 이름만 보인다 (이모지는 쓰지 않는다)
   def label
-    [emoji.presence, name].compact.join(' ')
+    name
   end
 end

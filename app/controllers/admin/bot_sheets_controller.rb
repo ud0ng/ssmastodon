@@ -25,9 +25,10 @@ module Admin
       elsif @worksheet
         @table = @bot_sheet.table(@worksheet)
         @rows = @bot_sheet.rows(@worksheet) if @table.nil?
-        @editing = @table&.rows&.find { |row| row.number == params[:edit].to_i }
-        @editing_formulas = @editing ? @bot_sheet.formula_columns(@worksheet, @editing.number) : []
+        hide_moved_help! if @table
+        @formulas = @table ? @bot_sheet.formula_map(@worksheet) : {}
       end
+      @moved_worksheets = @bot_sheet.moved_worksheets
     rescue ::BotSheets::Error => e
       @error = e
     end
@@ -99,6 +100,18 @@ module Admin
       redirect_to admin_bot_sheet_path(@bot_sheet.sheet, worksheet: worksheet) unless performed?
     end
 
+
+    # 기본 시트 도움말: 마스토돈으로 옮긴 재화 명령어 줄은 숨긴다 (자동봇도 [도움말]에서 빼고 마스토돈 문구를 붙인다)
+    def hide_moved_help!
+      return unless @bot_sheet.settings? && @worksheet == ::BotSheets::HELP_WORKSHEET
+
+      column = @table.header.index { |cell| cell.to_s.strip == '명령어' }
+      return if column.nil?
+
+      visible = @table.rows.reject { |row| ::BotSheets.moved_command?(row.cells[column]) }
+      @hidden_help = @table.rows.size - visible.size
+      @table.rows = visible
+    end
 
     def set_bot_sheet
       @bot_sheet = ::BotSheets.new(params[:id])

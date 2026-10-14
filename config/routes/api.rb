@@ -95,6 +95,15 @@ namespace :api, format: false do
       end
     end
 
+    # 자동봇(ssbot) 전용: 캐릭터·재화·상점 (컨텐츠 설정의 자동봇 계정만)
+    namespace :bot do
+      resource :config, only: [:show]
+      resources :shops, only: [:index]
+      resources :characters, only: [:index, :show] do
+        post :apply, on: :collection
+      end
+    end
+
     resources :dm_rooms, only: [:index, :show, :create, :destroy] do
       member do
         post :read

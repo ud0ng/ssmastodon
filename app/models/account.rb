@@ -89,6 +89,7 @@ class Account < ApplicationRecord
   include Attachmentable # Load prior to Avatar & Header concerns
 
   include Account::Associations
+  include GameRoster
   include Account::Avatar
   include Account::Counters
   include Account::FaspConcern

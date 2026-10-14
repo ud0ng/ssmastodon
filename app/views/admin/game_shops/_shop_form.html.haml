@@ -1,0 +1,9 @@
+- prefix = shop.persisted? ? "shop_#{shop.id}" : 'shop_new'
+= simple_form_for shop, as: :game_shop, url: url, method: method, html: { class: 'game-modal__form', id: "#{prefix}_form" } do |f|
+  .bot-sheet-fields
+    = f.input :name, wrapper: :with_label, label: game_t('admin.games.shop.shop_name'), required: true, input_html: { id: "#{prefix}_name", placeholder: game_t('admin.games.shop.shop_name_placeholder') }
+    = f.input :position, as: :integer, wrapper: :with_label, label: game_t('admin.games.houses.order'), input_html: { id: "#{prefix}_position" }
+  = f.input :description, as: :string, wrapper: :with_label, label: game_t('admin.games.shop.description'), input_html: { id: "#{prefix}_description" }
+  .actions
+    %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
+    = button_tag t('generic.save_changes'), type: :submit, class: 'button'

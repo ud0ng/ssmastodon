@@ -36,7 +36,7 @@ RSpec.describe Game::Summary do
     described_class.term_end!
 
     status = Status.where(account: system).last
-    expect(status.text).to include('🦁 그리핀도르', '해리 (O)')
+    expect(status.text).to include('그리핀도르', '해리 (O)')
     expect(status.game_event.payload['data']['champion']).to include('name' => '그리핀도르')
   end
 end

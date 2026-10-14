@@ -477,7 +477,69 @@ Rails.delegate(document, 'button.game-token', 'click', ({ target }) => {
   field.dispatchEvent(new Event('input', { bubbles: true }));
 });
 
+// 캐릭터 관리 > 스탯: 유형(스탯/상태 수치)에 따라 최소·최대치 칸 또는 수식 칸만 보인다
+const syncStatParts = (select: HTMLSelectElement) => {
+  select
+    .closest('[data-stat-form]')
+    ?.querySelectorAll<HTMLElement>('[data-stat-part]')
+    .forEach((part) => {
+      part.hidden = part.dataset.statPart !== select.value;
+    });
+};
+
+Rails.delegate(document, 'select[data-stat-type]', 'change', ({ target }) => {
+  if (target instanceof HTMLSelectElement) syncStatParts(target);
+});
+
+// 입력창 모달 (admin/game_characters/_modal): data-modal-open="id" 버튼으로 열고, X·바깥 클릭·Esc 로 닫는다
+Rails.delegate(document, '[data-modal-open]', 'click', ({ target }) => {
+  if (!(target instanceof Element)) return;
+
+  const id = target
+    .closest<HTMLElement>('[data-modal-open]')
+    ?.getAttribute('data-modal-open');
+  const dialog = id ? document.getElementById(id) : null;
+
+  if (dialog instanceof HTMLDialogElement) {
+    dialog.showModal();
+    dialog
+      .querySelector<HTMLElement>('input:not([type=hidden]), select, textarea')
+      ?.focus();
+  }
+});
+
+Rails.delegate(document, '[data-modal-close]', 'click', ({ target }) => {
+  if (target instanceof Element) target.closest('dialog')?.close();
+});
+
+// 상자 바깥(어두운 배경)을 누르면 닫는다. 안에서 끌다가 바깥에서 놓은 건 무시
+let modalPressTarget: EventTarget | null = null;
+
+document.addEventListener('mousedown', ({ target }) => {
+  modalPressTarget = target;
+});
+
+document.addEventListener('click', ({ target }) => {
+  if (
+    target instanceof HTMLDialogElement &&
+    target.classList.contains('game-modal') &&
+    modalPressTarget === target
+  )
+    target.close();
+});
+
 ready(() => {
+  document
+    .querySelectorAll<HTMLSelectElement>('select[data-stat-type]')
+    .forEach(syncStatParts);
+
+  // 저장하다 오류가 난 모달은 다시 열어 둔다 (data-modal-reopen)
+  document
+    .querySelectorAll<HTMLDialogElement>('dialog.game-modal[data-modal-reopen]')
+    .forEach((dialog) => {
+      dialog.showModal();
+    });
+
   document
     .querySelectorAll<HTMLInputElement>('input[data-color-picker]')
     .forEach(attachColorPicker);

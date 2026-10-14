@@ -23,9 +23,55 @@ ko:
   admin:
     system_menu: 시스템
     games:
+      shop:
+        add_item: 아이템 추가
+        add_shop: 상점 추가
+        change: 바뀐 것
+        delete_item: 아이템 삭제
+        delete_item_confirm: "'%{name}' 아이템을 지울까요?"
+        delete_shop: 상점 삭제
+        delete_shop_confirm: "'%{name}' 상점과 그 아이템을 모두 지울까요?"
+        description: 설명
+        edit_item: 아이템 고치기
+        edit_shop: 상점 고치기
+        effect: 사용 효과
+        empty: 아직 상점이 없습니다. 상점을 먼저 추가하세요.
+        hint: '자동봇의 [상점] [구매] [설명] [사용]이 쓰는 목록입니다. 가격을 비우면 비매품, 돈 단위(%{currency})는 설정 탭에서 바꿉니다.'
+        item_count: "%{count}개"
+        item_name: 아이템
+        kind: 종류
+        kinds:
+          admin: 운영진
+          attendance: 출석
+          consume: 소모
+          content: 컨텐츠 보상
+          investigation: 조사
+          purchase: 구매
+          randombox: 랜덤박스
+          toot: 툿 보상
+          transfer: 양도
+          use: 사용
+        no_items: 아이템이 없습니다.
+        no_records: 아직 기록이 없습니다.
+        no_stat: 스탯 변화 없음
+        not_for_sale: 비매품
+        price: 가격 (%{currency})
+        price_hint: 비우면 비매품
+        records: 최근 재화 기록
+        rules: 재화 규칙
+        shop_name: 상점
+        shop_name_placeholder: '예: 허니듀크'
+        stat: '[사용] 때 바뀌는 스탯'
+        title: 상점
+        unknown_stat: "'%{name}' 스탯이 없습니다. 캐릭터 관리 > 스탯에서 먼저 만드세요."
+        unusable: 사용 불가
+        usable: '[사용] 할 수 있음'
+        value: 수치
+        value_hint: '5, -20, 1d10, -(1d6+3)'
+        who: 캐릭터
       changed: 변경됨
       characters:
-        recent_rewards: 최근 받은 보상
+        recent_rewards: 최근 재화 기록
         reward_reason: 사유
         reward_when: 때
         no_rewards: 아직 받은 보상이 없습니다.
@@ -87,7 +133,7 @@ ko:
         stat_value: '값 (예: 10)'
         stats: 개인 값
         stats_hint: '한 줄에 하나씩 이름=값 (예: 체력=10). 컨텐츠에서 쓸 캐릭터 스탯'
-        title: 캐릭터 명단
+        title: 캐릭터 관리
       chips_placeholder: 입력 후 Enter
       common: 공통
       common_hint: 모든 컨텐츠에 쓰이는 시스템 계정, 명령어, 대기 시간, 점수 규칙과 공통 문구입니다. 문구는 아래 명령어를 눌러 넣을 수 있습니다.
@@ -117,12 +163,15 @@ ko:
         delete_confirm_named: '%{name}(%{term}) 지울까요? 점수 기록도 함께 지워집니다.'
         delete_named: '%{name} 지우기'
         members: '%{count}명'
-        mode: 점수 단위
+        mode: 점수 기준 소속
         mode_hint: 점수·토너먼트·모래시계·결산은 고른 쪽으로만 합니다. 바꿔도 다른 쪽 점수는 그대로 남습니다.
         mode_on: 사용 중
+        members_head: 인원
+        points_head: 점수
+        edit: 고치기
         name_label: 이름
         points: '%{count}점'
-        scoring: 점수 단위
+        scoring: 점수 기준
         tab: 소속
         add: '%{term} 추가'
         adjust: 점수 조정
@@ -134,7 +183,7 @@ ko:
         delete: '%{term} 지우기'
         delete_confirm: '%{name}(%{term}) 지울까요? 점수 기록도 함께 지워집니다.'
         emoji: 이모지
-        hint: '캐릭터마다 %{house}와 %{faction}을 따로 정할 수 있습니다 (캐릭터 명단에서). 컨텐츠에서 이기면 점수 단위로 고른 쪽에 점수가 쌓입니다. 부르는 이름은 공통 탭에서 바꿉니다.'
+        hint: '캐릭터마다 %{house}와 %{faction}을 따로 정할 수 있습니다 (캐릭터 명단에서). 컨텐츠에서 이기면 점수 기준 소속으로 고른 쪽에 점수가 쌓입니다. 부르는 이름은 공통 탭에서 바꿉니다.'
         manual: 운영진 조정
         name: '%{term}'
         order: 순서
@@ -148,6 +197,70 @@ ko:
         weekly_confirm: 이번 주 결산을 지금 올릴까요?
         weekly_now: 주간 결산 지금 올리기
         when: 시간
+      manage:
+        detail:
+          back: 목록으로
+          memo: 메모
+          no_stats: 스탯이 아직 없습니다. 스탯 탭에서 만들어 주세요.
+          profile: 프로필
+          range: '%{min} ~ %{max}'
+          stats: 스탯
+          statuses: 상태 수치
+          statuses_hint: 스탯으로 자동 계산한 값입니다. 스탯을 바꿔 저장하면 다시 계산됩니다.
+        fields:
+          add: 항목 추가
+          delete: 항목 지우기
+          delete_confirm: "'%{name}' 항목을 지울까요? 캐릭터에 넣은 값도 함께 지워집니다."
+          description: 설명
+          edit: 고치기
+          empty: 항목이 아직 없습니다.
+          hint: 캐릭터마다 적는 정보입니다 (예 혈통, 지팡이). '고르기'는 정해 둔 값 중 하나를 고르고 색을 줄 수 있고, '글'은 자유롭게 적습니다. 명단 표에 열로 나타납니다.
+          kind: 종류
+          kinds:
+            select: 고르기
+            text: 글
+          name: 이름
+          name_placeholder: '예: 혈통, 지팡이'
+          options: 항목
+          options_hint: "'종류'가 고르기일 때 고를 값 (한 줄에 하나, 뒤에 |#색 을 붙이면 색)"
+        none: 없음
+        roster:
+          acct: 아이디
+          all: 전체
+          apply: 거르기
+          count: '%{count}명'
+          empty: 해당하는 캐릭터가 없습니다.
+          grade: 학년
+          money: '돈 (%{currency})'
+          name: 이름
+          no_group: '%{term} 없음'
+          search: 이름·아이디 찾기
+        stats:
+          add: 스탯 추가
+          delete: 스탯 지우기
+          delete_confirm: "'%{name}' 스탯을 지울까요? 캐릭터에 넣은 값도 함께 지워집니다."
+          description: 설명
+          detail: 범위 / 수식
+          edit: 고치기
+          empty: 스탯이 아직 없습니다.
+          formula: 수식
+          formula_example: '{{힘}}*5'
+          formula_hint: '쓸 수 있는 스탯: %{names}. + - * / ( ) 를 쓰고, {{힘}}5 처럼 숫자를 바로 붙이면 곱합니다. 예) 힘 10 → {{힘}}5 = 50'
+          hint: '스탯은 캐릭터마다 직접 정하는 수치(최소~최대)이고, 상태 수치는 스탯으로 자동 계산하는 값입니다. 예) 스탯 힘, 상태 수치 체력 = {{힘}}*5 로 두면 힘 10인 캐릭터는 체력 50입니다.'
+          max: 최대치
+          min: 최소치
+          name: 이름
+          name_placeholder: '예: 힘, 체력'
+          type: 유형
+          types:
+            stat: 스탯
+            status: 상태 수치
+        tabs:
+          fields: 항목
+          houses: 소속
+          roster: 명단
+          stats: 스탯
+        title: 캐릭터 관리
       kind_hint: 이 컨텐츠의 켜기·명령어·규칙·문구입니다. 수락 대기, 턴 시간, 수락·거절·기권 명령어는 공통 탭에서 정합니다.
       lesson_hint: 이 과목의 해금·명령어·규칙·문구입니다. 자습/수업 명령어, 등급별 점수, 수업 모집 시간은 수업 공통 탭에서 정합니다.
       lessons: 수업 공통
@@ -178,6 +291,11 @@ ko:
         half: 어중간
         over: 합이 100%를 넘습니다
         perfect: 완벽
+      stats:
+        formula_invalid: 수식이 올바르지 않습니다. 숫자, + - * / ( ), {{스탯 이름}} 만 쓸 수 있어요.
+        formula_unknown: '수식에 없는 스탯이 있습니다: %{names}'
+        in_use: "'%{name}' 스탯은 상태 수치(%{users})의 수식에 쓰여서 지울 수 없습니다."
+        range_invalid: 최대치는 최소치보다 작을 수 없습니다.
       tournaments:
         champion: 우승
         champion_is: '우승: %{house}'
@@ -228,6 +346,10 @@ ko:
       unknown_tokens: "이 문구에서 쓸 수 없는 명령어: {tokens}"
       unsaved: 저장하지 않은 변경 {count}개
     bot_sheets:
+      moved:
+        help_html: '재화 명령어 도움말 %{count}줄은 숨겼습니다. 자동봇 [도움말]에는 <a href="%{shop}">컨텐츠 설정 &gt; 상점</a>의 도움말이 대신 붙습니다.'
+        settings_html: '재화 이름은 <a href="%{settings}">컨텐츠 설정</a>, 양도·출석 보상·툿 보상은 <a href="%{shop}">컨텐츠 설정 &gt; 상점</a>에서 정합니다. 시트의 그 항목은 이제 쓰지 않습니다.'
+        worksheets_html: '%{names} 워크시트는 이제 <a href="%{characters}">캐릭터 관리</a>와 <a href="%{shop}">상점</a>에서 관리해서 여기 보이지 않습니다. 구글 시트에서 지워도 됩니다.'
       conflict: '그사이 시트에서 바뀐 항목이 있어서 저장하지 않았습니다: %{names}. 바뀐 값을 확인하고 다시 저장하세요.'
       connection:
         hint: 자동봇(ssbot)의 .env 에 넣은 시트 ID 를 넣습니다. 시트 주소를 통째로 붙여 넣어도 됩니다. 비워 둔 시트는 탭에 나오지 않습니다.

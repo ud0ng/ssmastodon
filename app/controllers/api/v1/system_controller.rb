@@ -22,7 +22,7 @@ class Api::V1::SystemController < Api::BaseController
         house_id: character.group_id&.to_s,
         grade: character.grade,
         profile: profile_tags(character),
-        stats: GameCharacterField.stats.pluck(:name).then { |names| character.stats.slice(*names).merge(character.stats.except(*names)) }.map { |name, value| { name: name, value: value } },
+        stats: character_stats(character),
         money: character.money,
         currency: common['currency_name'],
         inventory: Array(character.inventory).map { |item| item.slice('name', 'count', 'note') },
@@ -40,6 +40,13 @@ class Api::V1::SystemController < Api::BaseController
   end
 
   private
+
+  # 스탯 값과 상태 수치(수식 계산): [{ name, value }]
+  def character_stats(character)
+    base = GameCharacterField.base_stats.to_a
+    base.map { |field| { name: field.name, value: character.stat_value(field).to_s } } +
+      GameCharacterField.statuses.map { |field| { name: field.name, value: (character.status_value(field, base) || '-').to_s } }
+  end
 
   # 내 캐릭터 칩: 점수 단위가 아닌 쪽 소속(기숙사 또는 진영) + 고르기·글·숫자 항목
   def profile_tags(character)

@@ -3292,3 +3292,362 @@ body .image-picker {
     opacity: 0.8;
   }
 }
+
+// 시스템 > 캐릭터 관리 (명단·소속·스탯·항목) 공통
+.game-table--scroll {
+  overflow-x: auto;
+
+  .table {
+    min-width: 640px;
+  }
+}
+
+// 명단 거르기: 소속·진영·찾기·버튼을 한 줄로
+.game-table__filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+
+  .filters {
+    display: contents;
+  }
+
+  .filters .filter-subset,
+  .filters .filter-subset:last-child {
+    flex: 0 0 auto;
+    margin: 0;
+
+    strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+
+    .input {
+      margin: 0;
+    }
+  }
+
+  .fields-group {
+    flex: 1 1 200px;
+    margin: 0;
+
+    .input {
+      margin: 0;
+    }
+  }
+
+  .actions {
+    margin: 0;
+  }
+}
+
+.game-table__check {
+  width: 1%;
+  padding-inline-end: 0 !important;
+}
+
+.game-table__group td {
+  padding: 8px 12px !important;
+  font-size: 13px;
+
+  strong {
+    margin-inline-start: 6px;
+  }
+}
+
+.game-table__count {
+  margin-inline-start: 8px;
+  color: $darker-text-color;
+  font-size: 12px;
+}
+
+.game-table__name {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.game-table__avatar {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+// 알약 배지 (고르기 항목 값, 스탯 유형)
+.game-badge {
+  display: inline-block;
+  margin: 0 4px 2px 0;
+  padding: 1px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--badge, #6b5b3e) 22%, transparent);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
+
+  &--status {
+    --badge: #3b7ea1;
+  }
+}
+
+.game-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--swatch, #6b5b3e);
+  vertical-align: middle;
+}
+
+.game-houses__title {
+  margin-top: 24px;
+
+  h4 {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 8px;
+    align-items: center;
+    margin: 0;
+  }
+}
+
+.game-houses__badge {
+  margin-inline-start: 8px;
+  padding: 1px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, $ui-highlight-color 22%, transparent);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.game-houses__color {
+  width: 44px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+// 스탯: 유형에 따라 한쪽만 보인다
+.game-stat__range,
+.game-stat__formula {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+
+  &[hidden] {
+    display: none !important;
+  }
+
+  .input {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+
+// 입력창 모달 (추가·수정 버튼을 누르면 뜬다)
+.game-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+
+  .hint,
+  .bot-sheet-notes {
+    flex: 1 1 320px;
+    margin: 0;
+  }
+
+  .button {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .button .icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+[data-stat-part][hidden] {
+  display: none !important;
+}
+
+.game-modal {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  padding: 0;
+  border: 1px solid var(--background-border-color);
+  border-radius: 12px;
+  background: var(--background-color);
+  color: inherit;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 30%);
+
+  &::backdrop {
+    background: rgb(0 0 0 / 45%);
+  }
+
+  .game-modal__head {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 12px 8px 20px;
+
+    h3 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 24px;
+    }
+  }
+
+  .game-modal__body {
+    padding: 4px 20px 20px;
+  }
+
+  .bot-sheet-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .input {
+    margin-bottom: 12px;
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+}
+
+// 캐릭터 상세
+.game-card {
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--background-border-color);
+  border-radius: 12px;
+
+  h4 {
+    margin-bottom: 12px;
+  }
+
+  h5 {
+    margin: 16px 0 8px;
+    font-size: 14px;
+  }
+}
+
+.game-detail__head {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.game-detail__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.game-detail__who {
+  flex: 1;
+
+  h3 {
+    margin-bottom: 2px;
+  }
+}
+
+.game-detail__statuses {
+  margin-top: 16px;
+}
+
+.game-detail__status-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.game-detail__status {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, $ui-highlight-color 12%, transparent);
+
+  strong {
+    font-size: 16px;
+  }
+
+  small {
+    color: $darker-text-color;
+    font-size: 11px;
+  }
+}
+
+.game-detail__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.game-houses__name {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.game-table--scroll .table td,
+.game-table--scroll .table th {
+  white-space: nowrap;
+}
+
+.game-table__row td,
+.game-table__group td {
+  vertical-align: middle;
+}
+
+.game-roster__bulk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+
+  .input {
+    flex: 0 1 280px;
+    margin: 0;
+  }
+}
+
+// 캐릭터 관리 표: 칸 안 줄바꿈 정리, 가운데 정렬
+.bot-sheet-table.game-table .table {
+  td.bot-sheet-table__text {
+    white-space: normal;
+  }
+
+  td,
+  th {
+    padding-block: 10px;
+    vertical-align: middle;
+  }
+}
+
+.game-table__name strong {
+  white-space: nowrap;
+}

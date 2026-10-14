@@ -569,9 +569,16 @@ body.community-theme.admin {
   }
 
   .bot-sheet-table__input {
-    border-color: var(--ct-line);
-    background: var(--ct-raised);
+    border: 1px solid var(--ct-line-strong);
+    border-radius: 10px;
+    background: var(--ct-field);
+    box-shadow: none;
     color: var(--ct-text);
+
+    &:focus {
+      border-color: var(--ct-point);
+      outline: 0;
+    }
   }
 
   .bot-sheet-table__editing td {
@@ -871,6 +878,12 @@ body.community-theme.admin {
       color: var(--ct-text);
       transition: border-color 120ms;
 
+      &:required:valid,
+      &:required:invalid:not(:placeholder-shown),
+      &:focus:invalid:not(:placeholder-shown) {
+        border-color: var(--ct-line-strong);
+      }
+
       &:focus {
         border-color: var(--ct-point);
         box-shadow: none;
@@ -920,5 +933,54 @@ body.community-theme.admin {
     &__chevron {
       color: var(--ct-dim);
     }
+  }
+}
+
+// 시스템 > 캐릭터 관리: 테마색으로
+body.community-theme.admin {
+  .bot-sheet-table {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .game-table__group td {
+    background: var(--ct-soft);
+  }
+
+  .game-badge {
+    background: color-mix(in srgb, var(--badge, var(--ct-point)) 24%, transparent);
+    color: var(--ct-text);
+  }
+
+  .game-houses__badge {
+    background: color-mix(in srgb, var(--ct-point) 24%, transparent);
+    color: var(--ct-text);
+  }
+
+  .game-card {
+    border: var(--ct-box-border) solid var(--ct-line);
+    background: var(--ct-panel);
+  }
+
+  .game-detail__status {
+    background: var(--ct-soft);
+
+    small {
+      color: var(--ct-dim);
+    }
+  }
+
+  .game-table__count {
+    color: var(--ct-dim);
+  }
+
+  .game-houses__color {
+    background: transparent;
+  }
+
+  .game-modal {
+    border: var(--ct-box-border) solid var(--ct-line);
+    background: var(--ct-base);
+    color: var(--ct-text);
   }
 }

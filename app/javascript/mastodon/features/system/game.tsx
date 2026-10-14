@@ -179,7 +179,7 @@ const NewGame: React.FC<{ game: GameInfo; onSent: () => void }> = ({ game, onSen
             >
               <img src={member.avatar} alt='' />
               <span className='system-member__name'>{member.name}</span>
-              {member.house && <span className='system-member__house'>{member.house.emoji} {member.house.name}</span>}
+              {member.house && <span className='system-member__house'>{member.house.name}</span>}
               {index >= 0 && game.max_opponents > 1 && <span className='system-member__order'>{index + 1}</span>}
             </button>
           );

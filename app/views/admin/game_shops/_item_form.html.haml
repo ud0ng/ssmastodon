@@ -1,0 +1,21 @@
+-# 아이템 추가·수정: 상점, 이름, 가격(비우면 비매품), 설명, 사용 가능, [사용] 때 바뀌는 스탯과 수치
+- shops = GameShop.all.map { |shop| [shop.name, shop.id] }
+- stats = [[game_t('admin.games.shop.no_stat'), '']] + @base_stats.map { |name| [name, name] }
+- prefix = item.persisted? ? "item_#{item.id}" : 'item_new'
+= simple_form_for item, as: :game_shop_item, url: url, method: method, html: { class: 'game-modal__form', id: "#{prefix}_form" } do |f|
+  .bot-sheet-fields
+    = f.input :name, wrapper: :with_label, label: game_t('admin.games.shop.item_name'), required: true, input_html: { id: "#{prefix}_name" }
+    = f.input :game_shop_id, as: :select, collection: shops, include_blank: false, wrapper: :with_label, label: game_t('admin.games.shop.shop_name'), input_html: { id: "#{prefix}_shop" }
+    = f.input :price, as: :integer, wrapper: :with_label, label: game_t('admin.games.shop.price', currency: @currency), hint: game_t('admin.games.shop.price_hint'), input_html: { id: "#{prefix}_price", min: 0 }
+    .bot-sheet-field.bot-sheet-field--switch
+      = hidden_field_tag 'game_shop_item[usable]', '0', id: nil
+      %label.bot-sheet-switch{ for: "#{prefix}_usable" }
+        = check_box_tag 'game_shop_item[usable]', '1', item.usable, id: "#{prefix}_usable", role: 'switch'
+        %span.bot-sheet-switch__track
+        %span.bot-sheet-switch__label= game_t('admin.games.shop.usable')
+    = f.input :stat_name, as: :select, collection: stats, include_blank: false, wrapper: :with_label, label: game_t('admin.games.shop.stat'), input_html: { id: "#{prefix}_stat" }
+    = f.input :stat_value, wrapper: :with_label, label: game_t('admin.games.shop.value'), hint: game_t('admin.games.shop.value_hint'), input_html: { id: "#{prefix}_value", placeholder: '5, -20, 1d10' }
+  = f.input :description, as: :text, wrapper: :with_label, label: game_t('admin.games.shop.description'), input_html: { id: "#{prefix}_description", rows: 2 }
+  .actions
+    %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
+    = button_tag t('generic.save_changes'), type: :submit, class: 'button'

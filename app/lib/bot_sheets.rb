@@ -19,10 +19,16 @@ class BotSheets
 
   # 설정 화면에서 같이 보여 줄 항목 (자동봇 설정 워크시트의 항목 이름). 여기 없는 항목은 기타로.
   SETTINGS_GROUPS = {
-    'currency' => ['재화 이름', '출석 보상', '툿 보상 기준', '툿 보상 재화'],
-    'features' => ['양도', '키워드 이미지', '하루 조사 횟수', '랜덤박스 명령어'],
+    'features' => ['키워드 이미지', '하루 조사 횟수', '랜덤박스 명령어'],
     'staff' => ['운영진'],
   }.freeze
+
+  # 마스토돈으로 옮긴 것 (컨텐츠 설정 > 상점, 캐릭터 관리). 시트에 남아 있어도 화면에 보이지 않고 자동봇도 쓰지 않는다.
+  MOVED_SETTINGS = ['재화 이름', '재화', '양도', '출석 보상', '툿 보상 기준', '툿 보상 재화'].freeze
+  MOVED_WORKSHEETS = { 'main' => %w(명단 관리 상점 출석부 기록) }.freeze
+  # 도움말에서 옮긴 명령어 ([ 다음 첫 낱말, 공백 무시). 운영진 명령어 [소지금 추가] [아이템 차감] [힘 변경] 도 포함
+  MOVED_COMMANDS = %w(가방 상점 구매 설명 소모 상태확인 상태 사용 양도 출석 소지금추가 소지금차감 아이템추가 아이템차감).freeze
+  HELP_WORKSHEET = '도움말'
 
   # 켜기/끄기 스위치로 보여 줄 값 (켜짐, 꺼짐)
   SWITCH = %w(사용 미사용).freeze
@@ -36,7 +42,7 @@ class BotSheets
     end
 
     def number?
-      value.match?(/A-?d+z/)
+      value.match?(/\A-?\d+\z/)
     end
   end
 
@@ -98,8 +104,23 @@ class BotSheets
     "https://docs.google.com/spreadsheets/d/#{@id}/edit"
   end
 
+  # 화면에 보이는 워크시트 (마스토돈으로 옮긴 워크시트는 뺀다)
   def worksheets
-    @backend.titles(@sheet, @id)
+    titles = @backend.titles(@sheet, @id)
+    titles - MOVED_WORKSHEETS.fetch(@sheet, [])
+  end
+
+  # 시트에 아직 남아 있는 옮긴 워크시트 (지워도 된다고 안내)
+  def moved_worksheets
+    @backend.titles(@sheet, @id) & MOVED_WORKSHEETS.fetch(@sheet, [])
+  end
+
+  # 도움말 줄이 마스토돈으로 옮긴 명령어인가 ('[가방]', '[구매/아이템명]', '[힘 변경/+3/이름]')
+  def self.moved_command?(text)
+    head = text.to_s.strip[%r{\A\[([^\]/]+)}, 1].to_s.gsub(/\s+/, '')
+    return false if head.empty?
+
+    MOVED_COMMANDS.include?(head) || (head.end_with?('변경') && head.size > 2)
   end
 
   def rows(worksheet)
@@ -124,6 +145,14 @@ class BotSheets
   def formula_columns(worksheet, number)
     row = @backend.formulas(@sheet, @id, worksheet)[number - 1].to_a
     row.each_index.select { |index| row[index].to_s.start_with?('=') }
+  end
+
+  # 워크시트 전체의 수식 칸: { 행 번호 => [열 번호...] } (수정 모달에서 잠글 칸)
+  def formula_map(worksheet)
+    @backend.formulas(@sheet, @id, worksheet).each_with_index.each_with_object({}) do |(row, index), map|
+      columns = row.to_a.each_index.select { |column| row[column].to_s.start_with?('=') }
+      map[index + 1] = columns if columns.any?
+    end
   end
 
   # 표의 한 줄을 고친다. original: 고치기 시작할 때 본 그 줄 (그사이 바뀌었거나 줄이 밀렸으면 Conflict)
@@ -173,6 +202,11 @@ class BotSheets
 
   # 설정 워크시트의 항목들 (헤더가 없으면 nil)
   def settings
+    all_settings&.reject { |item| MOVED_SETTINGS.include?(item.name) }
+  end
+
+  # 설정 워크시트의 모든 항목 (옮긴 항목 포함 — 저장할 때 행 확인용)
+  def all_settings
     rows = rows(SETTINGS_WORKSHEET)
     formulas = @backend.formulas(@sheet, @id, SETTINGS_WORKSHEET)
     header_row, columns = find_header(rows)

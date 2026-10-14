@@ -23,7 +23,7 @@ module Admin
     def show
       authorize :settings, :show?
 
-      @characters = GameCharacter.where(account_id: GameCharacter.eligible_accounts.select(:id)).includes(:house, :faction, :account).order(:game_house_id, :name)
+      @characters = GameCharacter.visible.includes(:house, :faction, :account).order(:game_house_id, :name)
       @kinds = Game::Kinds.matches
     end
 

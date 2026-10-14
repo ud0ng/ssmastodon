@@ -1,0 +1,13 @@
+-# 항목 추가·수정 모달 안의 폼. '고르기'일 때만 고를 항목 칸이 보인다 (data-stat-type 를 같이 쓴다)
+- kinds = GameCharacterField::EDITABLE_KINDS.map { |kind| [game_t("admin.games.manage.fields.kinds.#{kind}"), kind] }
+- choices_editor = { columns: [game_t('admin.games.characters.fields.choice_name'), game_t('admin.games.characters.fields.choice_color')], sep: '|' }.to_json
+= simple_form_for field, as: :game_character_field, url: url, method: method, html: { class: 'game-modal__form', data: { stat_form: true } } do |f|
+  .bot-sheet-fields
+    = f.input :name, wrapper: :with_label, label: game_t('admin.games.manage.fields.name'), required: true, input_html: { placeholder: game_t('admin.games.manage.fields.name_placeholder') }
+    = f.input :kind, as: :select, collection: kinds, selected: field.select? ? 'select' : 'text', include_blank: false, wrapper: :with_label, label: game_t('admin.games.manage.fields.kind'), input_html: { data: { stat_type: true } }
+  .bot-sheet-field{ data: { stat_part: 'select' } }
+    = f.input :choices_text, as: :text, wrapper: :with_label, label: game_t('admin.games.manage.fields.options'), hint: game_t('admin.games.manage.fields.options_hint'), input_html: { rows: 3, data: { stats_editor: choices_editor } }
+  = f.input :description, as: :string, wrapper: :with_label, label: game_t('admin.games.manage.fields.description')
+  .actions
+    %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
+    = button_tag t('generic.save_changes'), type: :submit, class: 'button'

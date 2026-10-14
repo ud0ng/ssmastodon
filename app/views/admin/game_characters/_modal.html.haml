@@ -1,0 +1,9 @@
+-# 입력창 모달 (<dialog>): data-modal-open="id" 버튼으로 열고, X·바깥 클릭·Esc 로 닫는다.
+-# 저장하다 오류가 나면 컨트롤러가 ?modal=id 로 돌려보내서 다시 열어 둔다.
+%dialog.game-modal{ id: id, 'aria-labelledby': "#{id}-title", data: { modal_reopen: (params[:modal] == id || nil) } }
+  .game-modal__box
+    .game-modal__head
+      %h3{ id: "#{id}-title" }= title
+      %button.icon-button{ type: 'button', data: { modal_close: true }, title: t('generic.cancel'), 'aria-label': t('generic.cancel') }= material_symbol('close')
+    .game-modal__body
+      = yield

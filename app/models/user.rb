@@ -59,6 +59,7 @@ class User < ApplicationRecord
   include LanguagesHelper
   include Redisable
   include User::HasSettings
+  include GameRoster
   include User::LdapAuthenticable
   include User::Omniauthable
   include User::PamAuthenticable

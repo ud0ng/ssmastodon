@@ -23,8 +23,14 @@ class GameCharacter < ApplicationRecord
     find_by!(account: account)
   end
 
-  # 회원 목록에서 아직 없는 사람을 추가한다
+  # 명단에 보이는 캐릭터 (정지·승인 대기 회원은 캐릭터를 남겨 두고 숨긴다)
+  scope :visible, -> { where(account_id: eligible_accounts.select(:id)) }
+
+  # 회원 목록과 맞춘다: 새 회원은 추가하고, 탈퇴한 회원(로그인 계정이 없어진 계정)의 캐릭터는 지운다.
+  # 정지된 회원은 지우지 않고 visible 에서 빠진다 (정지를 풀면 돈·인벤토리·스탯 그대로 돌아온다).
+  # (회원이 바뀔 때마다 Game::RosterSyncWorker 가 부르고, 명단 화면을 열 때도 한 번 확인한다)
   def self.sync!
+    where.not(account_id: Account.local.joins(:user).select(:id)).destroy_all
     existing = pluck(:account_id)
     eligible_accounts.where.not(id: existing).find_each { |account| create!(account: account) }
   end
@@ -42,28 +48,19 @@ class GameCharacter < ApplicationRecord
     name.presence || account.display_name.presence || account.username
   end
 
-  # 개인 값을 "체력=10" 줄로
-  def stats_text
-    stats.map { |key, value| "#{key}=#{value}" }.join("\n")
+  # 스탯 값 (정수). 입력한 값이 없으면 최소치, 최소~최대 안으로 맞춘다
+  def stat_value(field)
+    field.clamp(stats.fetch(field.name, field.min))
   end
 
-  def stats_text=(text)
-    self.stats = self.class.parse_pairs(text)
+  # 상태 수치 계산: 수식에 이 캐릭터의 스탯을 넣는다 (수식이 틀리면 nil)
+  def status_value(field, base_fields = GameCharacterField.base_stats)
+    Game::Formula.evaluate(field.formula, base_fields.to_h { |base| [base.name, stat_value(base)] })
+  rescue Game::Formula::Error
+    nil
   end
 
-  # 항목 설정의 전투 스탯 말고 더 적은 값만 (편집 화면의 '추가 값')
-  def extra_stats_text(field_names)
-    stats.except(*field_names).map { |key, value| "#{key}=#{value}" }.join("\n")
-  end
-
-  def self.parse_pairs(text)
-    text.to_s.lines.filter_map do |line|
-      key, value = line.split('=', 2).map(&:strip)
-      [key, value.to_s] if key.present?
-    end.to_h
-  end
-
-  # 정보 항목 값 (항목 설정의 select/text/number, 항목 id 로 저장)
+  # 항목 값 (select/text, 항목 id 로 저장)
   def profile_value(field)
     profile[field.id.to_s]
   end

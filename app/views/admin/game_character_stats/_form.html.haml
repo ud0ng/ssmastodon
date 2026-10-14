@@ -1,0 +1,14 @@
+- types = GameCharacterField::STAT_TYPES.map { |type| [game_t("admin.games.manage.stats.types.#{type}"), type] }
+= simple_form_for stat, as: :game_character_field, url: url, method: method, html: { class: 'game-modal__form', data: { stat_form: true } } do |f|
+  .bot-sheet-fields
+    = f.input :name, wrapper: :with_label, label: game_t('admin.games.manage.stats.name'), required: true, input_html: { placeholder: game_t('admin.games.manage.stats.name_placeholder') }
+    = f.input :stat_type, as: :select, collection: types, include_blank: false, wrapper: :with_label, label: game_t('admin.games.manage.stats.type'), input_html: { data: { stat_type: true } }
+    .game-stat__range.bot-sheet-field.bot-sheet-field--wide{ data: { stat_part: 'stat' } }
+      = f.input :min_value, as: :integer, wrapper: :with_label, label: game_t('admin.games.manage.stats.min'), input_html: { placeholder: GameCharacterField::DEFAULT_MIN }
+      = f.input :max_value, as: :integer, wrapper: :with_label, label: game_t('admin.games.manage.stats.max'), input_html: { placeholder: GameCharacterField::DEFAULT_MAX }
+    .game-stat__formula.bot-sheet-field.bot-sheet-field--wide{ data: { stat_part: 'status' } }
+      = f.input :formula, wrapper: :with_label, label: game_t('admin.games.manage.stats.formula'), hint: game_t('admin.games.manage.stats.formula_hint', names: base_names.map { |name| "{{#{name}}}" }.join(' ').presence || '—'), input_html: { placeholder: game_t('admin.games.manage.stats.formula_example') }
+    = f.input :description, as: :string, wrapper: :with_label, label: game_t('admin.games.manage.stats.description')
+  .actions
+    %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
+    = button_tag t('generic.save_changes'), type: :submit, class: 'button'

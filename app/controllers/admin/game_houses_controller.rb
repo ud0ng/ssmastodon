@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Admin
-  # 관리 > 캐릭터 명단 > 소속: 기숙사·진영 목록, 점수 단위(둘 중 무엇으로 점수·토너먼트를 할지), 점수 현황·조정, 정기 툿
+  # 관리 > 시스템 > 캐릭터 관리 > 소속: 기숙사·진영 목록, 점수 기준 소속(둘 중 무엇으로 점수·토너먼트를 할지), 점수 현황·조정, 정기 툿
   class GameHousesController < BaseController
     def index
       authorize :settings, :show?
@@ -12,8 +12,8 @@ module Admin
       @labels = { 'house' => common['house_label'], 'faction' => common['faction_label'] }
       @lists = GameHouse::CATEGORIES.index_with { |category| GameHouse.where(category: category).to_a }
       @counts = {
-        'house' => GameCharacter.group(:game_house_id).count,
-        'faction' => GameCharacter.group(:game_faction_id).count,
+        'house' => GameCharacter.visible.group(:game_house_id).count,
+        'faction' => GameCharacter.visible.group(:game_faction_id).count,
       }
       @recent_points = GameHousePoint.includes(:house, :account).order(id: :desc).limit(30)
     end
@@ -25,7 +25,7 @@ module Admin
       GameHouse.create!(house_params.merge(category: category, position: GameHouse.where(category: category).count))
       redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
     rescue ActiveRecord::RecordInvalid => e
-      redirect_to admin_game_houses_path, alert: e.record.errors.full_messages.to_sentence
+      redirect_to admin_game_houses_path(modal: "house-add-#{category}"), alert: e.record.errors.full_messages.to_sentence
     end
 
     def update
@@ -34,7 +34,7 @@ module Admin
       GameHouse.find(params[:id]).update!(house_params)
       redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
     rescue ActiveRecord::RecordInvalid => e
-      redirect_to admin_game_houses_path, alert: e.record.errors.full_messages.to_sentence
+      redirect_to admin_game_houses_path(modal: "house-#{params[:id]}"), alert: e.record.errors.full_messages.to_sentence
     end
 
     def destroy
@@ -44,7 +44,7 @@ module Admin
       redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
     end
 
-    # 점수 단위 바꾸기 (공통 설정 group_mode)
+    # 점수 기준 소속 바꾸기 (공통 설정 group_mode)
     def mode
       authorize :settings, :update?
 
@@ -81,7 +81,7 @@ module Admin
     private
 
     def house_params
-      params.expect(game_house: [:name, :emoji, :color, :position])
+      params.expect(game_house: [:name, :color, :position])
     end
   end
 end

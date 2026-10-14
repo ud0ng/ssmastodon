@@ -1,0 +1,46 @@
+- content_for :page_title do
+  = game_t('admin.games.manage.tabs.stats')
+
+- content_for :heading do
+  = render 'admin/game_characters/heading'
+
+.game-toolbar
+  %p.hint= game_t('admin.games.manage.stats.hint')
+  = button_tag safe_join([material_symbol('add'), game_t('admin.games.manage.stats.add')]), type: :button, class: 'button', data: { modal_open: 'stat-add' }
+
+.bot-sheet-table.game-table
+  %table.table
+    %thead
+      %tr
+        %th= game_t('admin.games.manage.stats.name')
+        %th= game_t('admin.games.manage.stats.type')
+        %th= game_t('admin.games.manage.stats.detail')
+        %th= game_t('admin.games.manage.stats.description')
+        %th.bot-sheet-table__actions
+    %tbody
+      - @stats.each do |stat|
+        %tr
+          %td.bot-sheet-table__text
+            %strong= stat.name
+          %td.bot-sheet-table__text
+            %span.game-badge{ class: ('game-badge--status' if stat.status?) }= game_t("admin.games.manage.stats.types.#{stat.stat_type}")
+          %td.bot-sheet-table__text
+            - if stat.status?
+              %code= stat.formula
+            - else
+              = game_t('admin.games.manage.detail.range', min: stat.min, max: stat.max)
+          %td.bot-sheet-table__text= stat.description.presence || '—'
+          %td.bot-sheet-table__actions
+            = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: game_t('admin.games.manage.stats.edit'), data: { modal_open: "stat-#{stat.id}" }
+            = button_to admin_game_character_stat_path(stat), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.manage.stats.delete'), data: { confirm: game_t('admin.games.manage.stats.delete_confirm', name: stat.name) } do
+              = material_symbol('delete')
+      - if @stats.empty?
+        %tr
+          %td.bot-sheet-table__text{ colspan: 5 }= game_t('admin.games.manage.stats.empty')
+
+= render layout: 'admin/game_characters/modal', locals: { id: 'stat-add', title: game_t('admin.games.manage.stats.add') } do
+  = render 'admin/game_character_stats/form', stat: GameCharacterField.new(stat_type: 'stat'), url: admin_game_character_stats_path, method: :post, base_names: @base_names
+
+- @stats.each do |stat|
+  = render layout: 'admin/game_characters/modal', locals: { id: "stat-#{stat.id}", title: game_t('admin.games.manage.stats.edit') } do
+    = render 'admin/game_character_stats/form', stat: stat, url: admin_game_character_stat_path(stat), method: :patch, base_names: @base_names

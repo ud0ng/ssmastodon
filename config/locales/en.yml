@@ -25,6 +25,52 @@ en:
   admin:
     system_menu: System
     games:
+      shop:
+        add_item: Add item
+        add_shop: Add shop
+        change: Change
+        delete_item: Delete item
+        delete_item_confirm: Delete the item '%{name}'?
+        delete_shop: Delete shop
+        delete_shop_confirm: Delete the shop '%{name}' and all its items?
+        description: Description
+        edit_item: Edit item
+        edit_shop: Edit shop
+        effect: Effect when used
+        empty: There are no shops yet. Add a shop first.
+        hint: Items the bot's [상점] [구매] [설명] [사용] commands use. Leave the price empty for items that are not for sale. The currency (%{currency}) is set in the settings tab.
+        item_count: "%{count} items"
+        item_name: Item
+        kind: Kind
+        kinds:
+          admin: Staff
+          attendance: Attendance
+          consume: Consume
+          content: Content reward
+          investigation: Investigation
+          purchase: Purchase
+          randombox: Random box
+          toot: Post reward
+          transfer: Transfer
+          use: Use
+        no_items: No items.
+        no_records: No records yet.
+        no_stat: No stat change
+        not_for_sale: Not for sale
+        price: Price (%{currency})
+        price_hint: Empty = not for sale
+        records: Recent currency records
+        rules: Currency rules
+        shop_name: Shop
+        shop_name_placeholder: 'e.g. Honeydukes'
+        stat: Stat changed on use
+        title: Shop
+        unknown_stat: The stat '%{name}' does not exist. Create it in Characters > Stats first.
+        unusable: Cannot be used
+        usable: Can be used
+        value: Amount
+        value_hint: '5, -20, 1d10, -(1d6+3)'
+        who: Character
       changed: Changed
       characters:
         recent_rewards: Recent rewards
@@ -121,6 +167,9 @@ en:
         members: '%{count} members'
         mode: Scoring by
         mode_hint: Points, tournaments, hourglasses and summaries use the chosen one only. The other keeps its points.
+        members_head: Members
+        points_head: Points
+        edit: Edit
         mode_on: In use
         name_label: Name
         points: '%{count} pts'
@@ -150,6 +199,70 @@ en:
         weekly_confirm: Post this week's summary now?
         weekly_now: Post weekly summary now
         when: When
+      manage:
+        detail:
+          back: Back to list
+          memo: Memo
+          no_stats: No stats yet. Create them in the Stats tab.
+          profile: Profile
+          range: '%{min} ~ %{max}'
+          stats: Stats
+          statuses: Status values
+          statuses_hint: Calculated from stats. They are recalculated when you change stats and save.
+        fields:
+          add: Add field
+          delete: Delete field
+          delete_confirm: "Delete '%{name}'? Values on characters are removed too."
+          description: Description
+          edit: Edit
+          empty: No fields yet.
+          hint: Information each character has (e.g. bloodline, wand). Choice fields pick from fixed values; text fields are free. They show as columns in the roster.
+          kind: Kind
+          kinds:
+            select: Choice
+            text: Text
+          name: Name
+          name_placeholder: 'e.g. Bloodline'
+          options: Options
+          options_hint: 'Values to choose from for a Choice field (one per line, add |#color for a color)'
+        none: None
+        roster:
+          acct: Username
+          all: All
+          apply: Filter
+          count: '%{count}'
+          empty: No matching characters.
+          grade: Year
+          money: 'Money (%{currency})'
+          name: Name
+          no_group: 'No %{term}'
+          search: Search name or username
+        stats:
+          add: Add stat
+          delete: Delete stat
+          delete_confirm: "Delete '%{name}'? Values on characters are removed too."
+          description: Description
+          detail: Range / formula
+          edit: Edit
+          empty: No stats yet.
+          formula: Formula
+          formula_example: '{{Strength}}*5'
+          formula_hint: 'Available stats: %{names}. Use + - * / ( ). Putting a number right after a stat multiplies it.'
+          hint: A stat is a value set per character (min to max); a status value is calculated from stats, e.g. Health = {{Strength}}*5.
+          max: Max
+          min: Min
+          name: Name
+          name_placeholder: 'e.g. Strength'
+          type: Type
+          types:
+            stat: Stat
+            status: Status value
+        tabs:
+          fields: Fields
+          houses: Groups
+          roster: Roster
+          stats: Stats
+        title: Characters
       kind_hint: This game's switch, commands, rules and messages. Time limits and accept/decline/forfeit commands are in the Common tab.
       lesson_hint: This subject's unlock, commands, rules and messages. Study/class commands and grade points are in the Lessons tab.
       lessons: Lessons
@@ -180,6 +293,11 @@ en:
         half: So-so
         over: Adds up to more than 100%
         perfect: Perfect
+      stats:
+        formula_invalid: The formula is invalid. Only numbers, + - * / ( ) and {{stat name}} are allowed.
+        formula_unknown: 'Unknown stat in formula: %{names}'
+        in_use: "'%{name}' is used in the formula of %{users} and cannot be deleted."
+        range_invalid: Max cannot be smaller than min.
       tournaments:
         champion: Champion
         champion_is: 'Champion: %{house}'
@@ -230,6 +348,10 @@ en:
       unknown_tokens: "Not available in this message: {tokens}"
       unsaved: "{count} unsaved changes"
     bot_sheets:
+      moved:
+        help_html: '%{count} help lines for currency commands are hidden. The bot adds the help from <a href="%{shop}">Content settings &gt; Shop</a> instead.'
+        settings_html: 'The currency name is set in <a href="%{settings}">Content settings</a>; transfers, attendance and post rewards in <a href="%{shop}">Content settings &gt; Shop</a>. Those rows of the sheet are no longer used.'
+        worksheets_html: 'The %{names} worksheets are now managed in <a href="%{characters}">Characters</a> and <a href="%{shop}">Shop</a>, so they are hidden here. You can delete them from the Google sheet.'
       conflict: 'Not saved because these items changed in the sheet meanwhile: %{names}. Check the new values and save again.'
       connection:
         hint: Enter the sheet IDs from the bot's (ssbot) .env. You can paste the whole sheet URL. Sheets left blank are hidden.

@@ -94,7 +94,7 @@ RSpec.describe Game::Tournament do
     expect(tournament.reload).to have_attributes(status: 'finished', winner_house: slytherin)
     expect(slytherin.total).to eq 50
     expect(gryffindor.total).to eq 0
-    expect(Status.where(account: system).map(&:text)).to include(a_string_including('우승: 🐍 슬리데린'))
+    expect(Status.where(account: system).map(&:text)).to include(a_string_including('우승: 슬리데린'))
   end
 
   it 'gives no points for regular content in tournament mode' do

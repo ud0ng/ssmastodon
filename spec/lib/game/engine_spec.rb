@@ -168,7 +168,7 @@ RSpec.describe Game::Engine do
   it 'answers the house board and personal record' do
     GameHousePoint.create!(house: slytherin, amount: 7)
     toot(alice, '@system [점수]')
-    expect(last_reply.text).to match(/1\. 🐍 슬리데린 7점.*2\. 🦁 그리핀도르 0점/m)
+    expect(last_reply.text).to match(/1\. 슬리데린 7점.*2\. 그리핀도르 0점/m)
 
     toot(alice, '@system [내전적]')
     expect(last_reply.text).to include('해리의 전적: 0승 0패 0무')

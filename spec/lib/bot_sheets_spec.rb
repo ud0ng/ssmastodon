@@ -13,8 +13,9 @@ RSpec.describe BotSheets do
       설정 시트
       항목,값,설명
       재화 이름,코인,소지금 단위
-      양도,사용,[양도] 명령어
+      키워드 이미지,사용,키워드 답변 이미지
       합계,=1+1,수식
+      하루 조사 횟수,3,
     CSV
     File.write(File.join(dir, 'main', '상점.csv'), "아이템명,가격\n사과,1\n")
   end
@@ -36,21 +37,22 @@ RSpec.describe BotSheets do
   end
 
   describe '#settings' do
-    it 'reads items under the header row' do
+    it 'reads items under the header row, leaving out what moved to Mastodon' do
       expect(bot_sheet.settings.map { |item| [item.row, item.name, item.value, item.formula] }).to eq [
-        [3, '재화 이름', '코인', false],
-        [4, '양도', '사용', false],
+        [4, '키워드 이미지', '사용', false],
         [5, '합계', '=1+1', true],
+        [6, '하루 조사 횟수', '3', false],
       ]
-      expect(bot_sheet.settings.second).to be_switch
+      expect(bot_sheet.settings.first).to be_switch
       expect(bot_sheet.settings.first).to_not be_number
+      expect(bot_sheet.settings.last).to be_number
     end
   end
 
   describe '#update_settings' do
     it 'writes changed values only' do
-      expect(bot_sheet.update_settings(3 => %w(코인 골드), 4 => %w(사용 사용))).to eq 1
-      expect(bot_sheet.rows('설정')[2]).to eq %w(재화\ 이름 골드 소지금\ 단위)
+      expect(bot_sheet.update_settings(6 => %w(3 5), 4 => %w(사용 사용))).to eq 1
+      expect(bot_sheet.rows('설정')[5]).to eq ['하루 조사 횟수', '5', '']
     end
 
     it 'does not touch formula cells' do
@@ -58,7 +60,12 @@ RSpec.describe BotSheets do
     end
 
     it 'refuses to save when the sheet changed meanwhile' do
-      expect { bot_sheet.update_settings(3 => %w(예전값 골드)) }.to raise_error(BotSheets::Conflict) { |error| expect(error.names).to eq ['재화 이름'] }
+      expect { bot_sheet.update_settings(6 => %w(1 9)) }.to raise_error(BotSheets::Conflict) { |error| expect(error.names).to eq ['하루 조사 횟수'] }
+      expect(bot_sheet.rows('설정')[5][1]).to eq '3'
+    end
+
+    it 'does not save items that moved to Mastodon' do
+      expect(bot_sheet.update_settings(3 => %w(코인 골드))).to eq 0
       expect(bot_sheet.rows('설정')[2][1]).to eq '코인'
     end
   end
@@ -111,13 +118,24 @@ RSpec.describe BotSheets do
   describe '.group_settings' do
     it 'groups known items and puts the rest under others' do
       groups = described_class.group_settings(bot_sheet.settings).to_h { |group, items| [group, items.map(&:name)] }
-      expect(groups).to eq('currency' => ['재화 이름'], 'features' => ['양도'], 'others' => ['합계'])
+      expect(groups).to eq('features' => ['키워드 이미지', '하루 조사 횟수'], 'others' => ['합계'])
     end
   end
 
   describe '#worksheets' do
-    it 'lists the worksheets' do
-      expect(bot_sheet.worksheets).to include('상점', '설정')
+    it 'lists the worksheets but hides the ones that moved to Mastodon' do
+      expect(bot_sheet.worksheets).to include('설정')
+      expect(bot_sheet.worksheets).to_not include('상점')
+      expect(bot_sheet.moved_worksheets).to eq ['상점']
+    end
+  end
+
+  describe '.moved_command?' do
+    it 'spots help lines of commands that moved to Mastodon' do
+      moved = ['[가방]', '[구매/아이템명]', '[상태 확인]', '[소지금 추가/10/전원]', '[힘 변경/+3/겐지]']
+      kept = ['[운세]', '[NdM]', '[랜덤/A, B]', '[조사/포인트]', '', '설명']
+      expect(moved.map { |line| described_class.moved_command?(line) }).to all(be true)
+      expect(kept.map { |line| described_class.moved_command?(line) }).to all(be false)
     end
   end
 end

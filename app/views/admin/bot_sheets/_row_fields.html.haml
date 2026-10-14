@@ -1,0 +1,24 @@
+-# 시트 한 줄의 입력칸 (헤더 순서대로 cells[]). 빈 헤더 칸과 수식 칸(locked)은 그대로 보낸다
+-# 내용이 긴 열(설명·문구 등)은 넓은 여러 줄 칸으로
+.bot-sheet-fields
+  - Array.new(table.width) { |index| table.header[index].to_s }.each_with_index do |name, index|
+    - value = cells[index].to_s
+    - if name.strip.empty?
+      = hidden_field_tag 'cells[]', value, id: nil
+    - elsif locked.include?(index)
+      = hidden_field_tag 'cells[]', value, id: nil
+      .bot-sheet-field.input.with_label.disabled
+        .label_input
+          %label= name
+          .label_input__wrapper= text_field_tag nil, value, readonly: true, id: nil, 'aria-label': name
+        %span.hint= t('admin.bot_sheets.settings.formula')
+    - else
+      - long = value.size > 20 || value.include?("\n") || table.rows.any? { |row| row.cells[index].to_s.size > 20 }
+      .bot-sheet-field.input.with_label{ class: ('bot-sheet-field--wide' if long) }
+        .label_input
+          %label{ for: "bot_sheet_#{prefix}_#{index}" }= name
+          .label_input__wrapper
+            - if long
+              = text_area_tag 'cells[]', value, id: "bot_sheet_#{prefix}_#{index}", rows: [value.lines.size, 2].max
+            - else
+              = text_field_tag 'cells[]', value, id: "bot_sheet_#{prefix}_#{index}"
