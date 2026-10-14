@@ -31,7 +31,6 @@ import { displayMedia } from '../initial_state';
 import { Avatar } from './avatar';
 import { AvatarOverlay } from './avatar_overlay';
 import { DisplayName } from './display_name';
-import { ContentCard } from './content_card';
 import { getHashtagBarForStatus } from './hashtag_bar';
 import { RelativeTimestamp } from './relative_timestamp';
 import StatusActionBar from './status_action_bar';
@@ -566,8 +565,6 @@ class Status extends ImmutablePureComponent {
 
             {expanded && (
               <>
-                {status.get('game_card') && <ContentCard status={status} />}
-
                 <StatusContent
                   status={status}
                   onClick={this.handleClick}

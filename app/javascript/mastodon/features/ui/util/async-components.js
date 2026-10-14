@@ -134,18 +134,6 @@ export function ScheduledStatuses() {
   return import('../../scheduled_statuses');
 }
 
-export function SystemPage() {
-  return import('../../system');
-}
-
-export function SystemSession() {
-  return import('../../system/session');
-}
-
-export function SystemGame() {
-  return import('../../system/game');
-}
-
 export function ScheduleModal() {
   return import('../components/schedule_modal');
 }

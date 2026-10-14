@@ -19,7 +19,6 @@ class REST::StatusSerializer < ActiveModel::Serializer
   has_many :filtered, serializer: REST::FilterResultSerializer, if: :current_user?
 
   attribute :content, unless: :source_requested?
-  attribute :game_card, if: :game_card? # 시스템 계정의 컨텐츠 툿 (PC 웹이 카드로 그린다, Game::Card)
   attribute :text, if: :source_requested?
 
   belongs_to :reblog, serializer: REST::StatusSerializer
@@ -160,14 +159,6 @@ class REST::StatusSerializer < ActiveModel::Serializer
       current_user.account_id == object.account_id &&
       !object.reblog? &&
       %w(public unlisted private).include?(object.visibility)
-  end
-
-  def game_card?
-    object.account_id == Game::System.cached_account_id && object.game_event.present?
-  end
-
-  def game_card
-    object.game_event.current_payload
   end
 
   def source_requested?

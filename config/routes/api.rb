@@ -81,20 +81,6 @@ namespace :api, format: false do
       end
     end
 
-    # 웹 '시스템' 메뉴 (기숙사 점수·게임)
-    resource :system, only: [:show], controller: 'system'
-    namespace :system do
-      resources :games, only: [:show]
-      resources :commands, only: [:create]
-      resources :members, only: [:index]
-      resources :sessions, only: [:show] do
-        member do
-          get :view
-          post :move
-        end
-      end
-    end
-
     resources :dm_rooms, only: [:index, :show, :create, :destroy] do
       member do
         post :read

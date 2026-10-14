@@ -82,26 +82,6 @@ namespace :admin do
     end
   end
 
-  # 게임 (시스템 계정)
-  get 'games/houses', to: redirect('/admin/characters/houses')
-  resources :game_houses, path: 'characters/houses', only: [:index, :create, :update, :destroy] do
-    post :adjust, on: :collection
-    post :weekly, on: :collection
-    post :term_end, on: :collection
-    post :mode, on: :collection
-  end
-  resources :game_tournaments, path: 'games/tournaments', only: [:index, :create, :show, :update, :destroy] do
-    post :start, on: :member
-  end
-  resources :game_tournament_matches, path: 'games/tournament_matches', only: [:update] do
-    post :decide, on: :member
-  end
-  resources :game_settings, path: 'games', only: [:index, :show, :update]
-  resources :game_character_fields, path: 'characters/fields', only: [:index, :create, :update, :destroy]
-  resources :game_characters, path: 'characters', only: [:index, :edit, :update] do
-    patch :bulk, on: :collection
-  end
-
   resources :site_uploads, only: [:destroy]
 
   resources :invites, only: [:index, :create, :destroy] do

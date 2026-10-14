@@ -26,8 +26,6 @@ import AdministrationIcon from '@/material-icons/400-24px/manufacturing.svg?reac
 import NotificationsActiveIcon from '@/material-icons/400-24px/notifications-fill.svg?react';
 import NotificationsIcon from '@/material-icons/400-24px/notifications.svg?react';
 import ScheduledStatusesIcon from '@/styles/bird-theme-svg/calendar-clock.svg?react';
-import SystemActiveIcon from '@/styles/bird-theme-svg/star-fill.svg?react';
-import SystemIcon from '@/styles/bird-theme-svg/star.svg?react';
 import FollowRequestsActiveIcon from '@/styles/bird-theme-svg/user-add-fill.svg?react';
 import FollowRequestsIcon from '@/styles/bird-theme-svg/user-add.svg?react';
 import PendingMentionsActiveIcon from '@/styles/bird-theme-svg/messages-fill.svg?react';
@@ -87,7 +85,6 @@ const messages = defineMessages({
   messagesAll: { id: 'navigation_bar.messages_all', defaultMessage: 'All messages' },
   bookmarks: { id: 'navigation_bar.bookmarks', defaultMessage: 'Bookmarks' },
   scheduledStatuses: { id: 'navigation_bar.scheduled_statuses', defaultMessage: 'Scheduled posts' },
-  system: { id: 'navigation_bar.system', defaultMessage: 'System' },
   scheduledStatusesFailed: { id: 'navigation_bar.scheduled_statuses_failed', defaultMessage: 'Scheduled posts (failed)' },
   lists: { id: 'navigation_bar.lists', defaultMessage: 'Lists' },
   preferences: { id: 'navigation_bar.preferences', defaultMessage: 'Preferences' },
@@ -432,7 +429,6 @@ class NavigationPanel extends Component {
           <ColumnLink transparent to='/messages/all' isActive={isMessagesAllPath} icon='messages-all' iconComponent={MessagesAllIcon} activeIconComponent={MessagesAllActiveIcon} text={intl.formatMessage(messages.messagesAll)} />
         )}
         <ScheduledStatusesLink />
-        <ColumnLink transparent to='/system' icon='system' iconComponent={SystemIcon} activeIconComponent={SystemActiveIcon} text={intl.formatMessage(messages.system)} />
         <ColumnLink transparent to='/bookmarks' icon='bookmarks' iconComponent={BookmarksIcon} activeIconComponent={BookmarksActiveIcon} text={bookmarksLabel} />
         <ColumnLink transparent to='/lists' icon='list-ul' iconComponent={ListAltIcon} activeIconComponent={ListAltActiveIcon} text={listsLabel} />
         <ColumnLink transparent href={settingsHref} icon='cog' iconComponent={SettingsIcon} text={preferencesLabel} />

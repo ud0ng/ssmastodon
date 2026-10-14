@@ -3741,11 +3741,6 @@ body .compose-form .compose-form__uploads {
     order: 8;
   }
 
-  /* 시스템 메뉴: 예약 게시물과 같은 순서 → 바로 아래(북마크 위) */
-  .layout-single-column .column-link[href="/system"] {
-    order: 8;
-  }
-
   .layout-single-column .column-link[href="/bookmarks"] {
     order: 9;
   }
@@ -4721,11 +4716,6 @@ body .compose-form .compose-form__uploads {
   }
 
   .layout-single-column .column-link[href="/scheduled_statuses"] {
-    order: 8;
-  }
-
-  /* 시스템 메뉴: 예약 게시물과 같은 순서 → 바로 아래(북마크 위) */
-  .layout-single-column .column-link[href="/system"] {
     order: 8;
   }
 
@@ -6416,28 +6406,4 @@ body.layout-single-column
 .layout-single-column .search:focus-within,
 .layout-single-column .search.active {
   outline: 0;
-}
-
-/* 시스템 메뉴 아이콘 (별) */
-.layout-single-column .column-link .icon-system {
-  mask-image: url('./bird-theme-svg/star.svg');
-  -webkit-mask-image: url('./bird-theme-svg/star.svg');
-  mask-size: contain;
-  -webkit-mask-size: contain;
-  mask-repeat: no-repeat;
-  -webkit-mask-repeat: no-repeat;
-  mask-position: center;
-  -webkit-mask-position: center;
-  background-color: var(--color-column-link);
-  background-image: none;
-}
-
-.layout-single-column .column-link.active .icon-system {
-  mask-image: url('./bird-theme-svg/star-fill.svg');
-  -webkit-mask-image: url('./bird-theme-svg/star-fill.svg');
-}
-
-.layout-single-column .column-link:not(.active):hover .icon-system,
-.layout-single-column .column-link:not(.active):focus-visible .icon-system {
-  background-color: var(--color-column-link-hover);
 }
