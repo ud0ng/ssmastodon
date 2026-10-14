@@ -89,6 +89,7 @@ namespace :admin do
     post :weekly, on: :collection
     post :term_end, on: :collection
     post :mode, on: :collection
+    patch :labels, on: :collection
   end
   resources :game_tournaments, path: 'games/tournaments', only: [:index, :create, :show, :update, :destroy] do
     post :start, on: :member
@@ -98,6 +99,7 @@ namespace :admin do
   end
   resources :game_shops, path: 'games/shops', only: [:index, :create, :update, :destroy] do
     patch :currency, on: :collection
+    post :give, on: :collection
   end
   resources :game_shop_items, path: 'games/shop_items', only: [:create, :update, :destroy]
   resources :game_settings, path: 'games', only: [:index, :show, :update]

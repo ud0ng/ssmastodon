@@ -1009,3 +1009,38 @@ body.community-theme.admin {
     color: var(--ct-text);
   }
 }
+
+// 컨텐츠 설정: 설정 묶음을 다른 화면의 카드와 같게, 문구 배지·매치 표를 테마색으로
+body.community-theme.admin {
+  .game-group {
+    border: var(--ct-box-border) solid var(--ct-line);
+    border-radius: 12px;
+    background: var(--ct-panel);
+  }
+
+  .game-token {
+    background: var(--ct-soft);
+    color: var(--ct-text);
+
+    &--person {
+      background: color-mix(in srgb, var(--ct-point) 24%, transparent);
+    }
+
+    &--particle {
+      background: transparent;
+      color: var(--ct-dim);
+    }
+  }
+
+  .game-tournament__table select,
+  .game-tournament__table input[type='datetime-local'],
+  .game-give__targets {
+    border-color: var(--ct-line-strong);
+    background: var(--ct-field);
+    color: var(--ct-text);
+  }
+
+  .game-give__targets {
+    background: transparent;
+  }
+}

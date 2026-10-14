@@ -1,0 +1,29 @@
+-# 목록 표의 한 줄 (kind: Game::Kinds 클래스). 줄을 누르면 그 컨텐츠 설정
+- config = kind.config
+- path = admin_game_setting_path(kind.key)
+%tr.game-table__row{ class: ('game-table__row--off' unless config['enabled']), data: { href: path } }
+  %td.bot-sheet-table__text
+    = link_to path, class: 'game-table__name' do
+      %span.game-table__icon{ 'aria-hidden': 'true' }= game_kind_icon(kind.key)
+      %strong= kind.display_name
+  %td.bot-sheet-table__text
+    %code
+      - if kind.event?
+        = "[#{config['command']}] → [#{config['cmd_join']}]"
+      - elsif kind.lesson?
+        = "[#{Game::Lessons.config['cmd_study']}/#{kind.display_name}] [#{Game::Lessons.config['cmd_class']}/#{kind.display_name}]"
+      - elsif kind.max_opponents > 1
+        = "[#{config['command']}] @#{game_t('admin.games.overview.opponent')} … (#{game_t('admin.games.overview.up_to', count: kind.max_opponents + 1)})"
+      - else
+        = "[#{config['command']}] @#{game_t('admin.games.overview.opponent')}"
+  %td.bot-sheet-table__text
+    %span.game-badge{ class: (config['enabled'] ? 'game-badge--win' : 'game-badge--draw') }
+      = config['enabled'] ? game_t('admin.games.overview.on') : game_t('admin.games.overview.off')
+  %td.game-table__number= recent.fetch(kind.key, 0)
+  %td.game-table__number
+    - if open.fetch(kind.key, 0).positive?
+      %span.game-badge= open[kind.key]
+    - else
+      \—
+  %td.bot-sheet-table__actions
+    = link_to material_symbol('edit'), path, class: 'icon-button', title: game_t('admin.games.overview.edit')

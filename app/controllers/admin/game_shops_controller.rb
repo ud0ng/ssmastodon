@@ -15,6 +15,7 @@ module Admin
       @values = Game::Config.for('currency')
       @records = GameReward.includes(:account).order(id: :desc).limit(30)
       @names = GameCharacter.where(account_id: @records.map(&:account_id)).to_h { |character| [character.account_id, character.display_name] }
+      @characters = GameCharacter.visible.includes(:account).to_a.sort_by(&:display_name)
     end
 
     def create
@@ -48,6 +49,24 @@ module Admin
 
       Game::Config.update!('currency', params.fetch(:config, {}).permit!.to_h)
       redirect_to admin_game_shops_path, notice: t('generic.changes_saved_msg')
+    end
+
+    # 지급: 고른 캐릭터에게 재화·아이템을 준다
+    def give
+      authorize :settings, :update?
+
+      accounts = GameCharacter.visible.where(account_id: Array(params[:account_ids])).includes(:account).map(&:account)
+      money = [params[:money].to_i, 0].max
+      item = GameShopItem.find_by(name: params[:item].to_s)
+      items = item ? { item.name => [params[:count].to_i, 1].max } : {}
+      if accounts.empty? || (money.zero? && items.empty?)
+        redirect_to admin_game_shops_path(modal: 'shop-give'), alert: t('admin.games.shop.give_nothing')
+        return
+      end
+
+      changes = accounts.map { |account| { account: account, money: money, items: items } }
+      Game::Wallet.apply!(changes, kind: 'admin', detail: params[:reason].to_s.strip.presence || t('admin.games.shop.give'), actor: current_account.username)
+      redirect_to admin_game_shops_path, notice: t('admin.games.shop.given', count: accounts.size)
     end
 
     private

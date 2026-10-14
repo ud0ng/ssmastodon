@@ -13,7 +13,20 @@
       = @labels[category]
       - if @mode == category
         %span.game-groups__mode-on= game_t('admin.games.houses.mode_on')
+  = button_tag safe_join([material_symbol('edit'), game_t('admin.games.houses.rename')]), type: :button, class: 'button button-tertiary', data: { modal_open: 'house-labels' }
   %span.hint= game_t('admin.games.houses.mode_hint')
+
+= render layout: 'admin/game_characters/modal', locals: { id: 'house-labels', title: game_t('admin.games.houses.rename') } do
+  = form_tag labels_admin_game_houses_path, method: :patch, class: 'simple_form' do
+    .bot-sheet-fields
+      - GameHouse::CATEGORIES.each do |category|
+        .input.with_label.string
+          .label_input
+            %label{ for: "house_label_#{category}" }= game_t("admin.games.houses.label_#{category}")
+            .label_input__wrapper= text_field_tag "labels[#{category}]", @labels[category], id: "house_label_#{category}", maxlength: 20, required: true
+    .actions
+      %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
+      = button_tag t('generic.save_changes'), type: :submit, class: 'button'
 
 - GameHouse::CATEGORIES.each do |category|
   - label = @labels[category]

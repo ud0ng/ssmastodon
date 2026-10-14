@@ -45,13 +45,31 @@ module Game
         SCHEMAS.keys + ['lessons'] + Game::Kinds.keys
       end
 
-      # 관리 화면에서 받은 값 저장 (기본값과 같은 값은 지운다)
-      def update!(key, params)
-        data = schema(key).each_with_object({}) do |field, result|
-          next unless params.key?(field.key)
+      # 관리 화면에서 묶어 보여 줄 칸: [[묶음 이름, 칸들], ...]
+      # 공통·수업은 LAYOUT 대로 묶고, 컨텐츠별 화면은 항목의 group 대로. HIDDEN 은 다른 화면에서 고친다.
+      def sections(key)
+        fields = schema(key).reject { |field| HIDDEN.fetch(key, []).include?(field.key) }
+        layout = LAYOUT[key]
+        return fields.group_by(&:group).to_a if layout.nil?
 
-          value = coerce(field, params[field.key])
-          result[field.key] = value unless value == field.default
+        placed = layout.filter_map do |name, groups|
+          list = fields.select { |field| groups.include?(field.group) }
+          [name, list] if list.any?
+        end
+        rest = fields - placed.flat_map(&:last)
+        placed + rest.group_by(&:group).to_a
+      end
+
+      # 관리 화면에서 받은 값 저장 (기본값과 같은 값은 지운다). 받지 않은 항목은 저장된 값을 그대로 둔다
+      def update!(key, params)
+        stored = GameConfig.find_by(key: key)&.data || {}
+        data = schema(key).each_with_object({}) do |field, result|
+          if params.key?(field.key)
+            value = coerce(field, params[field.key])
+            result[field.key] = value unless value == field.default
+          elsif stored.key?(field.key)
+            result[field.key] = stored[field.key]
+          end
         end
         GameConfig.find_or_initialize_by(key: key).update!(data: data)
       end
@@ -92,7 +110,7 @@ module Game
 
       Field.new(key: 'scoring_mode', type: :select, default: 'points', group: 'scoring',
                 choices: [['points', '점수제 (컨텐츠마다 이기면 점수)'], ['tournament', '토너먼트제 (대진표 경기의 승수가 가장 많은 소속만 우승 점수)']],
-                label: '점수 방식', hint: '토너먼트제에서는 평소 컨텐츠를 해도 점수가 없습니다. 대진표는 토너먼트 탭에서 만듭니다.'),
+                label: '점수 방식', hint: '토너먼트제에서는 평소 컨텐츠를 해도 점수가 없습니다. 대진표는 매치 탭에서 만듭니다.'),
 
       Field.new(key: 'cmd_accept', type: :string, default: '수락', group: 'commands', label: '수락'),
       Field.new(key: 'cmd_decline', type: :string, default: '거절', group: 'commands', label: '거절'),
@@ -196,5 +214,25 @@ module Game
     ].freeze
 
     SCHEMAS = { 'common' => COMMON, 'currency' => CURRENCY }.freeze
+
+    # 관리 화면 묶음 (sections)
+    LAYOUT = {
+      'common' => [
+        ['basic', %w(account scoring)],
+        ['rules', %w(commands time rules)],
+        ['summary', %w(summary)],
+        ['messages', %w(messages)],
+        ['tournament', %w(tournament)],
+      ],
+      'lessons' => [
+        ['rules', %w(commands time rules)],
+        ['points', %w(points)],
+        ['rewards', %w(rewards)],
+        ['lesson_messages', %w(messages)],
+      ],
+    }.freeze
+
+    # 기숙사·진영 부르는 이름은 캐릭터 관리 > 소속에서 고친다
+    HIDDEN = { 'common' => %w(house_label faction_label) }.freeze
   end
 end

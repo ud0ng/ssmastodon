@@ -1,4 +1,7 @@
--# 컨텐츠 설정 제목 + 탭 (전체 · 공통 · 토너먼트 · 수업 공통; 소속은 캐릭터 명단 탭). 컨텐츠별 화면은 전체 카드에서 들어간다. save_form: 저장 버튼이 제출할 폼 id
+-# 컨텐츠 설정 제목 + 탭 (설정 · 목록 · 매치 · 수업 · 상점). 컨텐츠별 화면은 목록에서, 과목별 화면은 목록·수업에서 들어간다.
+-# save_form: 저장 버튼이 제출할 폼 id
+- lesson_keys = Game::Lessons.all.map(&:key)
+- content_keys = Game::Kinds.keys - lesson_keys
 .content__heading__row
   %h2= game_t('admin.games.title')
 
@@ -9,8 +12,8 @@
 .content__heading__tabs
   = render_navigation renderer: :links do |primary|
     :ruby
-      primary.item :overview, safe_join([material_symbol('extension'), game_t('admin.games.overview.title')]), admin_game_settings_path, highlights_on: %r{/admin/games\z|/admin/games/(#{Game::Kinds.keys.join('|')})\z}
-      primary.item :common, safe_join([material_symbol('tune'), game_t('admin.games.common')]), admin_game_setting_path('common'), highlights_on: %r{/admin/games/common}
-      primary.item :tournaments, safe_join([material_symbol('flag'), game_t('admin.games.tournaments.title')]), admin_game_tournaments_path, highlights_on: %r{/admin/games/tournaments}
-      primary.item :lessons, safe_join([material_symbol('description'), game_t('admin.games.lessons')]), admin_game_setting_path('lessons'), highlights_on: %r{/admin/games/lessons}
+      primary.item :common, safe_join([material_symbol('tune'), game_t('admin.games.tabs.settings')]), admin_game_setting_path('common'), highlights_on: %r{/admin/games/common}
+      primary.item :overview, safe_join([material_symbol('list'), game_t('admin.games.tabs.list')]), admin_game_settings_path, highlights_on: %r{/admin/games\z|/admin/games/(#{content_keys.join('|')})\z}
+      primary.item :tournaments, safe_join([material_symbol('flag'), game_t('admin.games.tabs.matches')]), admin_game_tournaments_path, highlights_on: %r{/admin/games/tournaments}
+      primary.item :lessons, safe_join([material_symbol('description'), game_t('admin.games.tabs.lessons')]), admin_game_setting_path('lessons'), highlights_on: %r{/admin/games/(lessons|#{lesson_keys.join('|')})\z}
       primary.item :shop, safe_join([material_symbol('inventory_2'), game_t('admin.games.shop.title')]), admin_game_shops_path, highlights_on: %r{/admin/games/shops}

@@ -1,47 +1,55 @@
 - content_for :page_title do
-  = game_t('admin.games.tournaments.title')
+  = game_t('admin.games.tabs.matches')
 
 - content_for :heading do
   = render 'admin/game_settings/heading'
 
-%p.hint= game_t('admin.games.tournaments.hint')
+.game-toolbar
+  %p.hint= game_t('admin.games.tournaments.hint')
+  = button_tag safe_join([material_symbol('add'), game_t('admin.games.tournaments.new')]), type: :button, class: 'button', data: { modal_open: 'tournament-add' }
 
-- if @tournaments.any?
-  .bot-sheet-table
-    %table.table
-      %thead
+.bot-sheet-table.game-table
+  %table.table
+    %thead
+      %tr
+        %th= game_t('admin.games.tournaments.name')
+        %th= game_t('admin.games.tournaments.size')
+        %th= game_t('admin.games.tournaments.status')
+        %th= game_t('admin.games.tournaments.champion')
+        %th.game-table__number= game_t('admin.games.tournaments.reward')
+        %th.bot-sheet-table__actions
+    %tbody
+      - @tournaments.each do |tournament|
+        %tr.game-table__row{ data: { href: admin_game_tournament_path(tournament) } }
+          %td.bot-sheet-table__text
+            %strong= link_to tournament.name, admin_game_tournament_path(tournament)
+          %td.bot-sheet-table__text= game_t('admin.games.tournaments.people', count: tournament.size)
+          %td.bot-sheet-table__text
+            %span.game-badge{ class: "game-badge--tournament-#{tournament.status}" }= game_t("admin.games.tournaments.statuses.#{tournament.status}")
+          %td.bot-sheet-table__text= tournament.winner_house&.label || '—'
+          %td.game-table__number= tournament.reward
+          %td.bot-sheet-table__actions
+            = button_to admin_game_tournament_path(tournament), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.tournaments.delete'), data: { confirm: game_t('admin.games.tournaments.delete_confirm', name: tournament.name) } do
+              = material_symbol('delete')
+      - if @tournaments.empty?
         %tr
-          %th= game_t('admin.games.tournaments.name')
-          %th= game_t('admin.games.tournaments.size')
-          %th= game_t('admin.games.tournaments.status')
-          %th= game_t('admin.games.tournaments.champion')
-          %th.bot-sheet-table__actions
-      %tbody
-        - @tournaments.each do |tournament|
-          %tr
-            %td.bot-sheet-table__text= link_to tournament.name, admin_game_tournament_path(tournament)
-            %td.bot-sheet-table__text= game_t('admin.games.tournaments.people', count: tournament.size)
-            %td.bot-sheet-table__text= game_t("admin.games.tournaments.statuses.#{tournament.status}")
-            %td.bot-sheet-table__text= tournament.winner_house&.label || '—'
-            %td.bot-sheet-table__actions
-              = link_to material_symbol('edit'), admin_game_tournament_path(tournament), class: 'icon-button', title: game_t('admin.games.tournaments.edit')
-              = button_to admin_game_tournament_path(tournament), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.tournaments.delete'), data: { confirm: game_t('admin.games.tournaments.delete_confirm', name: tournament.name) } do
-                = material_symbol('delete')
+          %td.bot-sheet-table__text{ colspan: 6 }= game_t('admin.games.tournaments.empty')
 
-= form_tag admin_game_tournaments_path, method: :post, class: 'simple_form bot-sheet-add-row' do
-  %h4= game_t('admin.games.tournaments.new')
-  .bot-sheet-fields
-    .input.with_label.bot-sheet-field--wide
+= render layout: 'admin/game_characters/modal', locals: { id: 'tournament-add', title: game_t('admin.games.tournaments.new') } do
+  = form_tag admin_game_tournaments_path, method: :post, class: 'simple_form' do
+    .input.with_label.string.required
       .label_input
         %label{ for: 'new_tournament_name' }= game_t('admin.games.tournaments.name')
         .label_input__wrapper= text_field_tag 'game_tournament[name]', '', id: 'new_tournament_name', required: true, placeholder: game_t('admin.games.tournaments.name_placeholder')
-    .input.with_label
-      .label_input
-        %label{ for: 'new_tournament_size' }= game_t('admin.games.tournaments.size')
-        .label_input__wrapper= select_tag 'game_tournament[size]', options_for_select(GameTournament::SIZES.map { |size| [game_t('admin.games.tournaments.people', count: size), size] }, 8), id: 'new_tournament_size'
-    .input.with_label
-      .label_input
-        %label{ for: 'new_tournament_reward' }= game_t('admin.games.tournaments.reward')
-        .label_input__wrapper= number_field_tag 'game_tournament[reward]', 50, id: 'new_tournament_reward', min: 0
-  .actions
-    = button_tag safe_join([material_symbol('add'), game_t('admin.games.tournaments.create')]), type: :submit, class: 'button'
+    .bot-sheet-fields
+      .input.with_label
+        .label_input
+          %label{ for: 'new_tournament_size' }= game_t('admin.games.tournaments.size')
+          .label_input__wrapper= select_tag 'game_tournament[size]', options_for_select(GameTournament::SIZES.map { |size| [game_t('admin.games.tournaments.people', count: size), size] }, 8), id: 'new_tournament_size'
+      .input.with_label
+        .label_input
+          %label{ for: 'new_tournament_reward' }= game_t('admin.games.tournaments.reward')
+          .label_input__wrapper= number_field_tag 'game_tournament[reward]', 50, id: 'new_tournament_reward', min: 0
+    .actions
+      %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
+      = button_tag game_t('admin.games.tournaments.create'), type: :submit, class: 'button'

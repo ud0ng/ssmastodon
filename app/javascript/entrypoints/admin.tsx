@@ -4,7 +4,7 @@ import Rails from '@rails/ujs';
 
 import { setupCommunitySelect } from '../mastodon/admin/community_select';
 import { setupCommunityThemeEditor } from '../mastodon/admin/community_theme_editor';
-import { setupBracketEditor, setupGameConfigEditor, setupStatsEditor } from '../mastodon/admin/game_config_editor';
+import { setupGameConfigEditor, setupStatsEditor } from '../mastodon/admin/game_config_editor';
 import ready from '../mastodon/ready';
 
 const setAnnouncementEndsAttributes = (target: HTMLInputElement) => {
@@ -555,7 +555,6 @@ ready(() => {
   setupCommunityThemeEditor();
   setupGameConfigEditor();
   setupStatsEditor();
-  setupBracketEditor();
   setupCommunitySelect();
 
   const domainBlockSeveritySelect = document.querySelector<HTMLSelectElement>(

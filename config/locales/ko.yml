@@ -23,7 +23,32 @@ ko:
   admin:
     system_menu: 시스템
     games:
+      tabs:
+        lessons: 수업
+        list: 목록
+        matches: 매치
+        settings: 설정
+      sections:
+        basic: 기본 설정
+        lesson_messages: 문구 설정
+        messages: 일반 문구
+        points: 점수 설정
+        rewards: 보상 설정
+        rules: 룰 설정
+        summary: 정기 툿
+        tournament: 매치 문구
+      reward_item:
+        chance: 확률 %
+        count: 개수
+        hint: 확률을 비우면 반드시 줍니다. 줄마다 따로 뽑습니다.
+        name: 아이템
+        pick: 아이템 고르기
       shop:
+        give: 지급
+        give_all: 전체 선택
+        give_money: '재화 (%{currency})'
+        give_nothing: 받을 캐릭터와 재화나 아이템을 골라 주세요.
+        given: '%{count}명에게 지급했습니다.'
         image: 그림
         image_hint: 'PNG·JPG·GIF·WEBP, 2MB 까지. 정사각형으로 잘려 인벤토리 카드에도 보입니다.'
         remove_image: 그림 지우기
@@ -162,6 +187,9 @@ ko:
         tournament: 토너먼트 문구
         time: 시간
       houses:
+        label_faction: 진영 부르는 이름
+        label_house: 기숙사 부르는 이름
+        rename: 부르는 이름 바꾸기
         add_named: '%{name} 추가'
         delete_confirm_named: '%{name}(%{term}) 지울까요? 점수 기록도 함께 지워집니다.'
         delete_named: '%{name} 지우기'
@@ -186,7 +214,7 @@ ko:
         delete: '%{term} 지우기'
         delete_confirm: '%{name}(%{term}) 지울까요? 점수 기록도 함께 지워집니다.'
         emoji: 이모지
-        hint: '캐릭터마다 %{house}와 %{faction}을 따로 정할 수 있습니다 (캐릭터 명단에서). 컨텐츠에서 이기면 점수 기준 소속으로 고른 쪽에 점수가 쌓입니다. 부르는 이름은 공통 탭에서 바꿉니다.'
+        hint: '캐릭터마다 %{house}와 %{faction}을 따로 정할 수 있습니다 (캐릭터 명단에서). 컨텐츠에서 이기면 점수 기준 소속으로 고른 쪽에 점수가 쌓입니다. 부르는 이름은 위의 [부르는 이름 바꾸기]에서 바꿉니다.'
         manual: 운영진 조정
         name: '%{term}'
         order: 순서
@@ -273,23 +301,34 @@ ko:
           roster: 명단
           stats: 스탯
         title: 캐릭터 관리
-      kind_hint: 이 컨텐츠의 켜기·명령어·규칙·문구입니다. 수락 대기, 턴 시간, 수락·거절·기권 명령어는 공통 탭에서 정합니다.
-      lesson_hint: 이 과목의 해금·명령어·규칙·문구입니다. 자습/수업 명령어, 등급별 점수, 수업 모집 시간은 수업 공통 탭에서 정합니다.
+      kind_hint: 이 컨텐츠의 켜기·명령어·규칙·문구입니다. 수락 대기, 턴 시간, 수락·거절·기권 명령어는 설정 탭에서 정합니다.
+      lesson_hint: 이 과목의 해금·명령어·규칙·문구입니다. 자습/수업 명령어, 등급별 점수, 수업 모집 시간은 수업 탭에서 정합니다.
       lessons: 수업 공통
       lessons_hint: '마법 수업 공통 설정입니다. [자습/과목]은 혼자, [수업/과목]은 모집 뒤 반 전체가 함께합니다. 등급(O·E·A·P·D·T)은 성적표에 쌓이고 소속 점수가 됩니다.'
       messages_hint: '문구 아래 명령어를 누르면 커서 자리에 들어갑니다. {계정명} {계정아이디} {계정 아바타}(그 사람 프로필 사진을 툿에 첨부) — 앞에 상대·승자·패자·다음 차례를 붙이면 그 사람입니다. {이가} {을를} {은는} 같은 조사는 앞 글자 받침에 맞춰 바뀝니다.'
       overview:
+        command: 명령어
+        count: '%{count}개'
+        edit: 설정
+        name: 컨텐츠
+        open_head: 진행 중
+        recent_head: 최근 1주
+        sections:
+          duels: '1:1 컨텐츠'
+          lessons: 수업
+          teams: 팀 컨텐츠
+        state: 상태
         characters_hint: "%{count}명 · 이름·%{term}·개인 값"
         common_hint: 시스템 계정, 수락·기권 명령어, 대기 시간, 점수 규칙
         events: 서버 이벤트
-        lessons_common: 수업 공통
+        lessons_common: 수업 설정
         lessons_hint: 자습·수업 명령어, 등급별 점수, 모집 시간
         matches: 1:1 대결
         group_games: 여럿이 하는 컨텐츠 (팀전·웹 전용)
         up_to: '최대 %{count}명'
         no_houses: 아직 없음
-        off: 꺼짐
-        on: 켜짐
+        'off': 꺼짐
+        'on': 켜짐
         open: 진행 중 %{count}
         opponent: 상대
         recent: 최근 1주 %{count}판
@@ -309,6 +348,12 @@ ko:
         in_use: "'%{name}' 스탯은 상태 수치(%{users})의 수식에 쓰여서 지울 수 없습니다."
         range_invalid: 최대치는 최소치보다 작을 수 없습니다.
       tournaments:
+        edit_info: 이름·보상 고치기
+        empty: 아직 토너먼트가 없습니다.
+        match: 경기
+        player_a: 선수 A
+        player_b: 선수 B
+        win_by: '%{name} 승'
         champion: 우승
         champion_is: '우승: %{house}'
         content: 컨텐츠
@@ -319,7 +364,7 @@ ko:
         delete_confirm: '%{name} 토너먼트를 지울까요?'
         drop_player: 선수를 끌어다 놓기
         edit: 대진표
-        hint: '대진표에는 사람이 들어갑니다. 경기마다 컨텐츠·시간·선수를 정하면 그 시간에 시스템이 경기를 열고, 이긴 사람이 다음 칸으로 올라갑니다. 이긴 경기 수가 가장 많은 %{term}이(가) 우승합니다 (동률이면 결승 승자의 %{term}). 공통 탭의 점수 방식이 토너먼트제일 때만 평소 컨텐츠 점수가 꺼집니다.'
+        hint: '대진표에는 사람이 들어갑니다. 경기마다 컨텐츠·시간·선수를 정하면 그 시간에 시스템이 경기를 열고, 이긴 사람이 다음 칸으로 올라갑니다. 이긴 경기 수가 가장 많은 %{term}이(가) 우승합니다 (동률이면 결승 승자의 %{term}). 설정 탭의 점수 방식이 토너먼트제일 때만 평소 컨텐츠 점수가 꺼집니다.'
         locked: 이미 시작했거나 끝난 경기는 바꿀 수 없습니다.
         match_number: '%{number}경기'
         match_statuses:
@@ -328,7 +373,7 @@ ko:
           playing: 진행 중
           ready: 예약됨
           waiting: 준비 중
-        mode_hint: 지금 점수 방식이 점수제라서 평소 컨텐츠 점수도 계속 쌓입니다. 토너먼트만 반영하려면 공통 탭에서 토너먼트제로 바꾸세요.
+        mode_hint: 지금 점수 방식이 점수제라서 평소 컨텐츠 점수도 계속 쌓입니다. 토너먼트만 반영하려면 설정 탭에서 토너먼트제로 바꾸세요.
         name: 토너먼트 이름
         name_placeholder: '예: 1학기 기숙사 대항전'
         new: 새 토너먼트

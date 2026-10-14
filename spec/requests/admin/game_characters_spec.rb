@@ -91,6 +91,12 @@ RSpec.describe 'Admin character roster' do
     expect(GameHouse.factions.pluck(:name)).to include('중립')
   end
 
+  it 'renames houses and factions from the groups tab' do
+    patch labels_admin_game_houses_path, params: { labels: { house: '반', faction: '' } }
+
+    expect(Game::Config.for('common')).to include('house_label' => '반', 'faction_label' => '진영')
+  end
+
   it 'moves stat values and formulas when a stat is renamed' do
     character.update!(stats: { '힘' => '7' })
     field = GameCharacterField.find_by(name: '힘')

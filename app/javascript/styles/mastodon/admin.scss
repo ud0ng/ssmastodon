@@ -3904,3 +3904,206 @@ body .image-picker {
     margin-top: 8px;
   }
 }
+
+// 컨텐츠 설정 개편: 목록 표, 한 줄 안내, 문구 배지, 매치 표, 지급
+.game-table__number {
+  text-align: end !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-table__icon {
+  width: 22px;
+  text-align: center;
+}
+
+.game-table__row--off {
+  opacity: 0.6;
+}
+
+.game-config__hint {
+  margin-bottom: 14px;
+}
+
+.game-config__flow {
+  display: block;
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+// 문구에 넣는 명령어 배지: 사람(강조색) · 값(기본) · 조사(점선)
+.simple_form .game-token,
+.game-token {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, $ui-highlight-color 14%, transparent);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  opacity: 1;
+
+  &--person {
+    background: color-mix(in srgb, #b08d3c 22%, transparent);
+    color: inherit;
+  }
+
+  &--particle {
+    border: 1px dashed currentcolor;
+    background: transparent;
+    font-weight: 400;
+    opacity: 0.75;
+  }
+}
+
+button.game-token:hover,
+button.game-token:focus-visible {
+  border-color: $ui-highlight-color;
+}
+
+.game-tokens__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 12px;
+
+  .hint {
+    flex: 1 1 100%;
+    margin: 0;
+  }
+}
+
+.game-tournament__bar h4 {
+  flex-wrap: wrap;
+}
+
+.game-tournament__tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.game-tournament__table {
+  select,
+  input[type='datetime-local'] {
+    width: 100%;
+    min-width: 120px;
+    padding: 6px 8px;
+    border: 1px solid var(--background-border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 13px;
+  }
+
+  .table td {
+    padding: 6px 8px;
+  }
+}
+
+.game-tournament__winner {
+  font-weight: 700;
+
+  &::after {
+    content: ' ★';
+  }
+}
+
+.game-tournament__decide {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.game-badge--tournament-running,
+.game-badge--match-playing,
+.game-badge--match-judging {
+  --badge: #d08a2c;
+}
+
+.game-badge--tournament-finished,
+.game-badge--match-done {
+  --badge: #3c9a5f;
+}
+
+.game-give__targets {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--background-border-color);
+  border-radius: 10px;
+}
+
+.game-give__all {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.game-give__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 4px 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.game-give__target {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 14px;
+}
+
+// 표 위 제목 줄: 밑줄은 줄 전체에 (제목만 밑줄이 그어지지 않게)
+.game-toolbar h4 {
+  margin: 0 !important;
+  padding: 0 !important;
+  border-bottom: 0 !important;
+}
+
+.game-houses__title {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--background-border-color);
+}
+
+.game-tournament__bar {
+  justify-content: flex-start;
+
+  h4 {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 8px;
+    align-items: center;
+  }
+}
+
+// 목록 표: 묶음마다 칸 너비를 같게
+.game-overview-table .table {
+  table-layout: fixed;
+
+  th:nth-child(1) {
+    width: 22%;
+  }
+
+  th:nth-child(2) {
+    width: 38%;
+  }
+
+  th:nth-child(3) {
+    width: 12%;
+  }
+
+  th:nth-child(4),
+  th:nth-child(5) {
+    width: 11%;
+  }
+
+  td code {
+    white-space: normal;
+  }
+}

@@ -52,6 +52,15 @@ module Admin
       redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
     end
 
+    # 기숙사·진영을 부르는 이름 (공통 설정 house_label / faction_label)
+    def labels
+      authorize :settings, :update?
+
+      values = GameHouse::CATEGORIES.to_h { |category| ["#{category}_label", params.dig(:labels, category).to_s.strip.first(20)] }.compact_blank
+      Game::Config.merge!('common', values) if values.any?
+      redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
+    end
+
     # 운영진 점수 조정 (+/-)
     def adjust
       authorize :settings, :update?

@@ -429,7 +429,15 @@ export const setupGameConfigEditor = () => {
 // 이름=값 / 이름|개수|메모 같은 줄 글을 칸 표로 (data-stats-editor: { key, value } 또는 { columns: [...], sep })
 export const setupStatsEditor = () => {
   document.querySelectorAll<HTMLTextAreaElement>('textarea[data-stats-editor]').forEach((textarea) => {
-    const options = JSON.parse(textarea.dataset.statsEditor ?? '{}') as { key?: string; value?: string; columns?: string[]; sep?: string };
+    // choices: 첫 칸을 고르기(select)로 (예: 보상 아이템 = 상점 아이템 이름)
+    const options = JSON.parse(textarea.dataset.statsEditor ?? '{}') as {
+      key?: string;
+      value?: string;
+      columns?: string[];
+      sep?: string;
+      choices?: string[];
+      choice_placeholder?: string;
+    };
     const columns = options.columns ?? [options.key ?? '', options.value ?? ''];
     const sep = options.sep ?? '=';
     const table = document.createElement('div');
@@ -457,6 +465,25 @@ export const setupStatsEditor = () => {
           return cells.join(sep);
         })
         .join('\n');
+      // 설정 화면의 '변경됨'·저장 줄이 알아채게
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    const cellInput = (cell: string, column: number) => {
+      if (column !== 0 || !options.choices) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = cell;
+        input.placeholder = columns[column] ?? '';
+        return input;
+      }
+
+      const select = document.createElement('select');
+      const names = cell && !options.choices.includes(cell) ? [cell, ...options.choices] : options.choices;
+      select.append(new Option(options.choice_placeholder ?? columns[0] ?? '', ''));
+      names.forEach((name) => select.append(new Option(name, name, false, name === cell)));
+      select.value = cell;
+      return select;
     };
 
     const render = () => {
@@ -466,10 +493,7 @@ export const setupStatsEditor = () => {
         const line = document.createElement('div');
         line.className = 'game-stats__row';
         row.forEach((cell, column) => {
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.value = cell;
-          input.placeholder = columns[column] ?? '';
+          const input = cellInput(cell, column);
           input.addEventListener('change', () => {
             const next = rows();
             const current = next[index] ?? columns.map(() => '');
@@ -500,66 +524,5 @@ export const setupStatsEditor = () => {
     textarea.classList.add('game-chips__source');
     textarea.after(table);
     render();
-  });
-};
-
-// 토너먼트 대진표 (admin/game_tournaments/show): 경기를 누르면 오른쪽 패널에 그 경기 편집,
-// 선수 칩을 경기 칸에 끌어다 놓으면 그 경기 폼에 넣고 바로 저장한다.
-export const setupBracketEditor = () => {
-  const root = document.querySelector<HTMLElement>('[data-bracket-editor]');
-  if (!root) return;
-
-  const select = (id: string) => {
-    root.querySelectorAll<HTMLElement>('.game-bracket__match').forEach((match) => {
-      match.classList.toggle('game-bracket__match--selected', match.dataset.match === id);
-    });
-    root.querySelectorAll<HTMLElement>('[data-edit]').forEach((panel) => {
-      panel.hidden = panel.dataset.edit !== id;
-    });
-    const hint = root.querySelector<HTMLElement>('.game-bracket__panel-hint');
-    if (hint) hint.hidden = true;
-  };
-
-  root.querySelectorAll<HTMLElement>('.game-bracket__match').forEach((match) => {
-    const open = () => {
-      if (match.dataset.match) select(match.dataset.match);
-    };
-    match.addEventListener('click', open);
-    match.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        open();
-      }
-    });
-  });
-
-  // 저장하고 돌아오면 (#match-3) 그 경기를 연다
-  const fromHash = /^#match-(\d+)$/.exec(window.location.hash)?.[1];
-  if (fromHash) select(fromHash);
-
-  root.querySelectorAll<HTMLElement>('.game-bracket__chip').forEach((chip) => {
-    chip.addEventListener('dragstart', (event) => {
-      event.dataTransfer?.setData('text/plain', chip.dataset.accountId ?? '');
-    });
-  });
-
-  root.querySelectorAll<HTMLElement>('.game-bracket__slot[data-droppable]').forEach((slot) => {
-    slot.addEventListener('dragover', (event) => {
-      event.preventDefault();
-      slot.classList.add('game-bracket__slot--over');
-    });
-    slot.addEventListener('dragleave', () => {
-      slot.classList.remove('game-bracket__slot--over');
-    });
-    slot.addEventListener('drop', (event) => {
-      event.preventDefault();
-      slot.classList.remove('game-bracket__slot--over');
-      const accountId = event.dataTransfer?.getData('text/plain');
-      const form = root.querySelector<HTMLFormElement>(`form[data-match-form="${slot.dataset.match}"]`);
-      const field = form?.querySelector<HTMLSelectElement>(`select[data-slot="${slot.dataset.slot}"]`);
-      if (!accountId || !form || !field) return;
-      field.value = accountId;
-      form.requestSubmit();
-    });
   });
 };

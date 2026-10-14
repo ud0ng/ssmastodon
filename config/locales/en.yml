@@ -25,7 +25,32 @@ en:
   admin:
     system_menu: System
     games:
+      tabs:
+        lessons: Lessons
+        list: List
+        matches: Matches
+        settings: Settings
+      sections:
+        basic: Basic
+        lesson_messages: Messages
+        messages: General messages
+        points: Points
+        rewards: Rewards
+        rules: Rules
+        summary: Scheduled posts
+        tournament: Match messages
+      reward_item:
+        chance: Chance %
+        count: Count
+        hint: Leave the chance empty to always give it. Each row is drawn separately.
+        name: Item
+        pick: Choose an item
       shop:
+        give: Give
+        give_all: Select all
+        give_money: "Currency (%{currency})"
+        give_nothing: Choose characters and some currency or an item.
+        given: "Given to %{count} characters."
         image: Picture
         image_hint: 'PNG, JPG, GIF or WEBP up to 2MB. Cropped square and also shown on inventory cards.'
         remove_image: Remove picture
@@ -164,6 +189,9 @@ en:
         tournament: Tournament messages
         time: Time
       houses:
+        label_faction: Name for factions
+        label_house: Name for houses
+        rename: Rename
         add_named: 'Add %{name}'
         delete_confirm_named: 'Delete %{name} (%{term})? Its point history is deleted too.'
         delete_named: 'Delete %{name}'
@@ -188,7 +216,7 @@ en:
         delete: 'Delete %{term}'
         delete_confirm: 'Delete %{name}? Its point records are deleted too.'
         emoji: Emoji
-        hint: 'Each character can have a %{house} and a %{faction} (set on the roster). Wins add points to whichever is chosen as the scoring unit. Rename them in the Common tab.'
+        hint: 'Each character can have a %{house} and a %{faction} (set on the roster). Wins add points to whichever is chosen as the scoring unit. Rename them with the Rename button above.'
         manual: Manual adjustment
         name: '%{term}'
         order: Order
@@ -275,12 +303,23 @@ en:
           roster: Roster
           stats: Stats
         title: Characters
-      kind_hint: This game's switch, commands, rules and messages. Time limits and accept/decline/forfeit commands are in the Common tab.
+      kind_hint: This game's switch, commands, rules and messages. Time limits and accept/decline/forfeit commands are in the Settings tab.
       lesson_hint: This subject's unlock, commands, rules and messages. Study/class commands and grade points are in the Lessons tab.
       lessons: Lessons
       lessons_hint: 'Shared lesson settings. [study/subject] is solo, [class/subject] gathers a class first. Grades go to the report card and become points.'
       messages_hint: 'Click a token under a message to insert it. {계정명} {계정아이디} {계정 아바타} (attaches that profile picture); prefix 상대/승자/패자 for other people. Particles like {이가} follow the previous letter.'
       overview:
+        command: Command
+        count: "%{count}"
+        edit: Settings
+        name: Content
+        open_head: Running
+        recent_head: Last week
+        sections:
+          duels: '1:1 content'
+          lessons: Lessons
+          teams: Team content
+        state: State
         characters_hint: "%{count} people · names, %{term}, stats"
         common_hint: System account, accept/forfeit commands, timers, scoring
         events: Server events
@@ -290,8 +329,8 @@ en:
         group_games: Group games (teams & web-only)
         up_to: 'up to %{count}'
         no_houses: None yet
-        off: Off
-        on: On
+        'off': 'Off'
+        'on': 'On'
         open: "%{count} in progress"
         opponent: opponent
         recent: "%{count} games this week"
@@ -311,6 +350,12 @@ en:
         in_use: "'%{name}' is used in the formula of %{users} and cannot be deleted."
         range_invalid: Max cannot be smaller than min.
       tournaments:
+        edit_info: Edit name and reward
+        empty: No tournaments yet.
+        match: Match
+        player_a: Player A
+        player_b: Player B
+        win_by: "%{name} wins"
         champion: Champion
         champion_is: 'Champion: %{house}'
         content: Content
