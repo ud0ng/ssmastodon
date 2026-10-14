@@ -199,30 +199,38 @@ ko:
         when: 시간
       manage:
         detail:
-          back: 목록으로
+          add_item: 아이템 추가
+          back: 명단으로
+          content: 컨텐츠
+          currency_records: 최근 재화 기록
+          games: 최근 전적
+          inventory: 인벤토리
+          item_count: 개수
+          item_name: 아이템
+          item_note: 메모
           memo: 메모
+          money: 재화
+          no_games: 아직 끝난 컨텐츠가 없습니다.
+          no_items: 아이템이 없습니다.
+          no_records: 아직 재화 기록이 없습니다.
           no_stats: 스탯이 아직 없습니다. 스탯 탭에서 만들어 주세요.
-          profile: 프로필
+          opponents: 함께한 사람
+          profile: 소속
           range: '%{min} ~ %{max}'
+          reason: 사유
+          record: 전적
+          record_summary: '%{win}승 %{lose}패 %{draw}무'
+          remove_item: 이 줄 지우기
+          results:
+            draw: 무
+            lose: 패
+            none: 참여
+            win: 승
           stats: 스탯
           statuses: 상태 수치
           statuses_hint: 스탯으로 자동 계산한 값입니다. 스탯을 바꿔 저장하면 다시 계산됩니다.
-        fields:
-          add: 항목 추가
-          delete: 항목 지우기
-          delete_confirm: "'%{name}' 항목을 지울까요? 캐릭터에 넣은 값도 함께 지워집니다."
-          description: 설명
-          edit: 고치기
-          empty: 항목이 아직 없습니다.
-          hint: 캐릭터마다 적는 정보입니다 (예 혈통, 지팡이). '고르기'는 정해 둔 값 중 하나를 고르고 색을 줄 수 있고, '글'은 자유롭게 적습니다. 명단 표에 열로 나타납니다.
-          kind: 종류
-          kinds:
-            select: 고르기
-            text: 글
-          name: 이름
-          name_placeholder: '예: 혈통, 지팡이'
-          options: 항목
-          options_hint: "'종류'가 고르기일 때 고를 값 (한 줄에 하나, 뒤에 |#색 을 붙이면 색)"
+          summary_items: '아이템 %{count}개'
+          when: 때
         none: 없음
         roster:
           acct: 아이디
@@ -256,7 +264,6 @@ ko:
             stat: 스탯
             status: 상태 수치
         tabs:
-          fields: 항목
           houses: 소속
           roster: 명단
           stats: 스탯

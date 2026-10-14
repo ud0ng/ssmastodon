@@ -28,7 +28,8 @@ class BotSheets
   MOVED_WORKSHEETS = { 'main' => %w(명단 관리 상점 출석부 기록) }.freeze
   # 도움말에서 옮긴 명령어 ([ 다음 첫 낱말, 공백 무시). 운영진 명령어 [소지금 추가] [아이템 차감] [힘 변경] 도 포함
   MOVED_COMMANDS = %w(가방 상점 구매 설명 소모 상태확인 상태 사용 양도 출석 소지금추가 소지금차감 아이템추가 아이템차감).freeze
-  HELP_WORKSHEET = '도움말'
+  # 마스토돈으로 옮긴 명령어 줄을 숨길 워크시트
+  HELP_WORKSHEETS = ['도움말', '운영진 명령어'].freeze
 
   # 켜기/끄기 스위치로 보여 줄 값 (켜짐, 꺼짐)
   SWITCH = %w(사용 미사용).freeze

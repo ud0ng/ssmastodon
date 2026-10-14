@@ -528,6 +528,48 @@ document.addEventListener('click', ({ target }) => {
     target.close();
 });
 
+// 캐릭터 명단: 줄 아무 곳이나 누르면 상세 화면 (링크·버튼·체크박스를 누른 건 그대로)
+Rails.delegate(document, 'tr[data-href]', 'click', ({ target }) => {
+  if (!(target instanceof Element) || target.closest('a, button, input, label'))
+    return;
+
+  const href = target.closest<HTMLElement>('tr[data-href]')?.dataset.href;
+  if (href) window.location.assign(href);
+});
+
+// 캐릭터 상세 > 인벤토리: 줄 추가(템플릿 복사)·지우기
+const syncItemRowsEmpty = (box: Element) => {
+  const empty = box.querySelector<HTMLElement>('[data-item-rows-empty]');
+  const body = box.querySelector('[data-item-rows-body]');
+  if (empty && body)
+    empty.hidden =
+      body.querySelectorAll('tr:not([data-item-rows-empty])').length > 0;
+};
+
+Rails.delegate(document, '[data-item-rows-add]', 'click', ({ target }) => {
+  const box = target instanceof Element && target.closest('[data-item-rows]');
+  if (!box) return;
+
+  const template = box.querySelector<HTMLTemplateElement>(
+    'template[data-item-rows-template]',
+  );
+  const body = box.querySelector('[data-item-rows-body]');
+  const row = template?.content.firstElementChild?.cloneNode(true);
+  if (!(row instanceof HTMLElement) || !body) return;
+
+  body.querySelector('[data-item-rows-empty]')?.before(row);
+  syncItemRowsEmpty(box);
+  row.querySelector<HTMLInputElement>('input')?.focus();
+});
+
+Rails.delegate(document, '[data-item-rows-remove]', 'click', ({ target }) => {
+  if (!(target instanceof Element)) return;
+
+  const box = target.closest('[data-item-rows]');
+  target.closest('tr')?.remove();
+  if (box) syncItemRowsEmpty(box);
+});
+
 ready(() => {
   document
     .querySelectorAll<HTMLSelectElement>('select[data-stat-type]')

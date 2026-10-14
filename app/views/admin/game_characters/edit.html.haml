@@ -5,104 +5,144 @@
   = render 'admin/game_characters/heading'
 
 - none = game_t('admin.games.manage.none')
+- account = @character.account
+- win, lose, draw = @record['win'].to_i, @record['lose'].to_i, @record['draw'].to_i
+
+-# 머리: 누구인지 + 한눈에 보는 요약 (재화·아이템·전적)
+.game-detail__head
+  = image_tag full_asset_url(account.avatar_static_url), alt: '', class: 'game-detail__avatar'
+  .game-detail__who
+    %h3= @character.display_name
+    %p
+      = link_to "@#{account.username}", admin_account_path(account.id)
+      - [@character.house, @character.faction].compact.each do |group|
+        %span.game-badge{ style: "--badge: #{group.color.presence || '#6b5b3e'}" }= group.name
+      - if @character.grade
+        %span.game-badge= game_t('admin.games.characters.grade_value', grade: @character.grade)
+  .game-detail__summary
+    .game-detail__summary-item
+      %small= game_t('admin.games.manage.detail.money')
+      %strong= "#{number_with_delimiter(@character.money)} #{@currency}"
+    .game-detail__summary-item
+      %small= game_t('admin.games.manage.detail.inventory')
+      %strong= game_t('admin.games.manage.detail.summary_items', count: @character.item_count)
+    .game-detail__summary-item
+      %small= game_t('admin.games.manage.detail.record')
+      %strong= game_t('admin.games.manage.detail.record_summary', win: win, lose: lose, draw: draw)
+  = link_to safe_join([material_symbol('chevron_left'), game_t('admin.games.manage.detail.back')]), admin_game_characters_path(filter_params), class: 'button button-tertiary game-detail__back'
 
 = simple_form_for @character, url: admin_game_character_path(@character, filter_params), method: :patch, html: { class: 'game-detail' } do |f|
   = render 'shared/error_messages', object: @character
 
-  -# 머리: 아바타·이름·아이디
-  .game-detail__head
-    = image_tag full_asset_url(@character.account.avatar_static_url), alt: '', class: 'game-detail__avatar'
-    .game-detail__who
-      %h3= @character.display_name
-      %p= link_to "@#{@character.account.username}", admin_account_path(@character.account_id)
-    .game-detail__chips
-      - if @character.house
-        %span.game-badge{ style: "--badge: #{@character.house.color.presence || '#6b5b3e'}" }= @character.house.name
-      - if @character.faction
-        %span.game-badge{ style: "--badge: #{@character.faction.color.presence || '#6b5b3e'}" }= @character.faction.name
+  .game-detail__grid
+    .game-detail__column
+      -# 소속
+      %section.game-card
+        %h4= game_t('admin.games.manage.detail.profile')
+        .bot-sheet-fields
+          = f.input :name, wrapper: :with_label, label: game_t('admin.games.characters.name'), placeholder: account.display_name.presence || account.username, hint: game_t('admin.games.characters.name_hint')
+          = f.input :grade, as: :integer, wrapper: :with_label, label: game_t('admin.games.manage.roster.grade'), input_html: { min: 1, max: 7 }
+          = f.input :game_house_id, as: :select, collection: @houses.map { |house| [house.name, house.id] }, include_blank: none, wrapper: :with_label, label: @labels['house_label']
+          = f.input :game_faction_id, as: :select, collection: @factions.map { |faction| [faction.name, faction.id] }, include_blank: none, wrapper: :with_label, label: @labels['faction_label']
 
-  -# 프로필
-  %section.game-card
-    %h4= game_t('admin.games.manage.detail.profile')
-    .bot-sheet-fields
-      = f.input :name, wrapper: :with_label, label: game_t('admin.games.characters.name'), placeholder: @character.account.display_name.presence || @character.account.username, hint: game_t('admin.games.characters.name_hint')
-      = f.input :grade, as: :integer, wrapper: :with_label, label: game_t('admin.games.manage.roster.grade'), input_html: { min: 1, max: 7 }
-      = f.input :game_house_id, as: :select, collection: @houses.map { |house| [house.name, house.id] }, include_blank: none, wrapper: :with_label, label: @labels['house_label']
-      = f.input :game_faction_id, as: :select, collection: @factions.map { |faction| [faction.name, faction.id] }, include_blank: none, wrapper: :with_label, label: @labels['faction_label']
-      - @profile_fields.each do |field|
-        .input.with_label
-          .label_input
-            %label{ for: "profile_#{field.id}" }= field.name
-            .label_input__wrapper
-              - value = @character.profile_value(field)
-              - if field.select?
-                = select_tag "game_character[profile][#{field.id}]", options_for_select(field.choices.map { |choice| choice['name'] }, value), include_blank: none, id: "profile_#{field.id}"
-              - else
-                = text_field_tag "game_character[profile][#{field.id}]", value, id: "profile_#{field.id}"
-          - if field.description.present?
-            %span.hint= field.description
+      -# 스탯: 입력하는 스탯 + 자동 계산되는 상태 수치
+      %section.game-card
+        %h4= game_t('admin.games.manage.detail.stats')
+        - if @base_stats.empty? && @statuses.empty?
+          %p.hint= game_t('admin.games.manage.detail.no_stats')
+        - else
+          .bot-sheet-fields
+            - @base_stats.each do |stat|
+              .input.with_label.integer
+                .label_input
+                  %label{ for: "stat_#{stat.id}" }= stat.name
+                  .label_input__wrapper
+                    = number_field_tag "game_character[stat_values][#{stat.name}]", @character.stat_value(stat), id: "stat_#{stat.id}", min: stat.min, max: stat.max, step: 1
+                %span.hint= game_t('admin.games.manage.detail.range', min: stat.min, max: stat.max)
+          - if @statuses.any?
+            %h5= game_t('admin.games.manage.detail.statuses')
+            .game-detail__status-list
+              - @statuses.each do |status|
+                .game-detail__status
+                  %span= status.name
+                  %strong= @character.status_value(status, @base_stats) || '-'
+                  %small= status.formula.gsub(/\{\{\s*([^{}]+?)\s*\}\}/, '\1')
+            %p.hint= game_t('admin.games.manage.detail.statuses_hint')
 
-  -# 스탯: 입력하는 스탯 + 자동 계산되는 상태 수치
-  %section.game-card
-    %h4= game_t('admin.games.manage.detail.stats')
-    - if @base_stats.empty? && @statuses.empty?
-      %p.hint= game_t('admin.games.manage.detail.no_stats')
-    - else
-      .bot-sheet-fields
-        - @base_stats.each do |stat|
-          .input.with_label
-            .label_input
-              %label{ for: "stat_#{stat.id}" }= stat.name
-              .label_input__wrapper
-                = number_field_tag "game_character[stat_values][#{stat.name}]", @character.stats[stat.name], id: "stat_#{stat.id}", min: stat.min, max: stat.max, step: 1, placeholder: stat.min
-            %span.hint= game_t('admin.games.manage.detail.range', min: stat.min, max: stat.max)
-      - if @statuses.any?
-        .game-detail__statuses
-          %h5= game_t('admin.games.manage.detail.statuses')
-          .game-detail__status-list
-            - @statuses.each do |status|
-              .game-detail__status
-                %span= status.name
-                %strong= @character.status_value(status, @base_stats) || '-'
-                %small= status.formula.gsub(/\{\{\s*([^{}]+?)\s*\}\}/, '\1')
-          %p.hint= game_t('admin.games.manage.detail.statuses_hint')
+      -# 메모
+      %section.game-card
+        %h4= game_t('admin.games.manage.detail.memo')
+        = f.input :note, as: :text, label: false, input_html: { rows: 3, 'aria-label': game_t('admin.games.manage.detail.memo') }
 
-  -# 돈·인벤토리
-  %section.game-card
-    %h4= game_t('admin.games.characters.sections.inventory')
-    .bot-sheet-fields
-      = f.input :money, as: :integer, wrapper: :with_label, label: game_t('admin.games.characters.money', currency: @currency)
-    .fields-group
-      = f.input :inventory_text, as: :text, wrapper: :with_label, label: game_t('admin.games.characters.inventory'), hint: game_t('admin.games.characters.inventory_hint'), input_html: { rows: 3, data: { stats_editor: { columns: [game_t('admin.games.characters.item_name'), game_t('admin.games.characters.item_count'), game_t('admin.games.characters.item_note')], sep: '|' }.to_json } }
-    %h5= game_t('admin.games.characters.recent_rewards')
-    - if @rewards.any?
-      .bot-sheet-table.game-rewards
-        %table.table
-          %thead
-            %tr
-              %th= game_t('admin.games.characters.reward_when')
-              %th= game_t('admin.games.characters.reward_reason')
-              %th= game_t('admin.games.characters.money', currency: @currency)
-              %th= game_t('admin.games.characters.inventory')
-          %tbody
-            - @rewards.each do |reward|
+    .game-detail__column
+      -# 재화 + 최근 재화 기록
+      %section.game-card
+        %h4= game_t('admin.games.manage.detail.money')
+        .bot-sheet-fields
+          = f.input :money, as: :integer, wrapper: :with_label, label: game_t('admin.games.characters.money', currency: @currency), input_html: { step: 1 }
+        %h5= game_t('admin.games.manage.detail.currency_records')
+        - if @rewards.any?
+          .bot-sheet-table.game-table
+            %table.table
+              %tbody
+                - @rewards.each do |reward|
+                  - changes = (reward.money.zero? ? [] : [format('%+d %s', reward.money, @currency)]) + Array(reward.items).map { |item| format('%s %+d', item['name'], item['count'].to_i) } + reward.stats.to_h.map { |stat, delta| format('%s %+d', stat, delta.to_i) }
+                  %tr
+                    %td.bot-sheet-table__text= l(reward.created_at.in_time_zone('Asia/Seoul'), format: :short)
+                    %td.bot-sheet-table__text
+                      %span.game-badge= game_t("admin.games.shop.kinds.#{reward.kind}", default: reward.kind)
+                      = game_reward_reason(reward.reason)
+                    %td.bot-sheet-table__text= changes.join(', ').presence || '-'
+        - else
+          %p.hint= game_t('admin.games.manage.detail.no_records')
+
+      -# 인벤토리: 줄마다 이름·개수·메모 (줄 추가는 템플릿 복사, admin.tsx data-item-rows)
+      %section.game-card{ data: { item_rows: true } }
+        %h4= game_t('admin.games.manage.detail.inventory')
+        .bot-sheet-table.game-table
+          %table.table
+            %thead
               %tr
-                %td.bot-sheet-table__text= l(reward.created_at.in_time_zone('Asia/Seoul'), format: :short)
-                %td.bot-sheet-table__text
-                  - unless reward.kind == 'content'
-                    %span.game-badge= game_t("admin.games.shop.kinds.#{reward.kind}", default: reward.kind)
-                  = game_reward_reason(reward.reason)
-                %td.bot-sheet-table__text= reward.money.zero? ? '-' : format('%+d', reward.money)
-                %td.bot-sheet-table__text= (Array(reward.items).map { |item| item['count'].to_i.negative? ? format('%s %+d', item['name'], item['count'].to_i) : Game::Rewards.item_label(item) } + reward.stats.to_h.map { |stat, delta| format('%s %+d', stat, delta.to_i) }).join(', ').presence || '-'
-    - else
-      %p.hint= game_t('admin.games.characters.no_rewards')
+                %th= game_t('admin.games.manage.detail.item_name')
+                %th.game-detail__count-col= game_t('admin.games.manage.detail.item_count')
+                %th= game_t('admin.games.manage.detail.item_note')
+                %th.bot-sheet-table__actions
+            %tbody{ data: { item_rows_body: true } }
+              - Array(@character.inventory).each do |item|
+                = render 'admin/game_characters/item_row', item: item
+              %tr{ data: { item_rows_empty: true }, hidden: Array(@character.inventory).any? }
+                %td.bot-sheet-table__text{ colspan: 4 }= game_t('admin.games.manage.detail.no_items')
+        %template{ data: { item_rows_template: true } }
+          = render 'admin/game_characters/item_row', item: { 'name' => '', 'count' => 1, 'note' => '' }
+        .game-card__actions
+          = button_tag safe_join([material_symbol('add'), game_t('admin.games.manage.detail.add_item')]), type: :button, class: 'button button-secondary', data: { item_rows_add: true }
 
-  -# 메모
-  %section.game-card
-    %h4= game_t('admin.games.manage.detail.memo')
-    .fields-group
-      = f.input :note, as: :text, wrapper: :with_label, label: game_t('admin.games.characters.note'), input_html: { rows: 3 }
+      -# 전적: 승·패·무와 최근 판
+      %section.game-card
+        %h4
+          = game_t('admin.games.manage.detail.record')
+          %span.game-table__count= game_t('admin.games.manage.detail.record_summary', win: win, lose: lose, draw: draw)
+        - if @games.any?
+          .bot-sheet-table.game-table
+            %table.table
+              %thead
+                %tr
+                  %th= game_t('admin.games.manage.detail.when')
+                  %th= game_t('admin.games.manage.detail.content')
+                  %th= game_t('admin.games.manage.detail.opponents')
+                  %th
+              %tbody
+                - @games.each do |player|
+                  - session = player.session
+                  - others = session.players.reject { |other| other.account_id == player.account_id }
+                  %tr
+                    %td.bot-sheet-table__text= l((session.finished_at || session.updated_at).in_time_zone('Asia/Seoul'), format: :short)
+                    %td.bot-sheet-table__text= game_reward_reason(session.kind)
+                    %td.bot-sheet-table__text= others.map(&:name).join(', ').presence || '-'
+                    %td.bot-sheet-table__text
+                      %span.game-badge{ class: "game-badge--#{player.result || 'none'}" }= game_t("admin.games.manage.detail.results.#{player.result || 'none'}")
+        - else
+          %p.hint= game_t('admin.games.manage.detail.no_games')
 
   .actions.game-detail__actions
     = f.button :button, t('generic.save_changes'), type: :submit
-    = link_to game_t('admin.games.manage.detail.back'), admin_game_characters_path(filter_params), class: 'button'

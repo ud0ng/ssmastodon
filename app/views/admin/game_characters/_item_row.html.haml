@@ -1,0 +1,7 @@
+-# 캐릭터 상세 > 인벤토리 한 줄 (이름·개수·메모)
+%tr
+  %td= text_field_tag 'game_character[inventory][][name]', item['name'], id: nil, class: 'bot-sheet-table__input', 'aria-label': game_t('admin.games.manage.detail.item_name')
+  %td.game-detail__count-col= number_field_tag 'game_character[inventory][][count]', item['count'], id: nil, min: 1, step: 1, class: 'bot-sheet-table__input', 'aria-label': game_t('admin.games.manage.detail.item_count')
+  %td= text_field_tag 'game_character[inventory][][note]', item['note'], id: nil, class: 'bot-sheet-table__input', 'aria-label': game_t('admin.games.manage.detail.item_note')
+  %td.bot-sheet-table__actions
+    = button_tag material_symbol('delete'), type: :button, class: 'icon-button', title: game_t('admin.games.manage.detail.remove_item'), data: { item_rows_remove: true }

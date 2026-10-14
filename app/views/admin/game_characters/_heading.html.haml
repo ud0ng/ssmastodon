@@ -1,4 +1,4 @@
--# 캐릭터 관리 제목 + 탭 (명단 · 소속 · 스탯 · 항목)
+-# 캐릭터 관리 제목 + 탭 (명단 · 소속 · 스탯)
 .content__heading__row
   %h2= game_t('admin.games.manage.title')
 
@@ -8,4 +8,3 @@
       primary.item :roster, safe_join([material_symbol('badge'), game_t('admin.games.manage.tabs.roster')]), admin_game_characters_path, highlights_on: %r{/admin/characters(/\d+/edit)?\z}
       primary.item :houses, safe_join([material_symbol('shield_question'), game_t('admin.games.manage.tabs.houses')]), admin_game_houses_path, highlights_on: %r{/admin/characters/houses}
       primary.item :stats, safe_join([material_symbol('bar_chart_4_bars'), game_t('admin.games.manage.tabs.stats')]), admin_game_character_stats_path, highlights_on: %r{/admin/characters/stats}
-      primary.item :fields, safe_join([material_symbol('tune'), game_t('admin.games.manage.tabs.fields')]), admin_game_character_fields_path, highlights_on: %r{/admin/characters/fields}

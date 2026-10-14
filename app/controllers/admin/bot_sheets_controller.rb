@@ -103,7 +103,7 @@ module Admin
 
     # 기본 시트 도움말: 마스토돈으로 옮긴 재화 명령어 줄은 숨긴다 (자동봇도 [도움말]에서 빼고 마스토돈 문구를 붙인다)
     def hide_moved_help!
-      return unless @bot_sheet.settings? && @worksheet == ::BotSheets::HELP_WORKSHEET
+      return unless @bot_sheet.settings? && ::BotSheets::HELP_WORKSHEETS.include?(@worksheet)
 
       column = @table.header.index { |cell| cell.to_s.strip == '명령어' }
       return if column.nil?

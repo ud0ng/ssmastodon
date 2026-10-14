@@ -37,16 +37,13 @@ RSpec.describe GameCharacterField do
     end
   end
 
-  it 'reads choices from name|colour lines and drops bad colours' do
-    field = described_class.new(name: '혈통', kind: 'select')
-    field.choices_text = "순수혈통|#123456\n혼혈|red\n\n머글 태생"
+  it 'creates the default stats even when old profile fields are left over' do
+    described_class.unscoped.delete_all
+    described_class.create!(name: '혈통', kind: 'select', section: 'profile')
 
-    expect(field.choices).to eq [
-      { 'name' => '순수혈통', 'color' => '#123456' },
-      { 'name' => '혼혈', 'color' => '' },
-      { 'name' => '머글 태생', 'color' => '' },
-    ]
-    expect(field.choices_text).to eq "순수혈통|#123456\n혼혈\n머글 태생"
+    described_class.ensure_defaults!
+
+    expect(described_class.base_stats.pluck(:name)).to eq %w(힘 민첩)
   end
 end
 

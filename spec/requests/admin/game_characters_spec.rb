@@ -9,38 +9,37 @@ RSpec.describe 'Admin character roster' do
     GameHouse.ensure_defaults!
   end
 
-  let(:blood) { GameCharacterField.create!(name: '혈통', kind: 'select', section: 'profile', choices: [{ 'name' => '순수혈통', 'color' => '' }, { 'name' => '혼혈', 'color' => '' }]) }
   let(:order) { GameHouse.factions.find_by(name: '불사조 기사단') }
   let(:eaters) { GameHouse.factions.find_by(name: '죽음을 먹는 자들') }
   let(:character) { GameCharacter.for(Fabricate(:account)) }
 
-  it 'saves faction, profile fields, stats, money and inventory' do
+  it 'saves faction, stats, money and inventory rows from the detail page' do
     patch admin_game_character_path(character), params: {
       game_character: {
         name: '해리',
         money: 120,
         game_faction_id: order.id,
-        profile: { blood.id.to_s => '혼혈', '999' => 'x' },
         stat_values: { '힘' => '150', '민첩' => '', '체력' => '9', '없는 스탯' => '4' },
-        inventory_text: '투명 망토|1|',
+        inventory: [{ name: '투명 망토', count: '1', note: '아버지 유품' }, { name: '', count: '3', note: '' }, { name: '초콜릿 개구리', count: '0', note: '' }],
       },
     }
 
-    expect(response).to redirect_to(admin_game_characters_path)
+    expect(response).to redirect_to(edit_admin_game_character_path(character))
     expect(character.reload).to have_attributes(
       name: '해리',
       money: 120,
       faction: order,
-      profile: { blood.id.to_s => '혼혈' },
       stats: { '힘' => '100' },
-      inventory: [{ 'name' => '투명 망토', 'count' => 1, 'note' => '' }]
+      inventory: [{ 'name' => '투명 망토', 'count' => 1, 'note' => '아버지 유품' }, { 'name' => '초콜릿 개구리', 'count' => 1, 'note' => '' }]
     )
   end
 
-  it 'ignores a choice that is not in the list' do
-    patch admin_game_character_path(character), params: { game_character: { profile: { blood.id.to_s => '없는 값' } } }
+  it 'empties the inventory when every row is removed' do
+    character.update!(inventory: [{ 'name' => '사과', 'count' => 1, 'note' => '' }])
 
-    expect(character.reload.profile).to eq({})
+    patch admin_game_character_path(character), params: { game_character: { name: '' } }
+
+    expect(character.reload.inventory).to eq []
   end
 
   it 'sets a faction for several characters at once and clears it again' do
@@ -51,12 +50,6 @@ RSpec.describe 'Admin character roster' do
 
     patch bulk_admin_game_characters_path, params: { ids: [character.id], target: 'faction:none' }
     expect(character.reload.faction).to be_nil
-  end
-
-  it 'sets a select field for several characters at once' do
-    patch bulk_admin_game_characters_path, params: { ids: [character.id], target: "field:#{blood.id}:순수혈통" }
-
-    expect(character.reload.profile).to eq(blood.id.to_s => '순수혈통')
   end
 
   it 'switches the scoring unit to factions without touching house points' do
@@ -129,12 +122,6 @@ RSpec.describe 'Admin character roster' do
     expect { account.update!(suspended_at: Time.now.utc) }.to change(Game::RosterSyncWorker.jobs, :size).by(1)
     expect { account.update!(note: 'hello') }.to_not change(Game::RosterSyncWorker.jobs, :size)
     expect { account.user.destroy! }.to change(Game::RosterSyncWorker.jobs, :size)
-  end
-
-  it 'adds a select field with choices' do
-    post admin_game_character_fields_path, params: { game_character_field: { name: '지팡이', kind: 'select', section: 'profile', choices_text: "딱총나무|#ffffff\n호랑가시나무" } }
-
-    expect(GameCharacterField.find_by(name: '지팡이').choices.pluck('name')).to eq %w(딱총나무 호랑가시나무)
   end
 
   it 'redirects the old houses address' do

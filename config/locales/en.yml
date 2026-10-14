@@ -201,30 +201,38 @@ en:
         when: When
       manage:
         detail:
-          back: Back to list
-          memo: Memo
-          no_stats: No stats yet. Create them in the Stats tab.
-          profile: Profile
-          range: '%{min} ~ %{max}'
+          add_item: Add item
+          back: Back to roster
+          content: Content
+          currency_records: Recent currency records
+          games: Recent games
+          inventory: Inventory
+          item_count: Count
+          item_name: Item
+          item_note: Note
+          memo: Note
+          money: Currency
+          no_games: No finished content yet.
+          no_items: No items.
+          no_records: No currency records yet.
+          no_stats: There are no stats yet. Create them in the Stats tab.
+          opponents: With
+          profile: Groups
+          range: "%{min} – %{max}"
+          reason: Reason
+          record: Record
+          record_summary: "%{win}W %{lose}L %{draw}D"
+          remove_item: Remove this row
+          results:
+            draw: Draw
+            lose: Loss
+            none: Joined
+            win: Win
           stats: Stats
-          statuses: Status values
-          statuses_hint: Calculated from stats. They are recalculated when you change stats and save.
-        fields:
-          add: Add field
-          delete: Delete field
-          delete_confirm: "Delete '%{name}'? Values on characters are removed too."
-          description: Description
-          edit: Edit
-          empty: No fields yet.
-          hint: Information each character has (e.g. bloodline, wand). Choice fields pick from fixed values; text fields are free. They show as columns in the roster.
-          kind: Kind
-          kinds:
-            select: Choice
-            text: Text
-          name: Name
-          name_placeholder: 'e.g. Bloodline'
-          options: Options
-          options_hint: 'Values to choose from for a Choice field (one per line, add |#color for a color)'
+          statuses: Statuses
+          statuses_hint: Calculated from stats. They are recalculated when you save new stats.
+          summary_items: "%{count} items"
+          when: When
         none: None
         roster:
           acct: Username
@@ -258,7 +266,6 @@ en:
             stat: Stat
             status: Status value
         tabs:
-          fields: Fields
           houses: Groups
           roster: Roster
           stats: Stats

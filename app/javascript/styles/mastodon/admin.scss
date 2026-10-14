@@ -3606,6 +3606,82 @@ body .image-picker {
   align-items: center;
 }
 
+// 상세 머리의 요약 (재화·아이템·전적)과 두 칸 배치
+.game-detail__head {
+  flex-wrap: wrap;
+
+  .game-badge {
+    margin-inline-start: 6px;
+  }
+}
+
+.game-detail__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.game-detail__summary-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 96px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, $ui-highlight-color 10%, transparent);
+
+  small {
+    color: $darker-text-color;
+    font-size: 12px;
+  }
+
+  strong {
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.game-detail__back {
+  display: inline-flex;
+  align-items: center;
+}
+
+.game-detail__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 0 16px;
+  align-items: start;
+}
+
+.game-detail__count-col {
+  width: 84px;
+}
+
+.game-card__actions {
+  margin-top: 10px;
+}
+
+.game-card h4 {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.game-table__row[data-href] {
+  cursor: pointer;
+}
+
+.game-badge--win {
+  --badge: #3c9a5f;
+}
+
+.game-badge--lose {
+  --badge: #c0504d;
+}
+
+.game-badge--draw {
+  --badge: #8b8b8b;
+}
+
 .game-houses__name {
   display: inline-flex;
   gap: 8px;
@@ -3650,4 +3726,14 @@ body .image-picker {
 
 .game-table__name strong {
   white-space: nowrap;
+}
+
+// 상세 화면 표는 한 줄로 (넘치면 표 안에서 가로로 밀린다)
+.game-detail__column .bot-sheet-table .table td.bot-sheet-table__text {
+  white-space: nowrap;
+}
+
+.game-detail__who a {
+  color: $darker-text-color;
+  text-decoration: none;
 }

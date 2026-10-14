@@ -48,14 +48,10 @@ class Api::V1::SystemController < Api::BaseController
       GameCharacterField.statuses.map { |field| { name: field.name, value: (character.status_value(field, base) || '-').to_s } }
   end
 
-  # 내 캐릭터 칩: 점수 단위가 아닌 쪽 소속(기숙사 또는 진영) + 고르기·글·숫자 항목
+  # 내 캐릭터 칩: 점수 기준이 아닌 쪽 소속(기숙사 또는 진영)
   def profile_tags(character)
     groups = [character.house, character.faction].compact.reject { |group| group.id == character.group_id }
-    fields = GameCharacterField.profile.filter_map do |field|
-      value = character.profile_value(field)
-      { name: field.name, value: value, color: field.choice(value)&.dig('color').presence } if value.present?
-    end
-    groups.map { |group| { name: group.category, value: group.label, color: group.color.presence } } + fields
+    groups.map { |group| { name: group.category, value: group.label, color: group.color.presence } }
   end
 
   # 컨텐츠 고르기 (묶음별): 진행 중 판 수, 내가 하는 중인지

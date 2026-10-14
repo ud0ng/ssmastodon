@@ -101,7 +101,6 @@ namespace :admin do
   end
   resources :game_shop_items, path: 'games/shop_items', only: [:create, :update, :destroy]
   resources :game_settings, path: 'games', only: [:index, :show, :update]
-  resources :game_character_fields, path: 'characters/fields', only: [:index, :create, :update, :destroy]
   resources :game_character_stats, path: 'characters/stats', only: [:index, :create, :update, :destroy]
   resources :game_characters, path: 'characters', only: [:index, :edit, :update] do
     patch :bulk, on: :collection

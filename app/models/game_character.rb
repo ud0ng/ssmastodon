@@ -60,11 +60,6 @@ class GameCharacter < ApplicationRecord
     nil
   end
 
-  # 항목 값 (select/text, 항목 id 로 저장)
-  def profile_value(field)
-    profile[field.id.to_s]
-  end
-
   # 인벤토리: [{ name, count, note }] ↔ "이름|개수|메모" 줄
   def inventory_text
     Array(inventory).map { |item| [item['name'], item['count'], item['note'].presence].compact.join('|') }.join("\n")
