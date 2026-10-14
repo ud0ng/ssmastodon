@@ -1081,12 +1081,20 @@ ko:
           following: 나와 팔로우한 사람
         title: 커뮤니티 옵션
       community_theme:
+        dm_details: 채팅(DM) 화면
         colors: 색
         details: 세부 색
         details_hint: 비워 두면 메인색·서브색으로 자동으로 정해집니다. 칸에 흐리게 보이는 값과 색 버튼이 지금 자동으로 쓰이는 색입니다. 바꾸고 싶은 항목만 정하세요.
         hint_html: 켜면 사이트 테마 목록에 커뮤니티 테마 (낮)·(밤)이 생깁니다. 메인색은 박스·메뉴·아이콘·아이디/시간 같은 바탕 색, 서브색은 게시 버튼·링크·해시태그 같은 포인트 색이고, 나머지 색은 이 두 색으로 자동으로 만들어집니다.
         images: 이미지
         item_hints:
+          dm_sent: 채팅에서 내가 보낸 말풍선 바탕 (비우면 서브색)
+          dm_sent_text: 내 말풍선 글자
+          dm_received: 상대가 보낸 말풍선 바탕 (비우면 고른 항목 색)
+          dm_received_text: 받은 말풍선 글자
+          dm_input: 메시지 쓰는 칸과 채팅 목록 검색칸 바탕
+          dm_button: 보내기·새 채팅 버튼 (비우면 게시 버튼 색)
+          dm_button_text: 버튼 아이콘·글자
           border: 박스·글쓰기 박스·구분선 테두리
           box: 가운데 타임라인과 오른쪽 칸 박스
           box_opacity: 100이면 배경 이미지가 비치지 않음 (비우면 92)
@@ -1109,6 +1117,13 @@ ko:
           selected: 자동완성·검색에서 고른 항목, 받은 채팅 말풍선
           text: 본문 글자
         items:
+          dm_sent: 보낸 메시지
+          dm_sent_text: 보낸 메시지 글자
+          dm_received: 받은 메시지
+          dm_received_text: 받은 메시지 글자
+          dm_input: 채팅 입력창·검색창
+          dm_button: 채팅 버튼
+          dm_button_text: 채팅 버튼 글자
           border: 테두리
           box: 박스
           box_opacity: 박스 불투명도 (%)
@@ -2168,7 +2183,7 @@ ko:
   settings:
     account: 계정
     account_settings: 계정 설정
-    back: 마스토돈으로 돌아가기
+    back: 돌아가기
     delete: 계정 삭제
     development: 개발
     export: 데이터 내려받기

@@ -23,6 +23,24 @@ defaults: &defaults
   community_theme_main_dark: ''
   community_theme_point_dark: ''
   community_theme_post_button_main: false
+  community_theme_box_border: true
+  community_theme_compose_border: true
+  community_theme_dm_input_border: true
+  community_theme_dm_button_border: false
+  community_theme_dm_sent_light: ''
+  community_theme_dm_sent_dark: ''
+  community_theme_dm_sent_text_light: ''
+  community_theme_dm_sent_text_dark: ''
+  community_theme_dm_received_light: ''
+  community_theme_dm_received_dark: ''
+  community_theme_dm_received_text_light: ''
+  community_theme_dm_received_text_dark: ''
+  community_theme_dm_input_light: ''
+  community_theme_dm_input_dark: ''
+  community_theme_dm_button_light: ''
+  community_theme_dm_button_dark: ''
+  community_theme_dm_button_text_light: ''
+  community_theme_dm_button_text_dark: ''
   community_theme_default: light
   community_theme_paren_size: ''
   community_theme_page_light: ''

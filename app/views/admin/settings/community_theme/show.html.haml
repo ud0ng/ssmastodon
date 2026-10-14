@@ -30,6 +30,26 @@
                 as: :boolean,
                 wrapper: :with_label
 
+  .fields-row
+    .fields-row__column.fields-row__column-6.fields-group
+      = f.input :community_theme_box_border,
+                as: :boolean,
+                wrapper: :with_label
+    .fields-row__column.fields-row__column-6.fields-group
+      = f.input :community_theme_compose_border,
+                as: :boolean,
+                wrapper: :with_label
+
+  .fields-row
+    .fields-row__column.fields-row__column-6.fields-group
+      = f.input :community_theme_dm_input_border,
+                as: :boolean,
+                wrapper: :with_label
+    .fields-row__column.fields-row__column-6.fields-group
+      = f.input :community_theme_dm_button_border,
+                as: :boolean,
+                wrapper: :with_label
+
   .community-theme-editor{ data: { community_theme_editor: true, default_color: CommunityTheme::DEFAULT_COLOR } }
     .community-theme-editor__previews
       - CommunityTheme::MODES.each do |mode|
@@ -66,7 +86,19 @@
       %tr.community-theme-table__group
         %th{ colspan: CommunityTheme::MODES.size + 1 }= t('admin.settings.community_theme.details')
 
-      - CommunityTheme::DETAILS.each do |item|
+      - CommunityTheme::BASE_DETAILS.each do |item|
+        %tr
+          %th
+            .community-theme-table__name= t("admin.settings.community_theme.items.#{item}")
+            .community-theme-table__hint= t("admin.settings.community_theme.item_hints.#{item}")
+          - CommunityTheme::MODES.each do |mode|
+            %td
+              = f.text_field :"community_theme_#{item}_#{mode}", class: 'community-theme-table__input', placeholder: auto[mode][item], pattern: '#[0-9a-fA-F]{6}', maxlength: 7, data: { color_picker: auto[mode][item] }, 'aria-label': "#{t("admin.settings.community_theme.items.#{item}")} (#{t("admin.settings.community_theme.modes.#{mode}")})"
+
+
+      %tr.community-theme-table__group
+        %th{ colspan: CommunityTheme::MODES.size + 1 }= t('admin.settings.community_theme.dm_details')
+      - CommunityTheme::DM_DETAILS.each do |item|
         %tr
           %th
             .community-theme-table__name= t("admin.settings.community_theme.items.#{item}")

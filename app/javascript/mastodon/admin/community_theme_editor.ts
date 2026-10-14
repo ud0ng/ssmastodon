@@ -166,6 +166,14 @@ class Editor {
       mode === 'dark' ? mix(point, 75, '#ffffff') : mix(point, 75, '#000000');
     colors.post_button = this.postButtonMain() ? (colors.nav ?? point) : point;
     colors.post_button_text = onColor(colors.post_button);
+    // 채팅: 보낸 말풍선 = 서브색, 받은 말풍선·입력창 = 고른 항목, 버튼 = 게시 버튼 (community_theme.rb 와 같게)
+    colors.dm_sent = point;
+    colors.dm_sent_text = colors.on_point;
+    colors.dm_received = colors.selected ?? point;
+    colors.dm_received_text = colors.text ?? point;
+    colors.dm_input = colors.selected ?? point;
+    colors.dm_button = colors.post_button;
+    colors.dm_button_text = colors.post_button_text;
     return colors;
   }
 

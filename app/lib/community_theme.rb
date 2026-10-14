@@ -16,7 +16,7 @@ class CommunityTheme
   COLOR_FORMAT = /\A#\h{6}\z/
 
   # 세부 색 (설정 키: community_theme_<항목>_<light|dark>)
-  DETAILS = %w(
+  BASE_DETAILS = %w(
     page
     box
     compose
@@ -35,6 +35,19 @@ class CommunityTheme
     post_button
     post_button_text
   ).freeze
+
+  # 채팅(DM) 화면 세부 색. 정했을 때만 쓰고, 비워 두면 CSS 가 관련 색(서브색·고른 항목 등)을 따라간다.
+  DM_DETAILS = %w(
+    dm_sent
+    dm_sent_text
+    dm_received
+    dm_received_text
+    dm_input
+    dm_button
+    dm_button_text
+  ).freeze
+
+  DETAILS = (BASE_DETAILS + DM_DETAILS).freeze
 
   DEFAULT_BOX_OPACITY = 92
   BOX_OPACITY_RANGE = (0..100)
@@ -56,7 +69,7 @@ class CommunityTheme
   end
 
   # 자동 색이 반투명이라 CSS 가 직접 만드는 항목 (정했을 때만 넘긴다)
-  CSS_DERIVED = %w(hover).freeze
+  CSS_DERIVED = (%w(hover) + DM_DETAILS).freeze
 
   # 화면에 쓰는 색: 정한 세부 색 > 자동 색
   def palette(mode)
@@ -80,7 +93,21 @@ class CommunityTheme
     colors['link_hover'] = mode.to_s == 'dark' ? mix(point, 75, '#ffffff') : mix(point, 75, '#000000')
     colors['post_button'] = post_main ? colors['nav'] : point
     colors['post_button_text'] = on_color(colors['post_button'])
+    # 채팅: 보낸 말풍선 = 서브색, 받은 말풍선·입력창 = 고른 항목, 버튼 = 게시 버튼
+    colors['dm_sent'] = point
+    colors['dm_sent_text'] = colors['on_point']
+    colors['dm_received'] = colors['selected']
+    colors['dm_received_text'] = colors['text']
+    colors['dm_input'] = colors['selected']
+    colors['dm_button'] = colors['post_button']
+    colors['dm_button_text'] = colors['post_button_text']
     colors
+  end
+
+  # 테두리 켜기 (전체 박스 / 글쓰기·입력창 / 채팅 입력창 / 채팅 버튼). 설정이 없으면 켜짐
+  def border?(name)
+    value = setting("#{name}_border")
+    value.nil? || value == true || value.to_s == '1' || value.to_s == 'true'
   end
 
   def base_colors

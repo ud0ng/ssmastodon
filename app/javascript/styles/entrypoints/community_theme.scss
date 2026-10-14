@@ -38,6 +38,15 @@
   --ct-post-button: var(--community-theme-post-button-light);
   --ct-post-button-text: var(--community-theme-post-button-text-light);
 
+  // 채팅(DM): 정하지 않으면 보낸 말풍선 = 서브색, 받은 말풍선·입력창 = 고른 항목, 버튼 = 게시 버튼
+  --ct-dm-sent: var(--community-theme-dm-sent-light, var(--ct-point));
+  --ct-dm-sent-text: var(--community-theme-dm-sent-text-light, var(--ct-on-point));
+  --ct-dm-received: var(--community-theme-dm-received-light, var(--ct-soft));
+  --ct-dm-received-text: var(--community-theme-dm-received-text-light, var(--ct-text));
+  --ct-dm-input: var(--community-theme-dm-input-light, var(--ct-soft));
+  --ct-dm-button: var(--community-theme-dm-button-light, var(--ct-post-button));
+  --ct-dm-button-text: var(--community-theme-dm-button-text-light, var(--ct-post-button-text));
+
   // 박스 불투명도 (배경 이미지가 비치는 정도)
   --ct-panel-alpha: var(--community-theme-box-opacity-light);
   --ct-main-alpha: var(--community-theme-box-opacity-light);
@@ -72,6 +81,15 @@
   --ct-post-button: var(--community-theme-post-button-dark);
   --ct-post-button-text: var(--community-theme-post-button-text-dark);
 
+  // 채팅(DM): 정하지 않으면 보낸 말풍선 = 서브색, 받은 말풍선·입력창 = 고른 항목, 버튼 = 게시 버튼
+  --ct-dm-sent: var(--community-theme-dm-sent-dark, var(--ct-point));
+  --ct-dm-sent-text: var(--community-theme-dm-sent-text-dark, var(--ct-on-point));
+  --ct-dm-received: var(--community-theme-dm-received-dark, var(--ct-soft));
+  --ct-dm-received-text: var(--community-theme-dm-received-text-dark, var(--ct-text));
+  --ct-dm-input: var(--community-theme-dm-input-dark, var(--ct-soft));
+  --ct-dm-button: var(--community-theme-dm-button-dark, var(--ct-post-button));
+  --ct-dm-button-text: var(--community-theme-dm-button-text-dark, var(--ct-post-button-text));
+
   // 박스 불투명도 (배경 이미지가 비치는 정도)
   --ct-panel-alpha: var(--community-theme-box-opacity-dark);
   --ct-main-alpha: var(--community-theme-box-opacity-dark);
@@ -87,6 +105,12 @@
 // 사이트 테마 목록의 커뮤니티 테마 (낮) / (밤). 관리자·환경설정 화면(body.admin)도 같은 색을 쓴다.
 body.community-theme {
   @include community-theme-light;
+
+  // 박스 테두리 켜기/끄기 (디자인 탭: 전체 박스 / 글쓰기·입력창)
+  --ct-box-border: var(--community-theme-box-border, 1px);
+  --ct-compose-border: var(--community-theme-compose-border, 1px);
+  --ct-dm-input-border: var(--community-theme-dm-input-border, 1px);
+  --ct-dm-button-border: var(--community-theme-dm-button-border, 0px);
 
   &.theme-community-dark {
     @include community-theme-dark;
@@ -151,10 +175,10 @@ body.community-theme:not(.admin) {
   --color-post-button-text: var(--ct-post-button-text);
   --color-on-brand: var(--ct-on-point);
   --color-ghost-button-text: var(--ct-point);
-  --color-sent-message-background: var(--ct-point);
-  --color-sent-message-text: var(--ct-on-point);
-  --color-recieve-message-background: var(--ct-soft);
-  --color-recieve-message-text: var(--ct-text);
+  --color-sent-message-background: var(--ct-dm-sent);
+  --color-sent-message-text: var(--ct-dm-sent-text);
+  --color-recieve-message-background: var(--ct-dm-received);
+  --color-recieve-message-text: var(--ct-dm-received-text);
   --color-hover-message-list-background: var(--ct-soft);
 
   // 기본 마스토돈
@@ -177,11 +201,12 @@ body.community-theme:not(.admin) {
   // 가운데 칸(타임라인·채팅)은 반투명 박스, 양옆은 배경이 그대로 보인다.
   .columns-area__panels__main > .columns-area {
     background: var(--ct-panel-main);
+    border-inline: var(--ct-box-border) solid var(--ct-line);
   }
 
-  // 글쓰기 박스: 메인색 테두리, 쓰는 중에는 조금 더 진하게
+  // 글쓰기 박스: 메인색 테두리, 쓰는 중에는 조금 더 진하게 (디자인 탭에서 끌 수 있음)
   .compose-form__highlightable {
-    border: 1px solid var(--ct-line);
+    border: var(--ct-compose-border) solid var(--ct-line);
 
     &.active,
     &:focus-within {
@@ -294,6 +319,41 @@ body.community-theme:not(.admin) {
 
 
 // 관리자·환경설정 화면 (body.admin). 색이 SCSS 에 박혀 있는 곳이 많아 하나씩 덮어쓴다.
+// 채팅(DM) 화면 세부 색 + 검색창 테두리 (디자인 탭)
+body.community-theme:not(.admin) {
+  .search {
+    border: var(--ct-compose-border) solid var(--ct-line);
+  }
+
+  .dm-composer__field,
+  .dm-room-list__search {
+    border: var(--ct-dm-input-border) solid var(--ct-line);
+    background: var(--ct-dm-input);
+  }
+
+  .dm-room-list__search input,
+  .dm-composer__textarea {
+    background: transparent;
+    color: var(--ct-text);
+  }
+
+  .dm-composer__send,
+  .dm-room-list__compose {
+    border: var(--ct-dm-button-border) solid var(--ct-line-strong);
+    background: var(--ct-dm-button);
+    color: var(--ct-dm-button-text);
+
+    .icon {
+      color: inherit;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: color-mix(in srgb, var(--ct-dm-button) 85%, var(--ct-shade));
+    }
+  }
+}
+
 body.community-theme.admin {
   --ct-panel: color-mix(in srgb, var(--ct-base) var(--ct-panel-alpha), transparent);
 
@@ -332,6 +392,7 @@ body.community-theme.admin {
 
   .admin-wrapper .content-wrapper {
     background: var(--ct-panel);
+    border-inline: var(--ct-box-border) solid var(--ct-line);
   }
 
   // 왼쪽 메뉴: 기본 홈 메뉴(.navigation-panel .column-link)처럼 큰 글자·아이콘, 호버는 글자색만,
@@ -347,8 +408,8 @@ body.community-theme.admin {
 
     .icon {
       flex: 0 0 auto;
-      width: 22px;
-      height: 22px;
+      width: 26px;
+      height: 26px;
       margin: 0;
     }
 
@@ -577,6 +638,179 @@ body.community-theme.admin {
     .muted-hint,
     .dim {
       color: var(--ct-dim);
+    }
+  }
+}
+
+// 관리·환경설정 화면: 버튼·안내·체크박스·표·입력칸 (메인 화면 디자인과 같은 느낌으로)
+body.community-theme.admin {
+  // 저장 등 버튼 = 게시 버튼 (색·둥근 모양)
+  .button:not(.button-secondary, .button--destructive, .button-tertiary, .icon-button),
+  .simple_form .btn:not(.negative),
+  .simple_form button[type='submit']:not(.icon-button, .button-secondary) {
+    border: 0;
+    border-radius: 999px;
+    background: var(--ct-post-button);
+    color: var(--ct-post-button-text);
+    font-weight: 700;
+
+    &:hover,
+    &:focus-visible,
+    &:active {
+      background: color-mix(in srgb, var(--ct-post-button) 85%, var(--ct-shade));
+      color: var(--ct-post-button-text);
+    }
+  }
+
+  .button.button-secondary {
+    border: 1px solid var(--ct-post-button);
+    border-radius: 999px;
+    color: var(--ct-post-button);
+
+    &:hover,
+    &:focus-visible {
+      background: color-mix(in srgb, var(--ct-post-button) 12%, transparent);
+      border-color: var(--ct-post-button);
+      color: var(--ct-post-button);
+    }
+  }
+
+  // 안내 상자 (예: 이 서버에 게시하는 모든 글은 내 팔로워에게만 보입니다) = 고른 항목 색, 테두리 없음
+  .flash-message:not(.alert, .warning),
+  .flash-message.notice {
+    border: 0;
+    border-radius: 12px;
+    background: var(--ct-soft);
+    color: var(--ct-text);
+  }
+
+  // 체크박스·라디오: 테두리 없이 입력칸과 같은 바탕, 고르면 서브색으로 채우고 체크/점은 서브색 위 글자색
+  input[type='checkbox'],
+  input[type='radio'] {
+    appearance: none;
+    position: relative;
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    border: 0;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--ct-base) 35%, var(--ct-shade));
+    box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ct-text) 18%, transparent);
+    cursor: pointer;
+    vertical-align: middle;
+    transition: background-color 120ms;
+
+    &:checked {
+      background: var(--ct-point);
+      box-shadow: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--ct-point) 50%, transparent);
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.5;
+    }
+  }
+
+  input[type='checkbox']:checked::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 6px;
+    width: 4px;
+    height: 8px;
+    border: solid var(--ct-on-point);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  input[type='radio'] {
+    border-radius: 50%;
+
+    &:checked {
+      box-shadow: inset 0 0 0 5px var(--ct-point), inset 0 0 0 9px var(--ct-on-point);
+    }
+  }
+
+  // 표: 머리줄은 고른 항목 색, 줄무늬 없이 얇은 줄, 호버는 호버 색
+  .table,
+  .bot-sheet-table .table {
+    border: 0;
+
+    & > thead > tr > th {
+      background: var(--ct-soft);
+      border-bottom: 1px solid var(--ct-line);
+      color: var(--ct-text);
+      font-weight: 700;
+    }
+
+    & > tbody > tr > td,
+    & > tbody > tr > th {
+      background: transparent;
+      border-top: 0;
+      border-bottom: 1px solid var(--ct-line);
+    }
+
+    & > tbody > tr:hover > td {
+      background: var(--ct-hover);
+    }
+  }
+
+  .table-wrapper,
+  .bot-sheet-table {
+    overflow: hidden;
+    border: var(--ct-box-border) solid var(--ct-line);
+    border-radius: 12px;
+  }
+
+  .batch-table__toolbar,
+  .batch-table__row:first-child {
+    border-radius: 12px 12px 0 0;
+  }
+
+  .batch-table__toolbar {
+    background: var(--ct-soft);
+    border-color: var(--ct-line);
+  }
+
+  .batch-table__row {
+    background: transparent;
+    border-color: var(--ct-line);
+
+    &:hover {
+      background: var(--ct-hover);
+    }
+  }
+
+  // 입력칸: 박스보다 확실히 밝은(낮)/어두운(밤) 바탕 + 진한 테두리로 박스 위에서 또렷하게, 고르면 서브색 테두리
+  .simple_form {
+    input[type='text'],
+    input[type='number'],
+    input[type='email'],
+    input[type='password'],
+    input[type='url'],
+    input[type='search'],
+    input[type='datetime-local'],
+    textarea,
+    select {
+      // 테두리 없이 바탕색으로만 구분 (자리는 남겨 두어 고를 때 서브색 테두리가 생겨도 흔들리지 않게)
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background-color: color-mix(in srgb, var(--ct-base) 35%, var(--ct-shade));
+      box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ct-text) 10%, transparent);
+      color: var(--ct-text);
+      transition: border-color 120ms, box-shadow 120ms;
+
+      &:focus {
+        border-color: var(--ct-point);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-point) 22%, transparent);
+        outline: 0;
+      }
     }
   }
 }

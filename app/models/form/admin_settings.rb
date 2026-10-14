@@ -51,6 +51,10 @@ class Form::AdminSettings
     community_theme_main_dark
     community_theme_point_dark
     community_theme_post_button_main
+    community_theme_box_border
+    community_theme_compose_border
+    community_theme_dm_input_border
+    community_theme_dm_button_border
     community_theme_default
     community_theme_background_light
     community_theme_background_dark
@@ -87,6 +91,10 @@ class Form::AdminSettings
     status_search_enabled
     community_theme_enabled
     community_theme_post_button_main
+    community_theme_box_border
+    community_theme_compose_border
+    community_theme_dm_input_border
+    community_theme_dm_button_border
   ).freeze
 
   UPLOAD_KEYS = %i(

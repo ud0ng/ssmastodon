@@ -73,6 +73,10 @@ module ThemeHelper
     end
 
     declarations << "--community-theme-paren-size:#{community_theme.paren_size}%;"
+    # 테두리 켜기/끄기 (전체 박스 / 글쓰기·입력창 / 채팅 입력창 / 채팅 버튼)
+    %w(box compose dm_input dm_button).each do |name|
+      declarations << "--community-theme-#{name.dasherize}-border:#{community_theme.border?(name) ? 1 : 0}px;"
+    end
 
     CommunityTheme::MODES.each do |mode|
       upload = InstancePresenter.new.public_send(:"community_theme_background_#{mode}")

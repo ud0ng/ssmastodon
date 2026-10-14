@@ -1092,12 +1092,20 @@ en:
           following: Me and people I follow
         title: Community options
       community_theme:
+        dm_details: Chat (DM) screen
         colors: Colours
         details: Detailed colours
         details_hint: Leave blank to derive them from the main and accent colours. The faded value and the colour button show the colour currently used. Only set the ones you want to change.
         hint_html: Adds Community (Light) and (Dark) to the site theme list. The main colour sets the base tones (panels, the menu, icons, handles and times) and the accent colour sets accents such as the Post button, links and hashtags; every other colour is derived from these two.
         images: Images
         item_hints:
+          dm_sent: My chat bubbles (blank = accent color)
+          dm_sent_text: Text in my bubbles
+          dm_received: Other bubbles (blank = selected color)
+          dm_received_text: Text in received bubbles
+          dm_input: Message box and chat list search
+          dm_button: Send / new chat buttons (blank = post button)
+          dm_button_text: Button icons and text
           border: Borders of panels, the compose box and dividers
           box: Panels of the timeline and the right column
           box_opacity: At 100 the background image does not show through (blank = 92)
@@ -1120,6 +1128,13 @@ en:
           selected: Picked item in autocomplete and search, received chat bubbles
           text: Body text
         items:
+          dm_sent: Sent message
+          dm_sent_text: Sent message text
+          dm_received: Received message
+          dm_received_text: Received message text
+          dm_input: Chat input & search
+          dm_button: Chat buttons
+          dm_button_text: Chat button text
           border: Border
           box: Panel
           box_opacity: Panel opacity (%)
