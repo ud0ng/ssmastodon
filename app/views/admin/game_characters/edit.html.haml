@@ -96,26 +96,22 @@
         - else
           %p.hint= game_t('admin.games.manage.detail.no_records')
 
-      -# 인벤토리: 줄마다 이름·개수·메모 (줄 추가는 템플릿 복사, admin.tsx data-item-rows)
-      %section.game-card{ data: { item_rows: true } }
-        %h4= game_t('admin.games.manage.detail.inventory')
-        .bot-sheet-table.game-table
-          %table.table
-            %thead
-              %tr
-                %th= game_t('admin.games.manage.detail.item_name')
-                %th.game-detail__count-col= game_t('admin.games.manage.detail.item_count')
-                %th= game_t('admin.games.manage.detail.item_note')
-                %th.bot-sheet-table__actions
-            %tbody{ data: { item_rows_body: true } }
-              - Array(@character.inventory).each do |item|
-                = render 'admin/game_characters/item_row', item: item
-              %tr{ data: { item_rows_empty: true }, hidden: Array(@character.inventory).any? }
-                %td.bot-sheet-table__text{ colspan: 4 }= game_t('admin.games.manage.detail.no_items')
-        %template{ data: { item_rows_template: true } }
-          = render 'admin/game_characters/item_row', item: { 'name' => '', 'count' => 1, 'note' => '' }
-        .game-card__actions
-          = button_tag safe_join([material_symbol('add'), game_t('admin.games.manage.detail.add_item')]), type: :button, class: 'button button-secondary', data: { item_rows_add: true }
+      -# 인벤토리: 아이템 카드 (그림 + 개수 배지 + 이름). 누르면 모달에서 고치기·지우기, 바로 저장된다
+      %section.game-card
+        %h4
+          = game_t('admin.games.manage.detail.inventory')
+          %span.game-table__count= game_t('admin.games.manage.detail.summary_items', count: @character.item_count)
+        .game-inventory
+          - Array(@character.inventory).each_with_index do |item, index|
+            - image = @item_images[Game::Wallet.key(item['name'])]
+            %button.game-inventory__card{ type: 'button', title: item['note'].presence, data: { modal_open: "item-#{index}" } }
+              .game-inventory__image
+                = render 'admin/game_characters/item_thumb', name: item['name'], image: image&.image&.url(:small)
+                %span.game-inventory__count= "×#{item['count']}"
+              %span.game-inventory__name= item['name']
+          %button.game-inventory__card.game-inventory__card--add{ type: 'button', data: { modal_open: 'item-add' } }
+            .game-inventory__image= material_symbol('add')
+            %span.game-inventory__name= game_t('admin.games.manage.detail.add_item')
 
       -# 전적: 승·패·무와 최근 판
       %section.game-card
@@ -146,3 +142,33 @@
 
   .actions.game-detail__actions
     = f.button :button, t('generic.save_changes'), type: :submit
+
+-# 인벤토리 모달 (본 폼 밖에 둔다: 폼 안에 폼을 넣을 수 없어서)
+%datalist#game-shop-item-names
+  - @shop_item_names.each do |name|
+    %option{ value: name }
+
+= render layout: 'admin/game_characters/modal', locals: { id: 'item-add', title: game_t('admin.games.manage.detail.add_item') } do
+  = form_tag items_admin_game_character_path(@character, filter_params), method: :post, class: 'simple_form' do
+    = render 'admin/game_characters/item_fields', item: { 'name' => '', 'count' => 1, 'note' => '' }, prefix: 'item_new', named: true
+    .actions
+      %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
+      = button_tag game_t('admin.games.manage.detail.add_item'), type: :submit, class: 'button'
+
+- Array(@character.inventory).each_with_index do |item, index|
+  - image = @item_images[Game::Wallet.key(item['name'])]
+  = render layout: 'admin/game_characters/modal', locals: { id: "item-#{index}", title: item['name'] } do
+    .game-inventory__modal-head
+      = render 'admin/game_characters/item_thumb', name: item['name'], image: image&.image&.url(:small)
+      - if image&.description.present?
+        %p.hint= image.description
+    = form_tag item_admin_game_character_path(@character, filter_params.merge(index: index)), method: :patch, class: 'simple_form' do
+      = hidden_field_tag :original_name, item['name'], id: nil
+      = render 'admin/game_characters/item_fields', item: item, prefix: "item_#{index}", named: false
+      .actions
+        %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
+        = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+    = button_to item_admin_game_character_path(@character, filter_params.merge(index: index)), method: :delete, params: { original_name: item['name'] },
+                class: 'button button--destructive game-inventory__remove', data: { confirm: game_t('admin.games.manage.detail.remove_item_confirm', name: item['name']) } do
+      = material_symbol('delete')
+      = game_t('admin.games.manage.detail.remove_item')

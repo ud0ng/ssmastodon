@@ -104,6 +104,12 @@ namespace :admin do
   resources :game_character_stats, path: 'characters/stats', only: [:index, :create, :update, :destroy]
   resources :game_characters, path: 'characters', only: [:index, :edit, :update] do
     patch :bulk, on: :collection
+    # 상세 > 인벤토리 카드: 아이템 더하기·고치기·지우기 (index = 인벤토리 안 순서)
+    member do
+      post :items, action: :add_item
+      patch 'items/:index', action: :update_item, as: :item
+      delete 'items/:index', action: :remove_item
+    end
   end
 
   resources :site_uploads, only: [:destroy]

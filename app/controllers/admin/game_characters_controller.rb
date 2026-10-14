@@ -56,12 +56,46 @@ module Admin
       prepare_form
       @character.assign_attributes(character_params.slice(:name, :game_house_id, :game_faction_id, :grade, :note, :money))
       @character.stats = stat_values
-      @character.inventory = inventory_rows
       if @character.save
         redirect_to edit_admin_game_character_path(@character, filter_params), notice: t('generic.changes_saved_msg')
       else
         render :edit
       end
+    end
+
+    # 인벤토리 카드: 아이템 더하기 (이름이 같으면 개수만 더한다)
+    def add_item
+      authorize :settings, :update?
+
+      character = GameCharacter.find(params[:id])
+      item = item_params
+      if item['name'].present?
+        character.with_lock do
+          inventory = Array(character.inventory).map(&:dup)
+          existing = inventory.find { |entry| Game::Wallet.key(entry['name']) == Game::Wallet.key(item['name']) }
+          if existing
+            existing['count'] = existing['count'].to_i + item['count']
+            existing['note'] = item['note'] if item['note'].present?
+          else
+            inventory << item
+          end
+          character.update!(inventory: inventory)
+        end
+      end
+      redirect_to edit_admin_game_character_path(character, filter_params), notice: t('generic.changes_saved_msg')
+    end
+
+    # 인벤토리 카드: 개수·메모 고치기 (그사이 그 자리의 아이템이 바뀌었으면 고치지 않는다)
+    def update_item
+      authorize :settings, :update?
+
+      change_item { |inventory, index| inventory[index] = item_params.merge('name' => inventory[index]['name']) }
+    end
+
+    def remove_item
+      authorize :settings, :update?
+
+      change_item { |inventory, index| inventory.delete_at(index) }
     end
 
     private
@@ -79,6 +113,8 @@ module Admin
     def prepare_form
       load_columns
       @rewards = GameReward.where(account_id: @character.account_id).order(id: :desc).limit(RECENT_REWARDS)
+      @item_images = GameShopItem.by_key
+      @shop_item_names = GameShopItem.pluck(:name)
       finished = GamePlayer.joins(:session).where(account_id: @character.account_id, game_sessions: { status: 'finished' })
       @record = finished.group(:result).count
       @games = finished.includes(session: { players: :account }).order('game_sessions.finished_at DESC NULLS LAST, game_sessions.id DESC').limit(RECENT_GAMES)
@@ -97,14 +133,26 @@ module Admin
       end
     end
 
-    # 인벤토리 줄: 이름이 있는 줄만, 개수는 1 이상
-    def inventory_rows
-      Array(character_params[:inventory]).filter_map do |row|
-        name = row[:name].to_s.strip
-        next if name.empty?
+    # 인벤토리 아이템 한 개: 이름, 개수(1 이상), 메모
+    def item_params
+      item = params.expect(item: [:name, :count, :note])
+      { 'name' => item[:name].to_s.strip.first(50), 'count' => [item[:count].to_i, 1].max, 'note' => item[:note].to_s.strip.first(200) }
+    end
 
-        { 'name' => name, 'count' => [row[:count].to_i, 1].max, 'note' => row[:note].to_s.strip }
+    def change_item
+      character = GameCharacter.find(params[:id])
+      index = params[:index].to_i
+      character.with_lock do
+        inventory = Array(character.inventory).map(&:dup)
+        if inventory[index] && inventory[index]['name'] == params[:original_name].to_s
+          yield inventory, index
+          character.update!(inventory: inventory)
+          flash[:notice] = t('generic.changes_saved_msg')
+        else
+          flash[:alert] = t('admin.games.manage.detail.item_conflict')
+        end
       end
+      redirect_to edit_admin_game_character_path(character, filter_params)
     end
 
     def filtered
@@ -119,7 +167,7 @@ module Admin
     end
 
     def character_params
-      params.require(:game_character).permit(:name, :game_house_id, :game_faction_id, :grade, :note, :money, stat_values: {}, inventory: [:name, :count, :note])
+      params.require(:game_character).permit(:name, :game_house_id, :game_faction_id, :grade, :note, :money, stat_values: {})
     end
   end
 end

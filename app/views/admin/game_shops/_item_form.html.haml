@@ -16,6 +16,16 @@
     = f.input :stat_name, as: :select, collection: stats, include_blank: false, wrapper: :with_label, label: game_t('admin.games.shop.stat'), input_html: { id: "#{prefix}_stat" }
     = f.input :stat_value, wrapper: :with_label, label: game_t('admin.games.shop.value'), hint: game_t('admin.games.shop.value_hint'), input_html: { id: "#{prefix}_value", placeholder: '5, -20, 1d10' }
   = f.input :description, as: :text, wrapper: :with_label, label: game_t('admin.games.shop.description'), input_html: { id: "#{prefix}_description", rows: 2 }
+  -# 아이템 그림 (인벤토리 카드에도 보인다)
+  .game-item-image-field
+    - if item.image.present?
+      = image_tag item.image.url(:small), alt: '', class: 'game-item-image-field__preview'
+    .game-item-image-field__inputs
+      = f.input :image, as: :file, wrapper: :with_label, label: game_t('admin.games.shop.image'), hint: game_t('admin.games.shop.image_hint'), input_html: { id: "#{prefix}_image", accept: GameShopItem::IMAGE_MIME_TYPES.join(',') }
+      - if item.image.present?
+        %label.game-item-image-field__remove
+          = check_box_tag 'game_shop_item[remove_image]', '1', false, id: "#{prefix}_remove_image"
+          = game_t('admin.games.shop.remove_image')
   .actions
     %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
     = button_tag t('generic.save_changes'), type: :submit, class: 'button'

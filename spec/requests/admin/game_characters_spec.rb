@@ -13,33 +13,52 @@ RSpec.describe 'Admin character roster' do
   let(:eaters) { GameHouse.factions.find_by(name: '죽음을 먹는 자들') }
   let(:character) { GameCharacter.for(Fabricate(:account)) }
 
-  it 'saves faction, stats, money and inventory rows from the detail page' do
+  it 'saves faction, stats and money from the detail page without touching the inventory' do
+    character.update!(inventory: [{ 'name' => '사과', 'count' => 1, 'note' => '' }])
+
     patch admin_game_character_path(character), params: {
       game_character: {
         name: '해리',
         money: 120,
         game_faction_id: order.id,
         stat_values: { '힘' => '150', '민첩' => '', '체력' => '9', '없는 스탯' => '4' },
-        inventory: [{ name: '투명 망토', count: '1', note: '아버지 유품' }, { name: '', count: '3', note: '' }, { name: '초콜릿 개구리', count: '0', note: '' }],
       },
     }
 
     expect(response).to redirect_to(edit_admin_game_character_path(character))
     expect(character.reload).to have_attributes(
-      name: '해리',
-      money: 120,
-      faction: order,
-      stats: { '힘' => '100' },
-      inventory: [{ 'name' => '투명 망토', 'count' => 1, 'note' => '아버지 유품' }, { 'name' => '초콜릿 개구리', 'count' => 1, 'note' => '' }]
+      name: '해리', money: 120, faction: order, stats: { '힘' => '100' },
+      inventory: [{ 'name' => '사과', 'count' => 1, 'note' => '' }]
     )
   end
 
-  it 'empties the inventory when every row is removed' do
-    character.update!(inventory: [{ 'name' => '사과', 'count' => 1, 'note' => '' }])
+  describe 'inventory cards' do
+    before { character.update!(inventory: [{ 'name' => '투명 망토', 'count' => 1, 'note' => '' }]) }
 
-    patch admin_game_character_path(character), params: { game_character: { name: '' } }
+    it 'adds an item, merging one with the same name' do
+      post items_admin_game_character_path(character), params: { item: { name: '초콜릿 개구리', count: '3', note: '' } }
+      post items_admin_game_character_path(character), params: { item: { name: '초콜릿개구리', count: '0', note: '반쯤 먹음' } }
 
-    expect(character.reload.inventory).to eq []
+      expect(character.reload.inventory).to eq [
+        { 'name' => '투명 망토', 'count' => 1, 'note' => '' },
+        { 'name' => '초콜릿 개구리', 'count' => 4, 'note' => '반쯤 먹음' },
+      ]
+    end
+
+    it 'changes the count and note, keeping the name' do
+      patch item_admin_game_character_path(character, index: 0), params: { original_name: '투명 망토', item: { name: '딴 이름', count: '2', note: '아버지 유품' } }
+
+      expect(character.reload.inventory).to eq [{ 'name' => '투명 망토', 'count' => 2, 'note' => '아버지 유품' }]
+    end
+
+    it 'removes an item, but not one that moved meanwhile' do
+      delete item_admin_game_character_path(character, index: 0), params: { original_name: '다른 아이템' }
+      expect(character.reload.inventory.size).to eq 1
+      expect(flash[:alert]).to be_present
+
+      delete item_admin_game_character_path(character, index: 0), params: { original_name: '투명 망토' }
+      expect(character.reload.inventory).to eq []
+    end
   end
 
   it 'sets a faction for several characters at once and clears it again' do

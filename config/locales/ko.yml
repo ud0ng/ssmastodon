@@ -24,6 +24,9 @@ ko:
     system_menu: 시스템
     games:
       shop:
+        image: 그림
+        image_hint: 'PNG·JPG·GIF·WEBP, 2MB 까지. 정사각형으로 잘려 인벤토리 카드에도 보입니다.'
+        remove_image: 그림 지우기
         add_item: 아이템 추가
         add_shop: 상점 추가
         change: 바뀐 것
@@ -199,6 +202,8 @@ ko:
         when: 시간
       manage:
         detail:
+          item_conflict: 그사이 인벤토리가 바뀌어서 고치지 않았습니다. 다시 확인해 주세요.
+          remove_item_confirm: "'%{name}'을(를) 인벤토리에서 지울까요?"
           add_item: 아이템 추가
           back: 명단으로
           content: 컨텐츠
@@ -220,7 +225,7 @@ ko:
           reason: 사유
           record: 전적
           record_summary: '%{win}승 %{lose}패 %{draw}무'
-          remove_item: 이 줄 지우기
+          remove_item: 인벤토리에서 지우기
           results:
             draw: 무
             lose: 패

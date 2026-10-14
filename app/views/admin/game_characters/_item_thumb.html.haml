@@ -1,0 +1,6 @@
+-# 아이템 그림: 상점 아이템 그림이 있으면 그것, 없으면 이름 첫 글자
+%span.game-item-thumb{ class: ('game-item-thumb--empty' unless image) }
+  - if image
+    = image_tag image, alt: '', loading: 'lazy'
+  - else
+    = name.to_s.strip[0]

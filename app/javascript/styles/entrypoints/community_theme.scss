@@ -986,3 +986,26 @@ body.community-theme.admin {
     color: var(--ct-text);
   }
 }
+
+// 캐릭터 상세 > 인벤토리 카드
+body.community-theme.admin {
+  .game-inventory__image {
+    border: var(--ct-box-border) solid var(--ct-line);
+    background: var(--ct-soft);
+  }
+
+  .game-inventory__card--add .game-inventory__image {
+    border-style: dashed;
+    background: transparent;
+  }
+
+  .game-inventory__count {
+    background: var(--ct-point);
+    color: var(--ct-on-point);
+  }
+
+  .game-item-thumb {
+    background: var(--ct-soft);
+    color: var(--ct-text);
+  }
+}

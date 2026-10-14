@@ -26,6 +26,9 @@ en:
     system_menu: System
     games:
       shop:
+        image: Picture
+        image_hint: 'PNG, JPG, GIF or WEBP up to 2MB. Cropped square and also shown on inventory cards.'
+        remove_image: Remove picture
         add_item: Add item
         add_shop: Add shop
         change: Change
@@ -201,6 +204,8 @@ en:
         when: When
       manage:
         detail:
+          item_conflict: The inventory changed meanwhile, so nothing was saved. Please check again.
+          remove_item_confirm: Remove '%{name}' from the inventory?
           add_item: Add item
           back: Back to roster
           content: Content
@@ -222,7 +227,7 @@ en:
           reason: Reason
           record: Record
           record_summary: "%{win}W %{lose}L %{draw}D"
-          remove_item: Remove this row
+          remove_item: Remove from inventory
           results:
             draw: Draw
             lose: Loss

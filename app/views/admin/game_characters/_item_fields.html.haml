@@ -1,0 +1,15 @@
+-# 인벤토리 아이템 입력칸: 이름(더할 때만, 상점 아이템 이름을 고를 수 있다)·개수·메모
+.bot-sheet-fields
+  - if named
+    .input.with_label.string.required
+      .label_input
+        %label{ for: "#{prefix}_name" }= game_t('admin.games.manage.detail.item_name')
+        .label_input__wrapper= text_field_tag 'item[name]', item['name'], id: "#{prefix}_name", required: true, maxlength: 50, list: 'game-shop-item-names'
+  .input.with_label.integer
+    .label_input
+      %label{ for: "#{prefix}_count" }= game_t('admin.games.manage.detail.item_count')
+      .label_input__wrapper= number_field_tag 'item[count]', item['count'], id: "#{prefix}_count", min: 1, step: 1, required: true
+.input.with_label.string
+  .label_input
+    %label{ for: "#{prefix}_note" }= game_t('admin.games.manage.detail.item_note')
+    .label_input__wrapper= text_field_tag 'item[note]', item['note'], id: "#{prefix}_note", maxlength: 200

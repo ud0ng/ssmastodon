@@ -42,7 +42,9 @@
         - shop.items.each do |item|
           %tr
             %td.bot-sheet-table__text
-              %strong= item.name
+              .game-shop__item-name
+                = render 'admin/game_characters/item_thumb', name: item.name, image: item.image.present? ? item.image.url(:small) : nil
+                %strong= item.name
             %td.bot-sheet-table__text
               - if item.for_sale?
                 = number_with_delimiter(item.price)
