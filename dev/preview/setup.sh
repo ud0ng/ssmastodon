@@ -2,7 +2,8 @@
 # 로컬 미리보기 서버 만들기 (Docker Desktop 필요). 저장소 루트가 아니라 어디서 실행해도 된다.
 #
 #   bash dev/preview/setup.sh          처음 한 번: 이미지 빌드 + DB + 관리자 계정 owner@preview.test
-#   bash dev/preview/setup.sh rebuild  코드 고친 뒤: 이미지 다시 빌드 + web/sidekiq 재시작
+#   bash dev/preview/setup.sh rebuild  코드 고친 뒤: 이미지 다시 빌드 + DB 마이그레이션 + web/sidekiq 재시작
+#   (둘 다 컨텐츠 시험용 계정 @system·luna·draco·cedric 을 만든다)
 #
 # 열기: http://127.0.0.1:8080  (관리자 비밀번호는 dev/preview/.owner_password)
 # 화면 캡처: node dev/preview/shot.js <폴더> <너비> <높이> /경로:이름 ...
@@ -40,10 +41,27 @@ wait_web() {
   return 1
 }
 
+# 컨텐츠 시험용: 시스템 계정(@system)과 서버원 luna·draco·cedric, 기본 소속, 캐릭터 명단 (이미 있으면 넘어감)
+seed_content() {
+  compose exec -T web bin/rails runner "
+    %w(system luna draco cedric).each do |name|
+      next if Account.local.exists?(username: name)
+      account = Account.new(username: name, display_name: name == 'system' ? '시스템' : name)
+      user = User.new(email: \"#{name}@preview.test\", password: SecureRandom.hex(16), agreement: true, account: account, locale: 'ko')
+      user.save!(validate: false)
+      user.update_columns(approved: true, confirmed_at: Time.now.utc)
+    end
+    GameHouse.ensure_defaults!
+    GameCharacter.sync!
+  " >/dev/null 2>&1 || echo '(컨텐츠 시험 계정은 만들지 못했습니다)'
+}
+
 if [ "${1:-}" = rebuild ]; then
   build
+  echo '== DB 마이그레이션 =='
+  compose run --rm -T -e SAFETY_ASSURED=1 web bin/rails db:migrate
   compose up -d --force-recreate web sidekiq streaming
-  wait_web && echo '다시 띄웠습니다: http://127.0.0.1:8080'
+  wait_web && seed_content && echo '다시 띄웠습니다: http://127.0.0.1:8080'
   exit 0
 fi
 
@@ -104,4 +122,5 @@ compose run --rm -T web bin/rails runner "
 
 compose up -d
 wait_web
+seed_content
 echo "준비됐습니다: http://127.0.0.1:8080  (owner@preview.test / 비밀번호는 dev/preview/.owner_password)"

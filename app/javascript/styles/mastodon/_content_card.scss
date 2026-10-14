@@ -1,0 +1,938 @@
+@use 'variables' as *;
+
+// 컨텐츠 카드 (components/content_card.tsx): 시스템 계정의 컨텐츠 툿을 PC 웹에서 카드로.
+// 시스템 화면(.system-page)과 같은 양피지·금박·명조 제목 톤. 아래에는 툿 본문(진행 문구)이 그대로 이어진다.
+.content-card {
+  --sys-gold: #b08d3c;
+  --sys-gold-soft: color-mix(in srgb, var(--sys-gold) 45%, transparent);
+  --sys-parchment: color-mix(
+    in srgb,
+    var(--color-bg-compose-form, var(--surface-background-color)) 82%,
+    #c9a96a
+  );
+  --sys-serif: 'Noto Serif KR', 'Nanum Myeongjo', 'Batang', 'AppleMyungjo',
+    georgia, serif;
+  --card-dim: var(--color-dim, #{$darker-text-color});
+
+  margin: 6px 0 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--sys-gold-soft);
+  border-radius: 3px;
+  background: var(--sys-parchment);
+  box-shadow:
+    inset 0 0 0 3px var(--sys-parchment),
+    inset 0 0 0 4px var(--sys-gold-soft),
+    0 1px 3px rgb(0 0 0 / 12%);
+  color: var(--color-fg, #{$primary-text-color});
+  font-size: 14px;
+  line-height: 1.45;
+
+  &__head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    margin-bottom: 10px;
+  }
+
+  &__icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  &__name {
+    font-family: var(--sys-serif);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  &__phase {
+    padding: 1px 8px;
+    border: 1px solid var(--sys-gold-soft);
+    border-radius: 999px;
+    color: var(--sys-gold);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  &--finished &__phase {
+    background: var(--sys-gold);
+    color: #fffaf0;
+  }
+
+  &--cancelled {
+    opacity: 0.75;
+  }
+
+  &__deadline {
+    margin-inline-start: auto;
+    color: var(--card-dim);
+    font-size: 12px;
+  }
+
+  &__players {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    &--versus {
+      flex-wrap: nowrap;
+      align-items: center;
+    }
+  }
+
+  &__player {
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--house-color) 10%, transparent);
+    box-shadow: inset 3px 0 0 var(--house-color);
+
+    &--turn {
+      border-color: var(--sys-gold);
+      box-shadow:
+        inset 3px 0 0 var(--house-color),
+        0 0 0 2px var(--sys-gold-soft);
+    }
+
+    &--win {
+      border-color: var(--sys-gold);
+      background: color-mix(in srgb, var(--sys-gold) 18%, transparent);
+    }
+
+    &--lose {
+      opacity: 0.7;
+    }
+
+    &--waiting {
+      opacity: 0.8;
+      border-style: dashed;
+      border-color: var(--sys-gold-soft);
+    }
+  }
+
+  // 1:1 이면 오른쪽 사람은 거울처럼 (아바타가 바깥쪽)
+  &__players--versus &__player:last-of-type {
+    flex-direction: row-reverse;
+    text-align: end;
+    box-shadow: inset -3px 0 0 var(--house-color);
+  }
+
+  &__players--versus &__player--turn:last-of-type {
+    box-shadow:
+      inset -3px 0 0 var(--house-color),
+      0 0 0 2px var(--sys-gold-soft);
+  }
+
+  &__players--versus &__player:last-of-type &__player-main {
+    align-items: flex-end;
+  }
+
+  &__players--versus &__player:last-of-type &__player-name {
+    flex-direction: row-reverse;
+  }
+
+  &__avatar {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--house-color);
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  &__player-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__player-name {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    overflow: hidden;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    .system-crest {
+      --crest-size: 14px;
+    }
+  }
+
+  &__player-sub {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 12px;
+  }
+
+  &__versus {
+    flex: 0 0 auto;
+    color: var(--sys-gold);
+    font-family: var(--sys-serif);
+    font-size: 15px;
+    font-style: italic;
+    font-weight: 800;
+  }
+
+  &__score {
+    font-family: var(--sys-serif);
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  &__hearts {
+    letter-spacing: 1px;
+  }
+
+  &__heart {
+    color: #d0384c;
+
+    &--lost {
+      color: color-mix(in srgb, var(--card-dim) 50%, transparent);
+    }
+  }
+
+  &__grade {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--sys-gold);
+    color: #fffaf0;
+    font-family: var(--sys-serif);
+    font-weight: 800;
+
+    &--P,
+    &--D,
+    &--T {
+      background: color-mix(in srgb, var(--card-dim) 70%, transparent);
+    }
+  }
+
+  &__badge {
+    padding: 0 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--card-dim) 18%, transparent);
+    color: var(--card-dim);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 18px;
+
+    // 퀴디치 팀전
+    &--team-A {
+      background: color-mix(in srgb, #c0392b 22%, transparent);
+      color: inherit;
+    }
+
+    &--team-B {
+      background: color-mix(in srgb, #2e6fb7 22%, transparent);
+      color: inherit;
+    }
+
+    &--turn,
+    &--win {
+      background: var(--sys-gold);
+      color: #fffaf0;
+    }
+
+    &--lose {
+      background: color-mix(in srgb, var(--card-dim) 30%, transparent);
+    }
+  }
+
+  &__board {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--sys-gold-soft);
+  }
+
+  &__line {
+    color: var(--card-dim);
+    font-size: 13px;
+
+    &--title {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--color-fg, #{$primary-text-color});
+      font-family: var(--sys-serif);
+      font-size: 15px;
+      font-weight: 700;
+    }
+  }
+
+  &__dim {
+    color: var(--card-dim);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  &__chips {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  &__chips-label {
+    margin-inline-end: 2px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  &__chip {
+    padding: 1px 8px;
+    border: 1px solid var(--sys-gold-soft);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--sys-parchment) 60%, transparent);
+    font-size: 12px;
+
+    &--good {
+      border-color: #3f8f5a;
+      background: color-mix(in srgb, #3f8f5a 18%, transparent);
+    }
+
+    &--bad {
+      border-color: #b8443a;
+      background: color-mix(in srgb, #b8443a 18%, transparent);
+    }
+  }
+
+  &__beans {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  &__bean {
+    width: 12px;
+    height: 16px;
+    border-radius: 50%;
+    background: hsl(var(--bean-hue) 70% 62%);
+    box-shadow: inset -2px -2px 0 rgb(0 0 0 / 15%);
+
+    &--eaten {
+      background: transparent;
+      box-shadow: inset 0 0 0 1px
+        color-mix(in srgb, var(--card-dim) 50%, transparent);
+    }
+  }
+
+  &__progress {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--card-dim) 20%, transparent);
+
+    span {
+      display: block;
+      height: 100%;
+      background: var(--sys-gold);
+    }
+  }
+
+  &__clash {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  &__spell {
+    padding: 2px 10px;
+    border: 1px solid var(--sys-gold-soft);
+    border-radius: 4px;
+    font-weight: 700;
+
+    &--win {
+      border-color: var(--sys-gold);
+      background: var(--sys-gold);
+      color: #fffaf0;
+    }
+  }
+
+  &__guesses {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 12px;
+  }
+
+  &__guess {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+  }
+
+  &__dots {
+    display: inline-flex;
+    gap: 3px;
+  }
+
+  &__dot {
+    width: 9px;
+    height: 9px;
+    border: 1.5px solid var(--sys-gold);
+    border-radius: 50%;
+
+    &--strike {
+      background: var(--sys-gold);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  &__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border: 1px solid var(--sys-gold);
+    border-radius: 999px;
+    background: var(--sys-gold);
+    color: #fffaf0;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: color-mix(in srgb, var(--sys-gold) 85%, #000);
+    }
+
+    &--secondary {
+      background: transparent;
+      color: var(--sys-gold);
+
+      &:hover,
+      &:focus-visible {
+        background: color-mix(in srgb, var(--sys-gold) 15%, transparent);
+      }
+    }
+  }
+
+  &__action-dm {
+    padding: 0 4px;
+    border-radius: 3px;
+    background: rgb(0 0 0 / 18%);
+    font-size: 10px;
+  }
+
+  &__hint {
+    margin-top: 8px;
+    color: var(--card-dim);
+    font-size: 12px;
+  }
+}
+
+// 1:1 에서 VS 를 가운데에: 첫 사람(order 0), VS(order 1), 두 번째 사람(order 2)
+.content-card__players--versus .content-card__player:nth-child(2) {
+  order: 2;
+}
+
+// 타임라인·스레드에서는 본문과 같은 줄에서 시작 (아바타 칸 옆). 상세 화면(.detailed-status)은 그대로.
+.status .content-card {
+  margin-inline-start: calc(var(--size-avatar, 46px) + var(--gap-default, 10px));
+}
+
+.content-card__open {
+  margin-inline-start: auto;
+  color: var(--sys-gold);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.content-card__deadline + .content-card__open {
+  margin-inline-start: 8px;
+}
+
+// 컨텐츠 진행 화면 (features/system/session.tsx)
+.system-session {
+  &__events {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    list-style: none;
+  }
+
+  &__meta {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 4px;
+    color: var(--color-dim, #{$darker-text-color});
+    font-size: 12px;
+
+    a {
+      color: inherit;
+    }
+  }
+
+  &__event .content-card {
+    margin: 0;
+  }
+
+  &__text {
+    margin-top: 8px;
+    padding: 0 4px;
+    white-space: pre-wrap;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+}
+
+// 토너먼트 경기 표시, 소속 점수 지급, 우승 카드
+.content-card__tournament {
+  color: var(--sys-gold);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.content-card__awards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.content-card__award {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 6px;
+  border: 1px solid var(--house-color);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--house-color) 14%, transparent);
+  font-size: 13px;
+  font-weight: 700;
+
+  .system-crest {
+    --crest-size: 14px;
+  }
+}
+
+.content-card__award-amount {
+  color: var(--sys-gold);
+  font-family: var(--sys-serif);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.content-card__rewards {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 13px;
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+.content-card__reward-name {
+  font-weight: 700;
+}
+
+.content-card__reward-money,
+.content-card__reward-item {
+  padding: 1px 8px;
+  border: 1px solid var(--sys-gold-soft);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sys-gold) 10%, transparent);
+}
+
+.content-card__champion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px;
+  font-family: var(--sys-serif);
+  font-size: 22px;
+  font-weight: 800;
+
+  .system-crest {
+    --crest-size: 34px;
+  }
+}
+
+.content-card__tally {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.content-card__tally-row {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.content-card__tally-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--card-dim) 18%, transparent);
+
+  span {
+    display: block;
+    height: 100%;
+    background: var(--house-color);
+  }
+}
+
+// 비밀의방: 참가자 명단 (퇴학·석화는 흐리게), 고발 표 수, 끝나면 역할
+.content-card__roster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.content-card__member {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px 2px 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--house-color) 14%, transparent);
+  font-size: 12px;
+  font-weight: 600;
+
+  .system-crest {
+    --crest-size: 13px;
+  }
+
+  &--out {
+    opacity: 0.45;
+    text-decoration: line-through;
+  }
+}
+
+.content-card__role {
+  color: var(--card-dim);
+  font-weight: 400;
+}
+
+.content-card__votes {
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #b8443a;
+  color: #fff;
+  font-size: 11px;
+  text-align: center;
+}
+
+// 트라이위저드 미로 진행판 (features/system/maze.tsx)
+.maze-play {
+  --sys-gold: #b08d3c;
+  --maze-wall: color-mix(in srgb, var(--color-fg, #{$primary-text-color}) 70%, transparent);
+
+  margin-bottom: 20px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--sys-gold) 45%, transparent);
+  border-radius: 6px;
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+
+  &__compass {
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(var(--maze-size), minmax(0, 1fr));
+    max-width: 480px;
+    margin: 0 auto;
+    aspect-ratio: 1;
+    border: 2px solid var(--maze-wall);
+  }
+
+  &__cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    padding: 0;
+    border: 0 solid var(--maze-wall);
+    background: color-mix(in srgb, #2f5d3a 22%, transparent);
+    color: inherit;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+
+    &--wall-n {
+      border-top-width: 2px;
+    }
+
+    &--wall-e {
+      border-right-width: 2px;
+    }
+
+    &--wall-s {
+      border-bottom-width: 2px;
+    }
+
+    &--wall-w {
+      border-left-width: 2px;
+    }
+
+    &--memory {
+      background: color-mix(in srgb, #2f5d3a 10%, transparent);
+      filter: grayscale(0.6);
+    }
+
+    &--fog {
+      border-color: transparent;
+      background: color-mix(in srgb, #000 55%, transparent);
+      cursor: default;
+    }
+
+    &--trail {
+      background: color-mix(in srgb, var(--sys-gold) 45%, transparent);
+    }
+  }
+
+  &__token {
+    color: #3f7fd0;
+    font-size: 14px;
+
+    &--me {
+      color: var(--sys-gold);
+      font-size: 16px;
+    }
+
+    &--hostile {
+      color: #c0392b;
+    }
+  }
+
+  &__controls {
+    margin-top: 12px;
+    font-size: 13px;
+  }
+
+  &__hint {
+    color: var(--color-dim, #{$darker-text-color});
+  }
+
+  &__stance,
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  &__toggle {
+    padding: 5px 12px;
+    border: 1px solid color-mix(in srgb, var(--sys-gold) 55%, transparent);
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+
+    &--on {
+      border-color: var(--sys-gold);
+      background: color-mix(in srgb, var(--sys-gold) 25%, transparent);
+      font-weight: 700;
+    }
+  }
+
+  .content-card__action {
+    --sys-gold: #b08d3c;
+  }
+}
+
+.content-card__log {
+  margin: 0;
+  padding-inline-start: 18px;
+  font-size: 13px;
+  list-style: disc;
+}
+
+.content-card__board > .content-card__action {
+  align-self: flex-start;
+  text-decoration: none;
+}
+
+// 도둑 지도 진행판 (features/system/marauders_map.tsx): 양피지 지도 위 방·길
+.map-play {
+  --sys-gold: #b08d3c;
+
+  margin-bottom: 20px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--sys-gold) 45%, transparent);
+  border-radius: 6px;
+
+  &__svg {
+    display: block;
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+    border-radius: 6px;
+    background: color-mix(in srgb, #c9a96a 30%, transparent);
+  }
+
+  &__edge {
+    stroke: color-mix(in srgb, #6b4a1e 70%, transparent);
+    stroke-width: 6;
+
+    &--stairs {
+      stroke-dasharray: 10 6;
+    }
+
+    &--secret {
+      stroke: #7a3cff;
+      stroke-dasharray: 3 6;
+      stroke-width: 4;
+    }
+  }
+
+  &__room {
+    rect {
+      fill: color-mix(in srgb, #f3e6c4 85%, transparent);
+      stroke: #6b4a1e;
+      stroke-width: 1.5;
+    }
+
+    text {
+      font-size: 14px;
+      fill: #3b2a12;
+    }
+
+    &--target rect {
+      stroke: var(--sys-gold);
+      stroke-width: 3;
+    }
+
+    &--reachable {
+      cursor: pointer;
+
+      rect {
+        fill: #fff6d6;
+        stroke: #2f7d4a;
+        stroke-width: 3;
+      }
+    }
+
+    &--selected rect {
+      fill: #ffe38a;
+      stroke: #b08d3c;
+      stroke-width: 4;
+    }
+  }
+
+  &__name {
+    font-weight: 700;
+    font-size: 13px !important;
+  }
+
+  &__token {
+    fill: #3f7fd0;
+    stroke: #fff;
+    stroke-width: 2;
+
+    &--me {
+      fill: #b08d3c;
+    }
+
+    &--student {
+      fill: #c0392b;
+    }
+  }
+
+  &__role {
+    padding: 0 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--sys-gold) 25%, transparent);
+    font-weight: 700;
+  }
+}
+
+// 타임라인의 짧은 카드 (한 줄)
+.content-card--compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 8px 12px;
+
+  .content-card__icon {
+    font-size: 18px;
+  }
+
+  .content-card__open {
+    margin-inline-start: auto;
+  }
+}
+
+.content-card__compact-players {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 13px;
+}
+
+.content-card__compact-player {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+
+  &--win {
+    font-weight: 700;
+  }
+
+  &--lose {
+    opacity: 0.6;
+  }
+}
+
+.content-card__open--turn {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--sys-gold, #c9a227);
+  color: #1c1408;
+  font-weight: 700;
+  text-decoration: none;
+}

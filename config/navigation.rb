@@ -39,10 +39,12 @@ SimpleNavigation::Configuration.run do |navigation|
       s.item :custom_emojis, safe_join([material_symbol('mood'), t('admin.custom_emojis.title')]), admin_custom_emojis_path, highlights_on: %r{/admin/custom_emojis}, if: -> { current_user.can?(:manage_custom_emojis) }
     end
 
-    # 시스템: 서버 설정, 자동봇 시트 (컨텐츠·캐릭터 관리는 다시 만들 예정)
+    # 시스템: 서버 설정, 자동봇 시트, 컨텐츠(시스템 계정이 진행하는 게임) 설정, 캐릭터 명단
     n.item :system, safe_join([material_symbol('settings'), t('admin.system_menu')]), nil, if: -> { current_user.can?(:manage_settings) && !self_destruct } do |s|
       s.item :settings, safe_join([material_symbol('tune'), t('admin.settings.title')]), admin_settings_path, highlights_on: %r{/admin/settings}, if: -> { current_user.can?(:manage_settings) }
       s.item :bot_sheets, safe_join([material_symbol('list_alt'), t('admin.bot_sheets.title')]), admin_bot_sheets_path, highlights_on: %r{/admin/sheets}, if: -> { current_user.can?(:manage_settings) }
+      s.item :game_settings, safe_join([material_symbol('extension'), t('admin.games.title')]), admin_game_settings_path, highlights_on: %r{/admin/games}, if: -> { current_user.can?(:manage_settings) }
+      s.item :game_characters, safe_join([material_symbol('badge'), t('admin.games.characters.title')]), admin_game_characters_path, highlights_on: %r{/admin/characters}, if: -> { current_user.can?(:manage_settings) }
     end
 
     n.item :sidekiq, safe_join([material_symbol('diamond'), 'Sidekiq']), sidekiq_path, link_html: { target: 'sidekiq' }, if: -> { current_user.can?(:view_devops) }

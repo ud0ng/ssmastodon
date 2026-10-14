@@ -3103,3 +3103,192 @@ body .image-picker {
     }
   }
 }
+
+// 관리 > 게임 설정
+.game-config__full {
+  grid-column: 1 / -1;
+
+  textarea {
+    font-family: inherit;
+  }
+}
+
+.game-houses__order {
+  width: 64px;
+}
+
+.game-houses__recent {
+  margin-top: 30px;
+}
+
+.game-characters__filter {
+  margin-bottom: 20px;
+
+  .actions {
+    margin-top: 0;
+  }
+}
+
+// 컨텐츠 설정 > 토너먼트 (대진표 편집)
+.game-tournament__head {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 20px;
+  margin-bottom: 20px;
+
+  @media screen and (max-width: $no-columns-breakpoint) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.game-tournament__status {
+  padding: 12px 16px;
+  border: 1px solid var(--background-border-color);
+  border-radius: 8px;
+
+  p {
+    margin: 8px 0;
+  }
+}
+
+.game-tournament__tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+  font-weight: 700;
+}
+
+.game-bracket {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+
+  // 라운드 이름은 위에 맞추고, 경기 칸은 그 아래에서 세로 가운데 (다음 라운드 칸이 두 경기 사이에 오게)
+  &__round {
+    display: flex;
+    flex: 0 0 220px;
+    flex-direction: column;
+    gap: 12px;
+
+    h4 {
+      margin-bottom: 0;
+    }
+
+    > .game-bracket__match:nth-child(2) {
+      margin-top: auto;
+    }
+
+    > .game-bracket__match:last-child {
+      margin-bottom: auto;
+    }
+  }
+
+  &__match {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    border: 1px solid var(--background-border-color);
+    border-radius: 8px;
+    font-size: 13px;
+
+    &--playing,
+    &--judging {
+      border-color: $ui-highlight-color;
+    }
+
+    &--done {
+      opacity: 0.85;
+    }
+  }
+
+  &__match-head {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+  }
+
+  &__badge {
+    font-weight: 400;
+    color: $darker-text-color;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    select,
+    input {
+      height: auto !important;
+      padding: 6px 8px !important;
+      font-size: 13px !important;
+    }
+
+    .button {
+      align-self: flex-start;
+    }
+  }
+
+  &__player {
+    padding: 4px 6px;
+    border-radius: 4px;
+
+    &--winner {
+      font-weight: 700;
+      background: color-mix(in srgb, $ui-highlight-color 20%, transparent);
+    }
+  }
+
+  &__decide {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+
+    form {
+      display: inline;
+    }
+
+    .button {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+  }
+}
+
+// 컨텐츠 설정: 문구 아래 명령어 버튼 (누르면 문구에 들어감)
+.game-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+
+  &__hint {
+    margin-bottom: 12px;
+  }
+}
+
+.game-token {
+  padding: 2px 8px;
+  border: 1px solid var(--background-border-color);
+  border-radius: 4px;
+  background: transparent;
+  color: $darker-text-color;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    border-color: $ui-highlight-color;
+    color: $primary-text-color;
+  }
+
+  &--particle {
+    border-style: dashed;
+    opacity: 0.8;
+  }
+}

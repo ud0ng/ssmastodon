@@ -22,6 +22,211 @@ ko:
     self_follow_error: 본인의 계정을 팔로우할 수는 없습니다
   admin:
     system_menu: 시스템
+    games:
+      changed: 변경됨
+      characters:
+        recent_rewards: 최근 받은 보상
+        reward_reason: 사유
+        reward_when: 때
+        no_rewards: 아직 받은 보상이 없습니다.
+        bulk_target: 바꿀 값
+        extra_stats: 그 밖의 값
+        fields:
+          add: 항목 추가
+          choice_color: '색 (#b7410e)'
+          choice_name: 이름
+          choices: 고를 값
+          choices_hint: 캐릭터 편집에서 이 중 하나를 고릅니다. 색은 명단 칩 색입니다.
+          choices_new_hint: 종류가 '고르기'일 때만 씁니다.
+          delete: 항목 지우기
+          delete_confirm: "'%{name}' 항목을 지울까요? 캐릭터에 넣은 값은 보이지 않게 됩니다."
+          hint: '%{term}·학년 말고 캐릭터에 더 넣을 값입니다. 정보 항목(예: 진영)은 명단에서 칩과 거르기로 보이고, 전투 스탯은 컨텐츠에서 쓸 숫자입니다. 돈(%{currency})과 인벤토리는 캐릭터마다 따로 있습니다. 돈 이름은 컨텐츠 설정 > 공통에서 바꿉니다.'
+          kind: 종류
+          kinds:
+            number: 숫자
+            select: 고르기
+            text: 글
+          manage: 항목 설정에서 항목 더하기·고치기
+          name: 항목 이름
+          name_placeholder: '예: 진영, 지팡이, 혈통'
+          section: 구분
+          sections:
+            profile: 정보
+            stat: 전투 스탯
+          title: 항목 설정
+        inventory: 인벤토리
+        inventory_hint: '아이템 이름, 개수, 메모. (글로는 한 줄에 이름|개수|메모)'
+        item_count: 개수
+        item_name: 아이템
+        item_note: 메모
+        items_count: '아이템 %{count}개'
+        money: '돈 (%{currency})'
+        none: 없음
+        roster: 명단
+        sections:
+          basic: 기본 정보
+          inventory: 돈·인벤토리
+          stats: 전투 스탯
+        account: 계정
+        account_hint: '계정: %{account} (%{display_name})'
+        all: 전체
+        bulk_apply: 고른 캐릭터에 적용
+        edit: 고치기
+        edit_title: '캐릭터: %{name}'
+        grade: 학년
+        grade_value: '%{grade}학년'
+        hint: 서버원 목록에서 자동으로 만들어집니다. 캐릭터 이름을 비워 두면 표시 이름을 씁니다. 컨텐츠 툿에는 캐릭터 이름이 나옵니다.
+        house: '%{term}'
+        name: 캐릭터 이름
+        name_hint: 비워 두면 표시 이름
+        no_house: '%{term} 없음'
+        note: 메모
+        search: 찾기
+        select_all: 이 쪽 전체 선택
+        stat_name: '이름 (예: 체력)'
+        stat_value: '값 (예: 10)'
+        stats: 개인 값
+        stats_hint: '한 줄에 하나씩 이름=값 (예: 체력=10). 컨텐츠에서 쓸 캐릭터 스탯'
+        title: 캐릭터 명단
+      chips_placeholder: 입력 후 Enter
+      common: 공통
+      common_hint: 모든 컨텐츠에 쓰이는 시스템 계정, 명령어, 대기 시간, 점수 규칙과 공통 문구입니다. 문구는 아래 명령어를 눌러 넣을 수 있습니다.
+      fields_count: "%{count}개"
+      flow:
+        accept: 상대가 [수락]
+        invite: "[%{command}] @상대 로 신청"
+        play: 번갈아 또는 DM 으로 선택
+        result: 결과·%{term} 점수
+      groups:
+        rewards: 보상 (돈·아이템)
+        account: 시스템 계정
+        basic: 기본
+        commands: 명령어
+        flavors: 맛
+        messages: 문구
+        points: '%{term} 점수'
+        roles: 역할·진영 이름
+        rules: 규칙
+        scoring: 점수 방식
+        spells: 주문
+        summary: 정기 툿
+        tournament: 토너먼트 문구
+        time: 시간
+      houses:
+        add_named: '%{name} 추가'
+        delete_confirm_named: '%{name}(%{term}) 지울까요? 점수 기록도 함께 지워집니다.'
+        delete_named: '%{name} 지우기'
+        members: '%{count}명'
+        mode: 점수 단위
+        mode_hint: 점수·토너먼트·모래시계·결산은 고른 쪽으로만 합니다. 바꿔도 다른 쪽 점수는 그대로 남습니다.
+        mode_on: 사용 중
+        name_label: 이름
+        points: '%{count}점'
+        scoring: 점수 단위
+        tab: 소속
+        add: '%{term} 추가'
+        adjust: 점수 조정
+        adjust_hint: '운영진이 %{term} 점수를 더하거나 뺍니다 (빼려면 음수).'
+        amount: 점수
+        announcements: 정기 툿
+        announcements_hint_html: 주간 결산은 <a href="%{path}">공통</a> 탭의 요일·시각에 자동으로 올라갑니다. 여기서는 지금 바로 올릴 수 있습니다.
+        color: 색
+        delete: '%{term} 지우기'
+        delete_confirm: '%{name}(%{term}) 지울까요? 점수 기록도 함께 지워집니다.'
+        emoji: 이모지
+        hint: '캐릭터마다 %{house}와 %{faction}을 따로 정할 수 있습니다 (캐릭터 명단에서). 컨텐츠에서 이기면 점수 단위로 고른 쪽에 점수가 쌓입니다. 부르는 이름은 공통 탭에서 바꿉니다.'
+        manual: 운영진 조정
+        name: '%{term}'
+        order: 순서
+        posted: 시스템 계정으로 올렸습니다.
+        reason: 사유
+        recent: 최근 점수 기록
+        term_end: 학기 마감 발표
+        term_end_confirm: 소속 순위·우승 소속·과목별 수석을 지금 발표할까요? (점수는 그대로입니다)
+        title: '%{term}'
+        total: 총점
+        weekly_confirm: 이번 주 결산을 지금 올릴까요?
+        weekly_now: 주간 결산 지금 올리기
+        when: 시간
+      kind_hint: 이 컨텐츠의 켜기·명령어·규칙·문구입니다. 수락 대기, 턴 시간, 수락·거절·기권 명령어는 공통 탭에서 정합니다.
+      lesson_hint: 이 과목의 해금·명령어·규칙·문구입니다. 자습/수업 명령어, 등급별 점수, 수업 모집 시간은 수업 공통 탭에서 정합니다.
+      lessons: 수업 공통
+      lessons_hint: '마법 수업 공통 설정입니다. [자습/과목]은 혼자, [수업/과목]은 모집 뒤 반 전체가 함께합니다. 등급(O·E·A·P·D·T)은 성적표에 쌓이고 소속 점수가 됩니다.'
+      messages_hint: '문구 아래 명령어를 누르면 커서 자리에 들어갑니다. {계정명} {계정아이디} {계정 아바타}(그 사람 프로필 사진을 툿에 첨부) — 앞에 상대·승자·패자·다음 차례를 붙이면 그 사람입니다. {이가} {을를} {은는} 같은 조사는 앞 글자 받침에 맞춰 바뀝니다.'
+      overview:
+        characters_hint: "%{count}명 · 이름·%{term}·개인 값"
+        common_hint: 시스템 계정, 수락·기권 명령어, 대기 시간, 점수 규칙
+        events: 서버 이벤트
+        lessons_common: 수업 공통
+        lessons_hint: 자습·수업 명령어, 등급별 점수, 모집 시간
+        matches: 1:1 대결
+        group_games: 여럿이 하는 컨텐츠 (팀전·웹 전용)
+        up_to: '최대 %{count}명'
+        no_houses: 아직 없음
+        off: 꺼짐
+        on: 켜짐
+        open: 진행 중 %{count}
+        opponent: 상대
+        recent: 최근 1주 %{count}판
+        setup: 공통 · 운영
+        title: 전체
+        tournaments_hint: 대진표를 짜고 경기 결과를 판정
+      overview_hint: 컨텐츠를 눌러 켜기·명령어·규칙·확률·문구를 바꿉니다. 꺼진 컨텐츠는 흐리게 보입니다.
+      reset_default: 기본값으로
+      split:
+        fail: 실패
+        half: 어중간
+        over: 합이 100%를 넘습니다
+        perfect: 완벽
+      tournaments:
+        champion: 우승
+        champion_is: '우승: %{house}'
+        content: 컨텐츠
+        create: 대진표 만들기
+        decide: '운영진 판정 — 이긴 사람:'
+        decide_confirm: '%{name}의 승리로 정할까요?'
+        delete: 토너먼트 지우기
+        delete_confirm: '%{name} 토너먼트를 지울까요?'
+        drop_player: 선수를 끌어다 놓기
+        edit: 대진표
+        hint: '대진표에는 사람이 들어갑니다. 경기마다 컨텐츠·시간·선수를 정하면 그 시간에 시스템이 경기를 열고, 이긴 사람이 다음 칸으로 올라갑니다. 이긴 경기 수가 가장 많은 %{term}이(가) 우승합니다 (동률이면 결승 승자의 %{term}). 공통 탭의 점수 방식이 토너먼트제일 때만 평소 컨텐츠 점수가 꺼집니다.'
+        locked: 이미 시작했거나 끝난 경기는 바꿀 수 없습니다.
+        match_number: '%{number}경기'
+        match_statuses:
+          done: 끝
+          judging: 판정 대기
+          playing: 진행 중
+          ready: 예약됨
+          waiting: 준비 중
+        mode_hint: 지금 점수 방식이 점수제라서 평소 컨텐츠 점수도 계속 쌓입니다. 토너먼트만 반영하려면 공통 탭에서 토너먼트제로 바꾸세요.
+        name: 토너먼트 이름
+        name_placeholder: '예: 1학기 기숙사 대항전'
+        new: 새 토너먼트
+        panel_hint: 경기를 누르면 여기서 컨텐츠·시간·선수를 고칩니다. 아래 선수 칩을 대진표 칸에 끌어다 놓으면 바로 배치됩니다.
+        people:
+          one: '%{count}명'
+          other: '%{count}명'
+        pick_content: 컨텐츠 고르기
+        pick_player: 선수 고르기
+        player: 선수
+        reward: 우승 점수
+        size: 인원
+        start: 토너먼트 시작
+        start_confirm: 시작하면 정해진 시간에 경기가 자동으로 열립니다. 시작할까요?
+        start_hint: 경기마다 컨텐츠·시간·선수를 정한 뒤 시작하세요. 시작한 뒤에도 아직 열리지 않은 경기는 고칠 수 있습니다.
+        started: 토너먼트를 시작했습니다. 정해진 시간에 경기가 열립니다.
+        status: 상태
+        statuses:
+          draft: 준비 중
+          finished: 끝남
+          running: 진행 중
+        time: 시간
+        timed_out: '%{minutes}분 동안 응답 없음'
+        title: 토너먼트
+      title: 컨텐츠 설정
+      undo_all: 되돌리기
+      unknown_tokens: "이 문구에서 쓸 수 없는 명령어: {tokens}"
+      unsaved: 저장하지 않은 변경 {count}개
     bot_sheets:
       conflict: '그사이 시트에서 바뀐 항목이 있어서 저장하지 않았습니다: %{names}. 바뀐 값을 확인하고 다시 저장하세요.'
       connection:

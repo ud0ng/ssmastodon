@@ -1,0 +1,97 @@
+- kind = Game::Kinds.registry[@key]
+- title = { 'common' => game_t('admin.games.common'), 'lessons' => game_t('admin.games.lessons') }.fetch(@key) { kind.display_name }
+- content_for :page_title do
+  = title
+
+- content_for :heading do
+  = render 'admin/game_settings/heading', save_form: 'edit_game_config'
+
+-# 컨텐츠별 화면: 다른 컨텐츠로 바로 가는 칩 줄
+- if kind
+  .game-switcher
+    = link_to admin_game_settings_path, class: 'game-switcher__back' do
+      = material_symbol 'chevron_left'
+      = game_t('admin.games.overview.title')
+    - Game::Kinds.all.each do |other|
+      = link_to admin_game_setting_path(other.key), class: ['game-switcher__chip', ('game-switcher__chip--active' if other == kind), ('game-switcher__chip--off' unless other.enabled?)] do
+        %span{ 'aria-hidden': 'true' }= game_kind_icon(other.key)
+        = other.display_name
+
+- hint_key = { 'common' => 'admin.games.common_hint', 'lessons' => 'admin.games.lessons_hint' }.fetch(@key) { kind.lesson? ? 'admin.games.lesson_hint' : 'admin.games.kind_hint' }
+.game-intro
+  %span.game-intro__icon{ 'aria-hidden': 'true' }= kind ? game_kind_icon(kind.key) : (@key == 'lessons' ? '📜' : '⚙️')
+  .game-intro__body
+    %h3.game-intro__title= title
+    %p.game-intro__hint= game_t(hint_key, example: '%{이름}')
+    - if kind && !kind.lesson? && !kind.event?
+      %ol.game-intro__flow
+        %li= game_t('admin.games.flow.invite', command: kind.config['command'])
+        %li= game_t('admin.games.flow.accept')
+        %li= game_t('admin.games.flow.play')
+        %li= game_t('admin.games.flow.result')
+
+- system = Game::System.account
+= form_tag admin_game_setting_path(@key), method: :patch, id: 'edit_game_config', class: 'simple_form game-config',
+  data: { game_config: true, samples: game_preview_samples(title).to_json,
+          system_name: system&.display_name.presence || system&.username || 'system', system_avatar: system ? full_asset_url(system.avatar_static_url) : '',
+          changed_label: game_t('admin.games.changed'), reset_label: game_t('admin.games.reset_default'),
+          chips_placeholder: game_t('admin.games.chips_placeholder'), unknown_label: game_t('admin.games.unknown_tokens'),
+          split_labels: [game_t('admin.games.split.perfect'), game_t('admin.games.split.half'), game_t('admin.games.split.fail'), game_t('admin.games.split.over')].to_json } do
+  - @fields.group_by(&:group).each do |group, fields|
+    - many_messages = group == 'messages' && fields.size > 6
+    %details.game-group{ open: !many_messages, data: { group: group } }
+      %summary.game-group__summary
+        %span.game-group__title= game_t("admin.games.groups.#{group}", default: group)
+        %span.game-group__count= game_t('admin.games.fields_count', count: fields.size)
+        %span.game-group__changed{ hidden: true }
+      .game-group__body
+        - if %w(messages tournament).include?(group) && fields.any? { |field| field.type == :text }
+          %p.hint.game-tokens__hint= game_t('admin.games.messages_hint')
+        .bot-sheet-fields
+          - fields.each do |field|
+            - name = "config[#{field.key}]"
+            - field_id = "game_config_#{field.key}"
+            - value = @values[field.key]
+            - default = field.type == :lines ? Array(field.default).join("\n") : field.default
+            - wrapper_data = { game_field: field.type, default: default.to_s, field_label: field.label }
+            - if field.type == :boolean
+              .bot-sheet-field.bot-sheet-field--switch.game-field{ data: wrapper_data.merge(default: field.default ? '1' : '0') }
+                = hidden_field_tag name, '0', id: nil
+                %label.bot-sheet-switch{ for: field_id }
+                  = check_box_tag name, '1', value, id: field_id, role: 'switch'
+                  %span.bot-sheet-switch__track
+                  %span.bot-sheet-switch__label= field.label
+                - if field.hint
+                  %span.hint= field.hint
+            - else
+              .bot-sheet-field.input.with_label.game-field{ class: ('game-config__full' if %i(text lines select).include?(field.type)), data: wrapper_data.merge(percent: (field.type == :integer && field.label.to_s.include?('%')) ? true : nil, tokens: (field.type == :text ? (field.tokens + Game::Text::PARTICLES.keys).to_json : nil)) }
+                .label_input
+                  %label{ for: field_id }= field.label
+                  .label_input__wrapper
+                    - case field.type
+                    - when :select
+                      = select_tag name, options_for_select(field.choices.map(&:reverse), value), id: field_id
+                    - when :integer
+                      = number_field_tag name, value, id: field_id, step: 1
+                    - when :lines
+                      = text_area_tag name, Array(value).join("\n"), id: field_id, rows: [Array(value).size + 1, 4].max
+                    - when :text
+                      = text_area_tag name, value, id: field_id, rows: [value.to_s.lines.size + 1, 2].max
+                    - else
+                      = text_field_tag name, value, id: field_id
+                - if field.hint
+                  %span.hint= field.hint
+                - if field.type == :text
+                  -# 누르면 커서 자리에 들어가는 명령어 (admin.tsx), 미리보기는 game_config_editor.ts 가 붙인다
+                  .game-tokens
+                    - (field.tokens + Game::Text::PARTICLES.keys).each do |token|
+                      %button.game-token{ type: 'button', data: { insert: "{#{token}}", target: field_id }, class: [('game-token--particle' if Game::Text::PARTICLES.key?(token)), ('game-token--person' if token.include?('계정'))] }= "{#{token}}"
+
+  -# 저장하지 않은 변경이 있으면 화면 아래에 붙는 저장 줄 (game_config_editor.ts)
+  .game-savebar{ hidden: true }
+    %span.game-savebar__text{ data: { template: game_t('admin.games.unsaved') } }
+    %button.button.button-secondary.game-savebar__reset{ type: 'button' }= game_t('admin.games.undo_all')
+    = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+
+  .actions
+    = button_tag t('generic.save_changes'), type: :submit, class: 'button'

@@ -15491,3 +15491,1015 @@ body .search__popout__menu__item {
     }
   }
 }
+
+// 웹 '시스템' 메뉴 (features/system): 해리포터 분위기 — 양피지 카드, 금박 테두리, 명조체 제목, 소속 문장(방패)
+// 낮/밤 커뮤니티 테마 색(--color-*)에 양피지 색을 섞어 쓴다.
+.system-page {
+  --sys-gold: #b08d3c;
+  --sys-gold-soft: color-mix(in srgb, var(--sys-gold) 45%, transparent);
+  --sys-parchment: color-mix(in srgb, var(--color-bg-compose-form, var(--surface-background-color)) 82%, #c9a96a);
+  --sys-serif: 'Noto Serif KR', 'Nanum Myeongjo', 'Batang', 'AppleMyungjo', georgia, serif;
+
+  padding: 16px;
+  color: var(--color-fg, $primary-text-color);
+
+  &__empty {
+    padding: 8px 0;
+    color: var(--color-dim, $darker-text-color);
+    font-family: var(--sys-serif);
+    font-size: 14px;
+    font-style: italic;
+    text-align: center;
+  }
+}
+
+.system-section {
+  margin-bottom: 30px;
+
+  // 제목 양옆에 금빛 선
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    font-family: var(--sys-serif);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--sys-gold));
+    }
+
+    &::after {
+      background: linear-gradient(90deg, var(--sys-gold), transparent);
+    }
+  }
+}
+
+// 양피지 카드: 금박 두 줄 테두리
+%system-parchment {
+  border: 1px solid var(--sys-gold-soft);
+  border-radius: 3px;
+  background: var(--sys-parchment);
+  box-shadow:
+    inset 0 0 0 3px var(--sys-parchment),
+    inset 0 0 0 4px var(--sys-gold-soft),
+    0 1px 3px rgb(0 0 0 / 12%);
+}
+
+// 소속 문장 (방패 모양, 금테)
+.system-crest {
+  --crest-size: 18px;
+
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: var(--crest-size);
+  height: calc(var(--crest-size) * 1.18);
+  padding: 1.5px;
+  background: var(--sys-gold);
+  clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%);
+  vertical-align: middle;
+
+  &__inner {
+    display: flex;
+    flex: 1;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 8%;
+    background: var(--house-color, #555);
+    clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%);
+    color: #f3e6c4;
+    font-family: var(--sys-serif);
+    font-size: calc(var(--crest-size) * 0.55);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  &--large {
+    --crest-size: 34px;
+  }
+}
+
+.system-hourglasses {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 12px;
+}
+
+.system-hourglass {
+  @extend %system-parchment;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px 14px;
+
+  &--mine {
+    border-color: var(--sys-gold);
+    box-shadow:
+      inset 0 0 0 3px var(--sys-parchment),
+      inset 0 0 0 4px var(--sys-gold),
+      0 0 0 1px var(--sys-gold-soft),
+      0 2px 8px rgb(0 0 0 / 15%);
+  }
+
+  // 놋쇠 받침이 달린 모래시계
+  &__glass {
+    position: relative;
+    width: 46px;
+    height: 84px;
+    padding: 7px 4px;
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      inset-inline: 0;
+      height: 6px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, #e2c47a, var(--sys-gold) 55%, #7a5f22);
+    }
+
+    &::before {
+      top: 0;
+    }
+
+    &::after {
+      bottom: 0;
+    }
+  }
+
+  &__vial {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, rgb(255 255 255 / 18%), rgb(255 255 255 / 4%) 40%, rgb(255 255 255 / 14%));
+    box-shadow: inset 0 0 0 1px var(--sys-gold-soft);
+    clip-path: polygon(0 0, 100% 0, 56% 50%, 100% 100%, 0 100%, 44% 50%);
+  }
+
+  &__top,
+  &__bottom {
+    position: absolute;
+    inset-inline: 0;
+    background:
+      radial-gradient(circle at 30% 30%, rgb(255 255 255 / 35%) 0 1px, transparent 1.5px) 0 0 / 6px 6px,
+      linear-gradient(180deg, color-mix(in srgb, var(--house-color) 80%, #fff), var(--house-color));
+    transition: height 600ms ease;
+  }
+
+  &__top {
+    top: 50%;
+    transform: translateY(-100%);
+    opacity: 0.4;
+  }
+
+  &__bottom {
+    bottom: 0;
+  }
+
+  &__name {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    font-family: var(--sys-serif);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  &__total {
+    color: var(--sys-gold);
+    font-family: var(--sys-serif);
+    font-size: 15px;
+    font-weight: 700;
+    font-variant-numeric: oldstyle-nums;
+  }
+}
+
+.system-card {
+  @extend %system-parchment;
+
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+
+  &__body {
+    min-width: 0;
+  }
+
+  &__name {
+    font-family: var(--sys-serif);
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  &__grade {
+    margin-inline-start: 8px;
+    color: var(--color-dim, $darker-text-color);
+    font-size: 13px;
+    font-weight: 400;
+  }
+
+  &__house {
+    margin-top: 2px;
+    font-family: var(--sys-serif);
+    font-size: 14px;
+  }
+
+  &__record {
+    margin-top: 6px;
+    color: var(--color-dim, $darker-text-color);
+    font-family: var(--sys-serif);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  &__tag {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--tag-color) 20%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tag-color) 55%, transparent);
+    font-size: 12px;
+    font-weight: 700;
+  }
+}
+
+// 내 캐릭터: 전투 스탯·돈·인벤토리
+.system-sheet {
+  @extend %system-parchment;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 14px 18px;
+  font-family: var(--sys-serif);
+
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 6px;
+  }
+
+  &__stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 4px;
+    border: 1px dashed var(--sys-gold-soft);
+    border-radius: 3px;
+
+    span {
+      color: var(--color-dim, $darker-text-color);
+      font-size: 12px;
+    }
+
+    strong {
+      font-size: 18px;
+    }
+  }
+
+  &__money strong {
+    font-size: 17px;
+  }
+
+  &__inventory {
+    h3 {
+      margin-bottom: 4px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    ul {
+      display: flex;
+      flex-direction: column;
+    }
+
+    li {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 8px;
+      align-items: baseline;
+      padding: 5px 2px;
+      border-bottom: 1px dashed var(--sys-gold-soft);
+    }
+  }
+
+  &__count {
+    color: var(--color-dim, $darker-text-color);
+    font-size: 13px;
+  }
+
+  &__note {
+    flex-basis: 100%;
+    color: var(--color-dim, $darker-text-color);
+    font-size: 12px;
+  }
+
+  &__empty {
+    color: var(--color-dim, $darker-text-color);
+    font-size: 13px;
+  }
+}
+
+.system-game {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 11px 4px;
+  border-bottom: 1px dashed var(--sys-gold-soft);
+  color: inherit;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    background: color-mix(in srgb, var(--sys-gold) 8%, transparent);
+  }
+
+  &__name {
+    font-family: var(--sys-serif);
+  }
+
+  &__opponents {
+    margin-inline-start: 8px;
+    color: var(--color-dim, $darker-text-color);
+    font-size: 14px;
+  }
+
+  &__meta {
+    display: flex;
+    gap: 10px;
+    color: var(--color-dim, $darker-text-color);
+    font-size: 13px;
+  }
+
+  &__result {
+    font-family: var(--sys-serif);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+
+    &--win {
+      color: var(--sys-gold);
+    }
+  }
+}
+
+.system-howto {
+  display: grid;
+  gap: 8px;
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    font-family: var(--sys-serif);
+    font-size: 14px;
+  }
+
+  // 주문처럼 적힌 명령어
+  code {
+    padding: 2px 10px;
+    border-bottom: 1px solid var(--sys-gold-soft);
+    background: transparent;
+    font-family: var(--sys-serif);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  &__common {
+    margin-top: 12px;
+    color: var(--color-dim, $darker-text-color);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  &__note {
+    color: var(--color-dim, $darker-text-color);
+    font-size: 12px;
+  }
+}
+
+// 토너먼트 대진표
+.system-tournament {
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px 12px;
+    margin-bottom: 10px;
+    font-family: var(--sys-serif);
+    font-size: 14px;
+
+    strong {
+      font-size: 16px;
+    }
+  }
+
+  &__champion {
+    color: var(--sys-gold);
+    font-weight: 700;
+  }
+
+  // 소속별 승수: 문장 + 이름 + 승수
+  &__tally {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin-bottom: 14px;
+    font-family: var(--sys-serif);
+    font-size: 14px;
+
+    span {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    b {
+      color: var(--sys-gold);
+    }
+  }
+}
+
+.system-bracket {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+
+  // 라운드 이름은 위에 맞추고, 경기 칸은 그 아래에서 세로 가운데
+  &__round {
+    display: flex;
+    flex: 0 0 156px;
+    flex-direction: column;
+    gap: 10px;
+
+    > .system-bracket__match:nth-child(2) {
+      margin-top: auto;
+    }
+
+    > .system-bracket__match:last-child {
+      margin-bottom: auto;
+    }
+  }
+
+  &__round-name {
+    color: var(--sys-gold);
+    font-family: var(--sys-serif);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-align: center;
+  }
+
+  &__match {
+    @extend %system-parchment;
+
+    display: block;
+    padding: 7px;
+    color: inherit;
+    text-decoration: none;
+
+    &--playing,
+    &--judging {
+      border-color: var(--sys-gold);
+      box-shadow:
+        inset 0 0 0 3px var(--sys-parchment),
+        inset 0 0 0 4px var(--sys-gold),
+        0 0 8px color-mix(in srgb, var(--sys-gold) 40%, transparent);
+    }
+  }
+
+  &__meta {
+    margin-bottom: 4px;
+    color: var(--color-dim, $darker-text-color);
+    font-family: var(--sys-serif);
+    font-size: 11px;
+    font-style: italic;
+  }
+
+  &__player {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding: 3px 4px;
+    font-size: 13px;
+
+    &--winner {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--sys-gold) 25%, transparent), transparent);
+      font-weight: 700;
+    }
+
+    & + & {
+      border-top: 1px dotted var(--sys-gold-soft);
+    }
+  }
+
+  &__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// 성적표 (양피지 장부): 과목 — 점선 — 등급
+.system-report {
+  @extend %system-parchment;
+
+  padding: 16px 20px;
+  font-family: var(--sys-serif);
+
+  &__grades {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+  }
+
+  &__row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 14px;
+
+    dt {
+      flex: 0 0 auto;
+    }
+
+    // 과목과 등급 사이 점선
+    &::after {
+      content: '';
+      order: 1;
+      flex: 1;
+      border-bottom: 1px dotted var(--sys-gold-soft);
+    }
+
+    dd {
+      order: 2;
+      margin: 0;
+    }
+  }
+
+  &__grade {
+    min-width: 1.6em;
+    color: var(--color-dim, $darker-text-color);
+    font-size: 17px;
+    font-weight: 700;
+    text-align: center;
+
+    &--O,
+    &--E {
+      color: var(--sys-gold);
+    }
+
+    &--T,
+    &--D {
+      color: #8b3a3a;
+    }
+  }
+
+  &__extra {
+    display: grid;
+    gap: 4px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--sys-gold-soft);
+    font-size: 13px;
+  }
+
+  &__points {
+    margin-top: 10px;
+    color: var(--sys-gold);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: end;
+  }
+}
+
+// ── 시스템 메뉴: 컨텐츠 고르기·게임 화면 ──
+.system-strips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.system-strip {
+  @extend %system-parchment;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--sys-gold);
+  }
+
+  &__main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    font-family: var(--sys-serif);
+  }
+
+  &__sub {
+    color: var(--color-dim, $darker-text-color);
+    font-size: 12px;
+  }
+
+  &__houses {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    font-family: var(--sys-serif);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  &__house {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  &__go {
+    color: var(--sys-gold);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+}
+
+.system-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.system-tile {
+  @extend %system-parchment;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--sys-gold);
+    transform: translateY(-2px);
+  }
+
+  &--mine {
+    border-color: var(--sys-gold);
+  }
+
+  &__icon {
+    font-size: 30px;
+    line-height: 1;
+  }
+
+  &__name {
+    font-family: var(--sys-serif);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  &__summary {
+    flex: 1;
+    color: var(--color-dim, $darker-text-color);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-dim, $darker-text-color);
+    font-size: 11px;
+  }
+
+  &__badge {
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--sys-gold);
+    color: #1c1408;
+    font-weight: 700;
+  }
+}
+
+.system-game-page {
+  &__hero {
+    @extend %system-parchment;
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    padding: 16px 18px;
+
+    h2 {
+      font-family: var(--sys-serif);
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    p {
+      margin-top: 2px;
+      color: var(--color-dim, $darker-text-color);
+      font-size: 13px;
+    }
+
+    > div:nth-child(2) {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  &__icon {
+    font-size: 42px;
+    line-height: 1;
+  }
+
+  &__record {
+    font-family: var(--sys-serif);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  &__columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 0 16px;
+  }
+
+  &__steps {
+    margin-bottom: 12px;
+    padding-inline-start: 20px;
+    font-size: 14px;
+    line-height: 1.7;
+    list-style: decimal;
+  }
+
+  &__rules {
+    width: 100%;
+    font-size: 13px;
+    border-collapse: collapse;
+
+    th,
+    td {
+      padding: 4px 6px;
+      border-bottom: 1px dashed var(--sys-gold-soft);
+      text-align: start;
+    }
+
+    thead th {
+      color: var(--color-dim, $darker-text-color);
+      font-weight: 400;
+    }
+  }
+
+  &__items {
+    color: var(--color-dim, $darker-text-color);
+  }
+
+  &__more {
+    display: inline-block;
+    margin: 8px 0 4px;
+    color: var(--sys-gold);
+    font-size: 13px;
+  }
+}
+
+.system-newgame {
+  @extend %system-parchment;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+
+  &--simple {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+
+    input {
+      padding: 5px 10px;
+      border: 1px solid var(--sys-gold-soft);
+      border-radius: 999px;
+      background: transparent;
+      color: inherit;
+    }
+  }
+
+  &__members {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 6px;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+}
+
+.system-member {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 6px;
+  border: 1px solid var(--sys-gold-soft);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+
+  img {
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--house-color);
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  &--picked {
+    border-color: var(--sys-gold);
+    background: color-mix(in srgb, var(--sys-gold) 16%, transparent);
+  }
+
+  &__name {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  &__house {
+    color: var(--color-dim, $darker-text-color);
+    font-size: 11px;
+  }
+
+  &__order {
+    position: absolute;
+    top: 4px;
+    inset-inline-end: 6px;
+    min-width: 18px;
+    border-radius: 999px;
+    background: var(--sys-gold);
+    color: #1c1408;
+    font-size: 11px;
+    font-weight: 700;
+  }
+}
+
+.system-board {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  &__sent {
+    color: var(--sys-gold);
+    font-size: 13px;
+  }
+
+  &__command {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+
+    input[type='text'] {
+      flex: 1;
+      min-width: 160px;
+      padding: 6px 10px;
+      border: 1px solid var(--sys-gold-soft);
+      border-radius: 6px;
+      background: transparent;
+      color: inherit;
+    }
+  }
+
+  &__dm {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+  }
+
+  &__log {
+    font-size: 13px;
+
+    summary {
+      color: var(--color-dim, $darker-text-color);
+      cursor: pointer;
+    }
+
+    li {
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--sys-gold-soft);
+    }
+
+    p {
+      white-space: pre-wrap;
+    }
+  }
+
+  &__log-time {
+    color: var(--color-dim, $darker-text-color);
+    font-size: 11px;
+  }
+}
+
+.system-sessions {
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 12px;
+    padding: 9px 4px;
+    border-bottom: 1px dashed var(--sys-gold-soft);
+    color: inherit;
+    font-size: 14px;
+    text-decoration: none;
+
+    &:hover {
+      background: color-mix(in srgb, var(--sys-gold) 8%, transparent);
+    }
+  }
+
+  &__me {
+    font-weight: 700;
+  }
+
+  &__time {
+    color: var(--color-dim, $darker-text-color);
+    font-size: 12px;
+  }
+}
+
+.system-ranking {
+  padding-inline-start: 22px;
+  font-family: var(--sys-serif);
+  list-style: decimal;
+
+  li {
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--sys-gold-soft);
+
+    span {
+      display: inline-block;
+      min-width: 70%;
+    }
+  }
+
+  &__me {
+    color: var(--sys-gold);
+    font-weight: 700;
+  }
+}

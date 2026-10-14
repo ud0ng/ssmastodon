@@ -1,0 +1,81 @@
+- content_for :page_title do
+  = game_t('admin.games.characters.edit_title', name: @character.display_name)
+
+- content_for :heading do
+  = render 'admin/game_characters/heading'
+
+= simple_form_for @character, url: admin_game_character_path(@character, q: params[:q], house: params[:house], faction: params[:faction], field: params[:field]), method: :patch do |f|
+  = render 'shared/error_messages', object: @character
+
+  .game-character-head
+    = image_tag full_asset_url(@character.account.avatar_static_url), alt: '', class: 'game-roster__avatar'
+    %div
+      %h3= @character.display_name
+      %p.hint= game_t('admin.games.characters.account_hint', account: "@#{@character.account.username}", display_name: @character.account.display_name)
+
+  %h4= game_t('admin.games.characters.sections.basic')
+  .bot-sheet-fields
+    = f.input :name, wrapper: :with_label, label: game_t('admin.games.characters.name'), placeholder: @character.account.display_name.presence || @character.account.username, hint: game_t('admin.games.characters.name_hint')
+    = f.input :game_house_id, as: :select, collection: @houses.map { |house| [house.label, house.id] }, include_blank: game_t('admin.games.characters.none'), wrapper: :with_label, label: @labels['house_label']
+    = f.input :game_faction_id, as: :select, collection: @factions.map { |faction| [faction.label, faction.id] }, include_blank: game_t('admin.games.characters.none'), wrapper: :with_label, label: @labels['faction_label']
+    = f.input :grade, as: :integer, wrapper: :with_label, label: game_t('admin.games.characters.grade'), input_html: { min: 1, max: 7 }
+    - @profile_fields.each do |field|
+      .input.with_label
+        .label_input
+          %label{ for: "profile_#{field.id}" }= field.name
+          .label_input__wrapper
+            - value = @character.profile_value(field)
+            - if field.select?
+              = select_tag "game_character[profile][#{field.id}]", options_for_select(field.choices.map { |choice| choice['name'] }, value), include_blank: game_t('admin.games.characters.none'), id: "profile_#{field.id}"
+            - elsif field.kind == 'number'
+              = number_field_tag "game_character[profile][#{field.id}]", value, id: "profile_#{field.id}", step: 1
+            - else
+              = text_field_tag "game_character[profile][#{field.id}]", value, id: "profile_#{field.id}"
+  %p.hint= link_to game_t('admin.games.characters.fields.manage'), admin_game_character_fields_path
+
+  %h4= game_t('admin.games.characters.sections.stats')
+  .bot-sheet-fields
+    - @stat_fields.each do |field|
+      .input.with_label
+        .label_input
+          %label{ for: "stat_#{field.id}" }= field.name
+          .label_input__wrapper
+            - value = @character.stats[field.name]
+            - if field.kind == 'number'
+              = number_field_tag "game_character[stat_values][#{field.name}]", value, id: "stat_#{field.id}", step: 1
+            - else
+              = text_field_tag "game_character[stat_values][#{field.name}]", value, id: "stat_#{field.id}"
+  .fields-group
+    = f.input :extra_stats_text, as: :text, wrapper: :with_label, label: game_t('admin.games.characters.extra_stats'), hint: game_t('admin.games.characters.stats_hint'), input_html: { value: @character.extra_stats_text(@stat_fields.map(&:name)), rows: 2, data: { stats_editor: { key: game_t('admin.games.characters.stat_name'), value: game_t('admin.games.characters.stat_value') }.to_json } }
+
+  %h4= game_t('admin.games.characters.sections.inventory')
+  .bot-sheet-fields
+    = f.input :money, as: :integer, wrapper: :with_label, label: game_t('admin.games.characters.money', currency: @currency)
+  .fields-group
+    = f.input :inventory_text, as: :text, wrapper: :with_label, label: game_t('admin.games.characters.inventory'), hint: game_t('admin.games.characters.inventory_hint'), input_html: { rows: 3, data: { stats_editor: { columns: [game_t('admin.games.characters.item_name'), game_t('admin.games.characters.item_count'), game_t('admin.games.characters.item_note')], sep: '|' }.to_json } }
+
+  %h5= game_t('admin.games.characters.recent_rewards')
+  - if @rewards.any?
+    .bot-sheet-table.game-rewards
+      %table.table
+        %thead
+          %tr
+            %th= game_t('admin.games.characters.reward_when')
+            %th= game_t('admin.games.characters.reward_reason')
+            %th= game_t('admin.games.characters.money', currency: @currency)
+            %th= game_t('admin.games.characters.inventory')
+        %tbody
+          - @rewards.each do |reward|
+            %tr
+              %td.bot-sheet-table__text= l(reward.created_at.in_time_zone('Asia/Seoul'), format: :short)
+              %td.bot-sheet-table__text= game_reward_reason(reward.reason)
+              %td.bot-sheet-table__text= reward.money.positive? ? "+#{reward.money}" : '-'
+              %td.bot-sheet-table__text= reward.items.map { |item| Game::Rewards.item_label(item) }.join(', ').presence || '-'
+  - else
+    %p.hint= game_t('admin.games.characters.no_rewards')
+
+  .fields-group
+    = f.input :note, as: :text, wrapper: :with_label, label: game_t('admin.games.characters.note'), input_html: { rows: 3 }
+
+  .actions
+    = f.button :button, t('generic.save_changes'), type: :submit
