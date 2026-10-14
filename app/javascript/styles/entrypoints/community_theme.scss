@@ -355,6 +355,13 @@ body.community-theme:not(.admin) {
 }
 
 body.community-theme.admin {
+  // 입력칸·체크박스 바탕: 낮은 박스보다 밝게, 밤은 테마의 '고른 항목' 색을 박스에 섞는다 (테마색이 바뀌면 따라간다)
+  --ct-field: color-mix(in srgb, var(--ct-base) 35%, #fff);
+
+  &.theme-community-dark {
+    --ct-field: color-mix(in srgb, var(--ct-soft) 55%, var(--ct-base));
+  }
+
   --ct-panel: color-mix(in srgb, var(--ct-base) var(--ct-panel-alpha), transparent);
 
   --background-color: var(--ct-base);
@@ -684,7 +691,7 @@ body.community-theme.admin {
     color: var(--ct-text);
   }
 
-  // 체크박스·라디오: 테두리 없이 입력칸과 같은 바탕, 고르면 서브색으로 채우고 체크/점은 서브색 위 글자색
+  // 체크박스·라디오: 그림자 없이 테두리 + 입력칸 바탕, 고르면 서브색으로 채우고 체크/점은 서브색 위 글자색
   input[type='checkbox'],
   input[type='radio'] {
     appearance: none;
@@ -693,17 +700,17 @@ body.community-theme.admin {
     width: 18px;
     height: 18px;
     margin: 0;
-    border: 0;
+    border: 1.5px solid var(--ct-line-strong);
     border-radius: 5px;
-    background: color-mix(in srgb, var(--ct-base) 35%, var(--ct-shade));
-    box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ct-text) 18%, transparent);
+    background: var(--ct-field);
+    box-shadow: none;
     cursor: pointer;
     vertical-align: middle;
-    transition: background-color 120ms;
+    transition: background-color 120ms, border-color 120ms;
 
     &:checked {
+      border-color: var(--ct-point);
       background: var(--ct-point);
-      box-shadow: none;
     }
 
     &:focus-visible {
@@ -720,8 +727,8 @@ body.community-theme.admin {
   input[type='checkbox']:checked::after {
     content: '';
     position: absolute;
-    top: 3px;
-    left: 6px;
+    top: 2px;
+    left: 5px;
     width: 4px;
     height: 8px;
     border: solid var(--ct-on-point);
@@ -733,11 +740,11 @@ body.community-theme.admin {
     border-radius: 50%;
 
     &:checked {
-      box-shadow: inset 0 0 0 5px var(--ct-point), inset 0 0 0 9px var(--ct-on-point);
+      background: radial-gradient(circle, var(--ct-on-point) 0 3px, var(--ct-point) 3.5px);
     }
   }
 
-  // 표: 머리줄은 고른 항목 색, 줄무늬 없이 얇은 줄, 호버는 호버 색
+  // 표: 머리줄은 고른 항목 색, 내용 칸에는 박스 배경색, 얇은 줄, 호버는 호버 색. 바깥은 둥근 테두리
   .table,
   .bot-sheet-table .table {
     border: 0;
@@ -751,14 +758,35 @@ body.community-theme.admin {
 
     & > tbody > tr > td,
     & > tbody > tr > th {
-      background: transparent;
+      background: var(--ct-panel);
       border-top: 0;
       border-bottom: 1px solid var(--ct-line);
+      color: var(--ct-text);
     }
 
-    & > tbody > tr:hover > td {
-      background: var(--ct-hover);
+    & > tbody > tr:last-child > td,
+    & > tbody > tr:last-child > th {
+      border-bottom: 0;
     }
+
+    & > tbody > tr:hover > td,
+    & > tbody > tr:hover > th {
+      background: color-mix(in srgb, var(--ct-panel) 88%, var(--ct-text));
+    }
+  }
+
+  // 감싸개 없는 표(초대하기 등)도 같은 둥근 테두리
+  table.table:not(.inline-table) {
+    overflow: hidden;
+    border: var(--ct-box-border) solid var(--ct-line);
+    border-collapse: separate;
+    border-radius: 12px;
+    border-spacing: 0;
+  }
+
+  .table-wrapper > table.table {
+    border: 0;
+    border-radius: 0;
   }
 
   .table-wrapper,
@@ -766,6 +794,44 @@ body.community-theme.admin {
     overflow: hidden;
     border: var(--ct-box-border) solid var(--ct-line);
     border-radius: 12px;
+  }
+
+  // 목록형(로그인 기록·역할·공지·필터): 둥근 테두리 + 내용 칸 배경
+  .announcements-list,
+  .filters-list {
+    overflow: hidden;
+    border: var(--ct-box-border) solid var(--ct-line);
+    border-radius: 12px;
+
+    &__item,
+    .log-entry {
+      border-bottom: 1px solid var(--ct-line);
+    }
+
+    > :last-child {
+      border-bottom: 0;
+    }
+  }
+
+  .announcements-list .log-entry,
+  .announcements-list__item,
+  .filters-list__item {
+    background: var(--ct-panel);
+  }
+
+  .log-entry {
+    background: var(--ct-panel);
+    border-color: var(--ct-line);
+  }
+
+  // 회원 화면: 숫자 상자·프로필 카드
+  .dashboard__counters > div > div,
+  .dashboard__counters > div > a,
+  .card.h-card {
+    border: 1px solid var(--ct-line);
+    border-radius: 12px;
+    background: var(--ct-panel);
+    color: var(--ct-text);
   }
 
   .batch-table__toolbar,
@@ -787,7 +853,7 @@ body.community-theme.admin {
     }
   }
 
-  // 입력칸: 박스보다 확실히 밝은(낮)/어두운(밤) 바탕 + 진한 테두리로 박스 위에서 또렷하게, 고르면 서브색 테두리
+  // 입력칸: 그림자 없이 테두리 + 바탕. 바탕은 낮=박스보다 밝게, 밤=디자인 탭의 테마색(고른 항목 색)을 박스에 섞어 은은하게
   .simple_form {
     input[type='text'],
     input[type='number'],
@@ -798,19 +864,61 @@ body.community-theme.admin {
     input[type='datetime-local'],
     textarea,
     select {
-      // 테두리 없이 바탕색으로만 구분 (자리는 남겨 두어 고를 때 서브색 테두리가 생겨도 흔들리지 않게)
-      border: 1px solid transparent;
+      border: 1px solid var(--ct-line-strong);
       border-radius: 10px;
-      background-color: color-mix(in srgb, var(--ct-base) 35%, var(--ct-shade));
-      box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ct-text) 10%, transparent);
+      background-color: var(--ct-field);
+      box-shadow: none;
       color: var(--ct-text);
-      transition: border-color 120ms, box-shadow 120ms;
+      transition: border-color 120ms;
 
       &:focus {
         border-color: var(--ct-point);
-        box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-point) 22%, transparent);
+        box-shadow: none;
         outline: 0;
       }
+    }
+  }
+}
+
+// 개발: 범위(스코프)를 배지로, 이미지가 쓰이는 곳 안내는 '고른 항목' 색
+body.community-theme.admin {
+  .information-badge,
+  samp.information-badge,
+  .simple_form .check_boxes code,
+  .simple_form .check_boxes label code {
+    display: inline-block;
+    margin: 0 4px 4px 0;
+    padding: 2px 10px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ct-soft);
+    color: var(--ct-text);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 18px;
+  }
+
+  // 위험한 범위(write 등)는 붉은 배지
+  .simple_form .scope-danger code,
+  .simple_form .scope-danger .information-badge,
+  code.scope-danger,
+  .scope-danger {
+    background: color-mix(in srgb, #c0392b 18%, var(--ct-soft));
+    color: color-mix(in srgb, #c0392b 80%, var(--ct-text));
+  }
+
+  .branding-guide {
+    border-radius: 12px;
+    background: var(--ct-soft);
+    color: var(--ct-text);
+
+    &__summary .icon {
+      color: var(--ct-text);
+    }
+
+    &__chevron {
+      color: var(--ct-dim);
     }
   }
 }
