@@ -86,23 +86,25 @@ namespace :admin do
   get 'games/houses', to: redirect('/admin/characters/houses')
   resources :game_houses, path: 'characters/houses', only: [:index, :create, :update, :destroy] do
     post :adjust, on: :collection
-    post :weekly, on: :collection
-    post :term_end, on: :collection
+    post :scoring, on: :collection
     post :mode, on: :collection
     patch :labels, on: :collection
   end
-  resources :game_tournaments, path: 'games/tournaments', only: [:index, :create, :show, :update, :destroy] do
-    post :start, on: :member
-  end
-  resources :game_tournament_matches, path: 'games/tournament_matches', only: [:update] do
-    post :decide, on: :member
+  resources :game_seasons, path: 'characters/seasons', only: [:create, :update, :destroy] do
+    member do
+      post :interim
+      post :finish
+    end
+    patch :messages, on: :collection
   end
   resources :game_shops, path: 'games/shops', only: [:index, :create, :update, :destroy] do
     patch :currency, on: :collection
-    post :give, on: :collection
   end
   resources :game_shop_items, path: 'games/shop_items', only: [:create, :update, :destroy]
   resources :game_settings, path: 'games', only: [:index, :show, :update]
+  resources :game_activities, path: 'characters/activity', only: [:index, :show] do
+    post :give, on: :collection
+  end
   resources :game_character_stats, path: 'characters/stats', only: [:index, :create, :update, :destroy]
   resources :game_characters, path: 'characters', only: [:index, :edit, :update] do
     patch :bulk, on: :collection

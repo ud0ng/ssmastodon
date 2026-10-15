@@ -13,13 +13,13 @@ RSpec.describe 'Admin character roster' do
   let(:eaters) { GameHouse.factions.find_by(name: '죽음을 먹는 자들') }
   let(:character) { GameCharacter.for(Fabricate(:account)) }
 
-  it 'saves faction, stats and money from the detail page without touching the inventory' do
+  it 'saves name, faction and stats from the detail page without touching money or the inventory' do
     character.update!(inventory: [{ 'name' => '사과', 'count' => 1, 'note' => '' }])
 
     patch admin_game_character_path(character), params: {
       game_character: {
         name: '해리',
-        money: 120,
+        money: 120, # 상세 화면에서는 재화를 고치지 않는다 (활동 탭의 지급)
         game_faction_id: order.id,
         stat_values: { '힘' => '150', '민첩' => '', '체력' => '9', '없는 스탯' => '4' },
       },
@@ -27,7 +27,7 @@ RSpec.describe 'Admin character roster' do
 
     expect(response).to redirect_to(edit_admin_game_character_path(character))
     expect(character.reload).to have_attributes(
-      name: '해리', money: 120, faction: order, stats: { '힘' => '100' },
+      name: '해리', money: 0, faction: order, stats: { '힘' => '100' },
       inventory: [{ 'name' => '사과', 'count' => 1, 'note' => '' }]
     )
   end

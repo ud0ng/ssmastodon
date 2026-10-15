@@ -28,7 +28,7 @@ module Game
     LABELS = {
       game: '컨텐츠', subject: '과목', subjects: '과목 목록', tournament: '토너먼트', term: '소속 이름',
       house: '소속', emoji: '소속 이모지', amount: '점수', points: '점수', reward: '우승 점수',
-      turn: '턴', turns: '턴 수', round: '라운드', rounds: '라운드 수', minutes: '분', number: '경기 번호',
+      turn: '턴', turns: '턴 수', round: '라운드', rounds: '라운드 수', minutes: '분', seconds: '초', number: '경기 번호',
       lines: '결과 목록', board: '점수판', outcome: '결과', result: '이번 결과', tally: '승수', reason: '사유',
       players: '사람들', names: '참가자 명단', try: '시도 번호', tries: '시도 횟수', left: '남은 시도',
       target_name: '변신 결과물', score: '이번 점수', potion: '물약 이름', strength: '강도', size: '재료 수',
@@ -52,7 +52,7 @@ module Game
       room: '방', zone: '구역', targets: '목표 장소', student: '학생 이름', prefect: '사감 이름',
       link: '링크', creature: '마법 생물', item: '아이템',
       teams: '팀 구성', rewards: '보상', money: '돈', currency: '돈 이름', items: '아이템 목록',
-      range: '기간', houses: '소속 점수', games: '판 수', winners: '최다 승리', toppers: '과목별 수석',
+      range: '기간', season: '시즌', period: '시즌 기간', houses: '소속 점수', games: '판 수', winners: '최다 승리', toppers: '과목별 수석',
       **ROLES.transform_values { |prefix| "#{prefix}계정명" },
     }.freeze
 

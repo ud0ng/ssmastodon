@@ -10,7 +10,6 @@
   = button_tag safe_join([material_symbol('add'), game_t('admin.games.shop.add_shop')]), type: :button, class: 'button button-secondary', data: { modal_open: 'shop-add' }
   - if @shops.any?
     = button_tag safe_join([material_symbol('add'), game_t('admin.games.shop.add_item')]), type: :button, class: 'button button-secondary', data: { modal_open: 'item-add' }
-  = button_tag safe_join([material_symbol('celebration'), game_t('admin.games.shop.give')]), type: :button, class: 'button', data: { modal_open: 'shop-give' }
 
 - if @shops.empty?
   .bot-sheet-table.game-table
@@ -140,36 +139,3 @@
   - shop.items.each do |item|
     = render layout: 'admin/game_characters/modal', locals: { id: "item-#{item.id}", title: game_t('admin.games.shop.edit_item') } do
       = render 'admin/game_shops/item_form', item: item, url: admin_game_shop_item_path(item), method: :patch
-
--# 지급: 고른 캐릭터에게 재화·아이템을 준다 (재화 기록에 '운영진'으로 남는다)
-= render layout: 'admin/game_characters/modal', locals: { id: 'shop-give', title: game_t('admin.games.shop.give') } do
-  = form_tag give_admin_game_shops_path, method: :post, class: 'simple_form' do
-    .game-give__targets
-      %label.game-give__all
-        = check_box_tag :select_all, '1', false, id: 'give_select_all', data: { select_all: 'account_ids[]' }
-        %strong= game_t('admin.games.shop.give_all')
-      .game-give__list
-        - @characters.each do |character|
-          %label.game-give__target
-            = check_box_tag 'account_ids[]', character.account_id, false, id: "give_#{character.account_id}"
-            = character.display_name
-    .bot-sheet-fields
-      .input.with_label.integer
-        .label_input
-          %label{ for: 'give_money' }= game_t('admin.games.shop.give_money', currency: @currency)
-          .label_input__wrapper= number_field_tag :money, nil, id: 'give_money', min: 0, step: 1
-      .input.with_label.string
-        .label_input
-          %label{ for: 'give_reason' }= game_t('admin.games.houses.reason')
-          .label_input__wrapper= text_field_tag :reason, '', id: 'give_reason', maxlength: 100
-      .input.with_label.select
-        .label_input
-          %label{ for: 'give_item' }= game_t('admin.games.shop.item_name')
-          .label_input__wrapper= select_tag :item, options_for_select(@shops.flat_map { |shop| shop.items.map(&:name) }), include_blank: game_t('admin.games.reward_item.pick'), id: 'give_item'
-      .input.with_label.integer
-        .label_input
-          %label{ for: 'give_count' }= game_t('admin.games.manage.detail.item_count')
-          .label_input__wrapper= number_field_tag :count, 1, id: 'give_count', min: 1, step: 1
-    .actions
-      %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
-      = button_tag game_t('admin.games.shop.give'), type: :submit, class: 'button'

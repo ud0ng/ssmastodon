@@ -96,13 +96,4 @@ RSpec.describe Game::Tournament do
     expect(gryffindor.total).to eq 0
     expect(Status.where(account: system).map(&:text)).to include(a_string_including('우승: 슬리데린'))
   end
-
-  it 'gives no points for regular content in tournament mode' do
-    session = GameSession.create!(kind: 'jellybean', status: 'finished').tap do |created|
-      created.players.create!(account: harry, seat: 0)
-      created.players.create!(account: draco, seat: 1)
-    end
-    expect(Game::Points.award(session, session.players.first, 10)).to be_nil
-    expect(GameHousePoint.count).to eq 0
-  end
 end

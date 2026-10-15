@@ -16,6 +16,10 @@ module Admin
         'faction' => GameCharacter.visible.group(:game_faction_id).count,
       }
       @recent_points = GameHousePoint.includes(:house, :account).order(id: :desc).limit(30)
+      @scoring_mode = common['scoring_mode']
+      @seasons = GameSeason.order(id: :desc).to_a
+      @season_fields = Game::Config.sections('common', 'season').flat_map(&:last)
+      @season_values = common
     end
 
     def create
@@ -71,20 +75,12 @@ module Admin
       redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
     end
 
-    # 주간 결산 툿을 지금 올린다 (정기 결산과 별개)
-    def weekly
+    # 점수 방식 (점수제 / 판수제)
+    def scoring
       authorize :settings, :update?
 
-      Game::Summary.post_weekly!
-      redirect_to admin_game_houses_path, notice: t('admin.games.houses.posted')
-    end
-
-    # 학기 마감 발표 (점수는 그대로 둔다)
-    def term_end
-      authorize :settings, :update?
-
-      Game::Summary.term_end!
-      redirect_to admin_game_houses_path, notice: t('admin.games.houses.posted')
+      Game::Config.merge!('common', 'scoring_mode' => params[:scoring_mode].to_s)
+      redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
     end
 
     private

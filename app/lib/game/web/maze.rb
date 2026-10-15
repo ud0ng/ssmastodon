@@ -32,7 +32,7 @@ module Game
         F.new(key: 'lumos_turns', type: :integer, default: 3, group: 'rules', label: '루모스 지속 (턴)'),
         F.new(key: 'creature_names', type: :lines, group: 'flavors', label: '마법 생물 (줄마다 하나)', default: %w(스크루트 스핑크스 보가트 아크로맨투라)),
         F.new(key: 'msg_start', type: :text, group: 'messages', label: '시작',
-              default: "🏆 %{game} 시작! %{players}\n미로 한가운데 우승컵이 있습니다. 진행은 웹에서: %{link}\n턴마다 %{minutes}분 안에 길과 태도(협력/방해)를 골라 주세요."),
+              default: "🏆 %{game} 시작! %{players}\n미로 한가운데 우승컵이 있습니다. 진행은 웹에서: %{link}\n턴마다 %{seconds}초 안에 길과 태도(협력/방해)를 골라 주세요."),
         F.new(key: 'msg_turn', type: :text, group: 'messages', label: '턴 결과', default: "%{turn}턴\n%{lines}"),
         F.new(key: 'msg_quiet', type: :text, group: 'messages', label: '조용한 턴', default: '모두 미로 속을 조심스럽게 나아갔다.'),
         F.new(key: 'msg_trap', type: :text, group: 'messages', label: '함정', default: '%{player}{이가} 함정에 걸렸다! (다음 턴 쉼)'),
@@ -87,7 +87,7 @@ module Game
         )
         players.each { |player| reveal!(player.seat.to_s) }
         session.update!(turn: 1)
-        post(render(config['msg_start'], players: players.map(&:name).join(', '), link: link, minutes: common['turn_minutes']))
+        post(render(config['msg_start'], players: players.map(&:name).join(', '), link: link, **Game::Config.turn_time))
         wait_for_turn!
       end
 

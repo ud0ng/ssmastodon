@@ -4,13 +4,16 @@ require 'rails_helper'
 
 RSpec.describe Game::Config do
   describe '.sections' do
-    it 'lays out the common settings and hides the group labels edited elsewhere' do
-      sections = described_class.sections('common').to_h { |name, fields| [name, fields.map(&:key)] }
+    it 'splits the common settings into the settings and commands pages' do
+      settings = described_class.sections('common', 'settings').to_h { |name, fields| [name, fields.map(&:key)] }
+      commands = described_class.sections('common', 'commands').to_h { |name, fields| [name, fields.map(&:key)] }
 
-      expect(sections.keys).to eq %w(basic rules summary messages tournament)
-      expect(sections['basic']).to include('system_username', 'currency_name', 'group_mode', 'scoring_mode')
-      expect(sections['rules']).to include('cmd_accept', 'invite_minutes', 'daily_pair_limit')
-      expect(sections.values.flatten).to_not include('house_label', 'faction_label')
+      expect(settings.keys).to eq %w(bots currency rules)
+      expect(settings['bots']).to eq %w(system_username bot_usernames)
+      expect(settings['currency']).to include('currency_name', 'attendance_reward', 'toot_reward_basis', 'toot_reward_public', 'toot_reward_every', 'toot_reward_amount')
+      expect(settings['rules']).to eq %w(invite_minutes turn_seconds one_game_per_person)
+      expect(commands['commands']).to eq %w(cmd_accept cmd_decline cmd_forfeit cmd_points cmd_record)
+      expect((settings.values + commands.values).flatten).to_not include('house_label', 'scoring_mode', 'msg_season_final')
     end
 
     it 'lays out the lessons settings' do

@@ -26,19 +26,36 @@ RSpec.describe Game::Points do
     expect(gryffindor.total).to eq 10
   end
 
-  it 'halves points between the same house' do
+  it 'pays the set points every time, whoever the opponent is' do
     GameCharacter.for(bob).update!(house: gryffindor)
-    session = finished_session
-    described_class.award(session, session.players.first, 10)
-    expect(gryffindor.total).to eq 5
-  end
-
-  it 'stops paying after the daily limit against the same opponent' do
     4.times do
       session = finished_session
       described_class.award(session, session.players.first, 10)
     end
-    expect(gryffindor.total).to eq 30
+    expect(gryffindor.total).to eq 40
+  end
+
+  it 'gives one point per won game in games mode' do
+    Game::Config.update!('common', 'scoring_mode' => 'games')
+    session = finished_session
+    described_class.award(session, session.players.first, 50, outcome: 'win')
+    described_class.award(session, session.players.second, 30, outcome: 'lose')
+
+    expect([gryffindor.total, slytherin.total]).to eq [1, 0]
+  end
+
+  it 'starts counting again after a season ends' do
+    first = finished_session
+    described_class.award(first, first.players.first, 10)
+    season = GameSeason.create!(name: '1학기')
+    Game::Summary.season_final!(season)
+
+    expect(gryffindor.total).to eq 0
+    expect(season.reload).to have_attributes(status: 'finished')
+    expect(season.results.first).to include('name' => '그리핀도르', 'total' => 10)
+    later = finished_session
+    described_class.award(later, later.players.first, 5)
+    expect(gryffindor.total).to eq 5
   end
 
   it 'uses the configured name for houses (e.g. 진영 for the adult period)' do

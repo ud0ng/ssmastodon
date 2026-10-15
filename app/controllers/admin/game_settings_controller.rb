@@ -16,8 +16,9 @@ module Admin
     def show
       authorize :settings, :show?
 
-      @fields = Game::Config.schema(@key)
+      @sections = Game::Config.sections(@key, @page)
       @values = Game::Config.for(@key)
+      @accounts = Account.local.without_instance_actor.without_suspended.order(:username).to_a if @key == 'common'
     end
 
     def update
@@ -25,13 +26,14 @@ module Admin
 
       Game::Config.update!(@key, params.fetch(:config, {}).permit!.to_h)
       flash[:notice] = t('generic.changes_saved_msg')
-      redirect_to admin_game_setting_path(@key)
+      redirect_to admin_game_setting_path(params[:id])
     end
 
     private
 
+    # 공통 설정은 '설정'(common) / '명령어'(commands) 두 화면으로 나눠 보여 준다
     def set_key
-      @key = params[:id]
+      @key, @page = { 'common' => %w(common settings), 'commands' => %w(common commands) }.fetch(params[:id]) { [params[:id], nil] }
       raise ActiveRecord::RecordNotFound unless Game::Config.keys.include?(@key)
     end
   end

@@ -25,12 +25,81 @@ en:
   admin:
     system_menu: System
     games:
+      pick_account: Choose a member
+      activity:
+        all_characters: Select all
+        basis:
+          chars: characters
+          toots: posts
+        give: Give
+        give_items: Items
+        give_money: "Currency (%{currency})"
+        give_nothing: Choose characters and an amount or items.
+        give_to: Characters
+        given: "Given to %{count} characters."
+        hint: Posts are toots that are not replies (even with mentions); replies are replies. DMs, boosts and deleted toots are not counted. Click a row for details.
+        item_count: Count
+        item_kinds: Items
+        money_amount: "Amount (%{currency})"
+        no_options: Nothing to choose.
+        pick_characters: Choose characters
+        pick_items: Choose items
+        post_chars: Post characters
+        posts: Posts
+        reason: Note
+        records: Currency history
+        replies: Replies
+        reply_chars: Reply characters
+        rule_hint: "Post reward: every %{every} %{basis} of %{scope} gives %{amount} %{currency} (now %{progress})"
+        scope_all: posts and replies
+        scope_replies: replies
+        toot_reward_detail: "Post reward (%{units} %{basis})"
+      seasons:
+        add: Add season
+        already_running: A season is already running. End it first.
+        bad_period: The end date cannot be before the start date.
+        delete: Delete
+        delete_confirm: Delete the season '%{name}'? Point records are kept.
+        edit: Edit season
+        empty: No seasons yet.
+        ends_on: End date
+        finish: End season
+        finish_confirm: End the season '%{name}'? The final scores are posted and points start again from zero.
+        finished: The season has ended and the final scores were posted.
+        interim: Interim results
+        interim_confirm: Post the scores so far?
+        messages: Season messages
+        messages_hint: "{시즌} season name, {시즌 기간} period, {소속 점수} ranking, {소속} leader, {소속 이름} houses/factions"
+        name: Season name
+        name_placeholder: "e.g. Spring term"
+        period: Period
+        posted: Results posted.
+        result: Scores
+        scoring: Scoring
+        scoring_games: Games won (1 point per win)
+        scoring_hint: Points use each content's win/draw/loss points; games won give 1 point per win.
+        scoring_points: Points (set per content)
+        starts_on: Start date
+        status: Status
+        statuses:
+          finished: Finished
+          running: Running
+        title: Season
       tabs:
+        commands: Commands
+        contents: Content
         lessons: Lessons
         list: List
         matches: Matches
         settings: Settings
       sections:
+        bots: Bot accounts
+        commands: Basic commands
+        currency: Currency
+        messages_invalid: Messages · invalid requests
+        messages_match: Messages · requests and play
+        messages_score: Messages · points, rewards, record
+        season: Season messages
         basic: Basic
         lesson_messages: Messages
         messages: General messages
@@ -231,6 +300,7 @@ en:
         when: When
       manage:
         detail:
+          with: "With %{names}"
           item_conflict: The inventory changed meanwhile, so nothing was saved. Please check again.
           remove_item_confirm: Remove '%{name}' from the inventory?
           add_item: Add item
@@ -297,6 +367,7 @@ en:
             stat: Stat
             status: Status value
         tabs:
+          activity: Activity
           houses: Groups
           roster: Roster
           stats: Stats

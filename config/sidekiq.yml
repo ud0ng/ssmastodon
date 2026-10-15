@@ -48,10 +48,6 @@
       cron: '0 0 * * *'
       class: Scheduler::PgheroScheduler
       queue: scheduler
-    game_weekly_summary_scheduler:
-      cron: '1 * * * *'
-      class: Game::WeeklySummaryWorker
-      queue: scheduler
     instance_refresh_scheduler:
       cron: '0 * * * *'
       class: Scheduler::InstanceRefreshScheduler

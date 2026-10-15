@@ -23,7 +23,7 @@ module Game
               default: "%{turn}턴\n\n%{eaten}\n🤢 %{player}{이가} 최악의 맛을 먹었습니다!\n%{winner}의 승리!"),
         F.new(key: 'msg_not_turn', type: :text, group: 'messages', label: '차례 아님', default: '지금은 %{player}의 차례입니다.'),
         F.new(key: 'msg_timeout', type: :text, group: 'messages', label: '시간 초과',
-              default: '%{player}{이가} %{minutes}분 동안 젤리빈을 고르지 못했습니다. %{winner}의 승리!'),
+              default: '%{player}{이가} %{seconds}초 동안 젤리빈을 고르지 못했습니다. %{winner}의 승리!'),
       ]).freeze
 
       def start!
@@ -102,7 +102,7 @@ module Game
         state['last_eaten'] = nil
         loser = current
         winner = session.opponent_of(loser)
-        finish!(winner: winner, message: render(config['msg_timeout'], player: loser, winner: winner, minutes: common['turn_minutes']))
+        finish!(winner: winner, message: render(config['msg_timeout'], player: loser, winner: winner, **Game::Config.turn_time))
       end
 
       private

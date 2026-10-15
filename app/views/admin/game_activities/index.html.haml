@@ -1,0 +1,82 @@
+- content_for :page_title do
+  = game_t('admin.games.manage.tabs.activity')
+
+- content_for :heading do
+  = render 'admin/game_characters/heading'
+
+.game-toolbar
+  %p.hint= game_t('admin.games.activity.hint')
+  = button_tag safe_join([material_symbol('celebration'), game_t('admin.games.activity.give')]), type: :button, class: 'button', data: { modal_open: 'activity-give' }
+
+-# 퍼블 툿·답 툿 (DM·부스트 빼고), 글자 수, 가진 재화. 줄을 누르면 상세
+.bot-sheet-table.game-table
+  %table.table
+    %thead
+      %tr
+        %th= game_t('admin.games.manage.roster.name')
+        %th= game_t('admin.games.manage.roster.acct')
+        %th.game-table__number= game_t('admin.games.activity.posts')
+        %th.game-table__number= game_t('admin.games.activity.post_chars')
+        %th.game-table__number= game_t('admin.games.activity.replies')
+        %th.game-table__number= game_t('admin.games.activity.reply_chars')
+        %th.game-table__number= @currency
+    %tbody
+      - @characters.each do |character|
+        - stats = @stats[character.account_id]
+        %tr.game-table__row{ data: { href: admin_game_activity_path(character) } }
+          %td.bot-sheet-table__text.game-table__name-cell
+            = link_to admin_game_activity_path(character), class: 'game-table__name' do
+              = image_tag full_asset_url(character.account.avatar_static_url), alt: '', class: 'game-table__avatar'
+              %strong= character.display_name
+          %td.bot-sheet-table__text= "@#{character.account.username}"
+          %td.game-table__number= number_with_delimiter(stats.posts)
+          %td.game-table__number= number_with_delimiter(stats.post_chars)
+          %td.game-table__number= number_with_delimiter(stats.replies)
+          %td.game-table__number= number_with_delimiter(stats.reply_chars)
+          %td.game-table__number= number_with_delimiter(character.money)
+      - if @characters.empty?
+        %tr
+          %td.bot-sheet-table__text{ colspan: 7 }= game_t('admin.games.manage.roster.empty')
+
+-# 지급: 재화 또는 아이템을 고른 캐릭터들에게
+= render layout: 'admin/game_characters/modal', locals: { id: 'activity-give', title: game_t('admin.games.activity.give') } do
+  = form_tag give_admin_game_activities_path, method: :post, class: 'simple_form game-give', data: { give_form: true } do
+    .game-give__kinds{ role: 'radiogroup' }
+      - %w(money items).each_with_index do |kind, index|
+        %label.game-give__kind
+          = radio_button_tag :give_kind, kind, index.zero?, data: { give_kind: true }
+          = game_t("admin.games.activity.give_#{kind}", currency: @currency)
+
+    .input.with_label
+      .label_input
+        %label= game_t('admin.games.activity.give_to')
+        .label_input__wrapper
+          = render 'admin/game_activities/multi_select', name: 'character_ids[]', placeholder: game_t('admin.games.activity.pick_characters'), all_label: game_t('admin.games.activity.all_characters'),
+                                                         options: @characters.map { |character| [character.display_name, character.id] }
+
+    .bot-sheet-fields{ data: { give_part: 'money' } }
+      .input.with_label.integer
+        .label_input
+          %label{ for: 'give_money' }= game_t('admin.games.activity.money_amount', currency: @currency)
+          .label_input__wrapper= number_field_tag :money, nil, id: 'give_money', min: 1, step: 1
+
+    .bot-sheet-fields{ data: { give_part: 'items' }, hidden: true }
+      .input.with_label
+        .label_input
+          %label= game_t('admin.games.activity.item_kinds')
+          .label_input__wrapper
+            = render 'admin/game_activities/multi_select', name: 'item_names[]', placeholder: game_t('admin.games.activity.pick_items'), all_label: nil,
+                                                           options: @shop_item_names.map { |name| [name, name] }
+      .input.with_label.integer
+        .label_input
+          %label{ for: 'give_count' }= game_t('admin.games.activity.item_count')
+          .label_input__wrapper= number_field_tag :count, 1, id: 'give_count', min: 1, step: 1
+
+    .input.with_label.string
+      .label_input
+        %label{ for: 'give_reason' }= game_t('admin.games.activity.reason')
+        .label_input__wrapper= text_field_tag :reason, '', id: 'give_reason', maxlength: 100
+
+    .actions
+      %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
+      = button_tag game_t('admin.games.activity.give'), type: :submit, class: 'button'

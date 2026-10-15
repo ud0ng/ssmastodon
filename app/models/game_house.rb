@@ -59,8 +59,10 @@ class GameHouse < ApplicationRecord
     category == 'faction'
   end
 
+  # 이번 시즌 점수 (마지막으로 끝난 시즌 뒤에 쌓인 점수)
   def total
-    points.sum(:amount)
+    since = GameSeason.points_since
+    (since ? points.where(created_at: since..) : points).sum(:amount)
   end
 
   # 이름만 보인다 (이모지는 쓰지 않는다)

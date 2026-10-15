@@ -537,6 +537,49 @@ Rails.delegate(document, 'tr[data-href]', 'click', ({ target }) => {
   if (href) window.location.assign(href);
 });
 
+// 여러 개 고르는 드롭다운 (admin/game_activities/_multi_select): 고른 이름을 요약에 보이고, 바깥을 누르면 닫는다
+const syncMultiSelect = (box: HTMLElement) => {
+  const label = box.querySelector('.game-multi__label');
+  if (!label) return;
+
+  const names = Array.from(
+    box.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-label]:checked'),
+  ).map((input) => input.dataset.label ?? '');
+  label.textContent =
+    names.length === 0
+      ? (box.dataset.placeholder ?? '')
+      : names.length <= 3
+        ? names.join(', ')
+        : `${names.slice(0, 3).join(', ')} 외 ${names.length - 3}`;
+};
+
+document.addEventListener('change', ({ target }) => {
+  const box =
+    target instanceof Element &&
+    target.closest<HTMLElement>('[data-multi-select]');
+  if (box) syncMultiSelect(box);
+});
+
+document.addEventListener('click', ({ target }) => {
+  document
+    .querySelectorAll<HTMLDetailsElement>('details[data-multi-select][open]')
+    .forEach((box) => {
+      if (!(target instanceof Node) || !box.contains(target)) box.open = false;
+    });
+});
+
+// 지급 모달: 재화 / 아이템에 맞는 칸만
+Rails.delegate(document, 'input[data-give-kind]', 'change', ({ target }) => {
+  if (!(target instanceof HTMLInputElement)) return;
+
+  target
+    .closest('[data-give-form]')
+    ?.querySelectorAll<HTMLElement>('[data-give-part]')
+    .forEach((part) => {
+      part.hidden = part.dataset.givePart !== target.value;
+    });
+});
+
 ready(() => {
   document
     .querySelectorAll<HTMLSelectElement>('select[data-stat-type]')

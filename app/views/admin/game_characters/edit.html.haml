@@ -7,165 +7,75 @@
 - none = game_t('admin.games.manage.none')
 - account = @character.account
 - win, lose, draw = @record['win'].to_i, @record['lose'].to_i, @record['draw'].to_i
+- seoul = ActiveSupport::TimeZone['Asia/Seoul']
 
--# 머리: 누구인지 + 한눈에 보는 요약 (재화·아이템·전적)
+-# 머리: 왼쪽 전적 카드, 오른쪽 아바타 | 이름 (아이디) + 소속 배지
 .game-detail__head
-  = image_tag full_asset_url(account.avatar_static_url), alt: '', class: 'game-detail__avatar'
-  .game-detail__who
-    %h3= @character.display_name
-    %p
-      = link_to "@#{account.username}", admin_account_path(account.id)
-      - [@character.house, @character.faction].compact.each do |group|
-        %span.game-badge{ style: "--badge: #{group.color.presence || '#6b5b3e'}" }= group.name
-  .game-detail__summary
-    .game-detail__summary-item
-      %small= game_t('admin.games.manage.detail.money')
-      %strong= "#{number_with_delimiter(@character.money)} #{@currency}"
-    .game-detail__summary-item
-      %small= game_t('admin.games.manage.detail.inventory')
-      %strong= game_t('admin.games.manage.detail.summary_items', count: @character.item_count)
-    .game-detail__summary-item
-      %small= game_t('admin.games.manage.detail.record')
-      %strong= game_t('admin.games.manage.detail.record_summary', win: win, lose: lose, draw: draw)
-  = link_to safe_join([material_symbol('chevron_left'), game_t('admin.games.manage.detail.back')]), admin_game_characters_path(filter_params), class: 'button button-tertiary game-detail__back'
+  .game-detail__record
+    %small= game_t('admin.games.manage.detail.record')
+    %strong= game_t('admin.games.manage.detail.record_summary', win: win, lose: lose, draw: draw)
+  .game-detail__identity
+    = image_tag full_asset_url(account.avatar_static_url), alt: '', class: 'game-detail__avatar'
+    .game-detail__who
+      %h3
+        = @character.display_name
+        = link_to "@#{account.username}", admin_account_path(account.id), class: 'game-detail__acct'
+      .game-detail__badges
+        - [@character.house, @character.faction].compact.each do |group|
+          %span.game-badge{ style: "--badge: #{group.color.presence || '#6b5b3e'}" }= group.name
 
 = simple_form_for @character, url: admin_game_character_path(@character, filter_params), method: :patch, html: { class: 'game-detail' } do |f|
   = render 'shared/error_messages', object: @character
 
+  -# 소속 | 스탯
   .game-detail__grid
-    .game-detail__column
-      -# 소속
-      %section.game-card
-        %h4= game_t('admin.games.manage.detail.profile')
+    %section.game-card
+      %h4= game_t('admin.games.manage.detail.profile')
+      = f.input :name, wrapper: :with_label, label: game_t('admin.games.characters.name'), placeholder: account.display_name.presence || account.username, hint: game_t('admin.games.characters.name_hint')
+      .bot-sheet-fields
+        = f.input :game_house_id, as: :select, collection: @houses.map { |house| [house.name, house.id] }, include_blank: none, wrapper: :with_label, label: @labels['house_label']
+        = f.input :game_faction_id, as: :select, collection: @factions.map { |faction| [faction.name, faction.id] }, include_blank: none, wrapper: :with_label, label: @labels['faction_label']
+
+    %section.game-card
+      %h4= game_t('admin.games.manage.detail.stats')
+      - if @base_stats.empty? && @statuses.empty?
+        %p.hint= game_t('admin.games.manage.detail.no_stats')
+      - else
         .bot-sheet-fields
-          = f.input :name, wrapper: :with_label, label: game_t('admin.games.characters.name'), placeholder: account.display_name.presence || account.username, hint: game_t('admin.games.characters.name_hint')
-          = f.input :game_house_id, as: :select, collection: @houses.map { |house| [house.name, house.id] }, include_blank: none, wrapper: :with_label, label: @labels['house_label']
-          = f.input :game_faction_id, as: :select, collection: @factions.map { |faction| [faction.name, faction.id] }, include_blank: none, wrapper: :with_label, label: @labels['faction_label']
+          - @base_stats.each do |stat|
+            .input.with_label.integer
+              .label_input
+                %label{ for: "stat_#{stat.id}" }= stat.name
+                .label_input__wrapper
+                  = number_field_tag "game_character[stat_values][#{stat.name}]", @character.stat_value(stat), id: "stat_#{stat.id}", min: stat.min, max: stat.max, step: 1
+              %span.hint= game_t('admin.games.manage.detail.range', min: stat.min, max: stat.max)
+        - if @statuses.any?
+          .game-detail__status-list
+            - @statuses.each do |status|
+              .game-detail__status
+                %span= status.name
+                %strong= @character.status_value(status, @base_stats) || '-'
+                %small= status.formula.gsub(/\{\{\s*([^{}]+?)\s*\}\}/, '\1')
 
-      -# 스탯: 입력하는 스탯 + 자동 계산되는 상태 수치
-      %section.game-card
-        %h4= game_t('admin.games.manage.detail.stats')
-        - if @base_stats.empty? && @statuses.empty?
-          %p.hint= game_t('admin.games.manage.detail.no_stats')
-        - else
-          .bot-sheet-fields
-            - @base_stats.each do |stat|
-              .input.with_label.integer
-                .label_input
-                  %label{ for: "stat_#{stat.id}" }= stat.name
-                  .label_input__wrapper
-                    = number_field_tag "game_character[stat_values][#{stat.name}]", @character.stat_value(stat), id: "stat_#{stat.id}", min: stat.min, max: stat.max, step: 1
-                %span.hint= game_t('admin.games.manage.detail.range', min: stat.min, max: stat.max)
-          - if @statuses.any?
-            %h5= game_t('admin.games.manage.detail.statuses')
-            .game-detail__status-list
-              - @statuses.each do |status|
-                .game-detail__status
-                  %span= status.name
-                  %strong= @character.status_value(status, @base_stats) || '-'
-                  %small= status.formula.gsub(/\{\{\s*([^{}]+?)\s*\}\}/, '\1')
-            %p.hint= game_t('admin.games.manage.detail.statuses_hint')
+  -# 메모 (한 줄)
+  %section.game-card.game-detail__memo
+    = f.input :note, as: :string, wrapper: :with_label, label: game_t('admin.games.manage.detail.memo'), input_html: { maxlength: 2000 }
 
-      -# 메모
-      %section.game-card
-        %h4= game_t('admin.games.manage.detail.memo')
-        = f.input :note, as: :text, label: false, input_html: { rows: 3, 'aria-label': game_t('admin.games.manage.detail.memo') }
-
-    .game-detail__column
-      -# 재화 + 최근 재화 기록
-      %section.game-card
-        %h4= game_t('admin.games.manage.detail.money')
-        .bot-sheet-fields
-          = f.input :money, as: :integer, wrapper: :with_label, label: game_t('admin.games.characters.money', currency: @currency), input_html: { step: 1 }
-        %h5= game_t('admin.games.manage.detail.currency_records')
-        - if @rewards.any?
-          .bot-sheet-table.game-table
-            %table.table
-              %tbody
-                - @rewards.each do |reward|
-                  - changes = (reward.money.zero? ? [] : [format('%+d %s', reward.money, @currency)]) + Array(reward.items).map { |item| format('%s %+d', item['name'], item['count'].to_i) } + reward.stats.to_h.map { |stat, delta| format('%s %+d', stat, delta.to_i) }
-                  %tr
-                    %td.bot-sheet-table__text= l(reward.created_at.in_time_zone('Asia/Seoul'), format: :short)
-                    %td.bot-sheet-table__text
-                      %span.game-badge= game_t("admin.games.shop.kinds.#{reward.kind}", default: reward.kind)
-                      = game_reward_reason(reward.reason)
-                    %td.bot-sheet-table__text= changes.join(', ').presence || '-'
-        - else
-          %p.hint= game_t('admin.games.manage.detail.no_records')
-
-      -# 인벤토리: 아이템 카드 (그림 + 개수 배지 + 이름). 누르면 모달에서 고치기·지우기, 바로 저장된다
-      %section.game-card
-        %h4
-          = game_t('admin.games.manage.detail.inventory')
-          %span.game-table__count= game_t('admin.games.manage.detail.summary_items', count: @character.item_count)
-        .game-inventory
-          - Array(@character.inventory).each_with_index do |item, index|
-            - image = @item_images[Game::Wallet.key(item['name'])]
-            %button.game-inventory__card{ type: 'button', title: item['note'].presence, data: { modal_open: "item-#{index}" } }
-              .game-inventory__image
-                = render 'admin/game_characters/item_thumb', name: item['name'], image: image&.image&.url(:small)
-                %span.game-inventory__count= "×#{item['count']}"
-              %span.game-inventory__name= item['name']
-          %button.game-inventory__card.game-inventory__card--add{ type: 'button', data: { modal_open: 'item-add' } }
-            .game-inventory__image= material_symbol('add')
-            %span.game-inventory__name= game_t('admin.games.manage.detail.add_item')
-
-      -# 전적: 승·패·무와 최근 판
-      %section.game-card
-        %h4
-          = game_t('admin.games.manage.detail.record')
-          %span.game-table__count= game_t('admin.games.manage.detail.record_summary', win: win, lose: lose, draw: draw)
-        - if @games.any?
-          .bot-sheet-table.game-table
-            %table.table
-              %thead
-                %tr
-                  %th= game_t('admin.games.manage.detail.when')
-                  %th= game_t('admin.games.manage.detail.content')
-                  %th= game_t('admin.games.manage.detail.opponents')
-                  %th
-              %tbody
-                - @games.each do |player|
-                  - session = player.session
-                  - others = session.players.reject { |other| other.account_id == player.account_id }
-                  %tr
-                    %td.bot-sheet-table__text= l((session.finished_at || session.updated_at).in_time_zone('Asia/Seoul'), format: :short)
-                    %td.bot-sheet-table__text= game_reward_reason(session.kind)
-                    %td.bot-sheet-table__text= others.map(&:name).join(', ').presence || '-'
-                    %td.bot-sheet-table__text
-                      %span.game-badge{ class: "game-badge--#{player.result || 'none'}" }= game_t("admin.games.manage.detail.results.#{player.result || 'none'}")
-        - else
-          %p.hint= game_t('admin.games.manage.detail.no_games')
+  -# 전적 기록: 한 판에 한 줄
+  %section.game-card
+    %h4= game_t('admin.games.manage.detail.games')
+    - if @games.any?
+      %ul.game-detail__games
+        - @games.each do |player|
+          - session = player.session
+          - others = session.players.reject { |other| other.account_id == player.account_id }
+          %li
+            %span.game-detail__games-when= l((session.finished_at || session.updated_at).in_time_zone(seoul), format: :short)
+            %span.game-detail__games-what= game_reward_reason(session.kind)
+            %span.game-detail__games-with= others.any? ? game_t('admin.games.manage.detail.with', names: others.map(&:name).join(', ')) : ''
+            %span.game-badge{ class: "game-badge--#{player.result || 'none'}" }= game_t("admin.games.manage.detail.results.#{player.result || 'none'}")
+    - else
+      %p.hint= game_t('admin.games.manage.detail.no_games')
 
   .actions.game-detail__actions
     = f.button :button, t('generic.save_changes'), type: :submit
-
--# 인벤토리 모달 (본 폼 밖에 둔다: 폼 안에 폼을 넣을 수 없어서)
-%datalist#game-shop-item-names
-  - @shop_item_names.each do |name|
-    %option{ value: name }
-
-= render layout: 'admin/game_characters/modal', locals: { id: 'item-add', title: game_t('admin.games.manage.detail.add_item') } do
-  = form_tag items_admin_game_character_path(@character, filter_params), method: :post, class: 'simple_form' do
-    = render 'admin/game_characters/item_fields', item: { 'name' => '', 'count' => 1, 'note' => '' }, prefix: 'item_new', named: true
-    .actions
-      %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
-      = button_tag game_t('admin.games.manage.detail.add_item'), type: :submit, class: 'button'
-
-- Array(@character.inventory).each_with_index do |item, index|
-  - image = @item_images[Game::Wallet.key(item['name'])]
-  = render layout: 'admin/game_characters/modal', locals: { id: "item-#{index}", title: item['name'] } do
-    .game-inventory__modal-head
-      = render 'admin/game_characters/item_thumb', name: item['name'], image: image&.image&.url(:small)
-      - if image&.description.present?
-        %p.hint= image.description
-    = form_tag item_admin_game_character_path(@character, filter_params.merge(index: index)), method: :patch, class: 'simple_form' do
-      = hidden_field_tag :original_name, item['name'], id: nil
-      = render 'admin/game_characters/item_fields', item: item, prefix: "item_#{index}", named: false
-      .actions
-        %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
-        = button_tag t('generic.save_changes'), type: :submit, class: 'button'
-    = button_to item_admin_game_character_path(@character, filter_params.merge(index: index)), method: :delete, params: { original_name: item['name'] },
-                class: 'button button--destructive game-inventory__remove', data: { confirm: game_t('admin.games.manage.detail.remove_item_confirm', name: item['name']) } do
-      = material_symbol('delete')
-      = game_t('admin.games.manage.detail.remove_item')

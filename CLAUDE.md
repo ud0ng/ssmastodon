@@ -39,7 +39,7 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
 
 > 다음 작업 계획: `docs/컨텐츠-다음-계획.md` (PC 웹 컨텐츠 카드 UI + 관리 화면 UI 개선 → 비밀의방 → 웹 전용 → 정기 툿)
 
-## 컨텐츠(게임) — 시스템 계정 @system 이 진행 (관리 > 시스템 > 컨텐츠 설정 /admin/games, 캐릭터 명단 /admin/characters)
+## 컨텐츠(게임) — 시스템 계정 @system 이 진행 (관리 > 시스템 > 컨텐츠 설정 /admin/games, 캐릭터 관리 /admin/characters)
 
 - **화면·툿에 보이는 이름은 '컨텐츠', 진행 계정은 '시스템'** ('게임'이라고 쓰지 않는다). 코드 이름은 Game 그대로.
 - 해리포터 세계관 게임. 기획: 2인 대결(젤리빈·곱스톤·마법결투·물약·퀴디치), 마법 수업, 비밀의방(마피아), 웹 전용(도둑 지도·미로) 등.
@@ -49,9 +49,13 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
 - 시스템 답장은 방금 명령어를 보낸 툿에 단다 (한 스레드로 이어지게). 공개 범위는 신청 툿 (팔로워 공개 / DM). 앱에서도 멘션 알림만으로 알 수 있게 툿 텍스트로 진행.
 - 문구는 한글 명령어 (`Game::Text`): {계정명} {계정아이디} {계정 아바타}(사진 첨부, `Game::Poster`), 앞에 상대·승자·패자 등, {이가} 조사. 예전 %{player} 도 됨. 문구에 이름 대신 GamePlayer/Account 를 넘긴다.
 - 모든 규칙·명령어·시간·문구는 `Game::Config` (항목 정의 + game_configs 에 바뀐 값만). 새 게임: `app/lib/game/kinds/<게임>.rb` (Base 상속, KEY·FIELDS·start!·handle·timeout!) + `Game::Kinds.registry`.
-- 기숙사 점수: `Game::Points` (같은 상대 하루 N판, 같은 기숙사 %). 캐릭터 이름·기숙사는 `GameCharacter` (회원 목록에서 자동 생성).
-- 캐릭터 명단 탭: 명단 / 항목 설정(`GameCharacterField`: 고르기·글·숫자 정보, 전투 스탯) / 소속(기숙사·진영). 캐릭터마다 house·faction·profile(항목 id→값)·stats(이름→값)·money·inventory.
-- 소속: `GameHouse.category` house/faction. 공통 설정 `group_mode` 로 점수·토너먼트·모래시계·결산에 쓸 쪽을 고른다 (`GameHouse.active`, `GameCharacter#group`). {소속 이름}(house_term)은 그 이름.
+- 소속 점수: `Game::Points`. 점수 방식(공통 `scoring_mode`) 점수제 = 컨텐츠마다 승리·무승부·패배 점수 / 판수제 = 이긴 판마다 1점.
+  시즌(`GameSeason`, 캐릭터 관리 > 소속): 중간 결산·시즌 종료 툿(`Game::Summary`). 소속 점수(`GameHouse#total`)는 마지막으로 끝난 시즌 뒤의 점수만 센다.
+- 캐릭터는 `GameCharacter` (회원 목록에서 자동 생성·탈퇴 시 삭제·정지 시 숨김, `GameRoster`).
+- 캐릭터 관리 탭: 명단(상세: 소속·스탯·메모·전적) / 활동(퍼블·답 툿 수와 글자 수, 재화 내역, 인벤토리, 지급) / 소속(점수 기준 소속, 시즌, 목록) / 스탯(`GameCharacterField` stat·status 수식).
+- 툿 보상(컨텐츠 설정 > 설정 > 재화 설정): 툿이 저장될 때 `Status` after_create_commit → `Game::ActivityWorker` → `Game::Activity.reward!` (웹·앱 모두). 자동봇의 툿 보상은 끔 (/api/v1/bot/config 가 0).
+- 컨텐츠 설정 탭: 설정(봇 계정·재화·공통룰) / 명령어(기본 명령어·일반 문구) — 둘 다 공통 설정, `Game::Config::LAYOUT` 의 [common, 화면] / 컨텐츠 / 수업 / 상점.
+- 소속: `GameHouse.category` house/faction. 공통 설정 `group_mode` 로 점수를 모을 쪽을 고른다 (`GameHouse.active`, `GameCharacter#group`). {소속 이름}(house_term)은 그 이름.
 - 컨텐츠 보상: `Game::Rewards` (돈·아이템, game_rewards). 시스템 툿은 판 잠금 트랜잭션 안에서 올라가므로 `Game::Poster` 가 커밋 뒤 DistributionWorker 를 다시 넣는다 (안 그러면 멘션 알림이 빠짐).
 - PC 웹 카드: 시스템 툿마다 `GameEvent`(payload = `Game::Card.build`) → `REST::StatusSerializer#game_card` → `components/content_card.tsx`. 새 컨텐츠는 Kinds 에 `card_data`·`card_actions` 를 만든다 (공개된 것만, 정답·비밀 선택은 끝난 뒤).
 - 미리보기에서 시험: `bin/rails runner /dev/stdin "owner|@system @luna [젤리빈]" "luna|@system [수락]|reply" < dev/preview/play.rb` (sidekiq 이 처리, `|dm` 은 DM). Engine 을 직접 부르면 sidekiq 과 두 번 처리된다.

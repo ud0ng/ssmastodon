@@ -151,6 +151,8 @@ class Status < ApplicationRecord
 
   after_create_commit :store_uri, if: :local?
   after_create_commit :update_statistics, if: :local?
+  # 컨텐츠 툿 보상 (웹·앱 어디서 썼든 저장될 때 확인한다, Game::Activity)
+  after_create_commit :enqueue_game_activity, if: -> { local? && !reblog? && !direct_visibility? }
 
   before_validation :prepare_contents, if: :local?
   before_validation :set_reblog
@@ -437,6 +439,10 @@ class Status < ApplicationRecord
   end
 
   private
+
+  def enqueue_game_activity
+    Game::ActivityWorker.perform_async(account_id)
+  end
 
   def update_status_stat!(attrs)
     return if marked_for_destruction? || destroyed?

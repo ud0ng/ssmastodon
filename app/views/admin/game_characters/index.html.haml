@@ -5,7 +5,7 @@
   = render 'admin/game_characters/heading'
 
 - none = game_t('admin.games.manage.none')
-- column_count = 7 + @base_stats.size + @statuses.size
+- column_count = 6 + @base_stats.size + @statuses.size
 
 -# 찾기 + 소속·진영 거르기 (서버원 관리와 같은 모양)
 = form_tag admin_game_characters_path, method: :get, class: 'simple_form game-table__filter' do
@@ -41,7 +41,6 @@
             %th= stat.name
           - @statuses.each do |status|
             %th= status.name
-          %th= game_t('admin.games.manage.roster.money', currency: @currency)
           %th.bot-sheet-table__actions
       %tbody
         - if @characters.empty?
@@ -62,7 +61,6 @@
               %td.bot-sheet-table__text= stat_values[stat.name]
             - @statuses.each do |status|
               %td.bot-sheet-table__text= character.status_value(status, @base_stats) || '-'
-            %td.bot-sheet-table__text= number_with_delimiter(character.money)
             %td.bot-sheet-table__actions
               = link_to material_symbol('edit'), edit_admin_game_character_path(character, filter_params), class: 'icon-button', title: game_t('admin.games.characters.edit')
 

@@ -7,13 +7,14 @@ module Game
       F = Game::Config::Field
 
       # 모든 게임에 있는 설정 (켜기, 이름, 시작 명령어, 점수, 보상)
-      def self.base_fields(name:, command:, points_win:, points_draw: 0)
+      def self.base_fields(name:, command:, points_win:, points_draw: 0, points_lose: 0)
         [
           F.new(key: 'enabled', type: :boolean, default: true, group: 'basic', label: '켜기'),
           F.new(key: 'name', type: :string, default: name, group: 'basic', label: '컨텐츠 이름'),
           F.new(key: 'command', type: :string, default: command, group: 'basic', label: '시작 명령어', hint: '[명령어] 와 상대를 태그해 신청'),
           F.new(key: 'points_win', type: :integer, default: points_win, group: 'points', label: '승리 점수'),
           F.new(key: 'points_draw', type: :integer, default: points_draw, group: 'points', label: '무승부 점수'),
+          F.new(key: 'points_lose', type: :integer, default: points_lose, group: 'points', label: '패배 점수', hint: '판수제에서는 쓰지 않습니다'),
           F.new(key: 'reward_money_win', type: :integer, default: 10, group: 'rewards', label: '승리 돈'),
           F.new(key: 'reward_money_draw', type: :integer, default: 5, group: 'rewards', label: '무승부 돈'),
           F.new(key: 'reward_money_lose', type: :integer, default: 2, group: 'rewards', label: '패배(참가) 돈'),
@@ -159,7 +160,7 @@ module Game
 
       # 다음 턴 시간 제한
       def wait_for_turn!
-        Game::Engine.set_deadline!(session, common['turn_minutes'].to_i)
+        Game::Engine.set_deadline_in!(session, Game::Config.turn_seconds.seconds)
       end
 
       # 게임 끝: 결과 기록, 점수·보상 지급, 결과 툿. winners: 팀전처럼 이긴 사람이 여럿일 때
@@ -179,11 +180,10 @@ module Game
           return
         end
 
-        point_lines = if draw
-                        players.map { |player| Game::Points.award(session, player, config['points_draw']) }
-                      else
-                        winners.map { |player| Game::Points.award(session, player, config['points_win']) }
-                      end
+        point_lines = players.map do |player|
+          outcome = player.result
+          Game::Points.award(session, player, config["points_#{outcome}"], outcome: outcome)
+        end
         post([message, *point_lines.compact, *reward_lines].compact.join("\n\n"))
       end
 

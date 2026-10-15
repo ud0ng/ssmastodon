@@ -41,7 +41,7 @@ module Game
         F.new(key: 'student_name', type: :string, default: '학생', group: 'rules', label: '학생 역할 이름'),
         F.new(key: 'prefect_name', type: :string, default: '사감', group: 'rules', label: '사감 역할 이름'),
         F.new(key: 'msg_start', type: :text, group: 'messages', label: '시작',
-              default: "🗺️ %{game} 시작! %{student}: %{player} / %{prefect}: %{players}\n목표 장소: %{targets}\n진행은 웹에서: %{link}\n턴마다 %{minutes}분 안에 움직일 방을 골라 주세요."),
+              default: "🗺️ %{game} 시작! %{student}: %{player} / %{prefect}: %{players}\n목표 장소: %{targets}\n진행은 웹에서: %{link}\n턴마다 %{seconds}초 안에 움직일 방을 골라 주세요."),
         F.new(key: 'msg_turn', type: :text, group: 'messages', label: '턴 결과', default: "%{turn}턴\n%{lines}"),
         F.new(key: 'msg_quiet', type: :text, group: 'messages', label: '조용한 턴', default: '복도는 조용하다… 발소리 하나 들리지 않는다.'),
         F.new(key: 'msg_stairs', type: :text, group: 'messages', label: '계단', default: '🪜 계단이 움직였다!'),
@@ -84,7 +84,7 @@ module Game
         session.update!(turn: 1)
         post(render(config['msg_start'], student: config['student_name'], prefect: config['prefect_name'], player: student,
                                          players: prefects.map(&:name).join(', '), targets: targets.map { |room| ROOMS[room] }.join(', '),
-                                         link: Game::Web.session_url(session), minutes: common['turn_minutes']))
+                                         link: Game::Web.session_url(session), **Game::Config.turn_time))
         wait_for_turn!
       end
 

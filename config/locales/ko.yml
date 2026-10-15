@@ -23,12 +23,81 @@ ko:
   admin:
     system_menu: 시스템
     games:
+      pick_account: 회원 고르기
+      activity:
+        all_characters: 전체 선택
+        basis:
+          chars: 글자
+          toots: 툿
+        give: 지급
+        give_items: 아이템
+        give_money: '재화 (%{currency})'
+        give_nothing: 받을 캐릭터와 재화 수나 아이템을 골라 주세요.
+        give_to: 지급할 캐릭터
+        given: '%{count}명에게 지급했습니다.'
+        hint: 퍼블 툿은 답글이 아닌 툿(태그가 있어도), 답 툿은 답글입니다. DM·부스트·지운 툿은 세지 않습니다. 줄을 누르면 상세 활동·재화 내역·인벤토리가 보입니다.
+        item_count: 아이템 수
+        item_kinds: 아이템 종류
+        money_amount: '재화 수 (%{currency})'
+        no_options: 고를 것이 없습니다.
+        pick_characters: 캐릭터 고르기
+        pick_items: 아이템 고르기
+        post_chars: 퍼블 글자 수
+        posts: 퍼블 툿
+        reason: 내용
+        records: 재화 내역
+        replies: 답 툿
+        reply_chars: 답 글자 수
+        rule_hint: '툿 보상: %{scope} %{basis} %{every}마다 %{amount} %{currency} (지금 %{progress})'
+        scope_all: 퍼블·답글
+        scope_replies: 답글
+        toot_reward_detail: '툿 보상 (%{basis} %{units})'
+      seasons:
+        add: 시즌 추가
+        already_running: 진행 중인 시즌이 있습니다. 먼저 시즌을 끝내 주세요.
+        bad_period: 종료일은 시작일보다 빠를 수 없습니다.
+        delete: 지우기
+        delete_confirm: "'%{name}' 시즌을 지울까요? 점수 기록은 그대로 남습니다."
+        edit: 시즌 고치기
+        empty: 아직 시즌이 없습니다.
+        ends_on: 종료일
+        finish: 시즌 종료
+        finish_confirm: "'%{name}' 시즌을 끝낼까요? 최종 점수를 툿으로 발표하고 소속 점수를 0부터 다시 셉니다."
+        finished: 시즌을 끝내고 최종 점수를 발표했습니다.
+        interim: 중간 결산
+        interim_confirm: 지금까지의 점수를 툿으로 올릴까요?
+        messages: 시즌 문구
+        messages_hint: "{시즌} 시즌 이름, {시즌 기간} 기간, {소속 점수} 순위표, {소속} 1위 소속, {소속 이름} 기숙사/진영"
+        name: 시즌 이름
+        name_placeholder: '예: 1학기'
+        period: 기간
+        posted: 결산 툿을 올렸습니다.
+        result: 점수
+        scoring: 점수 방식
+        scoring_games: 판수제 (이긴 판마다 1점)
+        scoring_hint: 점수제는 컨텐츠마다 정한 승리·무승부·패배 점수를, 판수제는 이긴 판마다 1점을 줍니다.
+        scoring_points: 점수제 (컨텐츠마다 정한 점수)
+        starts_on: 시작일
+        status: 상태
+        statuses:
+          finished: 끝남
+          running: 진행 중
+        title: 시즌
       tabs:
+        commands: 명령어
+        contents: 컨텐츠
         lessons: 수업
         list: 목록
         matches: 매치
         settings: 설정
       sections:
+        bots: 봇 계정 설정
+        commands: 기본 명령어
+        currency: 재화 설정
+        messages_invalid: 일반 문구 · 잘못된 신청
+        messages_match: 일반 문구 · 신청과 진행
+        messages_score: 일반 문구 · 점수·보상·전적
+        season: 시즌 문구
         basic: 기본 설정
         lesson_messages: 문구 설정
         messages: 일반 문구
@@ -229,6 +298,7 @@ ko:
         when: 시간
       manage:
         detail:
+          with: '함께: %{names}'
           item_conflict: 그사이 인벤토리가 바뀌어서 고치지 않았습니다. 다시 확인해 주세요.
           remove_item_confirm: "'%{name}'을(를) 인벤토리에서 지울까요?"
           add_item: 아이템 추가
@@ -295,6 +365,7 @@ ko:
             stat: 스탯
             status: 상태 수치
         tabs:
+          activity: 활동
           houses: 소속
           roster: 명단
           stats: 스탯

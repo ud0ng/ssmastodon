@@ -4,7 +4,7 @@
 - content_for :heading do
   = render 'admin/game_characters/heading'
 
--# 점수 기준 소속: 기숙사 / 진영 중 점수·토너먼트·모래시계·결산에 쓸 쪽
+-# 점수 기준 소속: 기숙사 / 진영 중 점수를 모을 쪽
 .game-groups__mode
   %span.game-groups__mode-label= game_t('admin.games.houses.mode')
   - GameHouse::CATEGORIES.each do |category|
@@ -14,7 +14,6 @@
       - if @mode == category
         %span.game-groups__mode-on= game_t('admin.games.houses.mode_on')
   = button_tag safe_join([material_symbol('edit'), game_t('admin.games.houses.rename')]), type: :button, class: 'button button-tertiary', data: { modal_open: 'house-labels' }
-  %span.hint= game_t('admin.games.houses.mode_hint')
 
 = render layout: 'admin/game_characters/modal', locals: { id: 'house-labels', title: game_t('admin.games.houses.rename') } do
   = form_tag labels_admin_game_houses_path, method: :patch, class: 'simple_form' do
@@ -27,6 +26,8 @@
     .actions
       %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
       = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+
+= render 'admin/game_houses/seasons'
 
 - GameHouse::CATEGORIES.each do |category|
   - label = @labels[category]
@@ -116,9 +117,3 @@
               = point.reason
               - if point.account
                 = "· @#{point.account.username}"
-
-%h4= game_t('admin.games.houses.announcements')
-%p.hint= game_t('admin.games.houses.announcements_hint_html', path: admin_game_setting_path('common'))
-.game-houses__announce
-  = button_to game_t('admin.games.houses.weekly_now'), weekly_admin_game_houses_path, method: :post, class: 'button', data: { confirm: game_t('admin.games.houses.weekly_confirm') }
-  = button_to game_t('admin.games.houses.term_end'), term_end_admin_game_houses_path, method: :post, class: 'button', data: { confirm: game_t('admin.games.houses.term_end_confirm') }

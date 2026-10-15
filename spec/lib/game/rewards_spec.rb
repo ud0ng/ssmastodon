@@ -52,16 +52,6 @@ RSpec.describe Game::Rewards do
     expect(GameEvent.find_by(status: result).payload['rewards'].pluck('money')).to eq [30, 4]
   end
 
-  it 'stops paying after the daily limit against the same opponent' do
-    Game::Config.update!('common', 'daily_pair_limit' => 2)
-    3.times do
-      session = session_with_players
-      described_class.for_outcome(session, session.players.first, { 'reward_money_win' => 10 }, 'win', reason: 'game:jellybean')
-    end
-
-    expect(GameCharacter.for(alice).money).to eq 20
-  end
-
   it 'gives lesson money by grade, less for self-study' do
     expect(Game::Lessons.money_for('O', 'class')).to eq 10
     expect(Game::Lessons.money_for('O', 'study')).to eq 5

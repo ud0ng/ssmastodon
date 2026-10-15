@@ -1131,3 +1131,32 @@ body.community-theme.admin {
     background: var(--ct-base);
   }
 }
+
+// 캐릭터 상세·활동·시즌: 테마색으로
+body.community-theme.admin {
+  .game-detail__record {
+    border-color: var(--ct-line);
+    background: var(--ct-soft);
+  }
+
+  .game-detail__games li,
+  .game-group--plain > .game-group__summary {
+    border-color: var(--ct-line);
+  }
+
+  .game-multi__summary {
+    border-color: var(--ct-line-strong);
+    background: var(--ct-field);
+    color: var(--ct-text);
+  }
+
+  .game-multi__list {
+    border-color: var(--ct-line);
+    background: var(--ct-base);
+    color: var(--ct-text);
+  }
+
+  .game-multi__option:hover {
+    background: var(--ct-hover);
+  }
+}

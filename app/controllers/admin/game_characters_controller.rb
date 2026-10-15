@@ -2,11 +2,10 @@
 
 module Admin
   # 관리 > 시스템 > 캐릭터 관리 > 명단: 회원 목록에서 자동으로 만들어지는 캐릭터를 소속별 표로 보고,
-  # 캐릭터를 눌러 상세 화면(소속·스탯·재화·인벤토리·전적)에서 고친다.
+  # 캐릭터를 눌러 상세 화면(소속·스탯·메모·전적)에서 고친다. 재화·인벤토리는 활동 탭.
   class GameCharactersController < BaseController
     PER_PAGE = 100
     RECENT_GAMES = 10
-    RECENT_REWARDS = 10
 
     helper_method :filter_params
 
@@ -54,7 +53,7 @@ module Admin
 
       @character = GameCharacter.find(params[:id])
       prepare_form
-      @character.assign_attributes(character_params.slice(:name, :game_house_id, :game_faction_id, :note, :money))
+      @character.assign_attributes(character_params.slice(:name, :game_house_id, :game_faction_id, :note))
       @character.stats = stat_values
       if @character.save
         redirect_to edit_admin_game_character_path(@character, filter_params), notice: t('generic.changes_saved_msg')
@@ -63,7 +62,7 @@ module Admin
       end
     end
 
-    # 인벤토리 카드: 아이템 더하기 (이름이 같으면 개수만 더한다)
+    # 활동 > 인벤토리 카드: 아이템 더하기 (이름이 같으면 개수만 더한다)
     def add_item
       authorize :settings, :update?
 
@@ -82,7 +81,7 @@ module Admin
           character.update!(inventory: inventory)
         end
       end
-      redirect_to edit_admin_game_character_path(character, filter_params), notice: t('generic.changes_saved_msg')
+      redirect_to admin_game_activity_path(character), notice: t('generic.changes_saved_msg')
     end
 
     # 인벤토리 카드: 개수·메모 고치기 (그사이 그 자리의 아이템이 바뀌었으면 고치지 않는다)
@@ -109,12 +108,9 @@ module Admin
       @currency = Game::Config.for('common')['currency_name']
     end
 
-    # 상세 화면: 재화 기록, 전적(승·패·무)과 최근 판
+    # 상세 화면: 전적(승·패·무)과 최근 판
     def prepare_form
       load_columns
-      @rewards = GameReward.where(account_id: @character.account_id).order(id: :desc).limit(RECENT_REWARDS)
-      @item_images = GameShopItem.by_key
-      @shop_item_names = GameShopItem.pluck(:name)
       finished = GamePlayer.joins(:session).where(account_id: @character.account_id, game_sessions: { status: 'finished' })
       @record = finished.group(:result).count
       @games = finished.includes(session: { players: :account }).order('game_sessions.finished_at DESC NULLS LAST, game_sessions.id DESC').limit(RECENT_GAMES)
@@ -152,7 +148,7 @@ module Admin
           flash[:alert] = t('admin.games.manage.detail.item_conflict')
         end
       end
-      redirect_to edit_admin_game_character_path(character, filter_params)
+      redirect_to admin_game_activity_path(character)
     end
 
     def filtered
@@ -167,7 +163,7 @@ module Admin
     end
 
     def character_params
-      params.require(:game_character).permit(:name, :game_house_id, :game_faction_id, :note, :money, stat_values: {})
+      params.require(:game_character).permit(:name, :game_house_id, :game_faction_id, :note, stat_values: {})
     end
   end
 end
