@@ -4091,7 +4091,7 @@ button.game-token:focus-visible {
   }
 
   th:nth-child(2) {
-    width: 38%;
+    width: 34%;
   }
 
   th:nth-child(3) {
@@ -4101,6 +4101,10 @@ button.game-token:focus-visible {
   th:nth-child(4),
   th:nth-child(5) {
     width: 11%;
+  }
+
+  th:nth-child(6) {
+    width: 56px;
   }
 
   td code {

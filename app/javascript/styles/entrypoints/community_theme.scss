@@ -1044,3 +1044,90 @@ body.community-theme.admin {
     background: transparent;
   }
 }
+
+// 관리·환경설정 화면 바탕: 사용자 화면 테마(배경 이미지·박스 색·반투명)를 따르지 않고
+// 낮은 흰 화면, 밤은 어두운 화면으로 고정한다. 테마에서는 메인색·서브색만 가져온다.
+//   서브색(--ct-point): 버튼·링크·포커스·고른 탭   메인색(--ct-main): 표 머리줄·고른 항목·호버·지금 연 메뉴의 은은한 바탕
+// (같은 선택자의 위쪽 블록보다 뒤에 있어야 이긴다)
+body.community-theme.admin {
+  --ct-background-image: none;
+  --ct-page: #f3f4f6;
+  --ct-base: #fff;
+  --ct-raised: #fff;
+  --ct-field: #fff;
+  --ct-soft: color-mix(in srgb, var(--ct-main) 10%, #fff);
+  --ct-hover: color-mix(in srgb, var(--ct-main) 6%, #fff);
+  --ct-line: #e2e4e8;
+  --ct-line-strong: #c8ccd2;
+  --ct-text: #1f2329;
+  --ct-dim: #6b7079;
+  --ct-dim-hover: #3d424a;
+  --ct-nav: #3d424a;
+  --ct-nav-hover: var(--ct-point);
+  --ct-link-hover: var(--ct-point);
+  --ct-post-button: var(--ct-point);
+  --ct-post-button-text: var(--ct-on-point);
+  --ct-panel-alpha: 100%;
+  --ct-main-alpha: 100%;
+  --ct-raised-alpha: 100%;
+  --ct-panel: var(--ct-base);
+  --ct-box-border: 1px;
+  --ct-compose-border: 1px;
+
+  &.theme-community-dark {
+    --ct-page: #111317;
+    --ct-base: #1a1c20;
+    --ct-raised: #202328;
+    --ct-field: #23262b;
+    --ct-soft: color-mix(in srgb, var(--ct-main) 22%, #1a1c20);
+    --ct-hover: color-mix(in srgb, var(--ct-main) 12%, #1a1c20);
+    --ct-line: #2c3036;
+    --ct-line-strong: #3d424a;
+    --ct-text: #e7e9ec;
+    --ct-dim: #9a9fa7;
+    --ct-dim-hover: #c9ccd1;
+    --ct-nav: #c9ccd1;
+  }
+
+  background: var(--ct-page);
+
+  // 가운데 내용 영역: 흰(밤은 짙은) 판, 양옆 얇은 선
+  .admin-wrapper .content-wrapper {
+    background: var(--ct-base);
+    border-inline: 1px solid var(--ct-line);
+  }
+
+  // 왼쪽 메뉴: 지금 연 메뉴는 메인색을 은은하게 깐 둥근 바탕, 호버는 서브색 글자
+  .admin-wrapper .sidebar ul .simple-navigation-active-leaf > a {
+    border-radius: 10px;
+    background: var(--ct-soft);
+    color: var(--ct-text);
+  }
+
+  .admin-wrapper .sidebar ul a:hover,
+  .admin-wrapper .sidebar ul a:focus-visible {
+    color: var(--ct-point);
+  }
+
+  // 카드·묶음: 판보다 한 단계 들어간 바탕 대신 같은 판 + 얇은 테두리 (낮은 가벼운 그림자)
+  .game-card,
+  .game-group,
+  .commu-card {
+    background: var(--ct-base);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+  }
+
+  // 카드 버튼(인벤토리)·슬라이더·저장 줄도 테마색으로
+  .game-inventory__card {
+    color: var(--ct-text);
+  }
+
+  .game-slider {
+    accent-color: var(--ct-point);
+  }
+
+  .game-savebar {
+    border-top-color: var(--ct-point);
+    background: var(--ct-base);
+  }
+}
