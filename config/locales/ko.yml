@@ -148,7 +148,6 @@ ko:
         edit: 고치기
         edit_title: '캐릭터: %{name}'
         grade: 학년
-        grade_value: '%{grade}학년'
         hint: 서버원 목록에서 자동으로 만들어집니다. 캐릭터 이름을 비워 두면 표시 이름을 씁니다. 컨텐츠 툿에는 캐릭터 이름이 나옵니다.
         house: '%{term}'
         name: 캐릭터 이름
@@ -271,7 +270,6 @@ ko:
           apply: 거르기
           count: '%{count}명'
           empty: 해당하는 캐릭터가 없습니다.
-          grade: 학년
           money: '돈 (%{currency})'
           name: 이름
           no_group: '%{term} 없음'

@@ -54,7 +54,7 @@ module Admin
 
       @character = GameCharacter.find(params[:id])
       prepare_form
-      @character.assign_attributes(character_params.slice(:name, :game_house_id, :game_faction_id, :grade, :note, :money))
+      @character.assign_attributes(character_params.slice(:name, :game_house_id, :game_faction_id, :note, :money))
       @character.stats = stat_values
       if @character.save
         redirect_to edit_admin_game_character_path(@character, filter_params), notice: t('generic.changes_saved_msg')
@@ -167,7 +167,7 @@ module Admin
     end
 
     def character_params
-      params.require(:game_character).permit(:name, :game_house_id, :game_faction_id, :grade, :note, :money, stat_values: {})
+      params.require(:game_character).permit(:name, :game_house_id, :game_faction_id, :note, :money, stat_values: {})
     end
   end
 end

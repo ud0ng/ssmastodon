@@ -1034,7 +1034,6 @@
   "system.game.turn": "Turn {turn}",
   "system.game.until": "{time}",
   "system.game.vs": "vs {names}",
-  "system.grade": "Year {grade}",
   "system.houses": "{term} points",
   "system.how_to": "How to join",
   "content_card.open_game": "Game page",

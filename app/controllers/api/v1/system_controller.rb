@@ -20,7 +20,6 @@ class Api::V1::SystemController < Api::BaseController
       character: {
         name: character.display_name,
         house_id: character.group_id&.to_s,
-        grade: character.grade,
         profile: profile_tags(character),
         stats: character_stats(character),
         money: character.money,

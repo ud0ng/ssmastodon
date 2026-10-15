@@ -17,8 +17,6 @@
       = link_to "@#{account.username}", admin_account_path(account.id)
       - [@character.house, @character.faction].compact.each do |group|
         %span.game-badge{ style: "--badge: #{group.color.presence || '#6b5b3e'}" }= group.name
-      - if @character.grade
-        %span.game-badge= game_t('admin.games.characters.grade_value', grade: @character.grade)
   .game-detail__summary
     .game-detail__summary-item
       %small= game_t('admin.games.manage.detail.money')
@@ -41,7 +39,6 @@
         %h4= game_t('admin.games.manage.detail.profile')
         .bot-sheet-fields
           = f.input :name, wrapper: :with_label, label: game_t('admin.games.characters.name'), placeholder: account.display_name.presence || account.username, hint: game_t('admin.games.characters.name_hint')
-          = f.input :grade, as: :integer, wrapper: :with_label, label: game_t('admin.games.manage.roster.grade'), input_html: { min: 1, max: 7 }
           = f.input :game_house_id, as: :select, collection: @houses.map { |house| [house.name, house.id] }, include_blank: none, wrapper: :with_label, label: @labels['house_label']
           = f.input :game_faction_id, as: :select, collection: @factions.map { |faction| [faction.name, faction.id] }, include_blank: none, wrapper: :with_label, label: @labels['faction_label']
 

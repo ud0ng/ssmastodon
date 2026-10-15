@@ -114,7 +114,11 @@ const open = (select: HTMLSelectElement) => {
     event.preventDefault();
   });
 
-  document.body.append(popout);
+  // 모달(<dialog>) 안의 칸이면 목록도 그 모달 안에 붙인다. body 에 붙이면 모달(맨 위 층) 뒤에 가려진다.
+  // 모달 안에서는 화면 기준 고정 위치로 띄운다.
+  const dialog = select.closest('dialog');
+  (dialog ?? document.body).append(popout);
+  if (dialog) popout.style.position = 'fixed';
 
   // 칸 바로 아래 (아래 공간이 모자라면 위)
   const rect = select.getBoundingClientRect();
@@ -125,8 +129,8 @@ const open = (select: HTMLSelectElement) => {
     below < height + 8 && rect.top > below
       ? rect.top - height - 4
       : rect.bottom + 4;
-  popout.style.top = `${top + window.scrollY}px`;
-  popout.style.left = `${rect.left + window.scrollX}px`;
+  popout.style.top = `${dialog ? top : top + window.scrollY}px`;
+  popout.style.left = `${dialog ? rect.left : rect.left + window.scrollX}px`;
 
   current = { select, popout };
   select.setAttribute('aria-expanded', 'true');

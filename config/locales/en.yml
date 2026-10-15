@@ -150,7 +150,6 @@ en:
         edit: Edit
         edit_title: 'Character: %{name}'
         grade: Year
-        grade_value: Year %{grade}
         hint: Created automatically from the member list. A blank character name falls back to the display name.
         house: '%{term}'
         name: Character name
@@ -273,7 +272,6 @@ en:
           apply: Filter
           count: '%{count}'
           empty: No matching characters.
-          grade: Year
           money: 'Money (%{currency})'
           name: Name
           no_group: 'No %{term}'

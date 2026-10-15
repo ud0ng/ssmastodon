@@ -1218,7 +1218,6 @@
   "system.game.turn": "{turn}턴",
   "system.game.until": "{time}",
   "system.game.vs": "vs {names}",
-  "system.grade": "{grade}학년",
   "system.houses": "{term} 점수",
   "system.inventory": "인벤토리",
   "system.inventory_empty": "아직 아이템이 없습니다.",

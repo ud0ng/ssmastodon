@@ -85,7 +85,6 @@ interface Overview {
   character: {
     name: string;
     house_id: string | null;
-    grade: number | null;
     profile: { name: string; value: string; color: string | null }[];
     stats: { name: string; value: string }[];
     money: number;
@@ -436,11 +435,6 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                 <div className='system-card__body'>
                   <div className='system-card__name'>
                     {data.character.name}
-                    {data.character.grade && (
-                      <span className='system-card__grade'>
-                        <FormattedMessage id='system.grade' defaultMessage='Year {grade}' values={{ grade: data.character.grade }} />
-                      </span>
-                    )}
                   </div>
                   <div className='system-card__house'>
                     {myHouse ? myHouse.name : <FormattedMessage id='system.no_house' defaultMessage='No {term} yet' values={{ term: data.house_term }} />}

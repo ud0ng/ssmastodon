@@ -4111,3 +4111,14 @@ button.game-token:focus-visible {
     white-space: normal;
   }
 }
+
+// 캐릭터 명단: 체크 칸은 좁게, 이름 칸은 아바타가 체크 칸 바로 옆에 오게
+.bot-sheet-table .table .game-table__check {
+  width: 36px;
+  min-width: 0;
+  padding-inline: 12px 0;
+}
+
+.bot-sheet-table .table .game-table__name-cell {
+  padding-inline-start: 4px;
+}
