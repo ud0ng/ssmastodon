@@ -4,26 +4,25 @@
 - content_for :heading do
   = render 'admin/game_settings/heading'
 
--# 목록: 1:1 컨텐츠 / 팀 컨텐츠(여럿이 하는 컨텐츠 + 서버 이벤트) / 수업. 줄을 누르면 그 컨텐츠 설정
-- sections = [['duels', Game::Kinds.duels], ['teams', Game::Kinds.group_games + Game::Kinds.events], ['lessons', Game::Lessons.all]]
-- sections.each do |section, kinds|
-  .game-toolbar.game-houses__title
-    %h4
-      = game_t("admin.games.overview.sections.#{section}")
-      %span.game-table__count= game_t('admin.games.overview.count', count: kinds.size)
-    - if section == 'lessons'
-      = link_to safe_join([material_symbol('tune'), game_t('admin.games.overview.lessons_common')]), admin_game_setting_path('lessons'), class: 'button button-secondary'
+-# 컨텐츠 탭: 목록 | 컨텐츠들 (탭 안의 탭). 수업 과목은 수업 탭에서
+= render 'admin/game_settings/content_tabs', current: nil
 
-  .bot-sheet-table.game-table.game-overview-table
-    %table.table
-      %thead
-        %tr
-          %th= game_t('admin.games.overview.name')
-          %th= game_t('admin.games.overview.command')
-          %th= game_t('admin.games.overview.state')
-          %th.game-table__number= game_t('admin.games.overview.recent_head')
-          %th.game-table__number= game_t('admin.games.overview.open_head')
-          %th.bot-sheet-table__actions
-      %tbody
-        - kinds.each do |kind|
-          = render 'admin/game_settings/kind_row', kind: kind, recent: @recent, open: @open
+-# 목록: 1:1 컨텐츠 / 팀 컨텐츠(여럿이 하는 컨텐츠 + 서버 이벤트). 줄을 누르면 그 컨텐츠 설정
+- [['duels', Game::Kinds.duels], ['teams', Game::Kinds.group_games + Game::Kinds.events]].each do |section, kinds|
+  - title = capture do
+    = game_t("admin.games.overview.sections.#{section}")
+    %span.game-table__count= game_t('admin.games.overview.count', count: kinds.size)
+  = render layout: 'admin/ui/section', locals: { title: title } do
+    .bot-sheet-table.game-table.game-overview-table
+      %table.table
+        %thead
+          %tr
+            %th= game_t('admin.games.overview.name')
+            %th= game_t('admin.games.overview.command')
+            %th= game_t('admin.games.overview.state')
+            %th.game-table__number= game_t('admin.games.overview.recent_head')
+            %th.game-table__number= game_t('admin.games.overview.open_head')
+            %th.bot-sheet-table__actions
+        %tbody
+          - kinds.each do |kind|
+            = render 'admin/game_settings/kind_row', kind: kind, recent: @recent, open: @open

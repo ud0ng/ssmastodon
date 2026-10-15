@@ -21,6 +21,15 @@ RSpec.describe Game::Config do
       expect(described_class.sections('lessons').to_h['lesson_rules'].map(&:key)).to eq %w(join_minutes class_minutes study_daily_limit)
     end
 
+    it 'lays out a content as basic, rules, rewards, commands and messages (points live in the settings tab)' do
+      sections = described_class.sections('jellybean').to_h { |name, fields| [name, fields.map(&:key)] }
+
+      expect(sections.keys.first(5)).to eq %w(basic subject_rules rewards subject_commands subject_messages)
+      expect(sections['basic']).to eq %w(enabled name command)
+      expect(sections['subject_rules']).to include('beans', 'worst_flavor', 'flavors')
+      expect(sections.keys - %w(basic subject_rules rewards subject_commands subject_messages)).to eq %w(points)
+    end
+
     it 'lays out a lesson subject as basic, rules, commands and messages' do
       sections = described_class.sections('levitation').to_h { |name, fields| [name, fields.map(&:key)] }
 

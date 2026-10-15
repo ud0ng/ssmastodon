@@ -1,0 +1,4 @@
+-# 컨텐츠 탭 안의 탭: 목록 | 컨텐츠들 (꺼진 컨텐츠는 흐리게). current: 지금 컨텐츠 (목록이면 nil)
+- items = [[game_t('admin.games.tabs.list'), admin_game_settings_path, current.nil?, false]]
+- items += Game::Kinds.all.reject(&:lesson?).map { |kind| [kind.display_name, admin_game_setting_path(kind.key), kind == current, !kind.enabled?] }
+= render 'admin/ui/subtabs', items: items, label: game_t('admin.games.tabs.contents')

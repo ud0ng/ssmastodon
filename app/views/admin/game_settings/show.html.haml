@@ -14,15 +14,8 @@
   - if @key == 'lessons'
     %p.hint.game-config__hint= game_t('admin.games.lessons_ui.opener_hint', system: Game::System.username, command: @values['cmd_class'])
 - elsif kind
-  -# 컨텐츠 화면: 같은 묶음의 다른 컨텐츠로 바로 가는 칩 줄 + 한 줄 안내
-  .game-switcher
-    = link_to admin_game_settings_path, class: 'game-switcher__back' do
-      = material_symbol 'chevron_left'
-      = game_t('admin.games.tabs.list')
-    - Game::Kinds.all.reject(&:lesson?).each do |other|
-      = link_to admin_game_setting_path(other.key), class: ['game-switcher__chip', ('game-switcher__chip--active' if other == kind), ('game-switcher__chip--off' unless other.enabled?)] do
-        %span{ 'aria-hidden': 'true' }= game_kind_icon(other.key)
-        = other.display_name
+  -# 컨텐츠: 목록 | 컨텐츠들 (탭 안의 탭) + 한 줄 안내
+  = render 'admin/game_settings/content_tabs', current: kind
   %p.hint.game-config__hint
     = game_t('admin.games.kind_hint')
     - unless kind.event?

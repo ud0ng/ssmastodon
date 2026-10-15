@@ -406,7 +406,7 @@ en:
           roster: Roster
           stats: Stats
         title: Characters
-      kind_hint: This game's switch, commands, rules and messages. Time limits and accept/decline/forfeit commands are in the Settings tab.
+      kind_hint: "This game's basics, rules, rewards, commands and messages. Win/draw/loss points and time limits are in the Settings tab, accept/decline/forfeit commands in the Commands tab."
       lesson_hint: This subject's unlock, commands, rules and messages. Study/class commands and grade points are in the Lessons tab.
       lessons: Lessons
       lessons_hint: 'Shared lesson settings. [study/subject] is solo, [class/subject] gathers a class first. Grades go to the report card and become points.'

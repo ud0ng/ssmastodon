@@ -47,11 +47,12 @@ module Game
       end
 
       # 관리 화면에서 묶어 보여 줄 칸: [[묶음 이름, 칸들], ...]
-      # 공통 설정은 화면(page)마다 LAYOUT 에 적은 묶음만, 수업은 LAYOUT 뒤에 나머지, 컨텐츠별 화면은 항목의 group 대로.
+      # 공통 설정은 화면(page)마다 LAYOUT 에 적은 묶음만, 수업·과목·컨텐츠는 LAYOUT 뒤에 나머지 (컨텐츠의 points 는 설정 탭 표로).
       def sections(key, page = nil)
         fields = schema(key)
         layout = LAYOUT[page ? [key, page] : key]
-        layout ||= LAYOUT[:lesson_subject] if Game::Kinds.registry[key]&.lesson?
+        kind = Game::Kinds.registry[key]
+        layout ||= LAYOUT[kind.lesson? ? :lesson_subject : :content_subject] if kind
         return fields.group_by(&:group).to_a if layout.nil?
 
         placed = layout.filter_map do |name, groups|
@@ -278,6 +279,14 @@ module Game
         ['grades', %w(grades)],
         ['bonus', %w(bonus)],
         ['lesson_messages', %w(messages)],
+      ],
+      # 컨텐츠 > 각 컨텐츠: 기본 / 룰 설정 / 보상 설정 / 명령어 설정 / 문구 설정 (점수는 설정 탭의 표)
+      content_subject: [
+        ['basic', %w(basic)],
+        ['subject_rules', %w(rules time flavors spells roles)],
+        ['rewards', %w(rewards)],
+        ['subject_commands', %w(commands)],
+        ['subject_messages', %w(messages)],
       ],
       # 수업 > 과목: 기본 / 룰 설정 / 명령어 설정 / 문구 설정
       lesson_subject: [
