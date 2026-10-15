@@ -1,0 +1,5 @@
+-# 입력칸 여러 개를 한 줄에 (좁은 화면에서는 아래로). 규칙: docs/관리화면-컴포넌트.md
+-#   = render layout: 'admin/ui/fields' do
+-#     = render 'admin/ui/field', …
+.ui-fields{ class: ("ui-fields--#{local_assigns[:columns]}" if local_assigns[:columns]) }
+  = yield

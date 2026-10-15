@@ -1,0 +1,12 @@
+-# 소제목 묶음 (프로필 설정 화면처럼): 소제목 + 오른쪽 버튼 + 안내 + 내용. 규칙: docs/관리화면-컴포넌트.md
+-#   = render layout: 'admin/ui/section', locals: { title: '시즌', hint: '…', actions: capture { … } } do
+-#     …
+%section.ui-section{ id: local_assigns[:id] }
+  .ui-section__head
+    %h4.ui-section__title= title
+    - if local_assigns[:actions].present?
+      .ui-section__actions= actions
+  - if local_assigns[:hint].present?
+    %p.ui-section__hint= hint
+  .ui-section__body
+    = yield

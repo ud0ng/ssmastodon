@@ -75,7 +75,7 @@
   - @shop_item_names.each do |name|
     %option{ value: name }
 
-= render layout: 'admin/game_characters/modal', locals: { id: 'item-add', title: game_t('admin.games.manage.detail.add_item') } do
+= render layout: 'admin/ui/modal', locals: { id: 'item-add', title: game_t('admin.games.manage.detail.add_item') } do
   = form_tag items_admin_game_character_path(@character), method: :post, class: 'simple_form' do
     = render 'admin/game_characters/item_fields', item: { 'name' => '', 'count' => 1, 'note' => '' }, prefix: 'item_new', named: true
     .actions
@@ -84,7 +84,7 @@
 
 - Array(@character.inventory).each_with_index do |item, index|
   - image = @item_images[Game::Wallet.key(item['name'])]
-  = render layout: 'admin/game_characters/modal', locals: { id: "item-#{index}", title: item['name'] } do
+  = render layout: 'admin/ui/modal', locals: { id: "item-#{index}", title: item['name'] } do
     .game-inventory__modal-head
       = render 'admin/game_characters/item_thumb', name: item['name'], image: image&.image&.url(:small)
       - if image&.description.present?

@@ -124,18 +124,18 @@
         %tr
           %td.bot-sheet-table__text{ colspan: 5 }= game_t('admin.games.shop.no_records')
 
-= render layout: 'admin/game_characters/modal', locals: { id: 'shop-add', title: game_t('admin.games.shop.add_shop') } do
+= render layout: 'admin/ui/modal', locals: { id: 'shop-add', title: game_t('admin.games.shop.add_shop') } do
   = render 'admin/game_shops/shop_form', shop: GameShop.new(position: @shops.size), url: admin_game_shops_path, method: :post
 
 - @shops.each do |shop|
-  = render layout: 'admin/game_characters/modal', locals: { id: "shop-#{shop.id}", title: game_t('admin.games.shop.edit_shop') } do
+  = render layout: 'admin/ui/modal', locals: { id: "shop-#{shop.id}", title: game_t('admin.games.shop.edit_shop') } do
     = render 'admin/game_shops/shop_form', shop: shop, url: admin_game_shop_path(shop), method: :patch
 
 - if @shops.any?
-  = render layout: 'admin/game_characters/modal', locals: { id: 'item-add', title: game_t('admin.games.shop.add_item') } do
+  = render layout: 'admin/ui/modal', locals: { id: 'item-add', title: game_t('admin.games.shop.add_item') } do
     = render 'admin/game_shops/item_form', item: GameShopItem.new(game_shop_id: @shops.first.id), url: admin_game_shop_items_path, method: :post
 
 - @shops.each do |shop|
   - shop.items.each do |item|
-    = render layout: 'admin/game_characters/modal', locals: { id: "item-#{item.id}", title: game_t('admin.games.shop.edit_item') } do
+    = render layout: 'admin/ui/modal', locals: { id: "item-#{item.id}", title: game_t('admin.games.shop.edit_item') } do
       = render 'admin/game_shops/item_form', item: item, url: admin_game_shop_item_path(item), method: :patch

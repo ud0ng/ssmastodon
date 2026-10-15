@@ -9,20 +9,20 @@
 - win, lose, draw = @record['win'].to_i, @record['lose'].to_i, @record['draw'].to_i
 - seoul = ActiveSupport::TimeZone['Asia/Seoul']
 
--# 머리: 왼쪽 전적 카드, 오른쪽 아바타 | 이름 (아이디) + 소속 배지
+-# 머리: 왼쪽 아바타 | 이름 (아이디) + 소속 배지, 오른쪽 전적 카드
 .game-detail__head
-  .game-detail__record
-    %small= game_t('admin.games.manage.detail.record')
-    %strong= game_t('admin.games.manage.detail.record_summary', win: win, lose: lose, draw: draw)
   .game-detail__identity
     = image_tag full_asset_url(account.avatar_static_url), alt: '', class: 'game-detail__avatar'
     .game-detail__who
       %h3
         = @character.display_name
-        = link_to "@#{account.username}", admin_account_path(account.id), class: 'game-detail__acct'
+        = link_to "(@#{account.username})", admin_account_path(account.id), class: 'game-detail__acct'
       .game-detail__badges
         - [@character.house, @character.faction].compact.each do |group|
           %span.game-badge{ style: "--badge: #{group.color.presence || '#6b5b3e'}" }= group.name
+  .game-detail__record
+    %small= game_t('admin.games.manage.detail.record')
+    %strong= game_t('admin.games.manage.detail.record_summary', win: win, lose: lose, draw: draw)
 
 = simple_form_for @character, url: admin_game_character_path(@character, filter_params), method: :patch, html: { class: 'game-detail' } do |f|
   = render 'shared/error_messages', object: @character
@@ -31,24 +31,23 @@
   .game-detail__grid
     %section.game-card
       %h4= game_t('admin.games.manage.detail.profile')
-      = f.input :name, wrapper: :with_label, label: game_t('admin.games.characters.name'), placeholder: account.display_name.presence || account.username, hint: game_t('admin.games.characters.name_hint')
-      .bot-sheet-fields
-        = f.input :game_house_id, as: :select, collection: @houses.map { |house| [house.name, house.id] }, include_blank: none, wrapper: :with_label, label: @labels['house_label']
-        = f.input :game_faction_id, as: :select, collection: @factions.map { |faction| [faction.name, faction.id] }, include_blank: none, wrapper: :with_label, label: @labels['faction_label']
+      = render 'admin/ui/field', label: game_t('admin.games.characters.name'), name: 'game_character[name]', id: 'game_character_name', value: @character.name, wide: true,
+                                 placeholder: account.display_name.presence || account.username, hint: game_t('admin.games.characters.name_hint')
+      = render layout: 'admin/ui/fields', locals: { columns: 2 } do
+        = render 'admin/ui/field', label: @labels['house_label'], name: 'game_character[game_house_id]', id: 'game_character_game_house_id', value: @character.game_house_id, type: :select,
+                                   options: @houses.map { |house| [house.name, house.id] }, include_blank: none
+        = render 'admin/ui/field', label: @labels['faction_label'], name: 'game_character[game_faction_id]', id: 'game_character_game_faction_id', value: @character.game_faction_id, type: :select,
+                                   options: @factions.map { |faction| [faction.name, faction.id] }, include_blank: none
 
     %section.game-card
       %h4= game_t('admin.games.manage.detail.stats')
       - if @base_stats.empty? && @statuses.empty?
         %p.hint= game_t('admin.games.manage.detail.no_stats')
       - else
-        .bot-sheet-fields
+        = render layout: 'admin/ui/fields' do
           - @base_stats.each do |stat|
-            .input.with_label.integer
-              .label_input
-                %label{ for: "stat_#{stat.id}" }= stat.name
-                .label_input__wrapper
-                  = number_field_tag "game_character[stat_values][#{stat.name}]", @character.stat_value(stat), id: "stat_#{stat.id}", min: stat.min, max: stat.max, step: 1
-              %span.hint= game_t('admin.games.manage.detail.range', min: stat.min, max: stat.max)
+            = render 'admin/ui/field', label: stat.name, name: "game_character[stat_values][#{stat.name}]", id: "stat_#{stat.id}", value: @character.stat_value(stat), type: :number,
+                                       hint: game_t('admin.games.manage.detail.range', min: stat.min, max: stat.max), html: { min: stat.min, max: stat.max }
         - if @statuses.any?
           .game-detail__status-list
             - @statuses.each do |status|
@@ -59,7 +58,7 @@
 
   -# 메모 (한 줄)
   %section.game-card.game-detail__memo
-    = f.input :note, as: :string, wrapper: :with_label, label: game_t('admin.games.manage.detail.memo'), input_html: { maxlength: 2000 }
+    = render 'admin/ui/field', label: game_t('admin.games.manage.detail.memo'), name: 'game_character[note]', id: 'game_character_note', value: @character.note, wide: true, html: { maxlength: 2000 }
 
   -# 전적 기록: 한 판에 한 줄
   %section.game-card
@@ -78,4 +77,4 @@
       %p.hint= game_t('admin.games.manage.detail.no_games')
 
   .actions.game-detail__actions
-    = f.button :button, t('generic.save_changes'), type: :submit
+    = button_tag t('generic.save_changes'), type: :submit, class: 'button'

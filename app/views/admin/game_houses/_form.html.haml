@@ -1,21 +1,10 @@
 -# 소속(기숙사·진영) 추가·수정 모달 안의 폼: 이름·테마색·순서
-= form_tag url, method: method, class: 'simple_form game-modal__form' do
+= form_tag url, method: method, class: 'simple_form' do
   - prefix = house.persisted? ? "house_#{house.id}" : "new_house_#{house.category}"
   - if house.new_record?
     = hidden_field_tag 'game_house[category]', house.category, id: nil
-  .bot-sheet-fields
-    .input.with_label.bot-sheet-field--wide
-      .label_input
-        %label{ for: "#{prefix}_name" }= game_t('admin.games.houses.name_label')
-        .label_input__wrapper= text_field_tag 'game_house[name]', house.name, id: "#{prefix}_name", required: true
-    .input.with_label
-      .label_input
-        %label{ for: "#{prefix}_color" }= game_t('admin.games.houses.color')
-        .label_input__wrapper= color_field_tag 'game_house[color]', house.color.presence || '#6b5b3e', id: "#{prefix}_color", class: 'game-houses__color'
-    .input.with_label
-      .label_input
-        %label{ for: "#{prefix}_position" }= game_t('admin.games.houses.order')
-        .label_input__wrapper= number_field_tag 'game_house[position]', house.position, id: "#{prefix}_position", step: 1
-  .actions
-    %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
-    = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+  = render 'admin/ui/field', label: game_t('admin.games.houses.name_label'), name: 'game_house[name]', id: "#{prefix}_name", value: house.name, required: true, wide: true
+  = render layout: 'admin/ui/fields', locals: { columns: 2 } do
+    = render 'admin/ui/field', label: game_t('admin.games.houses.color'), name: 'game_house[color]', id: "#{prefix}_color", value: house.color, type: :color
+    = render 'admin/ui/field', label: game_t('admin.games.houses.order'), name: 'game_house[position]', id: "#{prefix}_position", value: house.position, type: :number
+  = render 'admin/ui/modal_actions'

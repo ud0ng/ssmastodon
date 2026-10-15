@@ -255,6 +255,9 @@ module Game
       ],
     }.freeze
 
+    # 관리 화면에서 이 칸부터 새 줄에 놓는다 (기본 명령어: 수락·거절·기권 / 소속 점수 보기·내 전적 보기)
+    ROW_STARTS = %w(cmd_points).freeze
+
     # 공통 설정의 화면들 (컨텐츠 설정의 '설정' / '명령어' 탭)
     COMMON_PAGES = %w(settings commands).freeze
   end

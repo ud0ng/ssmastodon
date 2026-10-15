@@ -1,0 +1,7 @@
+-# 둘 이상 중 하나 고르기 (점수제/판수제, 기숙사/진영 등). 누르면 바로 저장한다. 규칙: docs/관리화면-컴포넌트.md
+-#   = render 'admin/ui/segmented', url: …, param: :scoring_mode, value: 'points', options: [['점수제', 'points'], ['판수제', 'games']]
+.ui-segmented{ role: 'radiogroup', 'aria-label': local_assigns[:label] }
+  - options.each do |text, option|
+    - on = option.to_s == value.to_s
+    = button_to text, url, method: local_assigns.fetch(:method, :post), params: { param => option }, form_class: 'ui-segmented__form',
+                class: ['ui-segmented__option', ('ui-segmented__option--on' if on)], disabled: on, role: 'radio', 'aria-checked': on.to_s

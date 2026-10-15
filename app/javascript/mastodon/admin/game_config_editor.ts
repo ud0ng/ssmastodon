@@ -391,7 +391,8 @@ export const setupGameConfigEditor = () => {
       field.refresh();
     });
 
-    form.querySelectorAll<HTMLDetailsElement>('details.game-group').forEach((group) => {
+    // 묶음(admin/ui/_section)마다 바뀐 칸 수
+    form.querySelectorAll<HTMLElement>('.ui-section, details.game-group').forEach((group) => {
       const changed = group.querySelectorAll('.game-field--changed').length;
       const badge = group.querySelector<HTMLElement>('.game-group__changed');
       if (!badge) return;

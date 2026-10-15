@@ -26,7 +26,17 @@ en:
     system_menu: System
     games:
       pick_account: Choose a member
+      points_table:
+        content: Content
+        draw: Draw
+        hint_games: 'Scoring is by games won right now, so each win counts 1 point and these numbers are not used. (Change it in Characters > Groups > Season)'
+        hint_points: 'When a game ends, these points go to the group by result. e.g. win 50, loss 30.'
+        lose: Loss
+        title: Points per content
+        win: Win
       activity:
+        add_item: Add item
+        items_hint: 'Pick items with [+] and set how many under each card. Picking the same item again adds one.'
         all_characters: Select all
         basis:
           chars: characters

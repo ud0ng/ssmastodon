@@ -1,0 +1,319 @@
+@use 'variables' as *;
+
+// 관리 화면 공통 컴포넌트 (app/views/admin/ui/*). 규칙·쓰는 법: docs/관리화면-컴포넌트.md
+// 같은 종류의 칸은 여기 모양 하나만 쓴다 (화면마다 새 클래스를 만들지 않는다).
+
+// ── 소제목 묶음 (admin/ui/_section) ──
+.ui-section {
+  margin-bottom: 32px;
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--background-border-color);
+  }
+
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  &__hint {
+    margin: -4px 0 12px;
+    color: $darker-text-color;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+// 소제목 글자 모양은 마스토돈 설정 화면 소제목(.content h4) 그대로, 밑줄은 머리 줄 전체에 한 번만
+.ui-section .ui-section__head h4.ui-section__title {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  line-height: 32px;
+}
+
+// ── 입력칸 줄 (admin/ui/_fields) ──
+.ui-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0 16px;
+
+  &--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  &--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @media screen and (width <= 600px) {
+    &--2,
+    &--3 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .ui-field--wide {
+    grid-column: 1 / -1;
+  }
+}
+
+// ── 입력칸 (admin/ui/_field) — 글·숫자·날짜·색·드롭다운·여러 줄이 같은 모양 ──
+.simple_form .ui-field,
+.ui-field {
+  margin-bottom: 16px;
+
+  .label_input > label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .hint {
+    display: block;
+    margin-top: 4px;
+    color: $darker-text-color;
+    font-size: 12px;
+  }
+}
+
+.simple_form .ui-input,
+.ui-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--background-border-color);
+  border-radius: 10px;
+  background: var(--input-background-color, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+
+  &:focus {
+    border-color: $ui-highlight-color;
+    outline: 0;
+  }
+}
+
+.simple_form textarea.ui-input,
+textarea.ui-input {
+  min-height: 72px;
+  resize: vertical;
+}
+
+// 날짜: 달력 아이콘이 테마 색을 따르게
+.simple_form .ui-input--date,
+.ui-input--date {
+  color-scheme: light dark;
+}
+
+// 색: 칸 안에 색 견본만 크게
+.simple_form .ui-input--color,
+.ui-input--color {
+  width: 64px;
+  padding: 4px;
+  cursor: pointer;
+}
+
+// ── 고르기 버튼 (admin/ui/_segmented) ──
+.ui-segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  padding: 3px;
+  border: 1px solid var(--background-border-color);
+  border-radius: 999px;
+
+  &__form {
+    display: inline;
+  }
+
+  &__option {
+    padding: 6px 16px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: $darker-text-color;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+      color: $primary-text-color;
+    }
+
+    &--on,
+    &--on:disabled {
+      background: $ui-highlight-color;
+      color: $white;
+      cursor: default;
+      opacity: 1;
+    }
+  }
+}
+
+// ── 팝오버 (multi_select · item_picker 의 목록) — 위치는 admin.tsx 가 화면 기준으로 정한다 ──
+.ui-popover-anchor {
+  position: relative;
+
+  > summary {
+    list-style: none;
+    cursor: pointer;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
+}
+
+.ui-popover {
+  position: fixed;
+  z-index: 1000;
+  max-width: min(360px, calc(100vw - 16px));
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--background-border-color);
+  border-radius: 10px;
+  background: var(--background-color);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
+
+  &__option {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: color-mix(in srgb, $ui-highlight-color 12%, transparent);
+    }
+
+    .game-item-thumb {
+      flex: 0 0 auto;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+  }
+}
+
+// 예전 목록 위치(absolute)를 팝오버가 덮어쓴다
+.game-multi .game-multi__list.ui-popover {
+  inset-inline: auto;
+  top: auto;
+}
+
+// ── 아이템 고르기 (admin/ui/_item_picker) ──
+.ui-item-picker {
+  &__card {
+    position: relative;
+    cursor: default;
+  }
+
+  &__remove {
+    position: absolute;
+    top: 4px;
+    inset-inline-end: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(0 0 0 / 55%);
+    color: $white;
+    cursor: pointer;
+
+    .icon {
+      width: 14px !important;
+      height: 14px !important;
+      opacity: 1 !important;
+    }
+  }
+
+  .ui-item-picker__count {
+    width: 100%;
+    min-height: 32px;
+    padding: 4px 8px;
+    text-align: center;
+  }
+
+  &__add > summary {
+    width: 100%;
+  }
+}
+
+// ── 모달 아래 버튼 줄 (admin/ui/_modal_actions) ──
+.ui-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+// 폼 안의 고르기 (admin/ui/_choice): 라디오를 숨기고 고른 것만 칠한다
+.ui-segmented__option--radio {
+  display: inline-flex;
+  align-items: center;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:has(input:checked) {
+    background: $ui-highlight-color;
+    color: $white;
+  }
+
+  &:has(input:focus-visible) {
+    outline: 2px solid $ui-highlight-color;
+    outline-offset: 2px;
+  }
+}
+
+// 설정 탭의 컨텐츠별 점수 표: 칸을 좁게, 머리·칸 가운데 맞춤
+.game-table:has(.game-points__input) .game-table__number {
+  text-align: center;
+}
+
+.game-points__input {
+  display: inline-block;
+  max-width: 96px;
+  min-height: 34px;
+  padding: 4px 8px;
+  text-align: end;
+}
+
+// 소제목 오른쪽의 '바뀜 n' 배지 (컨텐츠 설정 편집기)
+.ui-section .game-group__changed {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, $ui-highlight-color 18%, transparent);
+  font-size: 12px;
+}

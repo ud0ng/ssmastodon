@@ -22,10 +22,11 @@ RSpec.describe 'Admin character activity' do
     expect(GameReward.where(kind: 'admin', reason: '생일').count).to eq 2
   end
 
-  it 'gives several shop items at once' do
-    post give_admin_game_activities_path, params: { give_kind: 'items', character_ids: [ron.id], item_names: ['초콜릿 개구리', '버티 보트 젤리빈', '없는 아이템'], count: '2', money: '99' }
+  it 'gives several shop items at once, each with its own count' do
+    items = [{ name: '초콜릿 개구리', count: '2' }, { name: '버티 보트 젤리빈', count: '5' }, { name: '없는 아이템', count: '1' }, { name: '초콜릿 개구리', count: '1' }]
+    post give_admin_game_activities_path, params: { give_kind: 'items', character_ids: [ron.id], items: items, money: '99' }
 
-    expect(ron.reload.inventory.pluck('name', 'count')).to eq [['초콜릿 개구리', 2], ['버티 보트 젤리빈', 2]]
+    expect(ron.reload.inventory.pluck('name', 'count')).to eq [['초콜릿 개구리', 3], ['버티 보트 젤리빈', 5]]
     expect(ron.money).to eq 0
   end
 

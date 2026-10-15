@@ -1,0 +1,31 @@
+-# 입력칸 하나: 이름표 + 칸 + 안내. 규칙: docs/관리화면-컴포넌트.md
+-#   = render 'admin/ui/field', label: '이름', name: 'game_season[name]', value: …, type: :text
+-# type: text · number · date · color · select · textarea · custom (custom 은 render layout: 으로 칸을 직접 넣는다)
+-# 그 밖: id, hint, required, placeholder, wide(한 줄 전체), options(select: [[보이는 이름, 값]]), include_blank(select), html(칸에 더할 속성)
+-#       data·extra(감싸는 칸에 더할 data 속성·클래스, 예: 컨텐츠 설정 편집기의 game-field)
+- type = local_assigns.fetch(:type, :text).to_sym
+- name = local_assigns[:name]
+- value = local_assigns[:value]
+- id = local_assigns[:id] || name.to_s.gsub(/[^\w]+/, '_').delete_suffix('_')
+- html = { id: id, required: local_assigns[:required].presence, placeholder: local_assigns[:placeholder].presence, class: "ui-input ui-input--#{type}" }.compact.merge(local_assigns[:html] || {})
+.input.with_label.ui-field{ class: [type, ('ui-field--wide' if local_assigns[:wide] || type == :textarea), ('required' if local_assigns[:required]), local_assigns[:extra]], data: local_assigns[:data] }
+  .label_input
+    %label{ for: id }= label
+    .label_input__wrapper
+      - case type
+      - when :number
+        = number_field_tag name, value, html.reverse_merge(step: 1)
+      - when :date
+        = date_field_tag name, value, html
+      - when :color
+        = color_field_tag name, value.presence || '#6b5b3e', html
+      - when :select
+        = select_tag name, options_for_select(local_assigns[:options] || [], value), html.merge(include_blank: local_assigns[:include_blank]).compact
+      - when :textarea
+        = text_area_tag name, value, html.reverse_merge(rows: 3)
+      - when :custom
+        = yield
+      - else
+        = text_field_tag name, value, html
+  - if local_assigns[:hint].present?
+    %span.hint= hint

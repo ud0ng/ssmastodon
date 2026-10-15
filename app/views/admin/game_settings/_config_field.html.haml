@@ -1,0 +1,39 @@
+-# Game::Config 항목 하나를 공통 컴포넌트(admin/ui)로. 감싸는 칸의 data-* 와 game-field 는 편집기(game_config_editor.ts)가 바뀜·되돌리기·미리보기에 쓴다.
+- name = "config[#{field.key}]"
+- field_id = "game_config_#{field.key}"
+- value = @values[field.key]
+- default = field.type == :lines ? Array(field.default).join("\n") : field.default
+- items_field = field.type == :lines && field.key.start_with?('reward_items')
+- data = { game_field: items_field ? 'items' : field.type, default: default.to_s, field_label: field.label }
+- if field.type == :boolean
+  = render 'admin/ui/switch', label: field.label, name: name, id: field_id, checked: value, hint: field.hint, extra: 'game-field', data: data.merge(default: field.default ? '1' : '0')
+- else
+  - data = data.merge(percent: (field.type == :integer && field.label.to_s.include?('%')) || nil, tokens: (field.type == :text ? (field.tokens + Game::Text::PARTICLES.keys).to_json : nil))
+  - hint = items_field ? game_t('admin.games.reward_item.hint') : field.hint
+  = render layout: 'admin/ui/field', locals: { label: field.label, id: field_id, type: :custom, hint: hint, wide: %i(text lines).include?(field.type), extra: 'game-field', data: data } do
+    - case field.type
+    - when :account
+      -# 회원 아이디: 가입한 회원 목록에서 고른다
+      - choices = @accounts.map { |account| ["#{account.display_name.presence || account.username} (@#{account.username})", account.username] }
+      - choices.unshift(["@#{value}", value]) if value.present? && choices.none? { |_, username| username == value }
+      = select_tag name, options_for_select([[game_t('admin.games.pick_account'), '']] + choices, value), id: field_id, class: 'ui-input ui-input--select'
+    - when :select
+      = select_tag name, options_for_select(field.choices.map(&:reverse), value), id: field_id, class: 'ui-input ui-input--select'
+    - when :integer
+      = number_field_tag name, value, id: field_id, step: 1, class: 'ui-input ui-input--number'
+    - when :lines
+      - if items_field
+        -# 보상 아이템: 상점 아이템을 골라 개수·확률을 적는 표 (game_config_editor.ts setupStatsEditor)
+        - editor = { columns: [game_t('admin.games.reward_item.name'), game_t('admin.games.reward_item.count'), game_t('admin.games.reward_item.chance')], sep: '|', choices: @shop_item_names, choice_placeholder: game_t('admin.games.reward_item.pick') }
+        = text_area_tag name, Array(value).join("\n"), id: field_id, rows: 3, class: 'ui-input ui-input--textarea', data: { stats_editor: editor.to_json }
+      - else
+        = text_area_tag name, Array(value).join("\n"), id: field_id, rows: [Array(value).size + 1, 4].max, class: 'ui-input ui-input--textarea'
+    - when :text
+      = text_area_tag name, value, id: field_id, rows: [value.to_s.lines.size + 1, 2].max, class: 'ui-input ui-input--textarea'
+    - else
+      = text_field_tag name, value, id: field_id, class: 'ui-input ui-input--text'
+    - if field.type == :text
+      -# 누르면 커서 자리에 들어가는 명령어 (admin.tsx), 미리보기는 game_config_editor.ts 가 붙인다
+      .game-tokens
+        - (field.tokens + Game::Text::PARTICLES.keys).each do |token|
+          %button.game-token{ type: 'button', data: { insert: "{#{token}}", target: field_id }, class: [('game-token--particle' if Game::Text::PARTICLES.key?(token)), ('game-token--person' if token.include?('계정'))] }= "{#{token}}"

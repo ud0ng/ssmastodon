@@ -1,0 +1,5 @@
+-# 모달 폼 아래 버튼 줄: [취소] [저장]. 규칙: docs/관리화면-컴포넌트.md
+-#   = render 'admin/ui/modal_actions', submit: '추가'
+.actions.ui-modal-actions
+  %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
+  = button_tag local_assigns[:submit] || t('generic.save_changes'), type: :submit, class: 'button'

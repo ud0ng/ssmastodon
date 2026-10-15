@@ -491,7 +491,7 @@ Rails.delegate(document, 'select[data-stat-type]', 'change', ({ target }) => {
   if (target instanceof HTMLSelectElement) syncStatParts(target);
 });
 
-// 입력창 모달 (admin/game_characters/_modal): data-modal-open="id" 버튼으로 열고, X·바깥 클릭·Esc 로 닫는다
+// 입력창 모달 (admin/ui/_modal): data-modal-open="id" 버튼으로 열고, X·바깥 클릭·Esc 로 닫는다
 Rails.delegate(document, '[data-modal-open]', 'click', ({ target }) => {
   if (!(target instanceof Element)) return;
 
@@ -537,7 +537,7 @@ Rails.delegate(document, 'tr[data-href]', 'click', ({ target }) => {
   if (href) window.location.assign(href);
 });
 
-// 여러 개 고르는 드롭다운 (admin/game_activities/_multi_select): 고른 이름을 요약에 보이고, 바깥을 누르면 닫는다
+// 여러 개 고르는 드롭다운 (admin/ui/_multi_select): 고른 이름을 요약에 보이고, 바깥을 누르면 닫는다
 const syncMultiSelect = (box: HTMLElement) => {
   const label = box.querySelector('.game-multi__label');
   if (!label) return;
@@ -560,13 +560,93 @@ document.addEventListener('change', ({ target }) => {
   if (box) syncMultiSelect(box);
 });
 
-document.addEventListener('click', ({ target }) => {
-  document
-    .querySelectorAll<HTMLDetailsElement>('details[data-multi-select][open]')
-    .forEach((box) => {
-      if (!(target instanceof Node) || !box.contains(target)) box.open = false;
-    });
+// 팝오버 (admin/ui: multi_select · item_picker 의 details[data-popover] > .ui-popover):
+// 화면 기준 고정 위치로 띄워 모달·표에 잘리지 않게 하고, 아래 공간이 모자라면 위로 띄운다. 바깥을 누르면 닫는다.
+const placePopover = (details: HTMLDetailsElement) => {
+  const popover = details.querySelector<HTMLElement>(':scope > .ui-popover');
+  const anchor = details.querySelector<HTMLElement>(':scope > summary');
+  if (!popover || !anchor) return;
+
+  const rect = anchor.getBoundingClientRect();
+  popover.style.position = 'fixed';
+  popover.style.minWidth = `${rect.width}px`;
+  popover.style.maxHeight = '';
+  const below = window.innerHeight - rect.bottom - 8;
+  const above = rect.top - 8;
+  const up = popover.offsetHeight > below && above > below;
+  const room = up ? above : below;
+  if (popover.offsetHeight > room) popover.style.maxHeight = `${Math.max(room, 120)}px`;
+  const height = popover.offsetHeight;
+  popover.style.top = `${up ? rect.top - height - 4 : rect.bottom + 4}px`;
+  popover.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - popover.offsetWidth - 8))}px`;
+};
+
+const openPopovers = () =>
+  document.querySelectorAll<HTMLDetailsElement>('details[data-popover][open]');
+
+document.addEventListener(
+  'toggle',
+  ({ target }) => {
+    if (target instanceof HTMLDetailsElement && target.matches('[data-popover]') && target.open) placePopover(target);
+  },
+  true,
+);
+
+document.addEventListener(
+  'scroll',
+  () => {
+    openPopovers().forEach(placePopover);
+  },
+  true,
+);
+
+window.addEventListener('resize', () => {
+  openPopovers().forEach(placePopover);
 });
+
+document.addEventListener('click', ({ target }) => {
+  openPopovers().forEach((box) => {
+    if (!(target instanceof Node) || !box.contains(target)) box.open = false;
+  });
+});
+
+// 아이템 고르기 (admin/ui/_item_picker): 목록에서 고르면 카드가 붙고(같은 아이템이면 개수 +1), × 로 뺀다
+Rails.delegate(document, '[data-item-pick]', 'click', ({ target }) => {
+  if (!(target instanceof Element)) return;
+
+  const option = target.closest<HTMLElement>('[data-item-pick]');
+  const picker = option?.closest<HTMLElement>('[data-item-picker]');
+  const template = picker?.querySelector('template');
+  const add = picker?.querySelector<HTMLDetailsElement>('.ui-item-picker__add');
+  const name = option?.dataset.itemPick;
+  if (!option || !picker || !template || !add || !name) return;
+
+  add.open = false;
+  const existing = Array.from(picker.querySelectorAll<HTMLElement>('.ui-item-picker__card')).find(
+    (card) => card.querySelector<HTMLInputElement>('input[type="hidden"]')?.value === name,
+  );
+  if (existing) {
+    const count = existing.querySelector<HTMLInputElement>('.ui-item-picker__count');
+    if (count) count.value = String((parseInt(count.value, 10) || 0) + 1);
+    return;
+  }
+
+  const card = (template.content.firstElementChild as HTMLElement | null)?.cloneNode(true);
+  if (!(card instanceof HTMLElement)) return;
+  const thumb = option.querySelector('.game-item-thumb')?.cloneNode(true);
+  if (thumb) card.querySelector('.ui-item-picker__thumb')?.replaceWith(thumb);
+  const label = card.querySelector('.game-inventory__name');
+  if (label) label.textContent = name;
+  const hidden = card.querySelector<HTMLInputElement>('input[type="hidden"]');
+  if (hidden) hidden.value = name;
+  add.before(card);
+  card.querySelector<HTMLInputElement>('.ui-item-picker__count')?.select();
+});
+
+Rails.delegate(document, '.ui-item-picker__remove', 'click', ({ target }) => {
+  if (target instanceof Element) target.closest('.ui-item-picker__card')?.remove();
+});
+
 
 // 지급 모달: 재화 / 아이템에 맞는 칸만
 Rails.delegate(document, 'input[data-give-kind]', 'change', ({ target }) => {

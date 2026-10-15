@@ -1,0 +1,7 @@
+-# 폼 안에서 둘 이상 중 하나 고르기 (라디오). 모양은 _segmented 와 같고, 바로 저장하지 않고 폼과 함께 보낸다. 규칙: docs/관리화면-컴포넌트.md
+-#   = render 'admin/ui/choice', name: 'give_kind', value: 'money', options: [['재화', 'money'], ['아이템', 'items']], data: { give_kind: true }
+.ui-segmented{ role: 'radiogroup', 'aria-label': local_assigns[:label] }
+  - options.each do |text, option|
+    %label.ui-segmented__option.ui-segmented__option--radio
+      = radio_button_tag name, option, option.to_s == value.to_s, data: local_assigns[:data]
+      %span= text

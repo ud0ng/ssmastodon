@@ -5,115 +5,96 @@
   = render 'admin/game_characters/heading'
 
 -# 점수 기준 소속: 기숙사 / 진영 중 점수를 모을 쪽
-.game-groups__mode
-  %span.game-groups__mode-label= game_t('admin.games.houses.mode')
-  - GameHouse::CATEGORIES.each do |category|
-    = button_to mode_admin_game_houses_path, params: { mode: category }, method: :post, form_class: 'game-groups__mode-form',
-                class: ['game-groups__mode-button', ('game-groups__mode-button--active' if @mode == category)], disabled: @mode == category do
-      = @labels[category]
-      - if @mode == category
-        %span.game-groups__mode-on= game_t('admin.games.houses.mode_on')
-  = button_tag safe_join([material_symbol('edit'), game_t('admin.games.houses.rename')]), type: :button, class: 'button button-tertiary', data: { modal_open: 'house-labels' }
+- rename = button_tag safe_join([material_symbol('edit'), game_t('admin.games.houses.rename')]), type: :button, class: 'button button-tertiary', data: { modal_open: 'house-labels' }
+= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.houses.mode'), hint: game_t('admin.games.houses.mode_hint'), actions: rename } do
+  = render 'admin/ui/segmented', url: mode_admin_game_houses_path, param: :mode, value: @mode, label: game_t('admin.games.houses.mode'),
+                                 options: GameHouse::CATEGORIES.map { |category| [@labels[category], category] }
 
-= render layout: 'admin/game_characters/modal', locals: { id: 'house-labels', title: game_t('admin.games.houses.rename') } do
+= render layout: 'admin/ui/modal', locals: { id: 'house-labels', title: game_t('admin.games.houses.rename') } do
   = form_tag labels_admin_game_houses_path, method: :patch, class: 'simple_form' do
-    .bot-sheet-fields
+    = render layout: 'admin/ui/fields', locals: { columns: 2 } do
       - GameHouse::CATEGORIES.each do |category|
-        .input.with_label.string
-          .label_input
-            %label{ for: "house_label_#{category}" }= game_t("admin.games.houses.label_#{category}")
-            .label_input__wrapper= text_field_tag "labels[#{category}]", @labels[category], id: "house_label_#{category}", maxlength: 20, required: true
-    .actions
-      %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
-      = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+        = render 'admin/ui/field', label: game_t("admin.games.houses.label_#{category}"), name: "labels[#{category}]", id: "house_label_#{category}", value: @labels[category], required: true, html: { maxlength: 20 }
+    = render 'admin/ui/modal_actions'
 
 = render 'admin/game_houses/seasons'
 
+-# 기숙사 · 진영 목록
 - GameHouse::CATEGORIES.each do |category|
   - label = @labels[category]
-  .game-toolbar.game-houses__title
-    %h4
-      = label
-      - if @mode == category
-        %span.game-houses__badge= game_t('admin.games.houses.scoring')
+  - actions = capture do
     = button_tag safe_join([material_symbol('add'), game_t('admin.games.houses.add_named', name: label)]), type: :button, class: 'button', data: { modal_open: "house-add-#{category}" }
     - if category == GameHouse::CATEGORIES.first
       = button_tag safe_join([material_symbol('edit_note'), game_t('admin.games.houses.adjust')]), type: :button, class: 'button button-secondary', data: { modal_open: 'house-adjust' }
-
-  .bot-sheet-table.game-table
-    %table.table
-      %thead
-        %tr
-          %th= game_t('admin.games.houses.name_label')
-          %th= game_t('admin.games.houses.color')
-          %th= game_t('admin.games.houses.order')
-          %th= game_t('admin.games.houses.members_head')
-          %th= game_t('admin.games.houses.points_head')
-          %th.bot-sheet-table__actions
-      %tbody
-        - @lists[category].each do |house|
+  - title = capture do
+    = label
+    - if @mode == category
+      %span.game-houses__badge= game_t('admin.games.houses.scoring')
+  = render layout: 'admin/ui/section', locals: { title: title, actions: actions } do
+    .bot-sheet-table.game-table
+      %table.table
+        %thead
           %tr
-            %td.bot-sheet-table__text
-              .game-houses__name
-                %span.game-swatch{ style: "--swatch: #{house.color.presence || '#6b5b3e'}" }
-                %strong= house.name
-            %td.bot-sheet-table__text= house.color.presence || '—'
-            %td.bot-sheet-table__text= house.position
-            %td.bot-sheet-table__text= @counts[category].fetch(house.id, 0)
-            %td.bot-sheet-table__text= house.total
-            %td.bot-sheet-table__actions
-              = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: game_t('admin.games.houses.edit'), data: { modal_open: "house-#{house.id}" }
-              = button_to admin_game_house_path(house), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.houses.delete_named', name: label),
-                          data: { confirm: game_t('admin.games.houses.delete_confirm_named', name: house.name, term: label) } do
-                = material_symbol('delete')
-        - if @lists[category].empty?
-          %tr
-            %td.bot-sheet-table__text{ colspan: 6 }= game_t('admin.games.overview.no_houses')
+            %th= game_t('admin.games.houses.name_label')
+            %th= game_t('admin.games.houses.color')
+            %th= game_t('admin.games.houses.order')
+            %th= game_t('admin.games.houses.members_head')
+            %th= game_t('admin.games.houses.points_head')
+            %th.bot-sheet-table__actions
+        %tbody
+          - @lists[category].each do |house|
+            %tr
+              %td.bot-sheet-table__text
+                .game-houses__name
+                  %span.game-swatch{ style: "--swatch: #{house.color.presence || '#6b5b3e'}" }
+                  %strong= house.name
+              %td.bot-sheet-table__text= house.color.presence || '—'
+              %td.bot-sheet-table__text= house.position
+              %td.bot-sheet-table__text= @counts[category].fetch(house.id, 0)
+              %td.bot-sheet-table__text= house.total
+              %td.bot-sheet-table__actions
+                = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: game_t('admin.games.houses.edit'), data: { modal_open: "house-#{house.id}" }
+                = button_to admin_game_house_path(house), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.houses.delete_named', name: label),
+                            data: { confirm: game_t('admin.games.houses.delete_confirm_named', name: house.name, term: label) } do
+                  = material_symbol('delete')
+          - if @lists[category].empty?
+            %tr
+              %td.bot-sheet-table__text{ colspan: 6 }= game_t('admin.games.overview.no_houses')
 
-  = render layout: 'admin/game_characters/modal', locals: { id: "house-add-#{category}", title: game_t('admin.games.houses.add_named', name: label) } do
+  = render layout: 'admin/ui/modal', locals: { id: "house-add-#{category}", title: game_t('admin.games.houses.add_named', name: label) } do
     = render 'admin/game_houses/form', house: GameHouse.new(category: category, color: '#6b5b3e', position: @lists[category].size), url: admin_game_houses_path, method: :post
 
   - @lists[category].each do |house|
-    = render layout: 'admin/game_characters/modal', locals: { id: "house-#{house.id}", title: game_t('admin.games.houses.edit') } do
+    = render layout: 'admin/ui/modal', locals: { id: "house-#{house.id}", title: game_t('admin.games.houses.edit') } do
       = render 'admin/game_houses/form', house: house, url: admin_game_house_path(house), method: :patch
 
-= render layout: 'admin/game_characters/modal', locals: { id: 'house-adjust', title: game_t('admin.games.houses.adjust') } do
-  = form_tag adjust_admin_game_houses_path, method: :post, class: 'simple_form game-modal__form' do
+= render layout: 'admin/ui/modal', locals: { id: 'house-adjust', title: game_t('admin.games.houses.adjust') } do
+  = form_tag adjust_admin_game_houses_path, method: :post, class: 'simple_form' do
     %p.hint= game_t('admin.games.houses.adjust_hint')
-    .bot-sheet-fields
-      .input.with_label
-        .label_input
-          %label{ for: 'adjust_house' }= game_t('admin.games.houses.name')
-          .label_input__wrapper= select_tag :house_id, grouped_options_for_select(GameHouse::CATEGORIES.to_h { |category| [@labels[category], @lists[category].map { |house| [house.label, house.id] }] }), id: 'adjust_house'
-      .input.with_label
-        .label_input
-          %label{ for: 'adjust_amount' }= game_t('admin.games.houses.amount')
-          .label_input__wrapper= number_field_tag :amount, nil, id: 'adjust_amount', step: 1, required: true
-    .input.with_label
-      .label_input
-        %label{ for: 'adjust_reason' }= game_t('admin.games.houses.reason')
-        .label_input__wrapper= text_field_tag :reason, '', id: 'adjust_reason'
-    .actions
-      %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
-      = button_tag game_t('admin.games.houses.adjust'), type: :submit, class: 'button'
+    = render layout: 'admin/ui/fields', locals: { columns: 2 } do
+      = render layout: 'admin/ui/field', locals: { label: game_t('admin.games.houses.name'), id: 'adjust_house', type: :custom } do
+        = select_tag :house_id, grouped_options_for_select(GameHouse::CATEGORIES.to_h { |category| [@labels[category], @lists[category].map { |house| [house.label, house.id] }] }), id: 'adjust_house', class: 'ui-input ui-input--select'
+      = render 'admin/ui/field', label: game_t('admin.games.houses.amount'), name: 'amount', id: 'adjust_amount', type: :number, required: true
+    = render 'admin/ui/field', label: game_t('admin.games.houses.reason'), name: 'reason', id: 'adjust_reason', wide: true
+    = render 'admin/ui/modal_actions', submit: game_t('admin.games.houses.adjust')
 
 - if @recent_points.any?
-  %h4.game-houses__recent= game_t('admin.games.houses.recent')
-  .bot-sheet-table.game-table
-    %table.table
-      %thead
-        %tr
-          %th= game_t('admin.games.houses.when')
-          %th= game_t('admin.games.houses.name')
-          %th= game_t('admin.games.houses.amount')
-          %th= game_t('admin.games.houses.reason')
-      %tbody
-        - @recent_points.each do |point|
+  = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.houses.recent') } do
+    .bot-sheet-table.game-table
+      %table.table
+        %thead
           %tr
-            %td.bot-sheet-table__text= l(point.created_at.in_time_zone('Asia/Seoul'), format: :short)
-            %td.bot-sheet-table__text= point.house.label
-            %td.bot-sheet-table__text= format('%+d', point.amount)
-            %td.bot-sheet-table__text
-              = point.reason
-              - if point.account
-                = "· @#{point.account.username}"
+            %th= game_t('admin.games.houses.when')
+            %th= game_t('admin.games.houses.name')
+            %th= game_t('admin.games.houses.amount')
+            %th= game_t('admin.games.houses.reason')
+        %tbody
+          - @recent_points.each do |point|
+            %tr
+              %td.bot-sheet-table__text= l(point.created_at.in_time_zone('Asia/Seoul'), format: :short)
+              %td.bot-sheet-table__text= point.house.label
+              %td.bot-sheet-table__text= format('%+d', point.amount)
+              %td.bot-sheet-table__text
+                = point.reason
+                - if point.account
+                  = "· @#{point.account.username}"

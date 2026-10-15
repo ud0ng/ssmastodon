@@ -34,12 +34,7 @@ module Admin
 
       accounts = GameCharacter.visible.where(id: Array(params[:character_ids])).includes(:account).map(&:account)
       money = params[:give_kind] == 'money' ? [params[:money].to_i, 0].max : 0
-      items = if params[:give_kind] == 'items'
-                count = [params[:count].to_i, 1].max
-                GameShopItem.where(name: Array(params[:item_names])).pluck(:name).index_with { count }
-              else
-                {}
-              end
+      items = params[:give_kind] == 'items' ? picked_items : {}
       if accounts.empty? || (money.zero? && items.empty?)
         redirect_to admin_game_activities_path(modal: 'activity-give'), alert: t('admin.games.activity.give_nothing')
         return
@@ -54,7 +49,17 @@ module Admin
 
     def load_give_form
       @currency = Game::Config.for('common')['currency_name']
-      @shop_item_names = GameShopItem.pluck(:name)
+      @shop_items = GameShopItem.order(:name).map { |item| [item.name, item.image.present? ? item.image.url(:small) : nil] }
+    end
+
+    # 아이템 고르기(admin/ui/_item_picker): items[][name], items[][count] → { 이름 => 개수 } (상점에 있는 아이템만, 같은 이름은 더한다)
+    def picked_items
+      known = GameShopItem.pluck(:name).to_set
+      Array(params[:items]).each_with_object(Hash.new(0)) do |item, total|
+        name = item[:name].to_s.strip
+        count = item[:count].to_i
+        total[name] += count if known.include?(name) && count.positive?
+      end
     end
   end
 end

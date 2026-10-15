@@ -38,9 +38,9 @@
         %tr
           %td.bot-sheet-table__text{ colspan: 5 }= game_t('admin.games.manage.stats.empty')
 
-= render layout: 'admin/game_characters/modal', locals: { id: 'stat-add', title: game_t('admin.games.manage.stats.add') } do
+= render layout: 'admin/ui/modal', locals: { id: 'stat-add', title: game_t('admin.games.manage.stats.add') } do
   = render 'admin/game_character_stats/form', stat: GameCharacterField.new(stat_type: 'stat'), url: admin_game_character_stats_path, method: :post, base_names: @base_names
 
 - @stats.each do |stat|
-  = render layout: 'admin/game_characters/modal', locals: { id: "stat-#{stat.id}", title: game_t('admin.games.manage.stats.edit') } do
+  = render layout: 'admin/ui/modal', locals: { id: "stat-#{stat.id}", title: game_t('admin.games.manage.stats.edit') } do
     = render 'admin/game_character_stats/form', stat: stat, url: admin_game_character_stat_path(stat), method: :patch, base_names: @base_names

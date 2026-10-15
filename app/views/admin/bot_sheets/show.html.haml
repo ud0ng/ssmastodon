@@ -66,7 +66,7 @@
               %td.bot-sheet-table__text{ colspan: width + 1 }= t('admin.bot_sheets.empty')
 
     -# 줄 추가·수정 모달: 헤더마다 입력칸 (빈 헤더 칸·수식 칸은 그대로 둔다)
-    = render layout: 'admin/game_characters/modal', locals: { id: 'sheet-row-add', title: t('admin.bot_sheets.rows.title') } do
+    = render layout: 'admin/ui/modal', locals: { id: 'sheet-row-add', title: t('admin.bot_sheets.rows.title') } do
       = form_tag rows_admin_bot_sheet_path(@bot_sheet.sheet), method: :post, class: 'simple_form game-modal__form' do
         = hidden_field_tag :worksheet, @worksheet, id: nil
         = render 'admin/bot_sheets/row_fields', table: @table, cells: [], locked: [], prefix: 'new'
@@ -76,7 +76,7 @@
 
     - @table.rows.each do |row|
       - cells = Array.new(width) { |index| row.cells[index].to_s }
-      = render layout: 'admin/game_characters/modal', locals: { id: "sheet-row-#{row.number}", title: t('admin.bot_sheets.rows.edit') } do
+      = render layout: 'admin/ui/modal', locals: { id: "sheet-row-#{row.number}", title: t('admin.bot_sheets.rows.edit') } do
         = form_tag rows_admin_bot_sheet_path(@bot_sheet.sheet), method: :patch, class: 'simple_form game-modal__form' do
           = hidden_field_tag :worksheet, @worksheet, id: nil
           = hidden_field_tag :row, row.number, id: nil

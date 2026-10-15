@@ -1,0 +1,10 @@
+-# 켜기/끄기 스위치 (끄면 0, 켜면 1 을 보낸다). 규칙: docs/관리화면-컴포넌트.md
+-#   = render 'admin/ui/switch', label: '퍼블 툿 포함', name: 'config[x]', id: 'x', checked: true, hint: '…'
+.bot-sheet-field.bot-sheet-field--switch.ui-switch{ class: local_assigns[:extra], data: local_assigns[:data] }
+  = hidden_field_tag name, '0', id: nil
+  %label.bot-sheet-switch{ for: id }
+    = check_box_tag name, '1', checked, id: id, role: 'switch'
+    %span.bot-sheet-switch__track
+    %span.bot-sheet-switch__label= label
+  - if local_assigns[:hint].present?
+    %span.hint= hint
