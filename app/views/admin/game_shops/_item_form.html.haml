@@ -1,31 +1,29 @@
--# 아이템 추가·수정: 상점, 이름, 가격(비우면 비매품), 설명, 사용 가능, [사용] 때 바뀌는 스탯과 수치
+-# 상점 아이템 추가·수정: 그림 · 이름 · 설명 · 금액(비우면 비매품), 그 아래 분류(상점이 여럿일 때)·사용 가능·[사용] 때 바뀌는 스탯과 수치
 - shops = GameShop.all.map { |shop| [shop.name, shop.id] }
 - stats = [[game_t('admin.games.shop.no_stat'), '']] + @base_stats.map { |name| [name, name] }
 - prefix = item.persisted? ? "item_#{item.id}" : 'item_new'
-= simple_form_for item, as: :game_shop_item, url: url, method: method, html: { class: 'game-modal__form', id: "#{prefix}_form" } do |f|
-  .bot-sheet-fields
-    = f.input :name, wrapper: :with_label, label: game_t('admin.games.shop.item_name'), required: true, input_html: { id: "#{prefix}_name" }
-    = f.input :game_shop_id, as: :select, collection: shops, include_blank: false, wrapper: :with_label, label: game_t('admin.games.shop.shop_name'), input_html: { id: "#{prefix}_shop" }
-    = f.input :price, as: :integer, wrapper: :with_label, label: game_t('admin.games.shop.price', currency: @currency), hint: game_t('admin.games.shop.price_hint'), input_html: { id: "#{prefix}_price", min: 0 }
-    .bot-sheet-field.bot-sheet-field--switch
-      = hidden_field_tag 'game_shop_item[usable]', '0', id: nil
-      %label.bot-sheet-switch{ for: "#{prefix}_usable" }
-        = check_box_tag 'game_shop_item[usable]', '1', item.usable, id: "#{prefix}_usable", role: 'switch'
-        %span.bot-sheet-switch__track
-        %span.bot-sheet-switch__label= game_t('admin.games.shop.usable')
-    = f.input :stat_name, as: :select, collection: stats, include_blank: false, wrapper: :with_label, label: game_t('admin.games.shop.stat'), input_html: { id: "#{prefix}_stat" }
-    = f.input :stat_value, wrapper: :with_label, label: game_t('admin.games.shop.value'), hint: game_t('admin.games.shop.value_hint'), input_html: { id: "#{prefix}_value", placeholder: '5, -20, 1d10' }
-  = f.input :description, as: :text, wrapper: :with_label, label: game_t('admin.games.shop.description'), input_html: { id: "#{prefix}_description", rows: 2 }
-  -# 아이템 그림 (인벤토리 카드에도 보인다)
-  .game-item-image-field
-    - if item.image.present?
-      = image_tag item.image.url(:small), alt: '', class: 'game-item-image-field__preview'
-    .game-item-image-field__inputs
-      = f.input :image, as: :file, wrapper: :with_label, label: game_t('admin.games.shop.image'), hint: game_t('admin.games.shop.image_hint'), input_html: { id: "#{prefix}_image", accept: GameShopItem::IMAGE_MIME_TYPES.join(',') }
-      - if item.image.present?
-        %label.game-item-image-field__remove
-          = check_box_tag 'game_shop_item[remove_image]', '1', false, id: "#{prefix}_remove_image"
-          = game_t('admin.games.shop.remove_image')
-  .actions
-    %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
-    = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+= form_tag url, method: method, multipart: true, class: 'simple_form', id: "#{prefix}_form" do
+  = render layout: 'admin/ui/field', locals: { label: game_t('admin.games.shop.image'), id: "#{prefix}_image", type: :custom, hint: game_t('admin.games.shop.image_hint'), wide: true } do
+    .game-item-image-field
+      = render 'admin/game_characters/item_thumb', name: item.name.presence || '?', image: item.image.present? ? item.image.url(:small) : nil
+      .game-item-image-field__inputs
+        = file_field_tag 'game_shop_item[image]', id: "#{prefix}_image", accept: GameShopItem::IMAGE_MIME_TYPES.join(','), class: 'ui-input ui-input--file'
+        - if item.image.present?
+          %label.game-item-image-field__remove
+            = check_box_tag 'game_shop_item[remove_image]', '1', false, id: "#{prefix}_remove_image"
+            = game_t('admin.games.shop.remove_image')
+  = render 'admin/ui/field', label: game_t('admin.games.shop.item_name'), name: 'game_shop_item[name]', id: "#{prefix}_name", value: item.name, required: true, wide: true, html: { maxlength: 50 }
+  = render 'admin/ui/field', label: game_t('admin.games.shop.description'), name: 'game_shop_item[description]', id: "#{prefix}_description", value: item.description, type: :textarea, html: { rows: 2, maxlength: 1000 }
+  = render layout: 'admin/ui/fields', locals: { columns: 2 } do
+    = render 'admin/ui/field', label: game_t('admin.games.shop.price', currency: @currency), name: 'game_shop_item[price]', id: "#{prefix}_price", value: item.price, type: :number,
+                               hint: game_t('admin.games.shop.price_hint'), html: { min: 0 }
+    - if shops.size > 1
+      = render 'admin/ui/field', label: game_t('admin.games.shop.shop_name'), name: 'game_shop_item[game_shop_id]', id: "#{prefix}_shop", value: item.game_shop_id, type: :select, options: shops
+    - else
+      = hidden_field_tag 'game_shop_item[game_shop_id]', item.game_shop_id || shops.first&.last, id: nil
+  = render 'admin/ui/switch', label: game_t('admin.games.shop.usable'), name: 'game_shop_item[usable]', id: "#{prefix}_usable", checked: item.usable
+  = render layout: 'admin/ui/fields', locals: { columns: 2 } do
+    = render 'admin/ui/field', label: game_t('admin.games.shop.stat'), name: 'game_shop_item[stat_name]', id: "#{prefix}_stat", value: item.stat_name.to_s, type: :select, options: stats
+    = render 'admin/ui/field', label: game_t('admin.games.shop.value'), name: 'game_shop_item[stat_value]', id: "#{prefix}_value", value: item.stat_value,
+                               hint: game_t('admin.games.shop.value_hint'), placeholder: '5, -20, 1d10'
+  = render 'admin/ui/modal_actions'

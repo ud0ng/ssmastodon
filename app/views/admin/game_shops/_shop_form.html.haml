@@ -1,9 +1,9 @@
+-# 상점(분류) 추가·수정: 이름 · 순서 · 설명. 자동봇 [상점] 목록이 이 분류대로 묶인다
 - prefix = shop.persisted? ? "shop_#{shop.id}" : 'shop_new'
-= simple_form_for shop, as: :game_shop, url: url, method: method, html: { class: 'game-modal__form', id: "#{prefix}_form" } do |f|
-  .bot-sheet-fields
-    = f.input :name, wrapper: :with_label, label: game_t('admin.games.shop.shop_name'), required: true, input_html: { id: "#{prefix}_name", placeholder: game_t('admin.games.shop.shop_name_placeholder') }
-    = f.input :position, as: :integer, wrapper: :with_label, label: game_t('admin.games.houses.order'), input_html: { id: "#{prefix}_position" }
-  = f.input :description, as: :string, wrapper: :with_label, label: game_t('admin.games.shop.description'), input_html: { id: "#{prefix}_description" }
-  .actions
-    %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
-    = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+= form_tag url, method: method, class: 'simple_form', id: "#{prefix}_form" do
+  = render layout: 'admin/ui/fields', locals: { columns: 2 } do
+    = render 'admin/ui/field', label: game_t('admin.games.shop.shop_name'), name: 'game_shop[name]', id: "#{prefix}_name", value: shop.name, required: true,
+                               placeholder: game_t('admin.games.shop.shop_name_placeholder'), html: { maxlength: 50 }
+    = render 'admin/ui/field', label: game_t('admin.games.houses.order'), name: 'game_shop[position]', id: "#{prefix}_position", value: shop.position, type: :number
+  = render 'admin/ui/field', label: game_t('admin.games.shop.description'), name: 'game_shop[description]', id: "#{prefix}_description", value: shop.description, wide: true, html: { maxlength: 500 }
+  = render 'admin/ui/modal_actions'

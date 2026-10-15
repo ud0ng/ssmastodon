@@ -123,6 +123,14 @@ ko:
         name: 아이템
         pick: 아이템 고르기
       shop:
+        commands: "명령어"
+        commands_hint: "자동봇이 처리하는 상점 명령어 이름입니다. 바꾸면 자동봇 [도움말]도 이 이름으로 바뀝니다."
+        admin_commands: "운영진 명령어"
+        admin_commands_hint: "운영진 계정만 쓸 수 있는 명령어입니다. 다른 계정이 쓰면 운영진만 쓸 수 있다고 답합니다."
+        pick_admins: "운영진 계정 고르기"
+        list: "상점 목록"
+        list_hint: "그림·이름·설명·금액(%{currency})으로 아이템을 올립니다. 분류가 여럿이면 자동봇 [상점] 목록이 분류대로 묶입니다."
+        default_shop: "상점"
         give: 지급
         give_all: 전체 선택
         give_money: '재화 (%{currency})'
@@ -131,16 +139,16 @@ ko:
         image: 그림
         image_hint: 'PNG·JPG·GIF·WEBP, 2MB 까지. 정사각형으로 잘려 인벤토리 카드에도 보입니다.'
         remove_image: 그림 지우기
-        add_item: 아이템 추가
-        add_shop: 상점 추가
+        add_item: "상점 추가"
+        add_shop: "분류 추가"
         change: 바뀐 것
         delete_item: 아이템 삭제
         delete_item_confirm: "'%{name}' 아이템을 지울까요?"
-        delete_shop: 상점 삭제
-        delete_shop_confirm: "'%{name}' 상점과 그 아이템을 모두 지울까요?"
+        delete_shop: "분류 지우기"
+        delete_shop_confirm: "'%{name}' 분류와 그 안의 아이템을 모두 지울까요?"
         description: 설명
         edit_item: 아이템 고치기
-        edit_shop: 상점 고치기
+        edit_shop: "분류 고치기"
         effect: 사용 효과
         empty: 아직 상점이 없습니다. 상점을 먼저 추가하세요.
         hint: '자동봇의 [상점] [구매] [설명] [사용]이 쓰는 목록입니다. 가격을 비우면 비매품, 돈 단위(%{currency})는 설정 탭에서 바꿉니다.'
@@ -166,8 +174,8 @@ ko:
         price_hint: 비우면 비매품
         records: 최근 재화 기록
         rules: 재화 규칙
-        shop_name: 상점
-        shop_name_placeholder: '예: 허니듀크'
+        shop_name: "분류"
+        shop_name_placeholder: "예: 허니듀크"
         stat: '[사용] 때 바뀌는 스탯'
         title: 상점
         unknown_stat: "'%{name}' 스탯이 없습니다. 캐릭터 관리 > 스탯에서 먼저 만드세요."

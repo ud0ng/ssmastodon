@@ -665,6 +665,9 @@ ready(() => {
     .querySelectorAll<HTMLSelectElement>('select[data-stat-type]')
     .forEach(syncStatParts);
 
+  // 여러 개 고르기: 처음부터 골라 둔 것(selected)을 요약 칸에
+  document.querySelectorAll<HTMLElement>('[data-multi-select]').forEach(syncMultiSelect);
+
   // 저장하다 오류가 난 모달은 다시 열어 둔다 (data-modal-reopen)
   document
     .querySelectorAll<HTMLDialogElement>('dialog.game-modal[data-modal-reopen]')

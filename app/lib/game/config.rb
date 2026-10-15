@@ -19,7 +19,7 @@ module Game
       end
     end
 
-    TYPES = %i(string integer boolean lines text select account).freeze
+    TYPES = %i(string integer boolean lines text select account accounts).freeze
 
     class << self
       # key 의 설정 (기본값 + 저장된 값), 문자열 키 Hash
@@ -103,6 +103,7 @@ module Game
         when :lines then (value.is_a?(Array) ? value : value.to_s.lines).map { |line| line.to_s.strip }.compact_blank
         when :select then field.choices.to_h.key?(value.to_s) ? value.to_s : field.default
         when :account then value.to_s.strip.delete_prefix('@')
+        when :accounts then Array(value).flat_map { |item| item.to_s.split(/[\s,]+/) }.map { |item| item.strip.delete_prefix('@') }.compact_blank.uniq
         else value.to_s.strip
         end
       end
@@ -203,30 +204,52 @@ module Game
 우승: %{house} (+%{reward}점)"),
     ].freeze
 
-    # 상점 (컨텐츠 설정 > 상점). 자동봇이 /api/v1/bot/config 로 읽는다
+    # 상점 (컨텐츠 설정 > 상점). 자동봇이 /api/v1/bot/config 로 읽는다 (명령어 이름·운영진·도움말)
     CURRENCY = [
-      Field.new(key: 'transfer_enabled', type: :boolean, default: true, group: 'currency', label: '양도', hint: '[양도/n재화/캐릭터명] [양도/아이템/캐릭터명]'),
-      Field.new(key: 'help_lines', type: :lines, group: 'currency_help', label: '도움말',
-                hint: '자동봇 [도움말]에 시트 도움말 뒤로 붙는 줄 (줄마다 [명령어] 설명)',
-                default: [
-                  '[가방] 현재 소지금과 소지품을 확인합니다.',
-                  '[상점] 상점 목록을 출력합니다.',
-                  '[구매/아이템명] 원하는 아이템을 구매합니다.',
-                  '[설명/아이템명] 아이템의 설명을 출력합니다.',
-                  '[소모/아이템명] 인벤토리에서 아이템을 소모합니다. (스탯 반영 X)',
-                  '[상태 확인] 소지금, 소지품, 스탯을 확인합니다.',
-                  '[사용/아이템명] 아이템을 사용합니다. (스탯 반영 O)',
-                  '[양도/n재화/캐릭터명] 재화를 캐릭터에게 양도합니다.',
-                  '[양도/아이템명/캐릭터명] 아이템을 캐릭터에게 양도합니다.',
-                  '[출석] 하루 한 번 재화를 받습니다.',
-                ]),
-      Field.new(key: 'admin_help_lines', type: :lines, group: 'currency_help', label: '운영진 명령어 도움말',
-                hint: '운영진이 [도움말]을 부르면 더 붙는 줄',
-                default: [
-                  '[소지금 추가/10/캐릭터명] [소지금 차감/10/전원] 소지금을 바꿉니다.',
-                  '[아이템 추가/사과: 2/캐릭터명] [아이템 차감/사과: 1/캐릭터명] 소지품을 바꿉니다.',
-                  '[힘 변경/+3/캐릭터명] 스탯을 바꿉니다. (캐릭터 관리 > 스탯)',
-                ]),
+      # 상점 명령어 (자동봇이 처리). 이름만 바꾸면 자동봇 도움말도 같이 바뀐다
+      Field.new(key: 'cmd_bag', type: :string, default: '가방', group: 'shop_commands', label: '가방', hint: '소지금과 소지품'),
+      Field.new(key: 'cmd_shop', type: :string, default: '상점', group: 'shop_commands', label: '상점', hint: '상점 목록'),
+      Field.new(key: 'cmd_buy', type: :string, default: '구매', group: 'shop_commands', label: '구매', hint: '[구매/아이템명]'),
+      Field.new(key: 'cmd_describe', type: :string, default: '설명', group: 'shop_commands', label: '설명', hint: '[설명/아이템명]'),
+      Field.new(key: 'cmd_consume', type: :string, default: '소모', group: 'shop_commands', label: '소모', hint: '스탯 반영 없이 아이템을 쓴다'),
+      Field.new(key: 'cmd_use', type: :string, default: '사용', group: 'shop_commands', label: '사용', hint: '아이템 효과(스탯)를 반영한다'),
+      Field.new(key: 'cmd_status', type: :string, default: '상태 확인', group: 'shop_commands', label: '상태 확인', hint: '소지금·소지품·스탯'),
+      Field.new(key: 'cmd_transfer', type: :string, default: '양도', group: 'shop_commands', label: '양도', hint: '[양도/n재화/캐릭터명] [양도/아이템/캐릭터명]'),
+      Field.new(key: 'cmd_attendance', type: :string, default: '출석', group: 'shop_commands', label: '출석', hint: '보상은 설정 탭의 출석 보상'),
+      Field.new(key: 'cmd_help', type: :string, default: '도움말', group: 'shop_commands', label: '도움말'),
+      Field.new(key: 'transfer_enabled', type: :boolean, default: true, group: 'shop_commands', label: '양도 켜기', hint: '끄면 [양도]를 받지 않습니다'),
+
+      # 운영진 명령어 (운영진 계정만)
+      Field.new(key: 'admin_usernames', type: :accounts, default: [], group: 'admin_commands', label: '운영진 계정',
+                hint: '아래 명령어를 쓸 수 있는 계정. 자동봇 설정(ADMIN_IDS·시트)의 운영진도 그대로 쓸 수 있습니다'),
+      Field.new(key: 'cmd_money_add', type: :string, default: '소지금 추가', group: 'admin_commands', label: '소지금 추가', hint: '[소지금 추가/10/캐릭터명]'),
+      Field.new(key: 'cmd_money_sub', type: :string, default: '소지금 차감', group: 'admin_commands', label: '소지금 차감', hint: '[소지금 차감/10/전원]'),
+      Field.new(key: 'cmd_item_add', type: :string, default: '아이템 추가', group: 'admin_commands', label: '아이템 추가', hint: '[아이템 추가/사과: 2/캐릭터명]'),
+      Field.new(key: 'cmd_item_sub', type: :string, default: '아이템 차감', group: 'admin_commands', label: '아이템 차감', hint: '[아이템 차감/사과: 1/캐릭터명]'),
+      Field.new(key: 'cmd_stat_change', type: :string, default: '변경', group: 'admin_commands', label: '스탯 변경', hint: '스탯 이름 뒤에 붙인다: [힘 변경/+3/캐릭터명]'),
+    ].freeze
+
+    # 자동봇 [도움말] 줄: 명령어 이름은 위 설정으로 채운다 (%{cmd}, 양도는 %{currency})
+    SHOP_HELP = [
+      ['cmd_help', '[%{cmd}] 도움말을 보여줍니다.'],
+      ['cmd_bag', '[%{cmd}] 현재 소지금과 소지품을 확인합니다.'],
+      ['cmd_shop', '[%{cmd}] 상점 목록을 출력합니다.'],
+      ['cmd_buy', '[%{cmd}/아이템명] 원하는 아이템을 구매합니다.'],
+      ['cmd_describe', '[%{cmd}/아이템명] 아이템의 설명을 출력합니다.'],
+      ['cmd_consume', '[%{cmd}/아이템명] 인벤토리에서 아이템을 소모합니다. (스탯 반영 X)'],
+      ['cmd_status', '[%{cmd}] 소지금, 소지품, 스탯을 확인합니다.'],
+      ['cmd_use', '[%{cmd}/아이템명] 아이템을 사용합니다. (스탯 반영 O)'],
+      ['cmd_transfer', '[%{cmd}/n%{currency}/캐릭터명] 재화를 캐릭터에게 양도합니다.'],
+      ['cmd_transfer', '[%{cmd}/아이템명/캐릭터명] 아이템을 캐릭터에게 양도합니다.'],
+      ['cmd_attendance', '[%{cmd}] 하루 한 번 재화를 받습니다.'],
+    ].freeze
+
+    SHOP_ADMIN_HELP = [
+      ['cmd_money_add', '[%{cmd}/10/캐릭터명] 소지금을 더합니다. (캐릭터명은 쉼표로 여러 명, 또는 전원)'],
+      ['cmd_money_sub', '[%{cmd}/10/캐릭터명] 소지금을 뺍니다.'],
+      ['cmd_item_add', '[%{cmd}/사과: 2/캐릭터명] 소지품을 더합니다.'],
+      ['cmd_item_sub', '[%{cmd}/사과: 1/캐릭터명] 소지품을 뺍니다.'],
+      ['cmd_stat_change', '[힘 %{cmd}/+3/캐릭터명] 스탯을 바꿉니다. (캐릭터 관리 > 스탯)'],
     ].freeze
 
     SCHEMAS = { 'common' => COMMON, 'currency' => CURRENCY }.freeze

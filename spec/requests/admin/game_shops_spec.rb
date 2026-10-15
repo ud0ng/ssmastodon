@@ -27,9 +27,13 @@ RSpec.describe 'Admin shop' do
     expect(response).to redirect_to(admin_game_shops_path(modal: 'item-add'))
   end
 
-  it 'saves the currency rules' do
-    patch currency_admin_game_shops_path, params: { config: { transfer_enabled: '0', attendance_reward: '3', help_lines: "[가방] 가방\n" } }
+  it 'saves shop commands without touching the staff commands, and staff accounts can be cleared' do
+    patch currency_admin_game_shops_path, params: { config: { admin_usernames: ['', 'manager', 'luna'], cmd_money_add: '돈 주기' } }
+    patch currency_admin_game_shops_path, params: { config: { cmd_buy: '사기', transfer_enabled: '0' } }
 
-    expect(Game::Config.for('currency')).to include('transfer_enabled' => false, 'help_lines' => ['[가방] 가방'])
+    expect(Game::Config.for('currency')).to include('cmd_buy' => '사기', 'transfer_enabled' => false, 'cmd_money_add' => '돈 주기', 'admin_usernames' => %w(manager luna))
+
+    patch currency_admin_game_shops_path, params: { config: { admin_usernames: [''] } }
+    expect(Game::Config.for('currency')['admin_usernames']).to eq []
   end
 end

@@ -125,6 +125,14 @@ en:
         name: Item
         pick: Choose an item
       shop:
+        commands: "Commands"
+        commands_hint: "Names of the shop commands the bot handles. Its [help] uses these names too."
+        admin_commands: "Staff commands"
+        admin_commands_hint: "Commands only staff accounts can use."
+        pick_admins: "Pick staff accounts"
+        list: "Shop"
+        list_hint: "Add items with a picture, name, description and price (%{currency}). With several categories, the bot groups its shop list by category."
+        default_shop: "Shop"
         give: Give
         give_all: Select all
         give_money: "Currency (%{currency})"
@@ -133,16 +141,16 @@ en:
         image: Picture
         image_hint: 'PNG, JPG, GIF or WEBP up to 2MB. Cropped square and also shown on inventory cards.'
         remove_image: Remove picture
-        add_item: Add item
-        add_shop: Add shop
+        add_item: "Add to shop"
+        add_shop: "Add category"
         change: Change
         delete_item: Delete item
         delete_item_confirm: Delete the item '%{name}'?
-        delete_shop: Delete shop
-        delete_shop_confirm: Delete the shop '%{name}' and all its items?
+        delete_shop: "Delete category"
+        delete_shop_confirm: "Delete the category '%{name}' and all its items?"
         description: Description
         edit_item: Edit item
-        edit_shop: Edit shop
+        edit_shop: "Edit category"
         effect: Effect when used
         empty: There are no shops yet. Add a shop first.
         hint: Items the bot's [상점] [구매] [설명] [사용] commands use. Leave the price empty for items that are not for sale. The currency (%{currency}) is set in the settings tab.
@@ -168,8 +176,8 @@ en:
         price_hint: Empty = not for sale
         records: Recent currency records
         rules: Currency rules
-        shop_name: Shop
-        shop_name_placeholder: 'e.g. Honeydukes'
+        shop_name: "Category"
+        shop_name_placeholder: "e.g. Honeydukes"
         stat: Stat changed on use
         title: Shop
         unknown_stat: The stat '%{name}' does not exist. Create it in Characters > Stats first.

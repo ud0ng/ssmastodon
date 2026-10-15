@@ -30,6 +30,14 @@ RSpec.describe 'Admin character activity' do
     expect(ron.money).to eq 0
   end
 
+  it 'goes back to the shop tab when given from there, but never to another site' do
+    post give_admin_game_activities_path, params: { give_kind: 'money', character_ids: [harry.id], money: '1', return_to: admin_game_shops_path }
+    expect(response).to redirect_to(admin_game_shops_path)
+
+    post give_admin_game_activities_path, params: { give_kind: 'money', character_ids: [harry.id], money: '1', return_to: '//evil.example/admin/' }
+    expect(response).to redirect_to(admin_game_activities_path)
+  end
+
   it 'gives nothing without a target or anything to give' do
     post give_admin_game_activities_path, params: { give_kind: 'money', character_ids: [harry.id], money: '0' }
 

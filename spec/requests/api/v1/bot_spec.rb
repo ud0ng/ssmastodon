@@ -110,4 +110,17 @@ RSpec.describe 'API V1 Bot' do
     expect(response.parsed_body).to include('currency' => '갈레온', 'transfer_enabled' => true, 'attendance_reward' => 1)
     expect(response.parsed_body['help']).to include('[양도/n갈레온/캐릭터명] 재화를 캐릭터에게 양도합니다.')
   end
+
+  it 'gives renamed shop and admin commands, admins and matching help lines' do
+    Game::Config.merge!('currency', 'cmd_buy' => '사기', 'cmd_stat_change' => '조정', 'admin_usernames' => ['manager', '@luna'], 'transfer_enabled' => false)
+
+    get '/api/v1/bot/config', headers: headers
+
+    body = response.parsed_body
+    expect(body['commands']).to include('buy' => '사기', 'bag' => '가방', 'stat_change' => '조정', 'money_add' => '소지금 추가')
+    expect(body['admins']).to eq %w(manager luna)
+    expect(body['help']).to include('[사기/아이템명] 원하는 아이템을 구매합니다.')
+    expect(body['help'].join).to_not include('양도')
+    expect(body['admin_help']).to include('[힘 조정/+3/캐릭터명] 스탯을 바꿉니다. (캐릭터 관리 > 스탯)')
+  end
 end

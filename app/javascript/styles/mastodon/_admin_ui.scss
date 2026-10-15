@@ -317,3 +317,32 @@ textarea.ui-input {
   background: color-mix(in srgb, $ui-highlight-color 18%, transparent);
   font-size: 12px;
 }
+
+// 파일 칸 (그림 올리기): 다른 칸과 같은 테두리
+.simple_form .ui-input--file,
+.ui-input--file {
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+// 상점 목록: 분류마다 머리 줄 + 표
+.game-shop__group {
+  margin-bottom: 20px;
+}
+
+.game-shop__group-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: center;
+  margin-bottom: 8px;
+
+  strong {
+    font-size: 15px;
+  }
+
+  .hint {
+    margin: 0;
+    font-size: 13px;
+  }
+}

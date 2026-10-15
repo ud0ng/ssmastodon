@@ -5,124 +5,109 @@
   = render 'admin/game_settings/heading'
 
 - none = '—'
-.game-toolbar
-  %p.hint= game_t('admin.games.shop.hint', currency: @currency)
-  = button_tag safe_join([material_symbol('add'), game_t('admin.games.shop.add_shop')]), type: :button, class: 'button button-secondary', data: { modal_open: 'shop-add' }
-  - if @shops.any?
-    = button_tag safe_join([material_symbol('add'), game_t('admin.games.shop.add_item')]), type: :button, class: 'button button-secondary', data: { modal_open: 'item-add' }
 
-- if @shops.empty?
-  .bot-sheet-table.game-table
-    %table.table
-      %tbody
-        %tr
-          %td.bot-sheet-table__text= game_t('admin.games.shop.empty')
+-# 명령어 · 운영진 명령어: 자동봇이 /api/v1/bot/config 로 읽어 그 이름으로 처리하고, 도움말도 이 이름으로 만든다
+- { 'shop_commands' => 'commands', 'admin_commands' => 'admin_commands' }.each do |group, key|
+  = render layout: 'admin/ui/section', locals: { title: game_t("admin.games.shop.#{key}"), hint: game_t("admin.games.shop.#{key}_hint") } do
+    = form_tag currency_admin_game_shops_path, method: :patch, class: 'simple_form' do
+      - fields = @sections.fetch(group, [])
+      - accounts = fields.select { |field| field.type == :accounts }
+      - accounts.each do |field|
+        = render layout: 'admin/ui/field', locals: { label: field.label, id: "currency_#{field.key}", type: :custom, hint: field.hint, wide: true } do
+          = render 'admin/ui/multi_select', name: "config[#{field.key}][]", placeholder: game_t('admin.games.shop.pick_admins'), selected: Array(@values[field.key]),
+                                            options: @accounts.map { |account| ["#{account.display_name.presence || account.username} (@#{account.username})", account.username] }
+      = render layout: 'admin/ui/fields' do
+        - (fields - accounts).each do |field|
+          - if field.type == :boolean
+            = render 'admin/ui/switch', label: field.label, name: "config[#{field.key}]", id: "currency_#{field.key}", checked: @values[field.key], hint: field.hint
+          - else
+            = render 'admin/ui/field', label: field.label, name: "config[#{field.key}]", id: "currency_#{field.key}", value: @values[field.key], hint: field.hint, required: true, html: { maxlength: 20 }
+      .actions
+        = button_tag t('generic.save_changes'), type: :submit, class: 'button'
 
-- @shops.each do |shop|
-  .game-toolbar.game-houses__title
-    %h4
-      = shop.name
-      %span.game-table__count= game_t('admin.games.shop.item_count', count: shop.items.size)
-    = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: game_t('admin.games.shop.edit_shop'), data: { modal_open: "shop-#{shop.id}" }
-    = button_to admin_game_shop_path(shop), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.shop.delete_shop'), data: { confirm: game_t('admin.games.shop.delete_shop_confirm', name: shop.name) } do
-      = material_symbol('delete')
-  - if shop.description.present?
-    %p.hint.game-shop__description= shop.description
-
+-# 최근 재화 기록 (컨텐츠 보상·구매·양도·출석·운영진 등)
+= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.shop.records') } do
   .bot-sheet-table.game-table
     %table.table
       %thead
         %tr
-          %th= game_t('admin.games.shop.item_name')
-          %th= game_t('admin.games.shop.price', currency: @currency)
-          %th= game_t('admin.games.shop.description')
-          %th= game_t('admin.games.shop.effect')
-          %th.bot-sheet-table__actions
+          %th= game_t('admin.games.houses.when')
+          %th= game_t('admin.games.shop.who')
+          %th= game_t('admin.games.shop.kind')
+          %th= game_t('admin.games.shop.change')
+          %th= game_t('admin.games.houses.reason')
       %tbody
-        - shop.items.each do |item|
+        - @records.each do |record|
+          - parts = []
+          - parts << format('%+d %s', record.money, @currency) unless record.money.zero?
+          - Array(record.items).each { |item| parts << format('%s %+d', item['name'], item['count'].to_i) }
+          - record.stats.to_h.each { |stat, delta| parts << format('%s %+d', stat, delta.to_i) }
           %tr
+            %td.bot-sheet-table__text= l(record.created_at.in_time_zone('Asia/Seoul'), format: :short)
+            %td.bot-sheet-table__text= @names[record.account_id] || "@#{record.account.username}"
             %td.bot-sheet-table__text
-              .game-shop__item-name
-                = render 'admin/game_characters/item_thumb', name: item.name, image: item.image.present? ? item.image.url(:small) : nil
-                %strong= item.name
-            %td.bot-sheet-table__text
-              - if item.for_sale?
-                = number_with_delimiter(item.price)
-              - else
-                %span.game-badge= game_t('admin.games.shop.not_for_sale')
-            %td.bot-sheet-table__text= item.description.presence || none
-            %td.bot-sheet-table__text
-              - if !item.usable
-                %span.game-badge= game_t('admin.games.shop.unusable')
-              - elsif item.stat_name.present?
-                = "#{item.stat_name} #{item.stat_value.start_with?('-', '+') ? item.stat_value : "+#{item.stat_value}"}"
-              - else
-                = none
-            %td.bot-sheet-table__actions
-              = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: game_t('admin.games.shop.edit_item'), data: { modal_open: "item-#{item.id}" }
-              = button_to admin_game_shop_item_path(item), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.shop.delete_item'), data: { confirm: game_t('admin.games.shop.delete_item_confirm', name: item.name) } do
-                = material_symbol('delete')
-        - if shop.items.empty?
+              %span.game-badge= game_t("admin.games.shop.kinds.#{record.kind}", default: record.kind)
+            %td.bot-sheet-table__text= parts.join(', ').presence || none
+            %td.bot-sheet-table__text= [(record.reason.present? ? game_reward_reason(record.reason) : nil), (record.actor.present? ? "@#{record.actor}" : nil)].compact.join(' · ').presence || none
+        - if @records.empty?
           %tr
-            %td.bot-sheet-table__text{ colspan: 5 }= game_t('admin.games.shop.no_items')
+            %td.bot-sheet-table__text{ colspan: 5 }= game_t('admin.games.shop.no_records')
 
--# 재화 규칙: 양도·출석·툿 보상, 자동봇 [도움말]에 붙는 줄
-%h4.game-houses__recent= game_t('admin.games.shop.rules')
-= form_tag currency_admin_game_shops_path, method: :patch, class: 'simple_form game-card' do
-  - @fields.group_by(&:group).each do |_group, fields|
-    .bot-sheet-fields
-      - fields.each do |field|
-        - name = "config[#{field.key}]"
-        - field_id = "currency_#{field.key}"
-        - value = @values[field.key]
-        - if field.type == :boolean
-          .bot-sheet-field.bot-sheet-field--switch
-            = hidden_field_tag name, '0', id: nil
-            %label.bot-sheet-switch{ for: field_id }
-              = check_box_tag name, '1', value, id: field_id, role: 'switch'
-              %span.bot-sheet-switch__track
-              %span.bot-sheet-switch__label= field.label
-            %span.hint= field.hint
-        - else
-          .bot-sheet-field.input.with_label{ class: ('bot-sheet-field--wide' if field.type == :lines) }
-            .label_input
-              %label{ for: field_id }= field.label
-              .label_input__wrapper
-                - if field.type == :lines
-                  = text_area_tag name, Array(value).join("\n"), id: field_id, rows: [Array(value).size, 3].max
-                - else
-                  = number_field_tag name, value, id: field_id, step: 1, min: 0
-            %span.hint= field.hint
-  .actions
-    = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+-# 상점 목록: [상점 추가] 아이템(그림·이름·설명·금액), [지급] 활동 탭과 같은 지급 모달. 분류(상점)는 오른쪽 작은 버튼으로
+- actions = capture do
+  = button_tag safe_join([material_symbol('add'), game_t('admin.games.shop.add_item')]), type: :button, class: 'button', data: { modal_open: 'item-add' }
+  = button_tag safe_join([material_symbol('celebration'), game_t('admin.games.activity.give')]), type: :button, class: 'button button-secondary', data: { modal_open: 'activity-give' }
+  = button_tag safe_join([material_symbol('list_alt'), game_t('admin.games.shop.add_shop')]), type: :button, class: 'button button-tertiary', data: { modal_open: 'shop-add' }
+= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.shop.list'), hint: game_t('admin.games.shop.list_hint', currency: @currency), actions: actions } do
+  - @shops.each do |shop|
+    .game-shop__group
+      .game-shop__group-head
+        %strong= shop.name
+        %span.game-table__count= game_t('admin.games.shop.item_count', count: shop.items.size)
+        - if shop.description.present?
+          %span.hint= shop.description
+        = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: game_t('admin.games.shop.edit_shop'), data: { modal_open: "shop-#{shop.id}" }
+        - if @shops.size > 1
+          = button_to admin_game_shop_path(shop), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.shop.delete_shop'), data: { confirm: game_t('admin.games.shop.delete_shop_confirm', name: shop.name) } do
+            = material_symbol('delete')
+      .bot-sheet-table.game-table
+        %table.table
+          %thead
+            %tr
+              %th= game_t('admin.games.shop.item_name')
+              %th= game_t('admin.games.shop.price', currency: @currency)
+              %th= game_t('admin.games.shop.description')
+              %th= game_t('admin.games.shop.effect')
+              %th.bot-sheet-table__actions
+          %tbody
+            - shop.items.each do |item|
+              %tr
+                %td.bot-sheet-table__text
+                  .game-shop__item-name
+                    = render 'admin/game_characters/item_thumb', name: item.name, image: item.image.present? ? item.image.url(:small) : nil
+                    %strong= item.name
+                %td.bot-sheet-table__text
+                  - if item.for_sale?
+                    = number_with_delimiter(item.price)
+                  - else
+                    %span.game-badge= game_t('admin.games.shop.not_for_sale')
+                %td.bot-sheet-table__text= item.description.presence || none
+                %td.bot-sheet-table__text
+                  - if !item.usable
+                    %span.game-badge= game_t('admin.games.shop.unusable')
+                  - elsif item.stat_name.present?
+                    = "#{item.stat_name} #{item.stat_value.start_with?('-', '+') ? item.stat_value : "+#{item.stat_value}"}"
+                  - else
+                    = none
+                %td.bot-sheet-table__actions
+                  = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: game_t('admin.games.shop.edit_item'), data: { modal_open: "item-#{item.id}" }
+                  = button_to admin_game_shop_item_path(item), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.shop.delete_item'), data: { confirm: game_t('admin.games.shop.delete_item_confirm', name: item.name) } do
+                    = material_symbol('delete')
+            - if shop.items.empty?
+              %tr
+                %td.bot-sheet-table__text{ colspan: 5 }= game_t('admin.games.shop.no_items')
 
--# 최근 재화 기록 (컨텐츠 보상·구매·양도·출석·운영진 등)
-%h4.game-houses__recent= game_t('admin.games.shop.records')
-.bot-sheet-table.game-table
-  %table.table
-    %thead
-      %tr
-        %th= game_t('admin.games.houses.when')
-        %th= game_t('admin.games.shop.who')
-        %th= game_t('admin.games.shop.kind')
-        %th= game_t('admin.games.shop.change')
-        %th= game_t('admin.games.houses.reason')
-    %tbody
-      - @records.each do |record|
-        - parts = []
-        - parts << format('%+d %s', record.money, @currency) unless record.money.zero?
-        - Array(record.items).each { |item| parts << format('%s %+d', item['name'], item['count'].to_i) }
-        - record.stats.to_h.each { |stat, delta| parts << format('%s %+d', stat, delta.to_i) }
-        %tr
-          %td.bot-sheet-table__text= l(record.created_at.in_time_zone('Asia/Seoul'), format: :short)
-          %td.bot-sheet-table__text= @names[record.account_id] || "@#{record.account.username}"
-          %td.bot-sheet-table__text
-            %span.game-badge= game_t("admin.games.shop.kinds.#{record.kind}", default: record.kind)
-          %td.bot-sheet-table__text= parts.join(', ').presence || none
-          %td.bot-sheet-table__text= [record.reason.presence, (record.actor.present? ? "@#{record.actor}" : nil)].compact.join(' · ').presence || none
-      - if @records.empty?
-        %tr
-          %td.bot-sheet-table__text{ colspan: 5 }= game_t('admin.games.shop.no_records')
+= render 'admin/game_activities/give_modal', return_to: admin_game_shops_path
 
 = render layout: 'admin/ui/modal', locals: { id: 'shop-add', title: game_t('admin.games.shop.add_shop') } do
   = render 'admin/game_shops/shop_form', shop: GameShop.new(position: @shops.size), url: admin_game_shops_path, method: :post
@@ -131,9 +116,8 @@
   = render layout: 'admin/ui/modal', locals: { id: "shop-#{shop.id}", title: game_t('admin.games.shop.edit_shop') } do
     = render 'admin/game_shops/shop_form', shop: shop, url: admin_game_shop_path(shop), method: :patch
 
-- if @shops.any?
-  = render layout: 'admin/ui/modal', locals: { id: 'item-add', title: game_t('admin.games.shop.add_item') } do
-    = render 'admin/game_shops/item_form', item: GameShopItem.new(game_shop_id: @shops.first.id), url: admin_game_shop_items_path, method: :post
+= render layout: 'admin/ui/modal', locals: { id: 'item-add', title: game_t('admin.games.shop.add_item') } do
+  = render 'admin/game_shops/item_form', item: GameShopItem.new(game_shop_id: @shops.first.id), url: admin_game_shop_items_path, method: :post
 
 - @shops.each do |shop|
   - shop.items.each do |item|

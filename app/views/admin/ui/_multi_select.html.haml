@@ -1,10 +1,12 @@
 -# 여러 개 고르는 드롭다운: 누르면 체크 목록(팝오버)이 펼쳐진다. 규칙: docs/관리화면-컴포넌트.md
--#   = render 'admin/ui/multi_select', name: 'character_ids[]', placeholder: '…', all_label: '전체', options: [[보이는 이름, 값], ...]
+-#   = render 'admin/ui/multi_select', name: 'character_ids[]', placeholder: '…', all_label: '전체', options: [[보이는 이름, 값], ...], selected: [값, ...]
+-# 아무것도 안 골라도 이름(name)이 빈 값으로 가서 '다 지움'이 저장된다
 -# 목록은 화면 기준 고정 위치로 띄워 모달에 잘리지 않고, 아래 공간이 모자라면 위로 뜬다 (admin.tsx). 고른 이름은 요약 칸에 보인다.
 %details.game-multi.ui-popover-anchor{ data: { multi_select: true, popover: true, placeholder: placeholder } }
   %summary.game-multi__summary.ui-input
     %span.game-multi__label= placeholder
     = material_symbol('arrow_drop_down')
+  = hidden_field_tag name, '', id: nil
   .game-multi__list.ui-popover
     - if options.empty?
       %p.hint= game_t('admin.games.activity.no_options')
@@ -15,5 +17,5 @@
           %strong= all_label
       - options.each do |label, value|
         %label.game-multi__option
-          = check_box_tag name, value, false, id: nil, data: { label: label }
+          = check_box_tag name, value, Array(local_assigns[:selected]).map(&:to_s).include?(value.to_s), id: nil, data: { label: label }
           = label
