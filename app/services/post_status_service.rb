@@ -161,9 +161,9 @@ class PostStatusService < BaseService
     enqueue_game_command!
   end
 
-  # 시스템 계정을 멘션한 툿이면 게임 명령어 처리 (Game::Engine)
+  # 시스템 계정을 멘션한 툿 (또는 시스템 계정으로 쓴 [수업/과목]) 이면 게임 명령어 처리 (Game::Engine)
   def enqueue_game_command!
-    Game::MentionWorker.perform_async(@status.id) if Game::System.mentioned_in?(@status)
+    Game::MentionWorker.perform_async(@status.id) if Game::System.command_toot?(@status)
   rescue => e
     Rails.logger.error { "Game::MentionWorker enqueue failed for status #{@status.id}: #{e.class} #{e.message}" }
   end

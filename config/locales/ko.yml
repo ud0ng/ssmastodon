@@ -23,6 +23,15 @@ ko:
   admin:
     system_menu: 시스템
     games:
+      lessons_ui:
+        settings: "설정"
+        grade: "등급"
+        points: "소속 점수"
+        money: "재화 (%{currency})"
+        items: "아이템"
+        grades_hint: "수업·자습이 끝나면 등급에 따라 소속에 점수를 주고, 그 사람에게 재화·아이템을 줍니다."
+        bonus_hint: "수업에서 등수가 높은 사람(A 이상)은 등급 점수에 보너스 %를 더하고, 아래 재화·아이템을 더 받습니다."
+        opener_hint: "수업은 운영진이 시스템 계정(@%{system})으로 직접 [%{command}/과목] 툿을 쓰면 열립니다."
       pick_account: 회원 고르기
       points_table:
         content: 컨텐츠
@@ -101,6 +110,13 @@ ko:
         matches: 매치
         settings: 설정
       sections:
+        lesson_commands: "명령어"
+        lesson_rules: "기본룰 설정"
+        grades: "소속 점수 및 보상"
+        bonus: "상위 보너스"
+        subject_rules: "룰 설정"
+        subject_commands: "명령어 설정"
+        subject_messages: "문구 설정"
         bots: 봇 계정 설정
         commands: 기본 명령어
         currency: 재화 설정

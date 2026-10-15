@@ -17,7 +17,16 @@ RSpec.describe Game::Config do
     end
 
     it 'lays out the lessons settings' do
-      expect(described_class.sections('lessons').map(&:first)).to eq %w(rules points rewards lesson_messages)
+      expect(described_class.sections('lessons').map(&:first)).to eq %w(lesson_commands lesson_rules grades bonus lesson_messages)
+      expect(described_class.sections('lessons').to_h['lesson_rules'].map(&:key)).to eq %w(join_minutes class_minutes study_daily_limit)
+    end
+
+    it 'lays out a lesson subject as basic, rules, commands and messages' do
+      sections = described_class.sections('levitation').to_h { |name, fields| [name, fields.map(&:key)] }
+
+      expect(sections.keys).to eq %w(basic subject_rules subject_commands subject_messages)
+      expect(sections['subject_rules']).to include('signal_min', 'signal_max', 'seconds_O')
+      expect(described_class.sections('practice').flat_map(&:last).map(&:key)).to_not include('patronus_spell', 'msg_patronus')
     end
   end
 

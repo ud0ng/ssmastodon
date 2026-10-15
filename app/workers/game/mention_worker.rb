@@ -8,7 +8,7 @@ class Game::MentionWorker
 
   def perform(status_id)
     status = Status.find_by(id: status_id)
-    return if status.nil? || !Game::System.mentioned_in?(status)
+    return if status.nil? || !Game::System.command_toot?(status)
     return if status.spoiler_text.start_with?(DmRoom::MEMBER_EVENT_PREFIX, DmRoom::TITLE_EVENT_PREFIX)
 
     Game::Engine.new(status).call

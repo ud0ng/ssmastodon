@@ -25,6 +25,15 @@ en:
   admin:
     system_menu: System
     games:
+      lessons_ui:
+        settings: "Settings"
+        grade: "Grade"
+        points: "Group points"
+        money: "Money (%{currency})"
+        items: "Items"
+        grades_hint: "When a lesson ends, each grade gives points to the group and money or items to the student."
+        bonus_hint: "Top students in a class (A or better) get the bonus % on top of their grade points, plus these rewards."
+        opener_hint: "Staff open a class by posting [%{command}/subject] from the system account (@%{system})."
       pick_account: Choose a member
       points_table:
         content: Content
@@ -103,6 +112,13 @@ en:
         matches: Matches
         settings: Settings
       sections:
+        lesson_commands: "Commands"
+        lesson_rules: "Basic rules"
+        grades: "Group points and rewards"
+        bonus: "Top bonus"
+        subject_rules: "Rules"
+        subject_commands: "Commands"
+        subject_messages: "Messages"
         bots: Bot accounts
         commands: Basic commands
         currency: Currency

@@ -1,0 +1,5 @@
+-# 탭 안의 탭 (수업 > 설정·과목들 등). 규칙: docs/관리화면-컴포넌트.md
+-#   = render 'admin/ui/subtabs', items: [[이름, 주소, 지금 화면?, 꺼짐?], ...]
+%nav.ui-subtabs{ 'aria-label': local_assigns[:label] }
+  - items.each do |text, path, active, off|
+    = link_to text, path, class: ['ui-subtabs__item', ('ui-subtabs__item--active' if active), ('ui-subtabs__item--off' if off)], 'aria-current': (active ? 'page' : nil)

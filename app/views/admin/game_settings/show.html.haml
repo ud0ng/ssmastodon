@@ -6,28 +6,27 @@
 - content_for :heading do
   = render 'admin/game_settings/heading', save_form: 'edit_game_config'
 
--# 컨텐츠·과목 화면: 같은 묶음의 다른 컨텐츠로 바로 가는 칩 줄 + 한 줄 안내
-- if kind
-  - siblings = kind.lesson? ? Game::Lessons.all : Game::Kinds.all.reject(&:lesson?)
+-# 수업: 설정 | 과목들 (탭 안의 탭)
+- if @key == 'lessons' || kind&.lesson?
+  - items = [[game_t('admin.games.lessons_ui.settings'), admin_game_setting_path('lessons'), @key == 'lessons', false]]
+  - items += Game::Lessons.all.map { |lesson| [lesson.display_name, admin_game_setting_path(lesson.key), lesson == kind, !lesson.enabled?] }
+  = render 'admin/ui/subtabs', items: items, label: game_t('admin.games.tabs.lessons')
+  - if @key == 'lessons'
+    %p.hint.game-config__hint= game_t('admin.games.lessons_ui.opener_hint', system: Game::System.username, command: @values['cmd_class'])
+- elsif kind
+  -# 컨텐츠 화면: 같은 묶음의 다른 컨텐츠로 바로 가는 칩 줄 + 한 줄 안내
   .game-switcher
-    = link_to (kind.lesson? ? admin_game_setting_path('lessons') : admin_game_settings_path), class: 'game-switcher__back' do
+    = link_to admin_game_settings_path, class: 'game-switcher__back' do
       = material_symbol 'chevron_left'
-      = kind.lesson? ? game_t('admin.games.tabs.lessons') : game_t('admin.games.tabs.list')
-    - siblings.each do |other|
+      = game_t('admin.games.tabs.list')
+    - Game::Kinds.all.reject(&:lesson?).each do |other|
       = link_to admin_game_setting_path(other.key), class: ['game-switcher__chip', ('game-switcher__chip--active' if other == kind), ('game-switcher__chip--off' unless other.enabled?)] do
         %span{ 'aria-hidden': 'true' }= game_kind_icon(other.key)
         = other.display_name
   %p.hint.game-config__hint
-    = game_t(kind.lesson? ? 'admin.games.lesson_hint' : 'admin.games.kind_hint')
-    - if !kind.lesson? && !kind.event?
+    = game_t('admin.games.kind_hint')
+    - unless kind.event?
       %span.game-config__flow= [game_t('admin.games.flow.invite', command: kind.config['command']), game_t('admin.games.flow.accept'), game_t('admin.games.flow.play'), game_t('admin.games.flow.result')].join(' → ')
-- elsif @key == 'lessons'
-  -# 수업: 과목으로 바로 가는 칩
-  .game-switcher
-    - Game::Lessons.all.each do |other|
-      = link_to admin_game_setting_path(other.key), class: ['game-switcher__chip', ('game-switcher__chip--off' unless other.enabled?)] do
-        %span{ 'aria-hidden': 'true' }= game_kind_icon(other.key)
-        = other.display_name
 
 - system = Game::System.account
 = form_tag admin_game_setting_path(params[:id]), method: :patch, id: 'edit_game_config', class: 'simple_form game-config',
@@ -49,12 +48,18 @@
           %span.game-token.game-token--person= '{계정명}'
           %span.game-token= '{컨텐츠}'
           %span.game-token.game-token--particle= '{이가}'
-      -# 줄을 나눠 보여 줄 칸(Game::Config::ROW_STARTS) 앞에서 새 줄
-      - rows = fields.slice_before { |field| Game::Config::ROW_STARTS.include?(field.key) }
-      - rows.each do |row|
-        = render layout: 'admin/ui/fields' do
-          - row.each do |field|
-            = render 'admin/game_settings/config_field', field: field
+      - if section == 'grades'
+        -# 수업 > 설정: 등급마다 소속 점수 · 재화 · 아이템 한 표
+        = render 'admin/game_settings/grades_table'
+      - else
+        - if section == 'bonus'
+          %p.ui-section__hint= game_t('admin.games.lessons_ui.bonus_hint')
+        -# 줄을 나눠 보여 줄 칸(Game::Config::ROW_STARTS) 앞에서 새 줄
+        - rows = fields.slice_before { |field| Game::Config::ROW_STARTS.include?(field.key) }
+        - rows.each do |row|
+          = render layout: 'admin/ui/fields' do
+            - row.each do |field|
+              = render 'admin/game_settings/config_field', field: field
 
   -# 설정 탭: 컨텐츠마다 승리·무승부·패배 점수를 한 표에서
   - if @points_kinds

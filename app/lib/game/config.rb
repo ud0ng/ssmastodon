@@ -51,6 +51,7 @@ module Game
       def sections(key, page = nil)
         fields = schema(key)
         layout = LAYOUT[page ? [key, page] : key]
+        layout ||= LAYOUT[:lesson_subject] if Game::Kinds.registry[key]&.lesson?
         return fields.group_by(&:group).to_a if layout.nil?
 
         placed = layout.filter_map do |name, groups|
@@ -270,11 +271,20 @@ module Game
       ['common', 'season'] => [
         ['season', %w(season)],
       ],
+      # 수업 > 설정: 명령어 / 기본룰 / 소속 점수 및 보상(등급 표 + 상위 보너스) / 문구
       'lessons' => [
-        ['rules', %w(commands time rules)],
-        ['points', %w(points)],
-        ['rewards', %w(rewards)],
+        ['lesson_commands', %w(commands)],
+        ['lesson_rules', %w(rules)],
+        ['grades', %w(grades)],
+        ['bonus', %w(bonus)],
         ['lesson_messages', %w(messages)],
+      ],
+      # 수업 > 과목: 기본 / 룰 설정 / 명령어 설정 / 문구 설정
+      lesson_subject: [
+        ['basic', %w(basic)],
+        ['subject_rules', %w(rules flavors spells)],
+        ['subject_commands', %w(commands)],
+        ['subject_messages', %w(messages)],
       ],
     }.freeze
 

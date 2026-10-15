@@ -52,9 +52,15 @@ RSpec.describe Game::Rewards do
     expect(GameEvent.find_by(status: result).payload['rewards'].pluck('money')).to eq [30, 4]
   end
 
-  it 'gives lesson money by grade, less for self-study' do
-    expect(Game::Lessons.money_for('O', 'class')).to eq 10
-    expect(Game::Lessons.money_for('O', 'study')).to eq 5
-    expect(Game::Lessons.money_for('T', 'class')).to eq 0
+  it 'gives lesson points and rewards by grade, the same for self-study, with a bonus for the top of a class' do
+    Game::Config.update!('lessons', 'points_O' => 20, 'reward_money_O' => 10, 'reward_items_O' => '깃펜|2|', 'reward_money_P' => 1,
+                                    'class_bonus_percent' => 50, 'class_bonus_count' => 1, 'bonus_money' => 7, 'reward_items_bonus' => '우승 리본|1|')
+
+    expect(Game::Lessons.points_for('O', 'study', nil)).to eq 20
+    expect(Game::Lessons.points_for('O', 'class', 1)).to eq 30
+    expect(Game::Lessons.points_for('O', 'class', 2)).to eq 20
+    expect(Game::Lessons.rewards_for('O', 'study', nil)).to eq(money: 10, items: [{ 'name' => '깃펜', 'count' => 2 }])
+    expect(Game::Lessons.rewards_for('O', 'class', 1)).to eq(money: 17, items: [{ 'name' => '깃펜', 'count' => 2 }, { 'name' => '우승 리본', 'count' => 1 }])
+    expect(Game::Lessons.rewards_for('P', 'class', 1)).to eq(money: 1, items: [])
   end
 end

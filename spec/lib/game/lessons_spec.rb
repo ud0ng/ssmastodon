@@ -9,7 +9,7 @@ RSpec.describe Game::Lessons do
   let(:ron) { Fabricate(:account, username: 'ron') }
   let(:hermione) { Fabricate(:account, username: 'hermione') }
   let(:neville) { Fabricate(:account, username: 'neville') }
-  let(:mcgonagall) { Fabricate(:account, username: 'mcgonagall') }
+  let(:app) { Fabricate(:application) }
 
   before do
     { harry => '해리', ron => '론', hermione => '헤르미온느', neville => '네빌' }.each do |account, name|
@@ -22,6 +22,15 @@ RSpec.describe Game::Lessons do
     status = PostStatusService.new.call(account, text: text, thread: thread, visibility: visibility)
     Game::Engine.new(status).call
     @replies = Status.where(account: system).where.not(id: before).to_a
+    status
+  end
+
+  # 운영진이 시스템 계정으로 직접 [수업/과목] 툿을 쓴다 (앱에서 쓴 툿)
+  def open_class(subject)
+    before = Status.where(account: system).pluck(:id)
+    status = PostStatusService.new.call(system, text: "[수업/#{subject}]", visibility: 'private', application: app)
+    Game::Engine.new(status).call if Game::System.class_toot?(status)
+    @replies = Status.where(account: system).where.not(id: before + [status.id]).to_a
     status
   end
 
@@ -50,7 +59,7 @@ RSpec.describe Game::Lessons do
       expect(@replies.last.text).to include('레비-오사', '해리 — T')
     end
 
-    it 'grades by reaction time after the signal and pays half points for study' do
+    it 'grades by reaction time after the signal and pays the same points for study' do
       toot(harry, '@system [자습/일반 마법]')
       run_timeout
       expect(last_text).to include('지금!')
@@ -58,7 +67,7 @@ RSpec.describe Game::Lessons do
       signal = Time.iso8601(session.state['signal_at'])
       travel_to(signal + 2.seconds) { toot(harry, '@system [레비오사]') }
       expect(GameGrade.last.grade).to eq 'O'
-      expect(gryffindor.total).to eq 8 # 15점의 50%
+      expect(gryffindor.total).to eq 15 # 자습도 등급 점수 그대로
     end
 
     it 'limits study to once a day per subject' do
@@ -73,7 +82,7 @@ RSpec.describe Game::Lessons do
     before { Game::Config.update!('transfiguration', 'high_perfect' => '100') }
 
     it 'gathers a class, then each student tries and gets ranked with a bonus' do
-      toot(mcgonagall, '@system [수업/변신술]')
+      open_class('변신술')
       expect(session.status).to eq 'pending'
       expect(@replies.last.text).to include('변신술 수업이 열립니다', '[참가]')
 
@@ -97,11 +106,17 @@ RSpec.describe Game::Lessons do
       expect(GameHousePoint.where(account: harry).sum(:amount)).to eq 20 # 15 + 상위 보너스 5
     end
 
-    it 'only lets listed openers open a class' do
-      Game::Config.update!('lessons', 'class_openers' => "mcgonagall\n")
+    it 'opens a class only from a toot the staff wrote as the system account' do
       toot(harry, '@system [수업/변신술]')
       expect(GameSession.count).to eq 0
-      expect(@replies.last.text).to include('교수만')
+      expect(@replies.last.text).to include('시스템 계정으로')
+
+      # 시스템이 자동으로 올린 툿(앱 없음)은 수업을 열지 않는다
+      automatic = PostStatusService.new.call(system, text: '[수업/변신술]', visibility: 'private')
+      expect(Game::System.class_toot?(automatic)).to be false
+
+      open_class('변신술')
+      expect(session).to have_attributes(kind: 'transfiguration', status: 'pending')
     end
   end
 
@@ -110,7 +125,7 @@ RSpec.describe Game::Lessons do
       toot(harry, '@system [자습/비행]')
       expect(@replies.last.text).to include('수업으로만')
 
-      toot(mcgonagall, '@system [수업/비행]')
+      open_class('비행')
       toot(harry, '@system [참가]')
       run_timeout
       expect(session.status).to eq 'cancelled'
@@ -119,7 +134,7 @@ RSpec.describe Game::Lessons do
 
     it 'succeeds alone on a route and crashes when routes overlap' do
       Game::Config.update!('flying', 'rounds' => '1')
-      toot(mcgonagall, '@system [수업/비행]')
+      open_class('비행')
       [harry, ron, hermione, neville].each { |account| toot(account, '@system [참가]') }
       run_timeout
       expect(session.state['routes'].size).to eq 3
@@ -136,19 +151,19 @@ RSpec.describe Game::Lessons do
     end
   end
 
-  describe 'practice (마법 연습)' do
-    it 'levels up the spell and gives a patronus on first success' do
+  describe 'practice (어둠의 마법 방어술)' do
+    it 'levels up the spell' do
       Game::Config.update!('practice', 'gain_min' => '100', 'gain_max' => '100')
-      toot(harry, '@system [자습/마법 연습]')
+      toot(harry, '@system [자습/어둠의 마법 방어술]')
       toot(harry, '@system [연습] 행복한 기억을 떠올린다')
 
       character = GameCharacter.for(harry).reload
       expect(character.progress['spells']).to eq('익스펙토 패트로눔' => 1)
-      expect(character.progress['patronus']).to be_present
-      expect(@replies.last.text).to include('수호령', '해리 — O')
+      expect(character.progress['patronus']).to be_blank
+      expect(@replies.last.text).to include('해리 — O')
 
       toot(harry, '@system [성적표]')
-      expect(@replies.last.text).to include('해리의 성적표', '마법 연습: O', '익스펙토 패트로눔 Lv.1', "수호령: #{character.progress['patronus']}")
+      expect(@replies.last.text).to include('해리의 성적표', '어둠의 마법 방어술: O', '익스펙토 패트로눔 Lv.1')
     end
   end
 
