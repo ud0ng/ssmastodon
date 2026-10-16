@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { apiRequestGet } from 'mastodon/api';
 
+import { syncTodo } from './game_todo';
+
 export interface WalletItem {
   name: string;
   count: number;
@@ -39,6 +41,8 @@ export interface Wallet {
   my_house_id: string | null;
   houses: { id: string; name: string; color: string; total: number }[];
   invites: number;
+  // 내가 행동해야 하는 판 (수락 대기·내 차례). 알림 소리·메뉴 배지의 기준
+  todo?: { session_id: string; name: string }[];
 }
 
 export type RecordFilter = 'all' | 'gain' | 'spend' | 'items';
@@ -62,7 +66,11 @@ export const useWallet = () => {
 
   const load = useCallback(() => {
     apiRequestGet<Wallet>('v1/system/wallet')
-      .then(setWallet)
+      .then((next) => {
+        syncTodo((next.todo ?? []).map((item) => item.session_id));
+        setWallet(next);
+        return next;
+      })
       .catch(() => {
         // 시스템 기능이 없거나 잠깐 실패하면 그대로 둔다
       });

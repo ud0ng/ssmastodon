@@ -6451,3 +6451,27 @@ body.layout-single-column
 .layout-single-column .column-link:not(.active):focus-visible .icon-shop {
   background-color: var(--color-column-link-hover);
 }
+
+/* 컨텐츠 메뉴 아이콘 (별). id 를 star 로 두면 위쪽 .icon-star 규칙(데이터 이미지)이 겹쳐 보여서 icon-contents 로 따로 그린다 */
+.layout-single-column .column-link .icon-contents {
+  mask-image: url('./bird-theme-svg/star.svg');
+  -webkit-mask-image: url('./bird-theme-svg/star.svg');
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
+  background-color: var(--color-column-link);
+  background-image: none;
+}
+
+.layout-single-column .column-link.active .icon-contents {
+  mask-image: url('./bird-theme-svg/star-fill.svg');
+  -webkit-mask-image: url('./bird-theme-svg/star-fill.svg');
+}
+
+.layout-single-column .column-link:not(.active):hover .icon-contents,
+.layout-single-column .column-link:not(.active):focus-visible .icon-contents {
+  background-color: var(--color-column-link-hover);
+}

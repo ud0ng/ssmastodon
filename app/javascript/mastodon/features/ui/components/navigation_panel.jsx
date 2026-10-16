@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 
 import { defineMessages, injectIntl, useIntl } from 'react-intl';
 
-import { useLocation } from 'react-router';
+import { useLocation, useRouteMatch } from 'react-router';
 import { Link } from 'react-router-dom';
 
 import { useSelector, useDispatch } from 'react-redux';
@@ -222,14 +222,18 @@ const ProfileLink = () => {
 const ContentsLink = () => {
   const wallet = useWallet();
   const intl = useIntl();
-  const count = wallet?.invites ?? 0;
+  // 내가 행동해야 하는 판 수 (수락 대기·내 차례). 지금 들어와 있는 방은 바로 보이므로 빼고 센다
+  const room = useRouteMatch('/system/sessions/:id');
+  const roomId = room?.params?.id;
+  const count = (wallet?.todo ?? []).filter((item) => item.session_id !== roomId).length;
 
   return (
     <ColumnLink
       transparent
       to='/system'
-      icon={<IconWithBadge id='star' icon={StarIcon} count={count} className='column-link__icon' />}
-      activeIcon={<IconWithBadge id='star' icon={StarActiveIcon} count={count} className='column-link__icon' />}
+      // id 를 'star' 로 두면 Bird UI 의 .icon-star(마스크 이미지) 규칙이 걸려 별이 겹쳐 보인다
+      icon={<IconWithBadge id='contents' icon={StarIcon} count={count} className='column-link__icon' />}
+      activeIcon={<IconWithBadge id='contents' icon={StarActiveIcon} count={count} className='column-link__icon' />}
       text={intl.formatMessage(messages.contents)}
     />
   );

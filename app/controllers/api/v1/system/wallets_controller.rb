@@ -28,7 +28,9 @@ class Api::V1::System::WalletsController < Api::BaseController
       item_count: character.item_count,
       record: { win: results['win'].to_i, lose: results['lose'].to_i, draw: results['draw'].to_i },
       # 왼쪽 컨텐츠 메뉴 배지: 받고 아직 수락하지 않은 신청 수
-      invites: invites_count,
+      invites: todo_sessions.size,
+      # 내가 행동해야 하는 판 (수락 대기·내 차례): 컨텐츠 메뉴 배지와 알림 소리의 기준
+      todo: todo_sessions,
       # 글쓰기 패널 맨 아래 소속 점수 (점수 기준 소속, 이번 시즌)
       house_term: Game::Config.for('common')['house_term'],
       my_house_id: character.group_id&.to_s,
@@ -69,12 +71,19 @@ class Api::V1::System::WalletsController < Api::BaseController
 
   private
 
-  def invites_count
-    GamePlayer.joins(:session).merge(GameSession.current_kinds)
-              .where(account: current_account, game_sessions: { status: 'pending' })
-              .where("COALESCE(game_players.state->>'accepted', 'false') <> 'true'")
-              .where("COALESCE(game_sessions.state->>'mode', '') <> 'event'")
-              .count
+  # 내 자리에 버튼(행동)이 열려 있는 판: 수락 대기 신청, 내가 고를 차례 (웹 방의 '내 차례예요' 와 같은 기준, Game::Card)
+  def todo_sessions
+    @todo_sessions ||= GamePlayer.joins(:session).merge(GameSession.current_kinds)
+                                 .where(account: current_account, game_sessions: { status: %w(pending active) })
+                                 .includes(:session).filter_map do |player|
+      session = player.session
+      next if session.state['mode'] == 'event' && session.status == 'pending'
+
+      actions = Game::Card.safe { Game::Card.actions_for(session, session.kind_class&.new(session)) } || []
+      next unless actions.any? { |action| action['seats'].is_a?(Array) && action['seats'].include?(player.seat) }
+
+      { session_id: session.id.to_s, name: session.kind_class&.display_name || session.kind }
+    end
   end
 
   def currency

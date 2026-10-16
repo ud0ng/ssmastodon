@@ -15492,13 +15492,12 @@ body .search__popout__menu__item {
   }
 }
 
-// 웹 '시스템' 메뉴 (features/system): 해리포터 분위기 — 양피지 카드, 금박 테두리, 명조체 제목, 소속 문장(방패)
-// 낮/밤 커뮤니티 테마 색(--color-*)에 양피지 색을 섞어 쓴다.
+// 웹 '시스템' 메뉴 (features/system): 커뮤니티 낮/밤 테마 — 박스색·테두리·서브색·글자색. (--sys-* 변수는 테마 값의 별명)
 .system-page {
-  --sys-gold: #b08d3c;
-  --sys-gold-soft: color-mix(in srgb, var(--sys-gold) 45%, transparent);
-  --sys-parchment: color-mix(in srgb, var(--color-bg-compose-form, var(--surface-background-color)) 82%, #c9a96a);
-  --sys-serif: 'Noto Serif KR', 'Nanum Myeongjo', 'Batang', 'AppleMyungjo', georgia, serif;
+  --sys-gold: var(--ct-point, var(--color-accent, #{$ui-highlight-color}));
+  --sys-gold-soft: var(--ct-line, var(--background-border-color));
+  --sys-parchment: var(--ct-panel-raised, var(--color-bg-compose-form, var(--surface-background-color)));
+  --sys-serif: #{$font-sans-serif}, sans-serif;
 
   padding: 16px;
   color: var(--color-fg, $primary-text-color);
@@ -15525,7 +15524,7 @@ body .search__popout__menu__item {
     font-family: var(--sys-serif);
     font-size: 16px;
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0;
 
     &::before,
     &::after {
@@ -15541,15 +15540,12 @@ body .search__popout__menu__item {
   }
 }
 
-// 양피지 카드: 금박 두 줄 테두리
+// 시스템 화면 카드 틀: 테마 박스색 + 테두리
 %system-parchment {
   border: 1px solid var(--sys-gold-soft);
-  border-radius: 3px;
+  border-radius: 14px;
   background: var(--sys-parchment);
-  box-shadow:
-    inset 0 0 0 3px var(--sys-parchment),
-    inset 0 0 0 4px var(--sys-gold-soft),
-    0 1px 3px rgb(0 0 0 / 12%);
+  box-shadow: none;
 }
 
 // 소속 문장 (방패 모양, 금테)
@@ -15560,8 +15556,8 @@ body .search__popout__menu__item {
   flex: 0 0 auto;
   width: var(--crest-size);
   height: calc(var(--crest-size) * 1.18);
-  padding: 1.5px;
-  background: var(--sys-gold);
+  padding: 0;
+  background: transparent;
   clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%);
   vertical-align: middle;
 
@@ -15573,7 +15569,7 @@ body .search__popout__menu__item {
     padding-top: 8%;
     background: var(--house-color, #555);
     clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%);
-    color: #f3e6c4;
+    color: #fff;
     font-family: var(--sys-serif);
     font-size: calc(var(--crest-size) * 0.55);
     font-weight: 700;
@@ -15666,9 +15662,9 @@ body .search__popout__menu__item {
     white-space: nowrap;
   }
 
-  // 개수 배지: 금빛
+  // 개수 배지: 서브색, 둥글게
   .wallet-page__item-count {
-    border-radius: 2px;
+    border-radius: 999px;
     background: var(--sys-gold);
     color: #fff;
     font-family: var(--sys-serif);
@@ -16584,9 +16580,9 @@ body .search__popout__menu__item {
 
 // [시작하기] 모달: 상대 고르기
 .challenge-modal {
-  --sys-gold: #b08d3c;
-  --sys-gold-soft: color-mix(in srgb, var(--sys-gold) 45%, transparent);
-  --sys-serif: 'Noto Serif KR', 'Nanum Myeongjo', 'Batang', 'AppleMyungjo', georgia, serif;
+  --sys-gold: var(--ct-point, var(--color-accent, #{$ui-highlight-color}));
+  --sys-gold-soft: var(--ct-line, var(--background-border-color));
+  --sys-serif: #{$font-sans-serif}, sans-serif;
 
   &__head {
     display: flex;
@@ -16644,16 +16640,16 @@ body .search__popout__menu__item {
   }
 }
 
-// 글쓰기 패널 아래 해리포터 분위기 (시스템 화면과 같은 양피지·금테·명조체). 색 변수는 시스템 화면 밖이라 여기서도 정한다.
+// 글쓰기 패널 아래·재화 화면: 커뮤니티 낮/밤 테마. 색 변수는 시스템 화면 밖이라 여기서도 정한다.
 .compose-panel,
 .wallet-page {
-  --sys-gold: #b08d3c;
-  --sys-gold-soft: color-mix(in srgb, var(--sys-gold) 45%, transparent);
-  --sys-parchment: color-mix(in srgb, var(--color-bg-compose-form, var(--surface-background-color)) 82%, #c9a96a);
-  --sys-serif: 'Noto Serif KR', 'Nanum Myeongjo', 'Batang', 'AppleMyungjo', georgia, serif;
+  --sys-gold: var(--ct-point, var(--color-accent, #{$ui-highlight-color}));
+  --sys-gold-soft: var(--ct-line, var(--background-border-color));
+  --sys-parchment: var(--ct-panel-raised, var(--color-bg-compose-form, var(--surface-background-color)));
+  --sys-serif: #{$font-sans-serif}, sans-serif;
 }
 
-// 글쓰기창 아래: (재화) | 인벤토리 | 전적 — 양피지 띠에 금빛 칸막이
+// 글쓰기창 아래: (재화) | 인벤토리 | 전적
 .wallet-bar {
   @extend %system-parchment;
 
@@ -18915,4 +18911,57 @@ body.app-body.layout-game-room.layout-single-column {
   font-size: 13px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+}
+
+// 글쓰기 패널 아래 재화 줄·소속 점수 줄: 양피지·금빛 대신 커뮤니티 낮/밤 테마 (박스색·테두리·서브색·글자색)
+.compose-panel .wallet-bar,
+.compose-panel .house-points {
+  --sys-gold: var(--ct-point, var(--color-accent, #{$ui-highlight-color}));
+  --sys-gold-soft: var(--ct-line, var(--background-border-color));
+  --sys-serif: #{$font-sans-serif}, sans-serif;
+
+  border: 1px solid var(--ct-line, var(--background-border-color));
+  border-radius: 14px;
+  background: var(--ct-panel-raised, var(--color-bg-compose-form, var(--surface-background-color)));
+  box-shadow: none;
+  color: var(--ct-text, var(--color-fg, #{$primary-text-color}));
+}
+
+.compose-panel .wallet-bar {
+  &__item {
+    &:hover,
+    &:focus-visible {
+      background: var(--ct-hover, var(--color-hover, rgb(127 127 127 / 8%)));
+    }
+
+    & + & {
+      border-inline-start: 1px solid var(--ct-line, var(--background-border-color));
+    }
+  }
+
+  &__label {
+    color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
+    letter-spacing: 0;
+  }
+
+  &__value .icon {
+    color: var(--ct-point, #{$ui-highlight-color});
+  }
+}
+
+.compose-panel .house-points {
+  &__item {
+    & + & {
+      border-inline-start: 1px solid var(--ct-line, var(--background-border-color));
+    }
+
+    // 내 소속: 서브색 바탕
+    &--mine {
+      background: color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 12%, transparent);
+    }
+  }
+
+  &__name {
+    color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
+  }
 }

@@ -4,3 +4,5 @@ override/
 chrome-profile/
 shots/
 sheets/
+.luna_password
+.test_accounts.txt

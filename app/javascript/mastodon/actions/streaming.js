@@ -13,6 +13,7 @@ import {
   deleteAnnouncement,
 } from './announcements';
 import { updateConversations } from './conversations';
+import { notifyGameTurn } from './game_alerts';
 import { dmChatStreamUpdate, dmMessageReceived, setDmStreamConnected, updateDmReadState } from './dm_rooms';
 import { processNewNotificationForGroups, refreshStaleNotificationGroups, pollRecentNotifications as pollRecentGroupNotifications } from './notification_groups';
 import { updateNotifications } from './notifications';
@@ -100,13 +101,14 @@ export const connectTimelineStream = (timelineId, channelName, params = {}, opti
           // @ts-expect-error
           const notificationJSON = JSON.parse(data.payload);
 
-          if (dmChatEnabled && notificationJSON.type === 'mention' && notificationJSON.status?.visibility === 'direct') {
+          // 컨텐츠 알림(시스템 계정이 나를 부름, 비밀 선택 DM 포함)은 알림 목록 대신 컨텐츠 메뉴 배지로 + 새 '내 차례' 면 소리·데스크톱 알림.
+          // DM 채팅 검사보다 먼저 본다 (시스템의 DM 도 컨텐츠 알림이다)
+          if (notificationJSON.account?.acct === systemAcct || isGameStatus(notificationJSON.status)) {
+            dispatch(notifyGameTurn());
             break;
           }
 
-          // 컨텐츠 알림은 알림 목록 대신 컨텐츠 메뉴 배지로
-          if (notificationJSON.account?.acct === systemAcct || isGameStatus(notificationJSON.status)) {
-            refreshWallet();
+          if (dmChatEnabled && notificationJSON.type === 'mention' && notificationJSON.status?.visibility === 'direct') {
             break;
           }
 
@@ -122,6 +124,11 @@ export const connectTimelineStream = (timelineId, channelName, params = {}, opti
         case 'conversation': {
           // @ts-expect-error
           const conversation = JSON.parse(data.payload);
+
+          // 시스템 계정과의 DM(컨텐츠 비밀 선택)은 DM 채팅 소리·목록에 넣지 않는다 — 위 컨텐츠 알림이 처리한다
+          if (isGameStatus(conversation?.last_status)) {
+            break;
+          }
 
           dispatch(updateConversations(conversation));
 
