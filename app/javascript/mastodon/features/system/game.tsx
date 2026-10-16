@@ -1,6 +1,6 @@
 // 컨텐츠 세부 화면 (/system/games/:key): 게임 소개 · 룰 · 순위(5명) · [시작하기](상대 고르기 모달) · 방 목록(진행 중/완료).
 // 방을 누르면 컨텐츠 방(session.tsx)으로 — 내가 낀 방이 아니면 관전. 버튼은 서버원 대신 시스템에게 툿을 보낸다 (board.tsx).
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
@@ -35,7 +35,7 @@ interface SessionRow {
   turn: number;
   deadline_at: string | null;
   finished_at: string | null;
-  players: { name: string; acct: string; result: 'win' | 'lose' | 'draw' | null; me: boolean }[];
+  players: { name: string; acct: string; avatar: string; result: 'win' | 'lose' | 'draw' | null; me: boolean }[];
 }
 
 interface GameInfo {
@@ -139,41 +139,65 @@ const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => 
   );
 };
 
-// 방 목록 한 줄: 참가자 · 상태(턴/결과/수락 대기) · 내 방이 아니면 [관전]
+// 방 목록 카드: 참가자 아바타 · 이름 (VS) · 상태(턴·남은 시간 / 끝난 때) · 내 방 / 관전.
+// 끝난 판은 승리자 아바타에 금빛 테두리 + 왕관, 패배자는 흐리게, 무승부는 '무' 표시
 const RoomList: React.FC<{ rows: SessionRow[] }> = ({ rows }) => {
   const intl = useIntl();
   return (
-    <ul className='system-rooms'>
+    <ul className='system-room-list'>
       {rows.map((row) => {
         const mine = row.players.some((player) => player.me);
+        const versus = row.players.length === 2;
         return (
           <li key={row.id}>
-            <Link to={`/system/sessions/${row.id}`} className='system-rooms__row'>
-              <span className='system-rooms__players'>
+            <Link
+              to={`/system/sessions/${row.id}`}
+              className={`system-room-card system-room-card--${row.status}${mine ? ' system-room-card--mine' : ''}${versus ? '' : ' system-room-card--many'}`}
+            >
+              <span className='system-room-card__players'>
                 {row.players.map((player, index) => (
-                  <span key={player.acct} className={player.me ? 'system-rooms__me' : undefined}>
-                    {index > 0 && <span className='system-rooms__vs'>{row.players.length === 2 ? ' vs ' : ' · '}</span>}
-                    {player.name}
-                    {player.result && player.result !== 'lose' && ` (${intl.formatMessage(messages[player.result])})`}
-                  </span>
+                  <Fragment key={player.acct}>
+                    {index > 0 && versus && <span className='system-room-card__vs'>VS</span>}
+                    <span
+                      className={[
+                        'system-room-card__player',
+                        player.result && `system-room-card__player--${player.result}`,
+                        player.me && 'system-room-card__player--me',
+                      ].filter(Boolean).join(' ')}
+                    >
+                      <span className='system-room-card__avatar'>
+                        <img src={player.avatar} alt='' />
+                        {player.result === 'win' && <span className='system-room-card__crown' aria-hidden>👑</span>}
+                      </span>
+                      <span className='system-room-card__name'>{player.name}</span>
+                      {player.result && player.result !== 'lose' && (
+                        <span className={`system-room-card__result system-room-card__result--${player.result}`}>
+                          {intl.formatMessage(messages[player.result])}
+                        </span>
+                      )}
+                    </span>
+                  </Fragment>
                 ))}
               </span>
-              <span className='system-rooms__state'>
-                {row.status === 'finished' && row.finished_at ? (
-                  <RelativeTimestamp timestamp={row.finished_at} />
-                ) : row.status === 'pending' ? (
-                  <FormattedMessage id='system.game.pending' defaultMessage='Waiting for accept' />
-                ) : (
-                  <FormattedMessage id='system.game.turn' defaultMessage='Turn {turn}' values={{ turn: row.turn }} />
-                )}
-              </span>
-              {row.status !== 'finished' && row.deadline_at && <Countdown until={row.deadline_at} className='system-rooms__time' />}
-              <span className={mine ? 'system-rooms__tag system-rooms__tag--mine' : 'system-rooms__tag'}>
-                {mine ? (
-                  <FormattedMessage id='system.game.my_room' defaultMessage='Mine' />
-                ) : (
-                  <FormattedMessage id='system.game.spectate' defaultMessage='Watch' />
-                )}
+
+              <span className='system-room-card__side'>
+                <span className='system-room-card__state'>
+                  {row.status === 'finished' && row.finished_at ? (
+                    <RelativeTimestamp timestamp={row.finished_at} />
+                  ) : row.status === 'pending' ? (
+                    <FormattedMessage id='system.game.pending' defaultMessage='Waiting for accept' />
+                  ) : (
+                    <FormattedMessage id='system.game.turn' defaultMessage='Turn {turn}' values={{ turn: row.turn }} />
+                  )}
+                </span>
+                {row.status !== 'finished' && row.deadline_at && <Countdown until={row.deadline_at} className='system-room-card__time' />}
+                <span className={mine ? 'system-room-card__tag system-room-card__tag--mine' : 'system-room-card__tag'}>
+                  {mine ? (
+                    <FormattedMessage id='system.game.my_room' defaultMessage='Mine' />
+                  ) : (
+                    <FormattedMessage id='system.game.spectate' defaultMessage='Watch' />
+                  )}
+                </span>
               </span>
             </Link>
           </li>
@@ -287,7 +311,7 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
                     {game.steps.map((step, index) => (
                       <li key={step} className='system-steps__item'>
                         <span className='system-steps__number'>{index + 1}</span>
-                        <span className='system-steps__text'><CommandText text={step} badge /></span>
+                        <span className='system-steps__text'><CommandText text={step} /></span>
                       </li>
                     ))}
                   </ol>

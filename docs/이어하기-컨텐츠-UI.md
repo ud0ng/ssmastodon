@@ -60,6 +60,14 @@
 
 검증: 미리보기 캡처로 룰 탭·동시 진행 안내·방(상대 차례/내 차례)을 확인. 로컬에 node_modules 가 없어 tsc·eslint 는 못 돌렸다 (미리보기 빌드는 통과).
 
+### 그다음 커밋: 방 화면 DM 디자인, 명령어 배지, 방 카드
+
+- 방 메시지(`session.tsx` `RoomLog`)는 DM 채팅 마크업 그대로: `dm-room__scroll` 스크롤, `DateDivider`, 참가자는 `dm-message`(같은 사람 연속이면 묶음).
+  - 시스템 메시지만 전체 너비 박스(`.game-room__host`). 입력창 위 안내(`.game-room__turn`)는 가운데 정렬.
+- `CommandText` 는 항상 배지(`.command-badge`, 대괄호 뗌). 색은 디자인 탭 [대괄호] 색(`--ct-bracket`), 내 말풍선 안에서는 글자색. 일반 툿의 [괄호](`utils/dialogue.ts`)는 그대로.
+- 진행중/완료 탭은 방 카드(`.system-room-card`): 아바타 VS 아바타, 승리자 금빛 테두리·👑·승리 배지, 패배자 흐리게, 무승부 배지.
+  - API `games/:key` 의 players 에 `avatar` 추가 (`RoutingHelper` include).
+
 ## 다음에 할 일
 
 1. 사용자 피드백 대기.

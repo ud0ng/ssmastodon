@@ -3,6 +3,8 @@
 # 웹 시스템 메뉴의 컨텐츠별 화면 (/system/games/:key): 하는 법, 내 전적, 진행 중·최근 판, 순위.
 # DM 으로 진행한 판은 참가자에게만 보인다.
 class Api::V1::System::GamesController < Api::BaseController
+  include RoutingHelper
+
   LIST_LIMIT = 15
   RANK_LIMIT = 5
 
@@ -88,7 +90,8 @@ class Api::V1::System::GamesController < Api::BaseController
       deadline_at: session.deadline_at&.iso8601,
       finished_at: session.finished_at&.iso8601,
       players: session.players.map do |player|
-        { name: player.name, acct: player.account.acct, result: player.result, me: player.account_id == current_account.id }
+        { name: player.name, acct: player.account.acct, avatar: full_asset_url(player.account.avatar_static_url),
+          result: player.result, me: player.account_id == current_account.id }
       end,
     }
   end

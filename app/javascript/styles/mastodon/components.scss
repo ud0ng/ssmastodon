@@ -17482,62 +17482,21 @@ body .search__popout__menu__item {
   }
 }
 
-// 컨텐츠 방 (features/system/session.tsx): DM 채팅방처럼. 시스템은 가운데 사회자 창, 참가자는 말풍선(내 것은 오른쪽)
+// 컨텐츠 방 (features/system/session.tsx): DM 채팅방(dm-room__scroll·dm-message·날짜 줄)을 그대로 쓴다.
+// 여기서는 시스템(사회자) 메시지만 전체 너비 박스로 따로 칠한다.
 .game-room {
-  display: flex;
   flex: 1 1 auto;
-  flex-direction: column;
-  gap: 10px;
   min-height: 0;
-  overflow-y: auto;
   overscroll-behavior: contain;
 
-  &__bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    font-size: 13px;
-
-    a {
-      color: var(--sys-gold);
-      font-family: var(--sys-serif);
-      font-weight: 700;
-      text-decoration: none;
-    }
-  }
-
-  &__log {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding-bottom: 8px;
-  }
-
-  // 사회자: 가운데 양피지 창
+  // 사회자: 전체 너비, 낮/밤 테마를 따르는 가벼운 박스
   &__host {
-    display: flex;
-    justify-content: center;
-  }
-
-  // 사회자 창: 낮/밤 테마를 따르는 가벼운 박스 (박스 색·테두리), 안의 컨텐츠 카드도 같은 톤
-  &__host-box {
-    width: min(100%, 520px);
+    margin: 16px 0 4px;
     padding: 10px 14px 12px;
     border: 1px solid var(--ct-line, var(--background-border-color));
     border-radius: 14px;
     background: var(--ct-panel-raised, var(--color-bg-compose-form, var(--surface-background-color)));
-    box-shadow: 0 1px 4px rgb(0 0 0 / 6%);
     text-align: center;
-
-    .content-card {
-      margin-top: 8px;
-      border-color: var(--ct-line, var(--background-border-color));
-      border-radius: 10px;
-      background: var(--ct-panel, transparent);
-      box-shadow: none;
-      text-align: start;
-    }
   }
 
   &__host-head {
@@ -17566,69 +17525,23 @@ body .search__popout__menu__item {
   &__host-text {
     margin-top: 6px;
     font-size: 14px;
-    line-height: 1.6;
+    line-height: 1.7;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
 
-  // 참가자 말풍선
-  &__msg {
-    display: flex;
-    gap: 8px;
-    align-items: flex-start;
-    max-width: 80%;
-
-    &--mine {
-      flex-direction: row-reverse;
-      align-self: flex-end;
-
-      .game-room__msg-body {
-        align-items: flex-end;
-      }
-
-      .game-room__bubble {
-        border-color: transparent;
-        border-radius: 16px 4px 16px 16px;
-        background: var(--sys-gold);
-        color: #fff;
-      }
-    }
-  }
-
+  // 말풍선 옆 아바타 (dm-message__avatar 안)
   &__avatar {
-    flex: 0 0 auto;
-    width: 34px;
-    height: 34px;
+    display: block;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     object-fit: cover;
   }
 
-  &__msg-body {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    align-items: flex-start;
-    min-width: 0;
-  }
-
-  &__msg-name {
-    font-size: 12px;
-    font-weight: 700;
-  }
-
-  &__bubble {
-    padding: 8px 12px;
-    border: 1px solid var(--sys-gold-soft);
-    border-radius: 4px 16px 16px;
-    background: var(--sys-parchment);
-    font-size: 14px;
+  .dm-message__bubble__text p {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
-  }
-
-  &__msg-time {
-    color: var(--color-dim, $darker-text-color);
-    font-size: 11px;
   }
 
   &__secret {
@@ -17639,6 +17552,7 @@ body .search__popout__menu__item {
     font-size: 11px;
     font-weight: 700;
     opacity: 0.8;
+    vertical-align: middle;
 
     .icon {
       width: 13px;
@@ -17676,13 +17590,6 @@ body .search__popout__menu__item {
   &--urgent {
     color: var(--color-text-error, #e0245e);
   }
-}
-
-// 문구 안 [명령어]: 디자인 탭의 [대괄호] 색 (components/command_text.tsx)
-.command-text {
-  color: var(--ct-bracket, var(--sys-gold, #b08d3c));
-  font-weight: 700;
-  white-space: nowrap;
 }
 
 // 컨텐츠 첫 화면: 진행 중인 컨텐츠 (카드 줄, 남은 시간 실시간)
@@ -18191,20 +18098,27 @@ body .search__popout__menu__item {
   text-align: center;
 }
 
-// 룰 안 [명령어]: 테마색 배지 (components/command_text.tsx badge)
+// 컨텐츠 문구 안 [명령어]: 배지 (components/command_text.tsx). 색은 디자인 탭의 [대괄호] 색
 .command-badge {
+  --cmd-color: var(--ct-bracket, var(--color-fg, #{$primary-text-color}));
+
   display: inline-block;
   margin: 0 2px;
   padding: 0 8px;
-  border: 1px solid color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cmd-color) 45%, transparent);
   border-radius: 6px;
-  background: color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 12%, transparent);
-  color: var(--ct-point, #{$ui-highlight-color});
+  background: color-mix(in srgb, var(--cmd-color) 10%, transparent);
+  color: var(--cmd-color);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 0.93em;
   font-weight: 700;
   line-height: 1.6;
   white-space: nowrap;
+}
+
+// 내가 보낸 말풍선(서브색 바탕) 안에서는 말풍선 글자색으로
+.dm-message--mine .command-badge {
+  --cmd-color: currentColor;
 }
 
 // 동시 진행을 막았을 때 [시작하기] → 바로 안내
@@ -18342,6 +18256,7 @@ body.app-body.layout-game-room.layout-single-column {
 // 입력창 위: 내 차례면 할 일(버튼·안내), 아니면 누구를 기다리는지
 .game-room__turn {
   padding: 12px 14px 0;
+  text-align: center;
 
   &--waiting {
     padding-top: 8px;
@@ -18353,6 +18268,7 @@ body.app-body.layout-game-room.layout-single-column {
     display: flex;
     gap: 10px;
     align-items: center;
+    justify-content: center;
     margin-bottom: 8px;
 
     strong {
@@ -18376,6 +18292,7 @@ body.app-body.layout-game-room.layout-single-column {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+    justify-content: center;
   }
 }
 
@@ -18419,5 +18336,180 @@ body.app-body.layout-game-room.layout-single-column {
     background: rgb(0 0 0 / 15%);
     font-size: 10px;
     letter-spacing: 0.04em;
+  }
+}
+
+// 컨텐츠 세부 화면 진행중/완료 탭: 방 카드 (아바타 VS 아바타 · 상태 · 내 방/관전)
+.system-room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.system-room-card {
+  --rc-point: var(--ct-point, var(--color-accent, #{$ui-highlight-color}));
+  --rc-gold: #e0b43a;
+
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--ct-line, var(--background-border-color));
+  border-radius: 14px;
+  background: var(--ct-panel-raised, var(--color-bg-compose-form, var(--surface-background-color)));
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: color-mix(in srgb, var(--rc-point) 55%, transparent);
+    background: var(--ct-hover, var(--color-hover, rgb(127 127 127 / 8%)));
+  }
+
+  &--mine {
+    border-color: color-mix(in srgb, var(--rc-point) 45%, transparent);
+    box-shadow: inset 3px 0 0 var(--rc-point);
+  }
+
+  &__players {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  &__vs {
+    color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
+    font-size: 12px;
+    font-style: italic;
+    font-weight: 800;
+  }
+
+  &__player {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+    max-width: 100%;
+
+    &--me .system-room-card__name {
+      color: var(--rc-point);
+    }
+
+    // 패배: 흐리게
+    &--lose {
+      opacity: 0.55;
+
+      img {
+        filter: grayscale(0.7);
+      }
+    }
+
+    // 승리: 금빛 테두리 + 빛 + 왕관
+    &--win {
+      .system-room-card__avatar img {
+        border-color: var(--rc-gold);
+        box-shadow:
+          0 0 0 2px color-mix(in srgb, var(--rc-gold) 35%, transparent),
+          0 0 12px color-mix(in srgb, var(--rc-gold) 55%, transparent);
+      }
+
+      .system-room-card__name {
+        font-weight: 800;
+      }
+    }
+  }
+
+  &__avatar {
+    position: relative;
+    flex: 0 0 auto;
+
+    img {
+      display: block;
+      width: 38px;
+      height: 38px;
+      border: 2px solid var(--ct-line, var(--background-border-color));
+      border-radius: 50%;
+      object-fit: cover;
+    }
+  }
+
+  &--many &__avatar img {
+    width: 30px;
+    height: 30px;
+  }
+
+  &__crown {
+    position: absolute;
+    top: -11px;
+    left: 50%;
+    font-size: 15px;
+    line-height: 1;
+    transform: translateX(-50%) rotate(-12deg);
+    filter: drop-shadow(0 1px 1px rgb(0 0 0 / 25%));
+  }
+
+  &__name {
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  &__result {
+    flex: 0 0 auto;
+    padding: 0 7px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 18px;
+
+    &--win {
+      background: var(--rc-gold);
+      color: #3a2a00;
+    }
+
+    &--draw {
+      border: 1px solid var(--ct-line, var(--background-border-color));
+      color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
+    }
+  }
+
+  &__side {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+  }
+
+  &__state {
+    color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
+    font-size: 12px;
+  }
+
+  &__time {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  &__tag {
+    padding: 1px 10px;
+    border: 1px solid color-mix(in srgb, var(--rc-point) 55%, transparent);
+    border-radius: 999px;
+    color: var(--rc-point);
+    font-size: 12px;
+    font-weight: 700;
+
+    &--mine {
+      background: var(--rc-point);
+      color: var(--ct-on-point, #fff);
+    }
   }
 }

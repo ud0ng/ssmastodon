@@ -3,7 +3,7 @@
 //   시스템 계정 메시지는 가운데 사회자 창(진행 문구), 참가자 메시지는 말풍선(내 것은 오른쪽).
 //   내 차례면 입력창이 강조되고 그 위에 할 일 버튼이 뜬다. 참가하지 않은 사람은 관전 (입력창 없음).
 //   미로·도둑 지도는 맨 위에 전용 진행판.
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { defineMessages, FormattedMessage, FormattedTime, useIntl } from 'react-intl';
 
@@ -21,6 +21,7 @@ import { Countdown } from 'mastodon/components/countdown';
 import { Icon } from 'mastodon/components/icon';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 import { Composer } from 'mastodon/features/messages/components/composer';
+import { DateDivider } from 'mastodon/features/messages/components/date_divider';
 
 import { sendCommand } from './board';
 import { MaraudersMapPlay } from './marauders_map';
@@ -65,37 +66,89 @@ const Secret: React.FC = () => (
   </span>
 );
 
-// 시스템(사회자) 메시지: 가운데 창 (진행 문구만. 지금 상태 카드는 맨 위에 고정)
+// 시스템(사회자) 메시지: 전체 너비 박스 (진행 문구만. 지금 상태 카드는 맨 위에 고정)
 const HostMessage: React.FC<{ message: RoomMessage }> = ({ message }) => (
-  <li className='game-room__host'>
-    <div className='game-room__host-box'>
-      <div className='game-room__host-head'>
-        <img src={message.avatar} alt='' />
-        <span>{message.name}</span>
-        {message.secret && <Secret />}
-        <FormattedTime value={message.created_at} hour='2-digit' minute='2-digit' />
-      </div>
-      {message.text && <p className='game-room__host-text'><CommandText text={message.text} /></p>}
+  <div className='game-room__host'>
+    <div className='game-room__host-head'>
+      <img src={message.avatar} alt='' />
+      <span>{message.name}</span>
+      {message.secret && <Secret />}
+      <FormattedTime value={message.created_at} hour='2-digit' minute='2-digit' hour12={false} />
     </div>
-  </li>
+    {message.text && <p className='game-room__host-text'><CommandText text={message.text} /></p>}
+  </div>
 );
 
-// 참가자 메시지: 말풍선 (내 것은 오른쪽)
-const PlayerMessage: React.FC<{ message: RoomMessage }> = ({ message }) => (
-  <li className={message.mine ? 'game-room__msg game-room__msg--mine' : 'game-room__msg'}>
-    {!message.mine && <img className='game-room__avatar' src={message.avatar} alt='' />}
-    <div className='game-room__msg-body'>
-      {!message.mine && <span className='game-room__msg-name'>{message.name}</span>}
-      <div className='game-room__bubble'>
-        {message.secret && <Secret />}
-        <CommandText text={message.text} />
+// 참가자 메시지: DM 채팅 말풍선 그대로 (dm-message, 내 것은 오른쪽). 같은 사람이 이어 보내면 한 묶음
+const PlayerMessage: React.FC<{ message: RoomMessage; first: boolean; last: boolean }> = ({ message, first, last }) => (
+  <div
+    className={[
+      'dm-message',
+      message.mine ? 'dm-message--mine' : 'dm-message--theirs',
+      first && 'dm-message--first',
+      last && 'dm-message--last',
+      first && 'dm-message--sender-changed',
+    ].filter(Boolean).join(' ')}
+  >
+    {!message.mine && (
+      <div className='dm-message__avatar' aria-hidden='true'>
+        {first && <img className='game-room__avatar' src={message.avatar} alt='' />}
       </div>
-      <span className='game-room__msg-time'>
-        <FormattedTime value={message.created_at} hour='2-digit' minute='2-digit' />
-      </span>
+    )}
+
+    <div className='dm-message__body'>
+      {first && !message.mine && <span className='dm-message__sender'>{message.name}</span>}
+      <div className='dm-message__bubble'>
+        <div className='dm-message__bubble__text'>
+          <p>
+            {message.secret && <Secret />}
+            <CommandText text={message.text} />
+          </p>
+        </div>
+      </div>
     </div>
-  </li>
+
+    <div className='dm-message__aside'>
+      {last && (
+        <div className='dm-message__meta'>
+          <time className='dm-message__time' dateTime={message.created_at}>
+            <FormattedTime value={message.created_at} hour='2-digit' minute='2-digit' hour12={false} />
+          </time>
+        </div>
+      )}
+    </div>
+  </div>
 );
+
+const dayOf = (value: string) => new Date(value).toDateString();
+
+// 메시지 목록: 날짜가 바뀌면 DM 처럼 날짜 줄, 참가자 메시지는 같은 사람이 이어지면 묶는다
+const RoomLog: React.FC<{ messages: RoomMessage[] }> = ({ messages: list }) => {
+  const shown = list.filter((message) => !message.system || message.text);
+  return (
+    <>
+      {shown.map((message, index) => {
+        const prev = shown[index - 1];
+        const next = shown[index + 1];
+        const newDay = !prev || dayOf(prev.created_at) !== dayOf(message.created_at);
+        const sameAsPrev = !newDay && prev && !prev.system && prev.acct === message.acct;
+        const sameAsNext = next && !next.system && next.acct === message.acct && dayOf(next.created_at) === dayOf(message.created_at);
+        return (
+          <Fragment key={message.id}>
+            {newDay && <DateDivider date={new Date(message.created_at)} />}
+            {message.system ? (
+              <HostMessage message={message} />
+            ) : (
+              <div className='dm-room__group'>
+                <PlayerMessage message={message} first={!sameAsPrev} last={!sameAsNext} />
+              </div>
+            )}
+          </Fragment>
+        );
+      })}
+    </>
+  );
+};
 
 // 방에 있는 동안 화면 높이를 고정한다 (DM 채팅처럼 위 상태·아래 입력창은 그대로, 가운데 메시지만 스크롤)
 const ROOM_BODY_CLASS = 'layout-game-room';
@@ -272,25 +325,15 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
       )}
 
       {/* 메시지 (여기만 스크롤) */}
-      <div className='system-page game-room' ref={scrollRef}>
+      <div className='dm-room__scroll game-room' ref={scrollRef}>
         {!data && !failed && <LoadingIndicator />}
         {failed && !data && (
-          <p className='system-page__empty'>
+          <p className='dm-room__empty'>
             <FormattedMessage id='system.load_failed' defaultMessage='Could not load. Try again in a moment.' />
           </p>
         )}
 
-        {data && (
-          <ol className='game-room__log'>
-            {data.messages.map((message) =>
-              message.system ? (
-                message.text ? <HostMessage key={message.id} message={message} /> : null
-              ) : (
-                <PlayerMessage key={message.id} message={message} />
-              ),
-            )}
-          </ol>
-        )}
+        {data && <RoomLog messages={data.messages} />}
       </div>
 
       {/* 입력창 (맨 아래 고정): 내 차례면 강조 + 할 일 버튼, DM 채팅과 같은 입력칸·보내기 버튼 */}
