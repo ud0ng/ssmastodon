@@ -133,6 +133,9 @@ interface Props {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
+
+  // 컨텐츠 방(features/system/session.tsx)처럼 다른 안내 문구를 쓸 때
+  placeholder?: string;
 }
 
 export const Composer: React.FC<Props> = ({
@@ -149,6 +152,7 @@ export const Composer: React.FC<Props> = ({
   value,
   onChange,
   onSubmit,
+  placeholder,
 }) => {
   const intl = useIntl();
   const textarea = useRef<HTMLTextAreaElement>(null);
@@ -356,8 +360,8 @@ export const Composer: React.FC<Props> = ({
             value={value}
             rows={1}
             disabled={disabled}
-            placeholder={intl.formatMessage(messages.placeholder)}
-            aria-label={intl.formatMessage(messages.placeholder)}
+            placeholder={placeholder ?? intl.formatMessage(messages.placeholder)}
+            aria-label={placeholder ?? intl.formatMessage(messages.placeholder)}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             onBlur={handleBlur}

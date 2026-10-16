@@ -178,3 +178,22 @@ export const GameBoard: React.FC<{ sessionId: string; onChanged?: () => void; sh
     </div>
   );
 };
+
+// 신청 툿을 보낸 뒤 시스템이 판을 만들 때까지 잠깐씩 기다렸다가 방 id (끝내 없으면 null) → 바로 그 방으로 간다
+// pick: 컨텐츠 화면 정보(GET /api/v1/system/games/:key)에서 방 id 고르기 (기본: 내가 낀 방)
+export const waitForSession = async (
+  kind: string,
+  pick: (info: { my_session_id: string | null; active: { id: string }[] }) => string | null = (info) => info.my_session_id,
+  tries = 12,
+): Promise<string | null> => {
+  for (let attempt = 0; attempt < tries; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      const found = pick(await apiRequestGet<{ my_session_id: string | null; active: { id: string }[] }>(`v1/system/games/${kind}`));
+      if (found) return found;
+    } catch {
+      // 잠깐 실패하면 다시
+    }
+  }
+  return null;
+};

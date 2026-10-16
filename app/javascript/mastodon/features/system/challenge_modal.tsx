@@ -1,13 +1,16 @@
 // 컨텐츠 세부 화면 [시작하기] 모달: 상대(여럿이 하는 컨텐츠면 여러 명) 골라 신청 → '@시스템 @상대 [명령어]' 툿 (board.sendCommand)
+// 시스템이 판(방)을 만들면 바로 그 컨텐츠 방으로 간다.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
+
+import { useHistory } from 'react-router-dom';
 
 import { apiRequestGet } from 'mastodon/api';
 import { Button } from 'mastodon/components/button';
 import { ICONS } from 'mastodon/components/content_card';
 
-import { sendCommand } from './board';
+import { sendCommand, waitForSession } from './board';
 
 const messages = defineMessages({
   search: { id: 'system.game.search', defaultMessage: 'Find a member' },
@@ -29,6 +32,7 @@ interface Props {
 
 const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, onClose }) => {
   const intl = useIntl();
+  const history = useHistory();
   const [members, setMembers] = useState<Member[]>([]);
   const [picked, setPicked] = useState<string[]>([]);
   const [query, setQuery] = useState('');
@@ -67,9 +71,15 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, onClose 
     setBusy(true);
     setFailed(false);
     sendCommand({ kind: gameKey, opponents: picked })
-      .then((response) => {
-        setSent(true);
-        return response;
+      .then(() => waitForSession(gameKey))
+      .then((sessionId) => {
+        if (sessionId) {
+          onClose();
+          history.push(`/system/sessions/${sessionId}`);
+        } else {
+          setSent(true);
+        }
+        return sessionId;
       })
       .catch(() => {
         setFailed(true);
@@ -77,7 +87,7 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, onClose 
       .finally(() => {
         setBusy(false);
       });
-  }, [gameKey, picked]);
+  }, [gameKey, picked, onClose, history]);
 
   return (
     <div className='modal-root__modal safety-action-modal challenge-modal'>

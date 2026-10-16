@@ -1323,13 +1323,21 @@
   "system.game.finished": "완료",
   "system.game.my_room": "내 방",
   "system.game.no_finished": "끝난 판이 아직 없습니다.",
+  "system.game.points_value": "{points}점",
   "system.game.rooms": "방 목록",
   "system.game.rules": "룰",
   "system.game.spectate": "관전",
   "system.game.spectating": "관전 중",
   "system.game.start": "시작하기",
+  "system.game.wins": "{wins}승",
   "system.room.placeholder": "명령어 (예: 먹기, 조합/용의 피 박쥐 날개)",
   "system.room.secret": "비밀",
   "wallet.balance_named": "보유 {currency}",
-  "wallet.inventory_title": "소지품 · {count}개"
+  "wallet.inventory_title": "소지품 · {count}개",
+  "system.game.busy_room": "{name} 방으로",
+  "system.game.tab_active": "진행중",
+  "system.room.turn": "내 차례예요",
+  "system.room.turn_hint": "아래 버튼을 누르거나 명령어를 보내세요",
+  "system.room.waiting": "{name} 차례예요. 기다리는 중…",
+  "system.room.waiting_others": "다른 사람을 기다리는 중…"
 }

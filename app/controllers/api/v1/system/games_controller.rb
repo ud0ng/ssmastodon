@@ -29,6 +29,7 @@ class Api::V1::System::GamesController < Api::BaseController
       currency: common['currency_name'],
       record: record,
       my_session_id: my_session&.id&.to_s,
+      busy: busy(common),
       active: visible_sessions.where(status: %w(pending active)).order(updated_at: :desc).limit(LIST_LIMIT).map { |session| session_json(session) },
       recent: visible_sessions.where(status: 'finished').order(finished_at: :desc).limit(LIST_LIMIT).map { |session| session_json(session) },
       ranking: ranking,
@@ -61,6 +62,17 @@ class Api::V1::System::GamesController < Api::BaseController
   def my_session
     GameSession.current_kinds.joins(:players).where(kind: @kind.key, status: %w(pending active), game_players: { account_id: current_account.id })
                .order(updated_at: :desc).first
+  end
+
+  # 동시 진행을 막았는데 다른 컨텐츠를 하고 있으면 [시작하기] 대신 바로 안내 (문구는 명령어 탭 '이미 진행 중 (웹 시작하기)')
+  def busy(common)
+    return unless common['one_game_per_person']
+
+    session = GameSession.current_kinds.joins(:players).where(status: %w(pending active), game_players: { account_id: current_account.id })
+                         .order(updated_at: :desc).first
+    return if session.nil?
+
+    { message: Game::Text.render(common['msg_busy_web'], player: current_account), session_id: session.id.to_s, name: session.kind_class&.display_name }
   end
 
   def visible_sessions

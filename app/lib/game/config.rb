@@ -165,6 +165,9 @@ module Game
       Field.new(key: 'msg_expired', type: :text, group: 'messages_match', label: '수락 시간 초과', default: '%{minutes}분 동안 응답이 없어 %{game} 신청이 취소되었습니다.'),
       Field.new(key: 'msg_forfeit', type: :text, group: 'messages_match', label: '기권', default: '%{player}{이가} 기권했습니다. %{winner}의 승리!'),
       Field.new(key: 'msg_busy', type: :text, group: 'messages_match', label: '이미 진행 중', default: '%{player}{은는} 이미 진행 중인 컨텐츠가 있습니다.'),
+      Field.new(key: 'msg_busy_web', type: :text, group: 'messages_match', label: '이미 진행 중 (웹 시작하기)',
+                hint: '동시 진행을 막았을 때 웹에서 [시작하기]를 누르면 바로 보여 주는 문구',
+                default: '이미 진행 중인 컨텐츠가 있습니다. 끝난 뒤에 시작해 주세요.'),
       Field.new(key: 'msg_secret_in_dm', type: :text, group: 'messages_match', label: '비밀 선택은 DM으로',
                 default: '선택은 상대가 보지 못하게 시스템 계정에게 DM으로 보내 주세요.'),
 

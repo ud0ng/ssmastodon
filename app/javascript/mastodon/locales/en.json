@@ -1186,13 +1186,21 @@
   "system.game.finished": "Finished",
   "system.game.my_room": "Mine",
   "system.game.no_finished": "No finished games yet.",
+  "system.game.points_value": "{points} pts",
   "system.game.rooms": "Rooms",
   "system.game.rules": "Rules",
   "system.game.spectate": "Watch",
   "system.game.spectating": "Watching",
   "system.game.start": "Start",
+  "system.game.wins": "{wins} W",
   "system.room.placeholder": "Command, e.g. eat or brew/dragon blood",
   "system.room.secret": "Secret",
   "wallet.balance_named": "Your {currency}",
-  "wallet.inventory_title": "Belongings · {count}"
+  "wallet.inventory_title": "Belongings · {count}",
+  "system.game.busy_room": "Go to {name}",
+  "system.game.tab_active": "In progress",
+  "system.room.turn": "Your move",
+  "system.room.turn_hint": "Tap a button below or send a command",
+  "system.room.waiting": "Waiting for {name}…",
+  "system.room.waiting_others": "Waiting for the others…"
 }

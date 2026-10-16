@@ -9,7 +9,7 @@ import type { Map as ImmutableMap } from 'immutable';
 
 import { Link } from 'react-router-dom';
 
-import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
+import { Countdown } from 'mastodon/components/countdown';
 import { me } from 'mastodon/initial_state';
 
 interface House {
@@ -129,6 +129,77 @@ const PlayerStat: React.FC<{ card: GameCard; player: CardPlayer }> = ({ card, pl
     default:
       return null;
   }
+};
+
+// 컨텐츠 방 맨 위 (고정): 아바타 | 소속 | 이름  vs  아바타 | 소속 | 이름, 가운데에 단계·턴·남은 시간
+const RoomPlayer: React.FC<{ card: GameCard; player: CardPlayer; side: 'left' | 'right' }> = ({ card, player, side }) => {
+  const isTurn = card.phase === 'active' && card.data.current_seat === player.seat;
+  return (
+    <div
+      className={[
+        'room-head__player',
+        `room-head__player--${side}`,
+        isTurn && 'room-head__player--turn',
+        player.result && `room-head__player--${player.result}`,
+      ].filter(Boolean).join(' ')}
+      style={{ '--house-color': player.house?.color || '#6b5b3e' } as React.CSSProperties}
+    >
+      {player.avatar && <img className='room-head__avatar' src={player.avatar} alt='' />}
+      <div className='room-head__who'>
+        <span className='room-head__name'>{player.name}</span>
+        <span className='room-head__house'>
+          <Crest house={player.house} />
+          {player.house?.name}
+        </span>
+        <span className='room-head__stat'>
+          <PlayerStat card={card} player={player} />
+          {player.result && (
+            <span className={`content-card__badge content-card__badge--${player.result}`}>
+              {player.result === 'win' && <FormattedMessage id='system.result.win' defaultMessage='Win' />}
+              {player.result === 'lose' && <FormattedMessage id='system.result.lose' defaultMessage='Loss' />}
+              {player.result === 'draw' && <FormattedMessage id='system.result.draw' defaultMessage='Draw' />}
+            </span>
+          )}
+          {card.phase === 'pending' && card.mode !== 'event' && !player.accepted && (
+            <span className='content-card__badge'>
+              <FormattedMessage id='content_card.waiting' defaultMessage='Waiting' />
+            </span>
+          )}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const RoomHead: React.FC<{ card: GameCard }> = ({ card }) => {
+  const versus = card.players.length === 2;
+  const middle = (
+    <div className='room-head__middle'>
+      <span className='room-head__vs'>VS</span>
+      <span className='room-head__phase'><PhaseBadge card={card} /></span>
+      {card.live && card.deadline_at && <Countdown until={card.deadline_at} className='room-head__time' />}
+    </div>
+  );
+
+  if (versus) {
+    const [left, right] = card.players as [CardPlayer, CardPlayer];
+    return (
+      <div className='room-head'>
+        <RoomPlayer card={card} player={left} side='left' />
+        {middle}
+        <RoomPlayer card={card} player={right} side='right' />
+      </div>
+    );
+  }
+
+  return (
+    <div className='room-head room-head--many'>
+      {middle}
+      <div className='room-head__many'>
+        {card.players.map((player) => <RoomPlayer key={player.seat} card={card} player={player} side='left' />)}
+      </div>
+    </div>
+  );
 };
 
 const Players: React.FC<{ card: GameCard }> = ({ card }) => {
@@ -580,20 +651,30 @@ const PhaseBadge: React.FC<{ card: GameCard }> = ({ card }) => {
   }
 };
 
+// 지금 내가 누를 수 있는 버튼 (내 자리 버튼, 참가하지 않았으면 '다른 사람' 버튼)
+export const myActions = (card: GameCard): CardAction[] => {
+  const mySeat = card.players.find((player) => player.account_id === me)?.seat;
+  return (card.live ? card.actions : []).filter((action) =>
+    action.seats === 'others' ? mySeat === undefined && !!me : mySeat !== undefined && action.seats.includes(mySeat),
+  );
+};
+
 // 카드 한 장 (진행 화면에서도 쓴다). onAction 이 없으면 버튼을 그리지 않는다.
 export const ContentCardView: React.FC<{
   card: GameCard;
   onAction?: (action: CardAction) => void;
   sessionLink?: boolean;
-}> = ({ card, onAction, sessionLink }) => {
+  // room: 컨텐츠 방 맨 위에 고정하는 현재 상태 (아바타 | 소속 | 이름 vs …, 가운데 판). 버튼은 방 아래 입력창에서
+  variant?: 'room';
+}> = ({ card, onAction, sessionLink, variant }) => {
   const mySeat = card.players.find((player) => player.account_id === me)?.seat;
-  const available = (card.live && onAction ? card.actions : []).filter((action) =>
-    action.seats === 'others' ? mySeat === undefined && !!me : mySeat !== undefined && action.seats.includes(mySeat),
-  );
+  const room = variant === 'room';
+  const available = onAction && !room ? myActions(card) : [];
 
   return (
-    <div className={`content-card content-card--${card.phase} content-card--${card.kind}`}>
-      <div className='content-card__head'>
+    <div className={`content-card content-card--${card.phase} content-card--${card.kind}${room ? ' content-card--room' : ''}`}>
+      {room && card.kind !== 'secret_chamber' && <RoomHead card={card} />}
+      <div className='content-card__head' hidden={room && card.kind !== 'secret_chamber'}>
         <span className='content-card__icon' aria-hidden>{ICONS[card.kind] ?? '📜'}</span>
         <span className='content-card__name'>{card.name}</span>
         {!['weekly', 'term', 'tournament'].includes(card.kind) && <span className='content-card__phase'><PhaseBadge card={card} /></span>}
@@ -604,11 +685,7 @@ export const ContentCardView: React.FC<{
         )}
         {card.live && card.deadline_at && (
           <span className='content-card__deadline'>
-            <FormattedMessage
-              id='content_card.deadline'
-              defaultMessage='⏳ {time}'
-              values={{ time: <RelativeTimestamp timestamp={card.deadline_at} futureDate /> }}
-            />
+            ⏳ <Countdown until={card.deadline_at} />
           </span>
         )}
         {sessionLink && card.session_id && (
@@ -618,7 +695,7 @@ export const ContentCardView: React.FC<{
         )}
       </div>
 
-      {card.kind !== 'secret_chamber' && <Players card={card} />}
+      {!room && card.kind !== 'secret_chamber' && <Players card={card} />}
       <Board card={card} />
 
       {card.awards && card.awards.length > 0 && (
@@ -664,7 +741,7 @@ export const ContentCardView: React.FC<{
           ))}
         </div>
       )}
-      {card.live && mySeat !== undefined && card.kind === 'potion' && card.phase === 'active' && (
+      {!room && card.live && mySeat !== undefined && card.kind === 'potion' && card.phase === 'active' && (
         <div className='content-card__hint'>
           <FormattedMessage id='content_card.potion_hint' defaultMessage='Send [{brew}] with your ingredients by DM, e.g. [{brew}] 1 5 3' values={{ brew: String(card.data.brew ?? '') }} />
         </div>

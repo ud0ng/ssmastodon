@@ -1,22 +1,26 @@
-// 컨텐츠 방 (/system/sessions/:id): DM 채팅방처럼 메시지로.
-//   시스템 계정 메시지는 가운데 사회자 창(진행 문구 + 그때의 컨텐츠 카드), 참가자 메시지는 말풍선(내 것은 오른쪽).
-//   참가자는 맨 아래 칸에서 명령어를 보낸다 (마지막 카드의 버튼으로도). 참가하지 않은 사람은 관전 (스레드만 보인다).
-//   미로·도둑 지도는 위에 전용 진행판.
+// 컨텐츠 방 (/system/sessions/:id): DM 채팅방과 같은 짜임.
+//   맨 위에 지금 상태(아바타 | 소속 | 이름 vs …, 가운데 진행 상황)를 고정, 맨 아래에 입력창을 고정하고 가운데 메시지만 스크롤.
+//   시스템 계정 메시지는 가운데 사회자 창(진행 문구), 참가자 메시지는 말풍선(내 것은 오른쪽).
+//   내 차례면 입력창이 강조되고 그 위에 할 일 버튼이 뜬다. 참가하지 않은 사람은 관전 (입력창 없음).
+//   미로·도둑 지도는 맨 위에 전용 진행판.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { defineMessages, FormattedMessage, FormattedTime, useIntl } from 'react-intl';
 
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import LockIcon from '@/material-icons/400-24px/lock.svg?react';
 import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
 import { apiRequestGet } from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
+import { CommandText } from 'mastodon/components/command_text';
 import type { CardAction, GameCard } from 'mastodon/components/content_card';
-import { ContentCardView } from 'mastodon/components/content_card';
+import { ContentCardView, myActions } from 'mastodon/components/content_card';
+import { Countdown } from 'mastodon/components/countdown';
 import { Icon } from 'mastodon/components/icon';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
+import { Composer } from 'mastodon/features/messages/components/composer';
 
 import { sendCommand } from './board';
 import { MaraudersMapPlay } from './marauders_map';
@@ -61,8 +65,8 @@ const Secret: React.FC = () => (
   </span>
 );
 
-// 시스템(사회자) 메시지: 가운데 창
-const HostMessage: React.FC<{ message: RoomMessage; onAction?: (action: CardAction) => void }> = ({ message, onAction }) => (
+// 시스템(사회자) 메시지: 가운데 창 (진행 문구만. 지금 상태 카드는 맨 위에 고정)
+const HostMessage: React.FC<{ message: RoomMessage }> = ({ message }) => (
   <li className='game-room__host'>
     <div className='game-room__host-box'>
       <div className='game-room__host-head'>
@@ -71,8 +75,7 @@ const HostMessage: React.FC<{ message: RoomMessage; onAction?: (action: CardActi
         {message.secret && <Secret />}
         <FormattedTime value={message.created_at} hour='2-digit' minute='2-digit' />
       </div>
-      {message.text && <p className='game-room__host-text'>{message.text}</p>}
-      {message.card && <ContentCardView card={message.card} onAction={onAction} />}
+      {message.text && <p className='game-room__host-text'><CommandText text={message.text} /></p>}
     </div>
   </li>
 );
@@ -85,7 +88,7 @@ const PlayerMessage: React.FC<{ message: RoomMessage }> = ({ message }) => (
       {!message.mine && <span className='game-room__msg-name'>{message.name}</span>}
       <div className='game-room__bubble'>
         {message.secret && <Secret />}
-        {message.text}
+        <CommandText text={message.text} />
       </div>
       <span className='game-room__msg-time'>
         <FormattedTime value={message.created_at} hour='2-digit' minute='2-digit' />
@@ -93,6 +96,74 @@ const PlayerMessage: React.FC<{ message: RoomMessage }> = ({ message }) => (
     </div>
   </li>
 );
+
+// 방에 있는 동안 화면 높이를 고정한다 (DM 채팅처럼 위 상태·아래 입력창은 그대로, 가운데 메시지만 스크롤)
+const ROOM_BODY_CLASS = 'layout-game-room';
+
+const useRoomLayout = () => {
+  useEffect(() => {
+    document.body.classList.add(ROOM_BODY_CLASS);
+    return () => {
+      document.body.classList.remove(ROOM_BODY_CLASS);
+    };
+  }, []);
+};
+
+// 맨 아래 입력창 위: 내 차례면 할 일(버튼·안내), 아니면 누구를 기다리는지
+const TurnPanel: React.FC<{
+  card: GameCard | null;
+  actions: CardAction[];
+  busy: boolean;
+  onAction: (action: CardAction) => void;
+}> = ({ card, actions, busy, onAction }) => {
+  if (!card || !card.live) return null;
+
+  if (actions.length > 0) {
+    return (
+      <div className='game-room__turn'>
+        <div className='game-room__turn-head'>
+          <strong>
+            <FormattedMessage id='system.room.turn' defaultMessage='Your move' />
+          </strong>
+          {card.deadline_at && <Countdown until={card.deadline_at} className='game-room__turn-time' />}
+        </div>
+        {card.kind === 'potion' && card.phase === 'active' && (
+          <p className='game-room__turn-hint'>
+            <FormattedMessage id='content_card.potion_hint' defaultMessage='Send [{brew}] with your ingredients by DM, e.g. [{brew}] 1 5 3' values={{ brew: String(card.data.brew ?? '') }} />
+          </p>
+        )}
+        <div className='game-room__turn-actions'>
+          {actions.map((action) => (
+            <button
+              key={`${action.command}${action.mention ?? ''}`}
+              type='button'
+              className={action.style === 'primary' ? 'game-room__action' : 'game-room__action game-room__action--secondary'}
+              disabled={busy}
+              onClick={() => { onAction(action); }}
+              title={action.dm ? `DM: [${action.command}]` : `[${action.command}]`}
+            >
+              {action.label}
+              {action.dm && <span className='game-room__action-dm'>DM</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (card.phase !== 'active') return null;
+
+  const current = card.players.find((player) => player.seat === card.data.current_seat);
+  return (
+    <p className='game-room__turn game-room__turn--waiting'>
+      {current ? (
+        <FormattedMessage id='system.room.waiting' defaultMessage='Waiting for {name}…' values={{ name: current.name }} />
+      ) : (
+        <FormattedMessage id='system.room.waiting_others' defaultMessage='Waiting for the others…' />
+      )}
+    </p>
+  );
+};
 
 const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
   const intl = useIntl();
@@ -103,8 +174,12 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   const [command, setCommand] = useState('');
   const [dm, setDm] = useState(false);
   const timers = useRef<number[]>([]);
-  const logRef = useRef<HTMLOListElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const dockRef = useRef<HTMLDivElement>(null);
   const lastId = useRef<string | null>(null);
+  const wasMyTurn = useRef(false);
+
+  useRoomLayout();
 
   const load = useCallback(() => {
     apiRequestGet<RoomData>(`v1/system/sessions/${id}`)
@@ -128,11 +203,11 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
     };
   }, [load]);
 
-  // 새 메시지가 오면 맨 아래로
+  // 새 메시지가 오면 메시지 칸만 맨 아래로
   useLayoutEffect(() => {
     const newest = data?.messages[data.messages.length - 1]?.id ?? null;
-    if (newest && newest !== lastId.current && logRef.current) {
-      logRef.current.lastElementChild?.scrollIntoView({ block: 'end' });
+    if (newest && newest !== lastId.current && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
     lastId.current = newest;
   }, [data]);
@@ -161,27 +236,43 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
     [send],
   );
 
-  const handleSubmit = useCallback(
-    (event: React.FormEvent) => {
-      event.preventDefault();
-      const [name, ...rest] = command.replace(/[[\]]/g, '').split('/');
-      if (!name?.trim()) return;
-      send({ command: name.trim(), args: rest.join('/').trim() || undefined, dm });
-      setCommand('');
-    },
-    [command, dm, send],
-  );
+  const handleSubmit = useCallback(() => {
+    const [name, ...rest] = command.replace(/[[\]]/g, '').split('/');
+    if (!name?.trim()) return;
+    send({ command: name.trim(), args: rest.join('/').trim() || undefined, dm });
+    setCommand('');
+  }, [command, dm, send]);
 
   const title = data?.name ?? intl.formatMessage(messages.title);
   const open = data ? data.status === 'pending' || data.status === 'active' : false;
-  // 버튼은 마지막 카드에만 (지금 상태)
-  const lastCardId = data ? [...data.messages].reverse().find((message) => message.card)?.id : undefined;
+  // 맨 위에 고정하는 지금 상태: 마지막 카드
+  const current = data ? [...data.messages].reverse().find((message) => message.card)?.card ?? null : null;
+  const actions = data?.player && open && current ? myActions(current) : [];
+  const myTurn = actions.length > 0;
+
+  // 내 차례가 되면 입력창으로 포커스 (효과는 .game-room__dock--turn)
+  useEffect(() => {
+    if (myTurn && !wasMyTurn.current) {
+      dockRef.current?.querySelector<HTMLTextAreaElement>('textarea')?.focus({ preventScroll: true });
+    }
+    wasMyTurn.current = myTurn;
+  }, [myTurn]);
 
   return (
     <Column bindToDocument={!multiColumn} label={title}>
       <ColumnHeader icon='system' iconComponent={StarIcon} title={title} multiColumn={multiColumn} showBackButton />
 
-      <div className='system-page game-room scrollable'>
+      {/* 지금 상태 (맨 위 고정): 아바타 | 소속 | 이름 vs …, 가운데 진행 상황 */}
+      {data && (current || (data.player && data.status === 'active' && ['maze', 'marauders_map'].includes(data.kind))) && (
+        <div className='system-page game-room__status'>
+          {current && <ContentCardView card={current} variant='room' />}
+          {data.player && data.kind === 'maze' && data.status === 'active' && <MazePlay sessionId={data.id} onMoved={load} />}
+          {data.player && data.kind === 'marauders_map' && data.status === 'active' && <MaraudersMapPlay sessionId={data.id} onMoved={load} />}
+        </div>
+      )}
+
+      {/* 메시지 (여기만 스크롤) */}
+      <div className='system-page game-room' ref={scrollRef}>
         {!data && !failed && <LoadingIndicator />}
         {failed && !data && (
           <p className='system-page__empty'>
@@ -190,51 +281,36 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
         )}
 
         {data && (
-          <>
-            <div className='game-room__bar'>
-              <Link to={`/system/games/${data.kind}`}>
-                <FormattedMessage id='system.session.game_page' defaultMessage='{name} page' values={{ name: data.name }} />
-              </Link>
-              {!data.player && (
-                <span className='system-rooms__tag'>
-                  <FormattedMessage id='system.game.spectating' defaultMessage='Watching' />
-                </span>
-              )}
-            </div>
-
-            {data.player && data.kind === 'maze' && data.status === 'active' && <MazePlay sessionId={data.id} onMoved={load} />}
-            {data.player && data.kind === 'marauders_map' && data.status === 'active' && <MaraudersMapPlay sessionId={data.id} onMoved={load} />}
-
-            <ol className='game-room__log' ref={logRef}>
-              {data.messages.map((message) =>
-                message.system ? (
-                  <HostMessage key={message.id} message={message} onAction={data.player && open && message.id === lastCardId && !busy ? handleAction : undefined} />
-                ) : (
-                  <PlayerMessage key={message.id} message={message} />
-                ),
-              )}
-            </ol>
-          </>
+          <ol className='game-room__log'>
+            {data.messages.map((message) =>
+              message.system ? (
+                message.text ? <HostMessage key={message.id} message={message} /> : null
+              ) : (
+                <PlayerMessage key={message.id} message={message} />
+              ),
+            )}
+          </ol>
         )}
       </div>
 
+      {/* 입력창 (맨 아래 고정): 내 차례면 강조 + 할 일 버튼, DM 채팅과 같은 입력칸·보내기 버튼 */}
       {data?.player && open && (
-        <form className='game-room__composer' onSubmit={handleSubmit}>
-          <label className='game-room__dm' title={intl.formatMessage({ id: 'system.board.secret', defaultMessage: 'Secret (DM)' })}>
-            <input type='checkbox' checked={dm} onChange={(event) => { setDm(event.target.checked); }} />
-            <Icon id='lock' icon={LockIcon} />
-          </label>
-          <input
-            type='text'
-            value={command}
-            onChange={(event) => { setCommand(event.target.value); }}
-            placeholder={intl.formatMessage(messages.placeholder)}
-            aria-label={intl.formatMessage(messages.placeholder)}
-          />
-          <button type='submit' className='system-start' disabled={busy || !command.trim()}>
-            <FormattedMessage id='system.board.send' defaultMessage='Send' />
-          </button>
-        </form>
+        <div ref={dockRef} className={myTurn ? 'game-room__dock game-room__dock--turn' : 'game-room__dock'}>
+          <TurnPanel card={current} actions={actions} busy={busy} onAction={handleAction} />
+          <div className='game-room__dock-row'>
+            <label className='game-room__dm' title={intl.formatMessage({ id: 'system.board.secret', defaultMessage: 'Secret (DM)' })}>
+              <input type='checkbox' checked={dm} onChange={(event) => { setDm(event.target.checked); }} />
+              <Icon id='lock' icon={LockIcon} />
+            </label>
+            <Composer
+              value={command}
+              onChange={setCommand}
+              onSubmit={handleSubmit}
+              isSending={busy}
+              placeholder={intl.formatMessage(messages.placeholder)}
+            />
+          </div>
+        </div>
       )}
     </Column>
   );

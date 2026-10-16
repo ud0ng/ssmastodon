@@ -14,17 +14,14 @@ import { apiRequestGet } from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
 import { ICONS } from 'mastodon/components/content_card';
+import { Countdown } from 'mastodon/components/countdown';
+import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 
 import { CharacterHeader } from './character_header';
 import type { House } from './crest';
-import { LoadingIndicator } from 'mastodon/components/loading_indicator';
-import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 
 const messages = defineMessages({
   title: { id: 'navigation_bar.contents', defaultMessage: 'Contents' },
-  win: { id: 'system.result.win', defaultMessage: 'Win' },
-  lose: { id: 'system.result.lose', defaultMessage: 'Loss' },
-  draw: { id: 'system.result.draw', defaultMessage: 'Draw' },
 });
 
 const REFRESH_MS = 30_000;
@@ -93,53 +90,30 @@ export interface Overview {
   catalog: { key: string; games: { key: string; name: string; summary: string; open: number; mine: boolean }[] }[];
 }
 
-const GameRow: React.FC<{ game: Game; systemAcct: string }> = ({ game, systemAcct }) => {
-  const intl = useIntl();
+// 진행 중인 컨텐츠 한 줄 (카드): [아이콘] 컨텐츠 / vs 상대 … 상태 배지 · 남은 시간 (분):(초) 실시간
+const GameRow: React.FC<{ game: Game }> = ({ game }) => {
   const opponents = game.opponents.map((opponent) => opponent.name).join(', ');
-
-  let state;
-  if (game.status === 'pending') {
-    state = <FormattedMessage id='system.game.pending' defaultMessage='Waiting for accept' />;
-  } else if (game.status === 'active') {
-    state = <FormattedMessage id='system.game.turn' defaultMessage='Turn {turn}' values={{ turn: game.turn }} />;
-  } else if (game.result) {
-    state = (
-      <span className={`system-game__result system-game__result--${game.result}`}>
-        {intl.formatMessage(messages[game.result])}
-      </span>
+  const state =
+    game.status === 'pending' ? (
+      <FormattedMessage id='system.game.pending' defaultMessage='Waiting for accept' />
+    ) : (
+      <FormattedMessage id='system.game.turn' defaultMessage='Turn {turn}' values={{ turn: game.turn }} />
     );
-  }
 
-  const time = game.status === 'finished' ? game.finished_at : game.deadline_at;
-  const body = (
-    <>
-      <div className='system-game__main'>
-        <strong className='system-game__name'>{game.name}</strong>
+  return (
+    <Link className={`system-live system-live--${game.status}`} to={`/system/sessions/${game.id}`}>
+      <span className='system-live__icon' aria-hidden>{ICONS[game.kind] ?? '📜'}</span>
+      <span className='system-live__main'>
+        <strong className='system-live__name'>{game.name}</strong>
         {opponents && (
-          <span className='system-game__opponents'>
+          <span className='system-live__vs'>
             <FormattedMessage id='system.game.vs' defaultMessage='vs {names}' values={{ names: opponents }} />
           </span>
         )}
-      </div>
-      <div className='system-game__meta'>
-        {state}
-        {time && (
-          <span className='system-game__time'>
-            {game.status === 'finished' ? (
-              <RelativeTimestamp timestamp={time} />
-            ) : (
-              <FormattedMessage id='system.game.until' defaultMessage='{time}' values={{ time: <RelativeTimestamp timestamp={time} futureDate /> }} />
-            )}
-          </span>
-        )}
-      </div>
-    </>
-  );
-
-  return game.status_id ? (
-    <Link className='system-game' to={`/system/sessions/${game.id}`}>{body}</Link>
-  ) : (
-    <div className='system-game'>{body}</div>
+      </span>
+      <span className='system-live__state'>{state}</span>
+      {game.deadline_at && <Countdown until={game.deadline_at} className='system-live__time' />}
+    </Link>
   );
 };
 
@@ -193,7 +167,9 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                 <h2 className='system-section__title'>
                   <FormattedMessage id='system.active' defaultMessage='In progress' />
                 </h2>
-                {data.active.map((game) => <GameRow key={game.id} game={game} systemAcct={data.system_acct} />)}
+                <div className='system-live-list'>
+                  {data.active.map((game) => <GameRow key={game.id} game={game} />)}
+                </div>
               </section>
             )}
 
