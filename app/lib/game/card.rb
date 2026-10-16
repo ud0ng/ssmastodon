@@ -115,22 +115,42 @@ module Game
     def actions_for(session, kind)
       common = Game::Config.for('common')
 
-      if session.status == 'pending'
-        if session.state['mode'] == 'event'
-          [action(session.kind_class.config['cmd_join'], seats: 'others')]
+      actions =
+        if session.status == 'pending'
+          if session.state['mode'] == 'event'
+            [action(session.kind_class.config['cmd_join'], seats: 'others')]
+          else
+            waiting = session.players.reject { |player| player.state['accepted'] }.map(&:seat)
+            waiting.empty? ? [] : [action(common['cmd_accept'], seats: waiting), action(common['cmd_decline'], seats: waiting, style: 'secondary')]
+          end
         else
-          waiting = session.players.reject { |player| player.state['accepted'] }.map(&:seat)
-          waiting.empty? ? [] : [action(common['cmd_accept'], seats: waiting), action(common['cmd_decline'], seats: waiting, style: 'secondary')]
+          kind&.card_actions || []
         end
-      else
-        kind&.card_actions || []
+      actions + meta_actions(session, kind, common, actions)
+    end
+
+    # 모든 컨텐츠 공통 보조 버튼 (meta: 내 차례 알림·할 일 수에는 세지 않는다)
+    #   수락 대기 중: 신청한 사람의 [신청 취소]
+    #   진행 중: 내 차례인 사람의 [항복] — 1:1 이거나 팀전(기권하면 상대 팀 승리)일 때. 서버 이벤트(비밀의방 등)는 제외.
+    def meta_actions(session, kind, common, actions)
+      return [] if session.state['mode'] == 'event'
+
+      if session.status == 'pending'
+        seats = session.players.select { |player| player.state['accepted'] }.map(&:seat)
+        return seats.empty? ? [] : [action(common['cmd_cancel'], label: '신청 취소', seats: seats, style: 'secondary', row: 9, meta: true)]
       end
+
+      return [] unless session.players.size == 2 || session.state['teams'].present?
+
+      seats = actions.flat_map { |each| each['seats'].is_a?(Array) ? each['seats'] : [] }.uniq
+      seats = session.players.map(&:seat) if seats.empty? && session.kind_class&.web?
+      seats.empty? ? [] : [action(common['cmd_forfeit'], label: '항복', seats: seats, style: 'danger', row: 9, meta: true)]
     end
 
     # 웹 버튼 하나: 누르면 '@시스템 [command]' 툿을 쓰는 창이 열린다 (dm 이면 DM 으로)
     # row: 버튼 줄 (웹 방 입력창 위에서 줄 단위로 나눈다. 필살기처럼 다음 줄에 둘 때 2)
-    def action(command, seats:, label: nil, dm: false, style: 'primary', row: 1)
-      { 'label' => label || command, 'command' => command, 'seats' => seats, 'dm' => dm, 'style' => style, 'row' => row }
+    def action(command, seats:, label: nil, dm: false, style: 'primary', row: 1, meta: false)
+      { 'label' => label || command, 'command' => command, 'seats' => seats, 'dm' => dm, 'style' => style, 'row' => row, 'meta' => meta }
     end
 
     # 카드는 덤이라 계산하다 잘못돼도 툿 올리기를 막지 않는다

@@ -34,8 +34,10 @@ RSpec.describe Game::Card do
       a_hash_including('name' => '해리', 'accepted' => true, 'house' => a_hash_including('name' => '그리핀도르', 'color' => '#ae0001')),
       a_hash_including('name' => '드레이코', 'accepted' => false, 'house' => nil)
     )
-    expect(event.payload['actions'].pluck('command')).to eq %w(수락 거절)
+    expect(event.payload['actions'].pluck('command')).to eq %w(수락 거절 신청취소)
     expect(event.payload['actions'].first['seats']).to eq [1]
+    # 신청 취소는 신청한 사람(자리 0)에게만, 차례 알림에는 세지 않는 보조 버튼
+    expect(event.payload['actions'].last).to include('seats' => [0], 'meta' => true)
     expect(event).to be_live
   end
 

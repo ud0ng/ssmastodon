@@ -14,18 +14,17 @@ module Game
         F.new(key: 'routes', type: :lines, group: 'flavors', label: '경로 (줄마다 하나)',
               default: ['천문탑 우회', '검은 호수 위 저공비행', '금지된 숲 가장자리', '퀴디치 경기장 상공', '온실 지붕 위', '부엉이장 옆 바람길', '시계탑 사이', '해그리드 오두막 위']),
         F.new(key: 'cmd_fly', type: :string, default: '비행', group: 'commands', label: '경로 고르기 명령어', hint: '[비행/번호] 또는 [비행/경로 이름]'),
-        F.new(key: 'msg_start', type: :text, group: 'messages', label: '시작', default: '🧹 %{game} 시작! %{rounds}라운드 동안 겹치지 않는 경로로 날아 보세요.'),
+        F.new(key: 'msg_start', type: :text, group: 'messages', label: '시작', default: "%{game} 시작! %{rounds}라운드 동안 겹치지 않는 경로를 골라 비행합니다."),
         F.new(key: 'msg_round', type: :text, group: 'messages', label: '라운드 시작',
-              default: "🧹 %{round}라운드 경로\n%{routes}\n\n시스템 계정에게 DM으로 [%{fly}/번호]를 보내 주세요. 다른 사람과 겹치면 공중에서 충돌합니다!"),
+              default: "%{round}라운드 경로\n%{routes}\n\n시스템 계정에게 DM으로 [%{fly}/번호]를 보내 주세요.\n다른 사람과 경로가 겹치면 공중에서 충돌합니다."),
         F.new(key: 'msg_ask', type: :text, group: 'messages', label: 'DM: 경로 고르기', default: "%{round}라운드 경로\n%{routes}\n\n[%{fly}/번호]로 답해 주세요."),
-        F.new(key: 'msg_chosen', type: :text, group: 'messages', label: 'DM: 선택 확인', default: '✔ %{route} 경로로 날아오릅니다.'),
+        F.new(key: 'msg_chosen', type: :text, group: 'messages', label: 'DM: 선택 확인', default: "%{route} 경로로 비행합니다."),
         F.new(key: 'msg_bad_route', type: :text, group: 'messages', label: 'DM: 없는 경로', default: '그런 경로는 없습니다. [%{fly}/번호]로 골라 주세요.'),
         F.new(key: 'msg_result', type: :text, group: 'messages', label: '라운드 결과', default: "%{round}라운드 결과\n\n%{lines}"),
-        F.new(key: 'msg_success', type: :text, group: 'messages', label: '통과', default: '🧹 %{route}: %{player} 무사히 통과!'),
-        F.new(key: 'msg_crash', type: :text, group: 'messages', label: '충돌', default: '💥 %{route}: %{players} 공중에서 충돌!'),
-        F.new(key: 'msg_idle', type: :text, group: 'messages', label: '시간 초과', default: '🍂 %{players}: 빗자루가 떠오르지 않았다.'),
-        F.new(key: 'msg_board', type: :text, group: 'messages', label: '통과 횟수', default: '통과 횟수: %{board}'),
-        F.new(key: 'msg_winner', type: :text, group: 'messages', label: '승리', default: '🏆 %{winner}의 승리!'),
+        F.new(key: 'msg_success', type: :text, group: 'messages', label: '통과', default: "%{route}: %{player} 통과"),
+        F.new(key: 'msg_crash', type: :text, group: 'messages', label: '충돌', default: "%{route}: %{players} 충돌"),
+        F.new(key: 'msg_idle', type: :text, group: 'messages', label: '시간 초과', default: "%{players}: 경로를 고르지 않아 출발하지 못했습니다."),
+        F.new(key: 'msg_winner', type: :text, group: 'messages', label: '승리', default: "%{winner}의 승리!"),
         F.new(key: 'msg_draw', type: :text, group: 'messages', label: '무승부', default: '모두 같은 횟수로 무승부입니다.'),
       ]).freeze
 
@@ -130,8 +129,7 @@ module Game
           end
         end
         state['last_round'] = { 'choices' => state['choices'].dup }
-        board = players.map { |player| "#{player.name} #{state['wins'][player.seat.to_s].to_i}" }.join(' · ')
-        result = [render(config['msg_result'], round: state['round'], lines: lines.join("\n")), render(config['msg_board'], board: board)].join("\n\n")
+        result = render(config['msg_result'], round: state['round'], lines: lines.join("\n"))
 
         if state['round'] >= rounds
           finish_race!(result)

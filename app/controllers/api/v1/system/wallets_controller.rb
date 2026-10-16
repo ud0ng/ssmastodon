@@ -80,7 +80,7 @@ class Api::V1::System::WalletsController < Api::BaseController
       next if session.state['mode'] == 'event' && session.status == 'pending'
 
       actions = Game::Card.safe { Game::Card.actions_for(session, session.kind_class&.new(session)) } || []
-      next unless actions.any? { |action| action['seats'].is_a?(Array) && action['seats'].include?(player.seat) }
+      next unless actions.any? { |action| !action['meta'] && action['seats'].is_a?(Array) && action['seats'].include?(player.seat) }
 
       { session_id: session.id.to_s, name: session.kind_class&.display_name || session.kind }
     end

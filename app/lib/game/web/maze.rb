@@ -32,7 +32,7 @@ module Game
         F.new(key: 'lumos_turns', type: :integer, default: 3, group: 'rules', label: '루모스 지속 (턴)'),
         F.new(key: 'creature_names', type: :lines, group: 'flavors', label: '마법 생물 (줄마다 하나)', default: %w(스크루트 스핑크스 보가트 아크로맨투라)),
         F.new(key: 'msg_start', type: :text, group: 'messages', label: '시작',
-              default: "🏆 %{game} 시작! %{players}\n미로 한가운데 우승컵이 있습니다. 진행은 웹에서: %{link}\n턴마다 %{seconds}초 안에 길과 태도(협력/방해)를 골라 주세요."),
+              default: "%{game} 시작! %{players}\n미로 한가운데 우승컵이 있습니다. 진행은 웹에서: %{link}\n턴마다 %{seconds}초 안에 길과 태도(협력/방해)를 골라 주세요."),
         F.new(key: 'msg_turn', type: :text, group: 'messages', label: '턴 결과', default: "%{turn}턴\n%{lines}"),
         F.new(key: 'msg_quiet', type: :text, group: 'messages', label: '조용한 턴', default: '모두 미로 속을 조심스럽게 나아갔다.'),
         F.new(key: 'msg_trap', type: :text, group: 'messages', label: '함정', default: '%{player}{이가} 함정에 걸렸다! (다음 턴 쉼)'),
@@ -42,8 +42,8 @@ module Game
         F.new(key: 'msg_meet_coop', type: :text, group: 'messages', label: '만남: 협력', default: '%{player}{과와} %{target}{이가} 손을 잡았다. (다음 턴 한 칸 더)'),
         F.new(key: 'msg_meet_hinder', type: :text, group: 'messages', label: '만남: 방해', default: '%{player}{이가} %{target}{을를} 방해했다! (%{target} 쉼)'),
         F.new(key: 'msg_meet_both', type: :text, group: 'messages', label: '만남: 서로 방해', default: '%{player}{과와} %{target}{이가} 서로 주문을 퍼부었다. (둘 다 쉼)'),
-        F.new(key: 'msg_win', type: :text, group: 'messages', label: '우승', default: '🏆 %{winner}{이가} 우승컵을 손에 넣었다! %{turn}턴 만의 승리!'),
-        F.new(key: 'msg_tie', type: :text, group: 'messages', label: '동시 도착', default: '🏆 %{players}{이가} 동시에 우승컵을 잡았다! 무승부.'),
+        F.new(key: 'msg_win', type: :text, group: 'messages', label: '우승', default: '%{winner}{이가} 우승컵을 손에 넣었다! %{turn}턴 만의 승리!'),
+        F.new(key: 'msg_tie', type: :text, group: 'messages', label: '동시 도착', default: '%{players}{이가} 동시에 우승컵을 잡았다! 무승부.'),
         F.new(key: 'msg_limit', type: :text, group: 'messages', label: '최대 턴', default: '%{turns}턴이 지나도록 아무도 우승컵에 닿지 못했다. 무승부.'),
       ]).freeze
 

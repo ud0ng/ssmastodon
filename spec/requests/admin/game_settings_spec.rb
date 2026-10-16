@@ -28,6 +28,6 @@ RSpec.describe 'Admin content settings' do
   it 'puts the record commands on their own row' do
     rows = Game::Config.sections('common', 'commands').to_h.fetch('commands').slice_before { |field| Game::Config::ROW_STARTS.include?(field.key) }.map { |row| row.map(&:key) }
 
-    expect(rows).to eq [%w(cmd_accept cmd_decline cmd_forfeit), %w(cmd_points cmd_record)]
+    expect(rows).to eq [%w(cmd_accept cmd_decline cmd_cancel cmd_forfeit), %w(cmd_points cmd_record)]
   end
 end

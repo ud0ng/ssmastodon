@@ -30,24 +30,24 @@ module Game
         F.new(key: 'seek_step', type: :integer, default: 5, group: 'rules', label: '수색할 때마다 오르는 확률 (%)'),
         F.new(key: 'snitch_score', type: :integer, default: 150, group: 'rules', label: '스니치 점수'),
         F.new(key: 'msg_start', type: :text, group: 'messages', label: '시작',
-              default: "🧹 %{game} 시작! 최대 %{turns}턴.\n%{teams}\n\n매 턴 시스템 계정이 보내는 DM에 [%{chase}] [%{beat}] [%{seek}] 중 하나로 답해 주세요. 모두 고르면 여기서 결과를 발표합니다."),
+              default: "%{game} 시작! 최대 %{turns}턴.\n%{teams}\n\n매 턴 시스템 계정이 보내는 DM에 [%{chase}] [%{beat}] [%{seek}] 중 하나로 답해 주세요.\n모든 인원이 행동을 고르면 결과가 공개됩니다."),
         F.new(key: 'msg_uneven', type: :text, group: 'messages', label: '팀 인원이 맞지 않음',
               default: '%{game} 팀전은 양 팀 인원이 같아야 합니다. 신청자를 포함해 2·4·6명이 되게 태그해 주세요.'),
         F.new(key: 'msg_ask', type: :text, group: 'messages', label: 'DM: 행동 고르기',
-              default: "%{turn}턴 — 행동을 골라 주세요.\n[%{chase}] 쿼플 득점 · [%{beat}] 블러저로 방해 · [%{seek}] 스니치 찾기 (지금 %{seek_rate}%)"),
-        F.new(key: 'msg_chosen', type: :text, group: 'messages', label: 'DM: 선택 확인', default: '✔ 행동을 정했습니다. 다른 사람을 기다립니다.'),
+              default: "%{turn}턴 | 행동을 골라 주세요.\n[%{chase}] 쿼플 득점 · [%{beat}] 블러저로 방해 · [%{seek}] 스니치 찾기 (현재 확률 %{seek_rate}%)"),
+        F.new(key: 'msg_chosen', type: :text, group: 'messages', label: 'DM: 선택 확인', default: "행동을 정했습니다. 다른 사람을 기다립니다."),
         F.new(key: 'msg_goal', type: :text, group: 'messages', label: '쿼플 골', default: '%{player}{이가} 쿼플을 골대에 꽂았다! +%{score}'),
         F.new(key: 'msg_no_goal', type: :text, group: 'messages', label: '쿼플 실패', default: '%{player}의 쿼플이 파수꾼에게 막혔다.'),
         F.new(key: 'msg_beat_hit', type: :text, group: 'messages', label: '블러저 명중', default: '%{player}의 블러저가 %{target}{을를} 덮쳤다! %{target}의 행동 무효'),
         F.new(key: 'msg_beat_miss', type: :text, group: 'messages', label: '블러저 빗나감', default: '%{player}의 블러저가 허공을 갈랐다.'),
         F.new(key: 'msg_seek_fail', type: :text, group: 'messages', label: '스니치 놓침', default: '%{player}{이가} 금빛을 쫓았지만 놓쳤다.'),
-        F.new(key: 'msg_snitch', type: :text, group: 'messages', label: '스니치', default: '✨ %{player}{이가} 골든 스니치를 잡았다! +%{score}'),
+        F.new(key: 'msg_snitch', type: :text, group: 'messages', label: '스니치', default: "%{player}{이가} 골든 스니치를 잡았다! +%{score}"),
         F.new(key: 'msg_blocked', type: :text, group: 'messages', label: '행동 무효', default: '%{player}{은는} 블러저를 피하느라 아무것도 하지 못했다.'),
         F.new(key: 'msg_idle', type: :text, group: 'messages', label: '시간 초과', default: '%{player}{은는} 빗자루 위에서 멍하니 있었다.'),
-        F.new(key: 'msg_turn', type: :text, group: 'messages', label: '턴 결과', default: "%{turn}턴\n\n%{lines}\n\n%{board}"),
-        F.new(key: 'msg_end', type: :text, group: 'messages', label: '경기 끝', default: '경기 종료! %{outcome}'),
+        F.new(key: 'msg_turn', type: :text, group: 'messages', label: '턴 결과', default: "%{turn}턴\n\n%{lines}"),
+        F.new(key: 'msg_end', type: :text, group: 'messages', label: '경기 끝', default: "경기가 종료되었습니다.\n%{outcome}"),
         F.new(key: 'msg_winner', type: :text, group: 'messages', label: '승리', default: '%{winner}의 승리!'),
-        F.new(key: 'msg_draw', type: :text, group: 'messages', label: '무승부', default: '동점, 무승부입니다.'),
+        F.new(key: 'msg_draw', type: :text, group: 'messages', label: '무승부', default: "동점으로 무승부입니다."),
       ]).freeze
 
       class << self
@@ -127,6 +127,11 @@ module Game
 
       def seats_to(value)
         players.to_h { |player| [player.seat.to_s, value] }
+      end
+
+      # 기권하면 상대 팀이 이긴다 (1:1 이면 상대)
+      def forfeit_winners(player)
+        team? ? players.reject { |other| team_of(other) == team_of(player) } : super
       end
 
       # 팀전인가 (3명 이상)

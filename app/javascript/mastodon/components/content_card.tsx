@@ -34,7 +34,9 @@ export interface CardAction {
   mention?: string;
   seats: number[] | 'others';
   dm: boolean;
-  style: 'primary' | 'secondary';
+  style: 'primary' | 'secondary' | 'danger';
+  // 신청 취소·항복처럼 차례와 상관없는 보조 버튼 (내 차례 알림에는 세지 않는다)
+  meta?: boolean;
   // 버튼 줄 (필살기처럼 일반 기술 다음 줄에 둘 때 2)
   row?: number;
 }

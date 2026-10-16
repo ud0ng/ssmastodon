@@ -73,7 +73,7 @@ RSpec.describe 'Game kinds' do
 
     it 'asks each player by DM and reveals both spells together' do
       expect(session.status).to eq 'active'
-      expect(replies_to(alice, 'direct').last.text).to include('1턴', '[공격]', '스투페파이')
+      expect(replies_to(alice, 'direct').last.text).to include('1턴', '[공격]')
       expect(replies_to(bob, 'direct').last.text).to include('1턴')
 
       toot(alice, '@system [방어]', visibility: 'direct')
@@ -81,7 +81,7 @@ RSpec.describe 'Game kinds' do
       toot(bob, '@system [공격]', visibility: 'direct')
 
       result = @replies.find { |status| status.visibility == 'private' }
-      expect(result.text).to include('1턴', '해리 [방어] vs 드레이코 [공격]', '해리의 주문이 통했습니다', '드레이코 ❤️❤️🖤')
+      expect(result.text).to include('1턴', '해리 vs 드레이코', '[방어]　　[공격]', '해리의 주문이 통했습니다', '💔 드레이코 -1')
       expect(session.state['hp']).to eq('0' => 3, '1' => 2)
     end
 
@@ -110,7 +110,7 @@ RSpec.describe 'Game kinds' do
 
       expect(session.status).to eq 'finished'
       expect(session.player_for(alice).result).to eq 'win'
-      expect(Status.find(session.last_status_id).text).to include('주문 실패', '쓰러졌습니다')
+      expect(Status.find(session.last_status_id).text).to include('시간 초과', '쓰러졌습니다')
     end
   end
 

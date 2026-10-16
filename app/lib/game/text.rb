@@ -99,16 +99,11 @@ module Game
       template.to_s.gsub(/%\{(\w+)\}/) { "{#{LABELS[Regexp.last_match(1).to_sym] || Regexp.last_match(1)}}" }
     end
 
-    # 이 문구에서 쓸 수 있는 명령어 (관리 화면 목록): 기본 문구에 있는 값 + 사람이면 아이디·아바타 + 조사
+    # 이 문구에서 쓸 수 있는 명령어 (관리 화면 목록): 기본 문구에 있는 값 + 조사.
+    # 사람은 {계정명} 만 보여 준다 (웹에서는 이름 옆에 아바타가 함께 보인다).
+    # {계정아이디}·{계정 아바타} 는 저장해 둔 문구에서 계속 쓸 수 있다.
     def tokens_for(template)
-      names = template.to_s.scan(/\{([^{}\n]{1,30})\}/).flatten.uniq - PARTICLES.keys
-      people = ROLES.values.map { |prefix| "#{prefix}계정명" }
-      names.flat_map do |name|
-        next [name] unless people.include?(name)
-
-        prefix = name.delete_suffix('계정명')
-        [name, "#{prefix}계정아이디", "#{prefix}계정 아바타"]
-      end
+      template.to_s.scan(/\{([^{}\n]{1,30})\}/).flatten.uniq - PARTICLES.keys
     end
 
     def account_of(value)

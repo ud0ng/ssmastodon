@@ -176,6 +176,40 @@ const useRoomLayout = () => {
 };
 
 // 맨 아래 입력창 위: 내 차례면 할 일(버튼·안내), 아니면 누구를 기다리는지
+// 버튼 줄: action.row 별로 나눈다 (결투 필살기·아이템은 일반 기술 다음 줄, 신청 취소·항복은 맨 아래 줄)
+const ActionRows: React.FC<{
+  actions: CardAction[];
+  busy: boolean;
+  picked: CardAction | null;
+  onAction: (action: CardAction) => void;
+}> = ({ actions, busy, picked, onAction }) => (
+  <>
+    {[...new Set(actions.map((action) => action.row ?? 1))].sort((x, y) => x - y).map((row) => (
+      <div key={row} className='game-room__turn-actions'>
+        {actions.filter((action) => (action.row ?? 1) === row).map((action) => (
+          <button
+            key={`${action.command}${action.mention ?? ''}`}
+            type='button'
+            className={[
+              'game-room__action',
+              action.style === 'secondary' && 'game-room__action--secondary',
+              action.style === 'danger' && 'game-room__action--danger',
+              picked?.command === action.command && picked.mention === action.mention && 'game-room__action--picked',
+            ].filter(Boolean).join(' ')}
+            disabled={busy}
+            onClick={() => { onAction(action); }}
+            title={action.dm ? `DM: [${action.command}]` : `[${action.command}]`}
+          >
+            {action.label}
+            {action.dm && <span className='game-room__action-dm'>DM</span>}
+          </button>
+        ))}
+      </div>
+    ))}
+  </>
+);
+
+// 맨 아래 입력창 위: 내 차례면 할 일(버튼), 아니면 누구를 기다리는지. 신청 취소·항복(meta)은 차례와 상관없이 맨 아래 줄에 둔다.
 const TurnPanel: React.FC<{
   card: GameCard | null;
   actions: CardAction[];
@@ -185,7 +219,10 @@ const TurnPanel: React.FC<{
 }> = ({ card, actions, busy, picked, onAction }) => {
   if (!card || !card.live) return null;
 
-  if (actions.length > 0) {
+  const turnActions = actions.filter((action) => !action.meta);
+  const metaActions = actions.filter((action) => action.meta);
+
+  if (turnActions.length > 0) {
     return (
       <div className='game-room__turn'>
         <div className='game-room__turn-head'>
@@ -199,43 +236,27 @@ const TurnPanel: React.FC<{
             <FormattedMessage id='content_card.potion_hint2' defaultMessage='Press the button, then type the ingredient numbers in order, e.g. 1 5 3' />
           </p>
         )}
-        {/* 버튼 줄: action.row 별로 나눈다 (결투 필살기는 일반 기술 다음 줄) */}
-        {[...new Set(actions.map((action) => action.row ?? 1))].sort((x, y) => x - y).map((row) => (
-          <div key={row} className='game-room__turn-actions'>
-            {actions.filter((action) => (action.row ?? 1) === row).map((action) => (
-              <button
-                key={`${action.command}${action.mention ?? ''}`}
-                type='button'
-                className={[
-                  'game-room__action',
-                  action.style !== 'primary' && 'game-room__action--secondary',
-                  picked?.command === action.command && picked.mention === action.mention && 'game-room__action--picked',
-                ].filter(Boolean).join(' ')}
-                disabled={busy}
-                onClick={() => { onAction(action); }}
-                title={action.dm ? `DM: [${action.command}]` : `[${action.command}]`}
-              >
-                {action.label}
-                {action.dm && <span className='game-room__action-dm'>DM</span>}
-              </button>
-            ))}
-          </div>
-        ))}
+        <ActionRows actions={actions} busy={busy} picked={picked} onAction={onAction} />
       </div>
     );
   }
 
-  if (card.phase !== 'active') return null;
+  if (card.phase !== 'active' && card.phase !== 'pending') return null;
 
   const current = card.players.find((player) => player.seat === card.data.current_seat);
   return (
-    <p className='game-room__turn game-room__turn--waiting'>
-      {current ? (
-        <FormattedMessage id='system.room.waiting' defaultMessage='Waiting for {name}…' values={{ name: current.name }} />
-      ) : (
-        <FormattedMessage id='system.room.waiting_others' defaultMessage='Waiting for the others…' />
-      )}
-    </p>
+    <div className='game-room__turn game-room__turn--waiting'>
+      <p>
+        {card.phase === 'pending' ? (
+          <FormattedMessage id='system.room.waiting_accept' defaultMessage='Waiting for them to accept…' />
+        ) : current ? (
+          <FormattedMessage id='system.room.waiting' defaultMessage='Waiting for {name}…' values={{ name: current.name }} />
+        ) : (
+          <FormattedMessage id='system.room.waiting_others' defaultMessage='Waiting for the others…' />
+        )}
+      </p>
+      {metaActions.length > 0 && <ActionRows actions={metaActions} busy={busy} picked={picked} onAction={onAction} />}
+    </div>
   );
 };
 
@@ -346,7 +367,11 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   // 맨 위에 고정하는 지금 상태: 마지막 카드
   const current = data ? [...data.messages].reverse().find((message) => message.card)?.card ?? null : null;
   const actions = data?.player && open && current ? myActions(current) : [];
-  const myTurn = actions.length > 0;
+  // 내 차례 강조·알림은 신청 취소·항복(meta)이 아닌 버튼이 있을 때만
+  const myTurn = actions.some((action) => !action.meta);
+  // 항복은 맨 위 헤더 오른쪽 끝에 둔다 (입력창 위 버튼 줄에는 넣지 않는다)
+  const forfeitAction = actions.find((action) => action.style === 'danger');
+  const panelActions = actions.filter((action) => action.style !== 'danger');
 
   // 고른 버튼이 더는 없으면 (차례가 넘어감 등) 배지도 뺀다
   useEffect(() => {
@@ -365,7 +390,24 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
 
   return (
     <Column bindToDocument={!multiColumn} label={title}>
-      <ColumnHeader icon='system' iconComponent={StarIcon} title={title} multiColumn={multiColumn} showBackButton />
+      <ColumnHeader
+        icon='system'
+        iconComponent={StarIcon}
+        title={title}
+        multiColumn={multiColumn}
+        showBackButton
+        extraButton={forfeitAction && (
+          <button
+            type='button'
+            className={picked?.command === forfeitAction.command ? 'game-room__forfeit game-room__forfeit--picked' : 'game-room__forfeit'}
+            disabled={busy}
+            onClick={() => { handleAction(forfeitAction); }}
+            title={`[${forfeitAction.command}]`}
+          >
+            {forfeitAction.label}
+          </button>
+        )}
+      />
 
       {/* 지금 상태 (맨 위 고정): 아바타 | 소속 | 이름 vs …, 가운데 진행 상황 */}
       {data && (current || (data.player && data.status === 'active' && ['maze', 'marauders_map'].includes(data.kind))) && (
@@ -391,7 +433,7 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
       {/* 입력창 (맨 아래 고정): 내 차례면 강조 + 할 일 버튼, DM 채팅과 같은 입력칸·보내기 버튼 */}
       {data?.player && open && (
         <div ref={dockRef} className={myTurn ? 'game-room__dock game-room__dock--turn' : 'game-room__dock'}>
-          <TurnPanel card={current} actions={actions} busy={busy} picked={picked} onAction={handleAction} />
+          <TurnPanel card={current} actions={panelActions} busy={busy} picked={picked} onAction={handleAction} />
           <div className='game-room__dock-row'>
             <label className='game-room__dm' title={intl.formatMessage({ id: 'system.board.secret', defaultMessage: 'Secret (DM)' })}>
               <input type='checkbox' checked={dm} onChange={(event) => { setDm(event.target.checked); }} />

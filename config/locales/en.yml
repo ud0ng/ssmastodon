@@ -423,7 +423,7 @@ en:
       lesson_hint: This subject's unlock, commands, rules and messages. Study/class commands and grade points are in the Lessons tab.
       lessons: Lessons
       lessons_hint: 'Shared lesson settings. [study/subject] is solo, [class/subject] gathers a class first. Grades go to the report card and become points.'
-      messages_hint: 'Click a token under a message to insert it. {계정명} {계정아이디} {계정 아바타} (attaches that profile picture); prefix 상대/승자/패자 for other people. Particles like {이가} follow the previous letter.'
+      messages_hint: 'Click a token under a message to insert it. {계정명} (the web shows the profile picture next to the name); prefix 상대/승자/패자 for other people. Particles like {이가} follow the previous letter.'
       overview:
         command: Command
         count: "%{count}"

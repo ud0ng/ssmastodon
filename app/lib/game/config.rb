@@ -156,25 +156,27 @@ module Game
       # 기본 명령어
       Field.new(key: 'cmd_accept', type: :string, default: '수락', group: 'commands', label: '수락'),
       Field.new(key: 'cmd_decline', type: :string, default: '거절', group: 'commands', label: '거절'),
-      Field.new(key: 'cmd_forfeit', type: :string, default: '기권', group: 'commands', label: '기권'),
+      Field.new(key: 'cmd_cancel', type: :string, default: '신청취소', group: 'commands', label: '신청 취소', hint: '내가 한 신청을 상대가 수락하기 전에 취소'),
+      Field.new(key: 'cmd_forfeit', type: :string, default: '기권', group: 'commands', label: '기권', hint: '웹에서는 항복 버튼으로 보냅니다'),
       Field.new(key: 'cmd_points', type: :string, default: '점수', group: 'commands', label: '소속 점수 보기'),
       Field.new(key: 'cmd_record', type: :string, default: '내전적', group: 'commands', label: '내 전적 보기'),
 
       # 일반 문구: 신청·진행
       Field.new(key: 'msg_invite', type: :text, group: 'messages_match', label: '신청',
-                default: "%{opponent}, %{player}{이가} %{game}{을를} 신청했습니다!\n[%{accept}] 또는 [%{decline}]로 답해 주세요. (%{minutes}분 안에)"),
+                default: "%{player}{이가} %{opponent}에게 %{game}{을를} 신청했습니다.\n%{minutes}분 내로 [%{accept}] 또는 [%{decline}]로 답해 주세요."),
       Field.new(key: 'msg_declined', type: :text, group: 'messages_match', label: '거절', default: '%{player}{이가} 신청을 거절했습니다.'),
-      Field.new(key: 'msg_expired', type: :text, group: 'messages_match', label: '수락 시간 초과', default: '%{minutes}분 동안 응답이 없어 %{game} 신청이 취소되었습니다.'),
-      Field.new(key: 'msg_forfeit', type: :text, group: 'messages_match', label: '기권', default: '%{player}{이가} 기권했습니다. %{winner}의 승리!'),
-      Field.new(key: 'msg_busy', type: :text, group: 'messages_match', label: '이미 진행 중', default: '%{player}{은는} 이미 진행 중인 컨텐츠가 있습니다.'),
+      Field.new(key: 'msg_cancelled', type: :text, group: 'messages_match', label: '신청 취소', default: '%{player}{이가} 신청을 취소했습니다.'),
+      Field.new(key: 'msg_expired', type: :text, group: 'messages_match', label: '수락 시간 초과', default: "%{minutes}분 동안 응답이 없어 %{game}{이가} 취소되었습니다."),
+      Field.new(key: 'msg_forfeit', type: :text, group: 'messages_match', label: '기권', default: "%{player}{이가} 기권했습니다.\n%{winner}의 승리입니다."),
+      Field.new(key: 'msg_busy', type: :text, group: 'messages_match', label: '이미 진행 중', default: "%{player}{은는} 이미 진행 중인 컨텐츠가 있어 새로 시작할 수 없습니다."),
       Field.new(key: 'msg_busy_web', type: :text, group: 'messages_match', label: '이미 진행 중 (웹 시작하기)',
                 hint: '동시 진행을 막았을 때 웹에서 [시작하기]를 누르면 바로 보여 주는 문구',
                 default: '이미 진행 중인 컨텐츠가 있습니다. 끝난 뒤에 시작해 주세요.'),
       Field.new(key: 'msg_secret_in_dm', type: :text, group: 'messages_match', label: '비밀 선택은 DM으로',
-                default: '선택은 상대가 보지 못하게 시스템 계정에게 DM으로 보내 주세요.'),
+                default: "선택은 상대가 보지 못하도록 시스템 계정에게 DM으로 보내 주세요."),
 
       # 일반 문구: 잘못 신청했을 때
-      Field.new(key: 'msg_one_opponent', type: :text, group: 'messages_invalid', label: '상대가 여러 명', default: '%{game}{은는} 1:1로만 할 수 있습니다. 상대를 한 명만 태그해 주세요.'),
+      Field.new(key: 'msg_one_opponent', type: :text, group: 'messages_invalid', label: '상대가 여러 명', default: "%{game}{은는} 1:1로만 진행할 수 있습니다. 상대를 한 명만 태그해 주세요."),
       Field.new(key: 'msg_many_opponents', type: :text, group: 'messages_invalid', label: '상대가 너무 많음', default: '%{game}에는 상대를 %{max}명까지 태그할 수 있습니다.'),
       Field.new(key: 'msg_no_opponent', type: :text, group: 'messages_invalid', label: '상대 없음', default: '%{game}{을를} 함께할 상대를 태그해 주세요.'),
       Field.new(key: 'msg_disabled', type: :text, group: 'messages_invalid', label: '꺼진 컨텐츠', default: '%{game}{은는} 지금 열려 있지 않습니다.'),
@@ -182,42 +184,35 @@ module Game
       Field.new(key: 'msg_event_running', type: :text, group: 'messages_invalid', label: '이벤트 진행 중', default: '%{game}{이가} 이미 열려 있습니다.'),
 
       # 일반 문구: 점수·보상·전적
-      Field.new(key: 'msg_points', type: :text, group: 'messages_score', label: '점수 지급', default: '%{house} +%{amount}점! (%{player})'),
-      Field.new(key: 'msg_reward', type: :text, group: 'messages_score', label: '보상 지급', default: '💰 %{player} 보상: %{rewards}'),
+      Field.new(key: 'msg_points', type: :text, group: 'messages_score', label: '점수 지급', default: "%{house}(%{player})가 +%{amount}점을 얻습니다!"),
+      Field.new(key: 'msg_reward', type: :text, group: 'messages_score', label: '보상 지급', default: "%{player}{은는} %{rewards}{을를} 획득합니다."),
       Field.new(key: 'msg_no_house', type: :text, group: 'messages_score', label: '소속 없음', default: '%{player}{은는} 아직 %{term}{이가} 없어 점수를 받지 못했습니다.'),
-      Field.new(key: 'msg_board', type: :text, group: 'messages_score', label: '[점수] 머리말', default: '🏆 %{term} 점수'),
+      Field.new(key: 'msg_board', type: :text, group: 'messages_score', label: '[점수] 머리말', default: "%{term} 점수"),
       Field.new(key: 'msg_record', type: :text, group: 'messages_score', label: '[내전적]', default: '%{player}의 전적: %{win}승 %{lose}패 %{draw}무'),
 
       # 웹에서 선물했을 때 받는 사람에게 가는 DM (시스템 계정)
       Field.new(key: 'msg_gift_item', type: :text, group: 'messages_gift', label: '아이템 선물',
-                default: '🎁 %{player}{이가} %{item} %{count}개{을를} 선물했습니다. 인벤토리에서 확인해 보세요.'),
+                default: "%{player}{이가} %{item} %{count}개{을를} 선물했습니다.\n인벤토리에서 확인해 보세요."),
       Field.new(key: 'msg_gift_money', type: :text, group: 'messages_gift', label: '재화 선물',
-                default: '🎁 %{player}{이가} %{money}%{currency}{을를} 선물했습니다.'),
+                default: "%{player}{이가} %{money}%{currency}{을를} 선물했습니다."),
 
       # 시즌 문구 (캐릭터 관리 > 소속 > 시즌)
       Field.new(key: 'msg_season_interim', type: :text, group: 'season', label: '중간 결산',
-                default: "📊 %{season} 중간 결산\n\n%{houses}"),
+                default: "%{season} 중간 결산\n\n%{houses}"),
       Field.new(key: 'msg_season_final', type: :text, group: 'season', label: '시즌 종료',
-                default: "🏆 %{season} 종료!\n\n%{houses}\n\n우승 %{term}: %{house}"),
+                default: "%{season} 종료\n\n%{houses}\n\n우승 %{term}: %{house}"),
 
       # 토너먼트 (관리 화면에서는 고치지 않는다)
       Field.new(key: 'round_final', type: :string, default: '결승', group: 'tournament', label: '결승 이름'),
       Field.new(key: 'round_semifinal', type: :string, default: '준결승', group: 'tournament', label: '준결승 이름'),
       Field.new(key: 'round_of', type: :string, default: '%{count}강', group: 'tournament', label: '그 앞 라운드 이름', hint: '%{count} = 남은 인원'),
       Field.new(key: 'msg_tournament_open', type: :text, group: 'tournament', label: '경기 시작',
-                default: "🏆 %{tournament} %{round} %{number}경기
-%{player_a} vs %{player_b} — %{game}
-
-지금 시작합니다!"),
+                default: "%{tournament} %{round} %{number}경기\n%{player_a} vs %{player_b} — %{game}\n\n경기를 시작합니다."),
       Field.new(key: 'msg_tournament_judging', type: :text, group: 'tournament', label: '운영진 판정 대기',
-                default: '⏸ 경기가 멈췄습니다 (%{reason}). 운영진 판정을 기다립니다.'),
-      Field.new(key: 'msg_tournament_decided', type: :text, group: 'tournament', label: '운영진 판정', default: '⚖️ 운영진 판정: %{winner}의 승리!'),
+                default: "경기가 중단되었습니다. (%{reason})\n운영진 판정을 기다립니다."),
+      Field.new(key: 'msg_tournament_decided', type: :text, group: 'tournament', label: '운영진 판정', default: "운영진 판정: %{winner}의 승리입니다."),
       Field.new(key: 'msg_tournament_champion', type: :text, group: 'tournament', label: '우승',
-                default: "🏆 %{tournament} 종료!
-
-%{tally}
-
-우승: %{house} (+%{reward}점)"),
+                default: "%{tournament} 종료\n\n%{tally}\n\n우승: %{house} (+%{reward}점)"),
     ].freeze
 
     # 상점 (컨텐츠 설정 > 상점). 자동봇이 /api/v1/bot/config 로 읽는다 (명령어 이름·운영진·도움말)

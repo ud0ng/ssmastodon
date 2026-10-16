@@ -29,7 +29,7 @@ RSpec.describe Game::Text do
   it 'shows default messages with Korean tokens in the settings' do
     field = Game::Config.schema('common').find { |each| each.key == 'msg_invite' }
     expect(field.default).to include('{상대 계정명}', '{계정명}{이가}', '{컨텐츠}{을를}')
-    expect(field.tokens).to include('계정명', '계정아이디', '계정 아바타', '상대 계정명', '상대 계정 아바타', '컨텐츠')
+    expect(field.tokens).to include('계정명', '상대 계정명', '컨텐츠')
   end
 
   describe Game::Poster do

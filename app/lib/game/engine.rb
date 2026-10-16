@@ -45,6 +45,7 @@ module Game
       case command
       when common['cmd_accept'] then accept
       when common['cmd_decline'] then decline
+      when common['cmd_cancel'] then cancel_invite
       when common['cmd_forfeit'] then forfeit
       when common['cmd_points'] then reply(Game::Points.board)
       when common['cmd_record'] then reply(Game::Points.record(actor))
@@ -162,6 +163,25 @@ module Game
         follow_up!(session)
         session.update!(status: 'cancelled', finished_at: Time.now.utc, deadline_at: nil)
         Game::Poster.to_session(session, Game::Text.render(common['msg_declined'], player: player, game: session.kind_class.display_name))
+      end
+    end
+
+    # 내가 한 신청을 상대가 수락하기 전에 취소 (서버 이벤트 모집은 제외)
+    def cancel_invite
+      player = GamePlayer.joins(:session)
+                         .where(account: actor, game_sessions: { status: 'pending' })
+                         .where("game_players.state->>'accepted' = 'true'")
+                         .where("COALESCE(game_sessions.state->>'mode', '') <> 'event'")
+                         .order(id: :desc).first
+      return if player.nil?
+
+      session = player.session
+      session.with_lock do
+        next unless session.status == 'pending'
+
+        follow_up!(session)
+        session.update!(status: 'cancelled', finished_at: Time.now.utc, deadline_at: nil)
+        Game::Poster.to_session(session, Game::Text.render(common['msg_cancelled'], player: player, game: session.kind_class.display_name))
       end
     end
 

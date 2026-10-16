@@ -76,6 +76,16 @@ RSpec.describe Game::Engine do
       expect(session.status).to eq 'cancelled'
     end
 
+    it 'lets the one who invited cancel before the other accepts' do
+      toot(alice, '@system @bob [젤리빈]')
+      toot(bob, '@system [신청취소]', thread: last_reply)
+      expect(session.status).to eq 'pending'
+
+      toot(alice, '@system [신청취소]', thread: last_reply)
+      expect(session.status).to eq 'cancelled'
+      expect(last_reply.text).to include('신청을 취소했습니다')
+    end
+
     it 'cancels an invite nobody answered' do
       toot(alice, '@system @bob [젤리빈]')
       token = session.deadline_token

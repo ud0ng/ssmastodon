@@ -128,6 +128,7 @@ module Game
         rows += matches.map { |kind| match_row(kind) }
         rows << "#{common['cmd_accept']}#{SEP}받은 신청을 받아들입니다."
         rows << "#{common['cmd_decline']}#{SEP}받은 신청을 거절합니다."
+        rows << "#{common['cmd_cancel']}#{SEP}내가 한 신청을 상대가 수락하기 전에 취소합니다."
         rows << "#{common['cmd_forfeit']}#{SEP}진행 중인 컨텐츠를 포기합니다."
       end
 

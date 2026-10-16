@@ -22,7 +22,7 @@ RSpec.describe Game::Points do
 
   it 'awards points to the house and returns the announcement' do
     session = finished_session
-    expect(described_class.award(session, session.players.first, 10)).to include('그리핀도르 +10점')
+    expect(described_class.award(session, session.players.first, 10)).to include('그리핀도르', '+10점')
     expect(gryffindor.total).to eq 10
   end
 
@@ -63,7 +63,7 @@ RSpec.describe Game::Points do
     GameCharacter.for(alice).update!(house: nil)
     session = finished_session
     expect(described_class.award(session, session.players.first, 10)).to include('아직 진영이 없어')
-    expect(described_class.board).to start_with('🏆 진영 점수')
+    expect(described_class.board).to start_with('진영 점수')
   end
 
   it 'tells when the player has no house' do

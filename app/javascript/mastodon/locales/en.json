@@ -1214,5 +1214,6 @@
   "content_card.potion_hint2": "Press the button, then type the ingredient numbers in order, e.g. 1 5 3",
   "content_card.round_of": "Round {turn} / {max}",
   "content_card.potion_size": "{size} ingredients",
-  "content_card.answer_label": "Answer"
+  "content_card.answer_label": "Answer",
+  "system.room.waiting_accept": "Waiting for them to accept…"
 }

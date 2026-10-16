@@ -125,8 +125,13 @@ module Game
 
       # 기권 → 상대 승리
       def forfeit!(player)
-        winner = session.opponent_of(player)
-        finish!(winner: winner, message: render(common['msg_forfeit'], player: player, winner: winner))
+        winners = forfeit_winners(player)
+        finish!(winners: winners, message: render(common['msg_forfeit'], player: player, winner: winners.first))
+      end
+
+      # 기권하면 이기는 사람들: 1:1 이면 상대 (팀전은 하위 클래스가 상대 팀으로)
+      def forfeit_winners(player)
+        players.reject { |other| other.id == player.id }
       end
 
       protected

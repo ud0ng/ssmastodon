@@ -25,24 +25,22 @@ module Game
         F.new(key: 'spell_attack', type: :string, default: '스투페파이', group: 'spells', label: '공격 주문 이름'),
         F.new(key: 'spell_disarm', type: :string, default: '엑스펠리아르무스', group: 'spells', label: '무장해제 주문 이름'),
         F.new(key: 'spell_defend', type: :string, default: '프로테고', group: 'spells', label: '방어 주문 이름'),
-        F.new(key: 'heart', type: :string, default: '❤️', group: 'spells', label: '남은 HP 표시'),
-        F.new(key: 'heart_lost', type: :string, default: '🖤', group: 'spells', label: '잃은 HP 표시'),
         F.new(key: 'msg_start', type: :text, group: 'messages', label: '시작',
-              default: "⚡ %{game} 시작! 각자 HP %{hp}.\n\n매 턴 시스템 계정이 보내는 DM에 주문을 답해 주세요. 둘 다 고르면 여기서 동시에 공개합니다."),
+              default: "%{game} 시작! 각자 %{hp}의 체력으로 시작합니다.\n\n매 턴 시스템 계정이 보내는 DM에 주문을 답해 주세요.\n모든 인원이 주문을 고르면 결과가 공개됩니다."),
         F.new(key: 'msg_ask', type: :text, group: 'messages', label: 'DM: 주문 고르기',
-              default: "%{turn}턴 — 주문을 골라 주세요.\n[%{attack}] (%{spell_attack}) · [%{disarm}] (%{spell_disarm}) · [%{defend}] (%{spell_defend})\n%{special_hint}"),
+              default: "%{turn}턴 | 주문을 골라 주세요.\n[%{attack}] · [%{disarm}] · [%{defend}]\n%{special_hint}"),
         F.new(key: 'msg_special_hint', type: :text, group: 'messages', label: 'DM: 필살기 남음',
-              default: '필살기 1회 남음: [%{attack}/%{special}] 처럼 붙이면 이길 때 피해 %{multiplier}배, 지면 내가 %{multiplier}배.'),
-        F.new(key: 'msg_chosen', type: :text, group: 'messages', label: 'DM: 선택 확인', default: '✔ 주문을 정했습니다. 상대를 기다립니다.'),
+              default: "[%{attack}/%{special}]{은는} 피해를 %{multiplier}배로 줄 수 있습니다."),
+        F.new(key: 'msg_chosen', type: :text, group: 'messages', label: 'DM: 선택 확인', default: "주문을 정했습니다. 상대를 기다립니다."),
         F.new(key: 'msg_round', type: :text, group: 'messages', label: '턴 결과',
-              default: "%{turn}턴\n\n%{player_a} [%{choice_a}] vs %{player_b} [%{choice_b}]\n%{outcome}\n\n%{hearts}"),
-        F.new(key: 'msg_round_win', type: :text, group: 'messages', label: '한쪽 승리', default: '%{winner}의 주문이 통했습니다! 💔 %{loser} -%{damage}'),
-        F.new(key: 'msg_round_backfire', type: :text, group: 'messages', label: '필살기 역풍', default: '%{winner}의 주문이 통했습니다! 필살기가 빗나간 💔 %{loser}{은는} -%{damage}'),
-        F.new(key: 'msg_round_tie', type: :text, group: 'messages', label: '같은 주문', default: '같은 주문이 맞부딪혀 흩어졌습니다. (피해 없음)'),
-        F.new(key: 'msg_both_fail', type: :text, group: 'messages', label: '둘 다 시간 초과', default: '두 사람 모두 주문을 외우지 못했습니다. (피해 없음)'),
-        F.new(key: 'msg_fail', type: :text, group: 'messages', label: '주문 실패 (시간 초과)', default: '주문 실패'),
-        F.new(key: 'msg_win', type: :text, group: 'messages', label: '승리', default: '%{loser}{이가} 쓰러졌습니다. %{winner}의 승리!'),
-        F.new(key: 'msg_limit', type: :text, group: 'messages', label: '최대 턴', default: '%{turns}턴이 지났습니다. %{outcome}'),
+              default: "%{turn}턴\n\n%{player_a} vs %{player_b}\n[%{choice_a}]　　[%{choice_b}]\n%{outcome}"),
+        F.new(key: 'msg_round_win', type: :text, group: 'messages', label: '한쪽 승리', default: "%{winner}의 주문이 통했습니다.\n💔 %{loser} -%{damage}"),
+        F.new(key: 'msg_round_backfire', type: :text, group: 'messages', label: '필살기 역풍', default: "%{winner}의 주문이 통했습니다.\n필살기가 빗나간 %{loser}{은는} 피해를 입었습니다.\n💔 %{loser} -%{damage}"),
+        F.new(key: 'msg_round_tie', type: :text, group: 'messages', label: '같은 주문', default: "같은 주문이 맞부딪혀 흩어졌습니다. 피해는 없습니다."),
+        F.new(key: 'msg_both_fail', type: :text, group: 'messages', label: '둘 다 시간 초과', default: "두 사람 모두 주문을 고르지 않았습니다. 피해는 없습니다."),
+        F.new(key: 'msg_fail', type: :text, group: 'messages', label: '주문 실패 (시간 초과)', default: "시간 초과"),
+        F.new(key: 'msg_win', type: :text, group: 'messages', label: '승리', default: "%{loser}{이가} 쓰러졌습니다.\n%{winner}의 승리입니다."),
+        F.new(key: 'msg_limit', type: :text, group: 'messages', label: '최대 턴', default: "최대 턴(%{turns}턴)이 지났습니다.\n%{outcome}"),
         F.new(key: 'msg_draw', type: :text, group: 'messages', label: '무승부', default: '남은 HP가 같아 무승부입니다.'),
       ]).freeze
 
@@ -145,7 +143,7 @@ module Game
                   end
 
         round_text = render(config['msg_round'], turn: session.turn, player_a: a, player_b: b,
-                                                 choice_a: choice_label(choice_a), choice_b: choice_label(choice_b), outcome: outcome, hearts: hearts)
+                                                 choice_a: choice_label(choice_a), choice_b: choice_label(choice_b), outcome: outcome)
         state['last_round'] = {
           'choices' => { a.seat.to_s => choice_label(choice_a), b.seat.to_s => choice_label(choice_b) },
           'winner_seat' => winner&.seat,
@@ -173,14 +171,6 @@ module Game
         return if choice_a['spell'] == choice_b['spell']
 
         BEATS[choice_a['spell']] == choice_b['spell'] ? [a, b, choice_a, choice_b] : [b, a, choice_b, choice_a]
-      end
-
-      def hearts
-        full = config['hp'].to_i
-        players.map do |player|
-          left = state['hp'][player.seat.to_s]
-          "#{player.name} #{config['heart'] * left}#{config['heart_lost'] * [full - left, 0].max}"
-        end.join("\n")
       end
 
       def finish_by_hp!(round_text)

@@ -11,8 +11,8 @@ RSpec.describe Game::Config do
       expect(settings.keys).to eq %w(bots currency rules)
       expect(settings['bots']).to eq %w(system_username bot_usernames)
       expect(settings['currency']).to include('currency_name', 'attendance_reward', 'toot_reward_basis', 'toot_reward_public', 'toot_reward_every', 'toot_reward_amount')
-      expect(settings['rules']).to eq %w(invite_minutes turn_seconds one_game_per_person)
-      expect(commands['commands']).to eq %w(cmd_accept cmd_decline cmd_forfeit cmd_points cmd_record)
+      expect(settings['rules']).to eq %w(contents_open invite_minutes turn_seconds one_game_per_person)
+      expect(commands['commands']).to eq %w(cmd_accept cmd_decline cmd_cancel cmd_forfeit cmd_points cmd_record)
       expect((settings.values + commands.values).flatten).to_not include('house_label', 'scoring_mode', 'msg_season_final')
     end
 

@@ -19079,3 +19079,48 @@ body.app-body.layout-game-room.layout-single-column {
 .game-room__turn {
   padding-bottom: 4px;
 }
+
+// 신청 취소·항복: 눈에 띄지 않는 선 버튼, 항복은 경고색
+.game-room__action--danger {
+  border-color: var(--color-text-error, #e0245e);
+  background: transparent;
+  color: var(--color-text-error, #e0245e);
+
+  &:hover,
+  &:focus-visible {
+    background: color-mix(in srgb, var(--color-text-error, #e0245e) 10%, transparent);
+  }
+}
+
+.game-room__turn--waiting {
+  padding-bottom: 4px;
+
+  p {
+    margin-bottom: 8px;
+  }
+}
+
+// 항복: 방 헤더 오른쪽 끝 (column-header__buttons 안)
+.game-room__forfeit {
+  margin-inline-end: 12px;
+  padding: 4px 14px;
+  border: 1px solid var(--color-text-error, #e0245e);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-error, #e0245e);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible,
+  &--picked {
+    background: color-mix(in srgb, var(--color-text-error, #e0245e) 12%, transparent);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
