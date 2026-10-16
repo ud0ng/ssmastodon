@@ -115,6 +115,8 @@ class InitialStateSerializer < ActiveModel::Serializer
       scheduled_status_total_limit: ScheduledStatus::TOTAL_LIMIT,
       scheduled_status_daily_limit: ScheduledStatus::DAILY_LIMIT,
       dm_chat_enabled: Mastodon::DmChat.enabled?,
+      # 상점 해금 (컨텐츠 설정 > 상점): 꺼지면 왼쪽 상점 메뉴·/shop 화면을 숨긴다
+      shop_enabled: Game::Config.for('currency')['shop_open'],
     }
   end
 

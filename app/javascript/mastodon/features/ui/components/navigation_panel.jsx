@@ -44,7 +44,7 @@ import { IconWithBadge } from 'mastodon/components/icon_with_badge';
 import { WordmarkLogo } from 'mastodon/components/logo';
 import { NavigationPortal } from 'mastodon/components/navigation_portal';
 import { identityContextPropShape, withIdentity } from 'mastodon/identity_context';
-import { timelinePreview, trendsEnabled, dmChatEnabled } from 'mastodon/initial_state';
+import { timelinePreview, trendsEnabled, dmChatEnabled, shopEnabled } from 'mastodon/initial_state';
 import { canManageDirectMessages } from 'mastodon/permissions';
 import { selectUnreadDmCount } from 'mastodon/features/messages/selectors';
 import { selectUnreadNotificationGroupsCount } from 'mastodon/selectors/notifications';
@@ -432,7 +432,7 @@ class NavigationPanel extends Component {
           <ColumnLink transparent to='/messages/all' isActive={isMessagesAllPath} icon='messages-all' iconComponent={MessagesAllIcon} activeIconComponent={MessagesAllActiveIcon} text={intl.formatMessage(messages.messagesAll)} />
         )}
         <ScheduledStatusesLink />
-        <ColumnLink transparent to='/shop' icon='shop' iconComponent={ShopIcon} activeIconComponent={ShopActiveIcon} text={intl.formatMessage(messages.shop)} />
+        {shopEnabled && <ColumnLink transparent to='/shop' icon='shop' iconComponent={ShopIcon} activeIconComponent={ShopActiveIcon} text={intl.formatMessage(messages.shop)} />}
         <ColumnLink transparent to='/bookmarks' icon='bookmarks' iconComponent={BookmarksIcon} activeIconComponent={BookmarksActiveIcon} text={bookmarksLabel} />
         <ColumnLink transparent to='/lists' icon='list-ul' iconComponent={ListAltIcon} activeIconComponent={ListAltActiveIcon} text={listsLabel} />
         <ColumnLink transparent href={settingsHref} icon='cog' iconComponent={SettingsIcon} text={preferencesLabel} />

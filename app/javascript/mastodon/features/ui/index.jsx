@@ -27,7 +27,7 @@ import { uploadCompose, resetCompose, changeComposeSpoilerness } from '../../act
 import { clearHeight } from '../../actions/height_cache';
 import { fetchServer, fetchServerTranslationLanguages } from '../../actions/server';
 import { expandHomeTimeline } from '../../actions/timelines';
-import initialState, { me, owner, singleUserMode, trendsEnabled, trendsAsLanding, disableHoverCards } from '../../initial_state';
+import initialState, { me, owner, singleUserMode, trendsEnabled, trendsAsLanding, disableHoverCards, shopEnabled } from '../../initial_state';
 
 import BundleColumnError from './components/bundle_column_error';
 import { UploadArea } from './components/upload_area';
@@ -240,7 +240,7 @@ class SwitchingColumnsArea extends PureComponent {
             <WrappedRoute path='/messages/all' component={AdminMessages} content={children} />
             <WrappedRoute path='/messages' component={Messages} content={children} />
             <WrappedRoute path='/scheduled_statuses' component={ScheduledStatuses} content={children} />
-            <WrappedRoute path='/shop' component={SystemShop} content={children} />
+            {shopEnabled ? <WrappedRoute path='/shop' component={SystemShop} content={children} /> : <Redirect from='/shop' to='/home' exact />}
             <WrappedRoute path='/system/sessions/:id' component={SystemSession} content={children} />
             <WrappedRoute path='/system/games/:key' component={SystemGame} content={children} />
             <WrappedRoute path='/system/:section(wallet|inventory)' component={SystemWallet} content={children} />

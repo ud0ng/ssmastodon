@@ -118,6 +118,17 @@ RSpec.describe 'API V1 System shop and items' do
     end
   end
 
+  it 'closes the shop when it is not unlocked' do
+    Game::Config.merge!('currency', 'shop_open' => false)
+
+    get '/api/v1/system/shop', headers: headers
+    expect(response).to have_http_status(403)
+
+    post '/api/v1/system/shop/purchase', params: { item_id: frog.id }, headers: headers
+    expect(response).to have_http_status(403)
+    expect(count('초콜릿 개구리')).to eq 0
+  end
+
   it 'refuses items you do not have' do
     post '/api/v1/system/items/discard', params: { name: '투명 망토' }, headers: headers
 

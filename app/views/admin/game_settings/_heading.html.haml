@@ -14,6 +14,7 @@
     :ruby
       primary.item :common, safe_join([material_symbol('tune'), game_t('admin.games.tabs.settings')]), admin_game_setting_path('common'), highlights_on: %r{/admin/games/common}
       primary.item :commands, safe_join([material_symbol('chat_bubble'), game_t('admin.games.tabs.commands')]), admin_game_setting_path('commands'), highlights_on: %r{/admin/games/commands}
+      primary.item :help, safe_join([material_symbol('info'), game_t('admin.games.tabs.help')]), admin_game_setting_path('help'), highlights_on: %r{/admin/games/help}
       primary.item :overview, safe_join([material_symbol('list'), game_t('admin.games.tabs.contents')]), admin_game_settings_path, highlights_on: %r{/admin/games\z|/admin/games/(#{content_keys.join('|')})\z}
       primary.item :lessons, safe_join([material_symbol('description'), game_t('admin.games.tabs.lessons')]), admin_game_setting_path('lessons'), highlights_on: %r{/admin/games/(lessons|#{lesson_keys.join('|')})\z}
       primary.item :shop, safe_join([material_symbol('inventory_2'), game_t('admin.games.shop.title')]), admin_game_shops_path, highlights_on: %r{/admin/games/shops}

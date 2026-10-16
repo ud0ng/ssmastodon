@@ -106,6 +106,7 @@ en:
         title: Season
       tabs:
         commands: Commands
+        help: Help
         contents: Content
         lessons: Lessons
         list: List
@@ -126,6 +127,11 @@ en:
         messages_match: Messages · requests and play
         messages_score: Messages · points, rewards, record
         messages_gift: Messages · gift notifications
+        help_commands: Help commands
+        help_basic: Basic help
+        help_shop: Shop help
+        help_content: Content help
+        help_admin: Staff help
         season: Season messages
         basic: Basic
         lesson_messages: Messages
@@ -143,6 +149,8 @@ en:
         pick: Choose an item
       shop:
         commands: "Commands"
+        open: "Shop open"
+        open_hint: "Open or close the shop. When closed, the shop menu and page disappear for users."
         commands_hint: "Names of the shop commands the bot handles. Its [help] uses these names too."
         admin_commands: "Staff commands"
         admin_commands_hint: "Commands only staff accounts can use."
@@ -408,6 +416,7 @@ en:
           stats: Stats
         title: Characters
       kind_hint: "This game's basics, rules, rewards, commands and messages. Win/draw/loss points and time limits are in the Settings tab, accept/decline/forfeit commands in the Commands tab."
+      help_hint: "Edit the commands and lines of the bot help ([help], shop, content and staff help). Untouched tables follow the current command names and enabled contents."
       lesson_hint: This subject's unlock, commands, rules and messages. Study/class commands and grade points are in the Lessons tab.
       lessons: Lessons
       lessons_hint: 'Shared lesson settings. [study/subject] is solo, [class/subject] gathers a class first. Grades go to the report card and become points.'

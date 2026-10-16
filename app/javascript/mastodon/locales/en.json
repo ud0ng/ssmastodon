@@ -1180,5 +1180,6 @@
   "wallet.gift_have": "You have {money} {currency}.",
   "wallet.gift_max": "up to {max}",
   "item.use_confirm": "Use one {name}?",
-  "item.use_effect": "{stat} {value}"
+  "item.use_effect": "{stat} {value}",
+  "wallet.inventory_title": "Belongings · {count}"
 }

@@ -4,13 +4,15 @@
 - value = @values[field.key]
 - default = field.type == :lines ? Array(field.default).join("\n") : field.default
 - items_field = field.type == :lines && field.key.start_with?('reward_items')
-- data = { game_field: items_field ? 'items' : field.type, default: default.to_s, field_label: field.label }
+-# 표로 고치는 줄 (도움말: 명령어|설명)
+- table_field = field.type == :lines && field.columns.present?
+- data = { game_field: items_field || table_field ? 'items' : field.type, default: default.to_s, field_label: field.label }
 - if field.type == :boolean
   = render 'admin/ui/switch', label: field.label, name: name, id: field_id, checked: value, hint: field.hint, extra: 'game-field', data: data.merge(default: field.default ? '1' : '0')
 - else
   - data = data.merge(percent: (field.type == :integer && field.label.to_s.include?('%')) || nil, tokens: (field.type == :text ? (field.tokens + Game::Text::PARTICLES.keys).to_json : nil))
   - hint = items_field ? game_t('admin.games.reward_item.hint') : field.hint
-  = render layout: 'admin/ui/field', locals: { label: field.label, id: field_id, type: :custom, hint: hint, wide: %i(text lines).include?(field.type), extra: 'game-field', data: data } do
+  = render layout: 'admin/ui/field', locals: { label: field.label, id: field_id, type: :custom, hint: hint, wide: %i(text lines).include?(field.type) || field.key.start_with?('intro_'), extra: 'game-field', data: data } do
     - case field.type
     - when :account
       -# 회원 아이디: 가입한 회원 목록에서 고른다
@@ -22,7 +24,10 @@
     - when :integer
       = number_field_tag name, value, id: field_id, step: 1, class: 'ui-input ui-input--number'
     - when :lines
-      - if items_field
+      - if table_field
+        -# 도움말 줄: '명령어|설명' 표 (game_config_editor.ts setupStatsEditor, 보상 아이템 표와 같은 칸)
+        = text_area_tag name, Array(value).join("\n"), id: field_id, rows: 3, class: 'ui-input ui-input--textarea', data: { stats_editor: { columns: field.columns, sep: '|' }.to_json }
+      - elsif items_field
         -# 보상 아이템: 상점 아이템을 골라 개수·확률을 적는 표 (game_config_editor.ts setupStatsEditor)
         - editor = { columns: [game_t('admin.games.reward_item.name'), game_t('admin.games.reward_item.count'), game_t('admin.games.reward_item.chance')], sep: '|', choices: @shop_item_names, choice_placeholder: game_t('admin.games.reward_item.pick') }
         = text_area_tag name, Array(value).join("\n"), id: field_id, rows: 3, class: 'ui-input ui-input--textarea', data: { stats_editor: editor.to_json }

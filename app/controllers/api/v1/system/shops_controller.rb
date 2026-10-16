@@ -9,6 +9,7 @@ class Api::V1::System::ShopsController < Api::BaseController
   before_action -> { doorkeeper_authorize! :read }, only: [:show]
   before_action -> { doorkeeper_authorize! :write }, only: [:purchase]
   before_action :require_user!
+  before_action :require_shop_open!
 
   def show
     render json: {
@@ -31,6 +32,11 @@ class Api::V1::System::ShopsController < Api::BaseController
   end
 
   private
+
+  # 상점 해금이 꺼져 있으면 (컨텐츠 설정 > 상점) 목록도 구매도 받지 않는다
+  def require_shop_open!
+    render json: { error: '지금은 상점이 열려 있지 않습니다.' }, status: 403 unless Game::Config.for('currency')['shop_open']
+  end
 
   def currency
     Game::Config.for('common')['currency_name']

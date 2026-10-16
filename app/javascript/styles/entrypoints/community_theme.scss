@@ -1218,6 +1218,15 @@ body.community-theme:not(.admin) {
   }
 
   // 상점 양피지 카드의 그림은 금테 액자 그대로 (위 재화·인벤토리 그림 칸 색을 덮어쓰지 않게)
+  .shop-card .wallet-page__item-count {
+    background: var(--sys-gold);
+    color: #fff;
+  }
+
+  .shop-card__note {
+    color: var(--ct-dim);
+  }
+
   .shop-card .wallet-page__item-image {
     border: 1px solid var(--sys-gold-soft);
     border-radius: 2px;

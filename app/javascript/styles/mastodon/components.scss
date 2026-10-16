@@ -15614,6 +15614,7 @@ body .search__popout__menu__item {
   gap: 6px;
   align-items: center;
   width: 100%;
+  height: 100%; // 메모가 있는 카드와 높이를 맞춘다
   padding: 12px 10px 10px;
   color: inherit;
   font: inherit;
@@ -15650,6 +15651,27 @@ body .search__popout__menu__item {
     text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  // 인벤토리 메모 (예: 아버지 유품)
+  &__note {
+    width: 100%;
+    overflow: hidden;
+    color: var(--color-dim, $darker-text-color);
+    font-family: var(--sys-serif);
+    font-size: 12px;
+    font-style: italic;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // 개수 배지: 금빛
+  .wallet-page__item-count {
+    border-radius: 2px;
+    background: var(--sys-gold);
+    color: #fff;
+    font-family: var(--sys-serif);
   }
 
   // 가격: 금빛 글씨, 위에 짧은 금선

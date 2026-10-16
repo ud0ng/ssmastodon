@@ -1,5 +1,5 @@
 - kind = Game::Kinds.registry[@key]
-- title = { 'common' => game_t("admin.games.tabs.#{@page}"), 'lessons' => game_t('admin.games.tabs.lessons') }.fetch(@key) { kind.display_name }
+- title = { 'common' => game_t("admin.games.tabs.#{@page}"), 'lessons' => game_t('admin.games.tabs.lessons'), 'help' => game_t('admin.games.tabs.help') }.fetch(@key) { kind.display_name }
 - content_for :page_title do
   = title
 
@@ -13,6 +13,8 @@
   = render 'admin/ui/subtabs', items: items, label: game_t('admin.games.tabs.lessons')
   - if @key == 'lessons'
     %p.hint.game-config__hint= game_t('admin.games.lessons_ui.opener_hint', system: Game::System.username, command: @values['cmd_class'])
+- elsif @key == 'help'
+  %p.hint.game-config__hint= game_t('admin.games.help_hint')
 - elsif kind
   -# 컨텐츠: 목록 | 컨텐츠들 (탭 안의 탭) + 한 줄 안내
   = render 'admin/game_settings/content_tabs', current: kind

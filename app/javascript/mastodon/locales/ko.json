@@ -1317,5 +1317,6 @@
   "wallet.gift_have": "가진 재화 {money}{currency}",
   "wallet.gift_max": "최대 {max}",
   "item.use_confirm": "{name} 1개를 사용할까요?",
-  "item.use_effect": "사용하면 {stat} {value}"
+  "item.use_effect": "사용하면 {stat} {value}",
+  "wallet.inventory_title": "소지품 · {count}개"
 }

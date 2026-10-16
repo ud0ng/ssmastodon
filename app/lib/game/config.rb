@@ -7,10 +7,13 @@
 # 문구에는 %{이름} 자리표시와 {이가}{을를}{은는}{과와}{으로로}{아야} 조사를 쓸 수 있다.
 module Game
   class Config
-    Field = Struct.new(:key, :type, :default, :label, :hint, :group, :choices, keyword_init: true) do
+    # columns: lines 를 '칸|칸' 표로 고칠 때 칸 이름 (도움말의 명령어|설명)
+    # default 가 lambda 면 읽을 때마다 계산한다 (도움말 기본 줄은 지금 명령어 이름·켜진 컨텐츠로)
+    Field = Struct.new(:key, :type, :default, :label, :hint, :group, :choices, :columns, keyword_init: true) do
       # 문구 기본값은 한글 명령어로 ({계정명} 등, Game::Text)
       def default
-        %i(text string).include?(type) ? Game::Text.koreanize(self[:default]) : self[:default]
+        value = self[:default].respond_to?(:call) ? self[:default].call : self[:default]
+        %i(text string).include?(type) ? Game::Text.koreanize(value) : value
       end
 
       # 관리 화면에서 이 문구에 쓸 수 있는 명령어
@@ -38,19 +41,20 @@ module Game
 
       def schema(key)
         return Game::Lessons::FIELDS if key == 'lessons'
+        return Game::Help::FIELDS if key == 'help'
 
         SCHEMAS.fetch(key) { Game::Kinds.fetch(key).schema }
       end
 
       def keys
-        SCHEMAS.keys + ['lessons'] + Game::Kinds.keys
+        SCHEMAS.keys + %w(lessons help) + Game::Kinds.keys
       end
 
       # 관리 화면에서 묶어 보여 줄 칸: [[묶음 이름, 칸들], ...]
       # 공통 설정은 화면(page)마다 LAYOUT 에 적은 묶음만, 수업·과목·컨텐츠는 LAYOUT 뒤에 나머지 (컨텐츠의 points 는 설정 탭 표로).
       def sections(key, page = nil)
         fields = schema(key)
-        layout = LAYOUT[page ? [key, page] : key]
+        layout = key == 'help' ? Game::Help::LAYOUT : LAYOUT[page ? [key, page] : key]
         kind = Game::Kinds.registry[key]
         layout ||= LAYOUT[kind.lesson? ? :lesson_subject : :content_subject] if kind
         return fields.group_by(&:group).to_a if layout.nil?
@@ -214,6 +218,9 @@ module Game
 
     # 상점 (컨텐츠 설정 > 상점). 자동봇이 /api/v1/bot/config 로 읽는다 (명령어 이름·운영진·도움말)
     CURRENCY = [
+      # 상점 해금: 끄면 웹 상점 메뉴·화면이 사라지고 웹·자동봇 구매를 받지 않는다 (인벤토리·사용·양도는 그대로)
+      Field.new(key: 'shop_open', type: :boolean, default: true, group: 'shop_open', label: '상점 해금', hint: '끄면 사용자 화면에서 상점 메뉴가 사라지고 [상점]·[구매]를 받지 않습니다'),
+
       # 상점 명령어 (자동봇이 처리). 이름만 바꾸면 자동봇 도움말도 같이 바뀐다
       Field.new(key: 'cmd_bag', type: :string, default: '가방', group: 'shop_commands', label: '가방', hint: '소지금과 소지품'),
       Field.new(key: 'cmd_shop', type: :string, default: '상점', group: 'shop_commands', label: '상점', hint: '상점 목록'),
@@ -224,7 +231,6 @@ module Game
       Field.new(key: 'cmd_status', type: :string, default: '상태 확인', group: 'shop_commands', label: '상태 확인', hint: '소지금·소지품·스탯'),
       Field.new(key: 'cmd_transfer', type: :string, default: '양도', group: 'shop_commands', label: '양도', hint: '[양도/n재화/캐릭터명] [양도/아이템/캐릭터명]'),
       Field.new(key: 'cmd_attendance', type: :string, default: '출석', group: 'shop_commands', label: '출석', hint: '보상은 설정 탭의 출석 보상'),
-      Field.new(key: 'cmd_help', type: :string, default: '도움말', group: 'shop_commands', label: '도움말'),
       Field.new(key: 'transfer_enabled', type: :boolean, default: true, group: 'shop_commands', label: '양도 켜기', hint: '끄면 [양도]를 받지 않습니다'),
 
       # 운영진 명령어 (운영진 계정만)
@@ -237,9 +243,8 @@ module Game
       Field.new(key: 'cmd_stat_change', type: :string, default: '변경', group: 'admin_commands', label: '스탯 변경', hint: '스탯 이름 뒤에 붙인다: [힘 변경/+3/캐릭터명]'),
     ].freeze
 
-    # 자동봇 [도움말] 줄: 명령어 이름은 위 설정으로 채운다 (%{cmd}, 양도는 %{currency})
+    # 자동봇 [상점 도움말] 줄: 명령어 이름은 위 설정으로 채운다 (%{cmd}, 양도는 %{currency}). [도움말] 은 분류 목록만 보여 준다
     SHOP_HELP = [
-      ['cmd_help', '[%{cmd}] 도움말을 보여줍니다.'],
       ['cmd_bag', '[%{cmd}] 현재 소지금과 소지품을 확인합니다.'],
       ['cmd_shop', '[%{cmd}] 상점 목록을 출력합니다.'],
       ['cmd_buy', '[%{cmd}/아이템명] 원하는 아이템을 구매합니다.'],
@@ -252,6 +257,7 @@ module Game
       ['cmd_attendance', '[%{cmd}] 하루 한 번 재화를 받습니다.'],
     ].freeze
 
+    # 자동봇 [운영진 도움말] 줄
     SHOP_ADMIN_HELP = [
       ['cmd_money_add', '[%{cmd}/10/캐릭터명] 소지금을 더합니다. (캐릭터명은 쉼표로 여러 명, 또는 전원)'],
       ['cmd_money_sub', '[%{cmd}/10/캐릭터명] 소지금을 뺍니다.'],
@@ -305,7 +311,7 @@ module Game
     }.freeze
 
     # 관리 화면에서 이 칸부터 새 줄에 놓는다 (기본 명령어: 수락·거절·기권 / 소속 점수 보기·내 전적 보기)
-    ROW_STARTS = %w(cmd_points).freeze
+    ROW_STARTS = (%w(cmd_points) + %w(cmd_shop_help cmd_content_help cmd_admin_help)).freeze
 
     # 공통 설정의 화면들 (컨텐츠 설정의 '설정' / '명령어' 탭)
     COMMON_PAGES = %w(settings commands).freeze

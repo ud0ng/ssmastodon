@@ -1,6 +1,6 @@
 // 웹 재화·인벤토리 화면 (글쓰기창 아래 버튼에서 들어온다)
 //   /system/wallet     보유 재화 카드(선물) + 재화 기록 (전체/획득/사용/아이템 탭, 날짜별, 더 보기)
-//   /system/inventory  가진 아이템 (상점 그림 + 개수 배지 + 이름). 누르면 아이템 모달 (item_modal)
+//   /system/inventory  가진 아이템 양피지 카드 (상점 화면과 같은 해리포터 스타일). 누르면 아이템 모달 (item_modal)
 import { useCallback, useMemo, useState } from 'react';
 
 import { defineMessages, FormattedDate, FormattedMessage, FormattedTime, useIntl } from 'react-intl';
@@ -225,21 +225,30 @@ const InventoryView: React.FC<{ wallet: Wallet }> = ({ wallet }) => {
     dispatch(openModal({ modalType: 'INVENTORY_ITEM', modalProps: { item, transferEnabled: wallet.transfer_enabled } }));
   };
 
-  return wallet.inventory.length === 0 ? (
-    <p className='wallet-page__empty'>
-      <FormattedMessage id='wallet.no_items' defaultMessage='No items yet.' />
-    </p>
-  ) : (
-    <ul className='wallet-page__items'>
-      {wallet.inventory.map((item) => (
-        <li key={item.name}>
-          <button type='button' className='wallet-page__item' onClick={() => { open(item); }}>
-            <ItemImage item={item} count={item.count} />
-            <span className='wallet-page__item-name'>{item.name}</span>
-          </button>
-        </li>
-      ))}
-    </ul>
+  // 상점과 같은 해리포터 분위기: 금빛 선 제목 + 양피지 카드 (개수는 금빛 배지, 메모는 이름 아래)
+  return (
+    <section className='system-section'>
+      <h3 className='system-section__title'>
+        <FormattedMessage id='wallet.inventory_title' defaultMessage='Belongings · {count}' values={{ count: wallet.item_count }} />
+      </h3>
+      {wallet.inventory.length === 0 ? (
+        <p className='system-page__empty'>
+          <FormattedMessage id='wallet.no_items' defaultMessage='No items yet.' />
+        </p>
+      ) : (
+        <ul className='shop-page__items'>
+          {wallet.inventory.map((item) => (
+            <li key={item.name}>
+              <button type='button' className='shop-card' onClick={() => { open(item); }}>
+                <ItemImage item={item} count={item.count} />
+                <span className='shop-card__name'>{item.name}</span>
+                {item.note && <span className='shop-card__note'>{item.note}</span>}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 };
 
@@ -254,7 +263,7 @@ const WalletPage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
     <Column bindToDocument={!multiColumn} label={title}>
       <ColumnHeader icon={inventory ? 'inventory' : 'diamond'} iconComponent={inventory ? InventoryIcon : DiamondIcon} title={title} multiColumn={multiColumn} showBackButton />
 
-      <div className={inventory ? 'scrollable wallet-page' : 'scrollable wallet-page wallet-page--money'}>
+      <div className={inventory ? 'scrollable system-page shop-page' : 'scrollable wallet-page wallet-page--money'}>
         {!wallet ? <LoadingIndicator /> : inventory ? <InventoryView wallet={wallet} /> : <MoneyView wallet={wallet} />}
       </div>
 

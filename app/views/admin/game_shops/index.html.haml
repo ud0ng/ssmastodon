@@ -7,7 +7,7 @@
 - none = '—'
 
 -# 명령어 · 운영진 명령어: 자동봇이 /api/v1/bot/config 로 읽어 그 이름으로 처리하고, 도움말도 이 이름으로 만든다
-- { 'shop_commands' => 'commands', 'admin_commands' => 'admin_commands' }.each do |group, key|
+- { 'shop_open' => 'open', 'shop_commands' => 'commands', 'admin_commands' => 'admin_commands' }.each do |group, key|
   = render layout: 'admin/ui/section', locals: { title: game_t("admin.games.shop.#{key}"), hint: game_t("admin.games.shop.#{key}_hint") } do
     = form_tag currency_admin_game_shops_path, method: :patch, class: 'simple_form' do
       - fields = @sections.fetch(group, [])
