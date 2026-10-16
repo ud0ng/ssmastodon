@@ -15585,6 +15585,85 @@ body .search__popout__menu__item {
   }
 }
 
+// 상점 화면 (features/system/shop.tsx): 시스템 화면 안에서 상점 이름 = 금빛 선 제목, 아이템 = 양피지 카드
+.shop-page {
+  &__description {
+    margin: -6px 0 14px;
+    color: var(--color-dim, $darker-text-color);
+    font-family: var(--sys-serif);
+    font-size: 13px;
+    font-style: italic;
+    text-align: center;
+  }
+
+  &__items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}
+
+.shop-card {
+  @extend %system-parchment;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  padding: 12px 10px 10px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 0 0 3px var(--sys-parchment),
+      inset 0 0 0 4px var(--sys-gold),
+      0 4px 10px rgb(0 0 0 / 18%);
+  }
+
+  // 그림: 금테 액자
+  .wallet-page__item-image {
+    border: 1px solid var(--sys-gold-soft);
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--sys-parchment) 70%, #000 4%);
+  }
+
+  .wallet-page__item-letter {
+    color: var(--sys-gold);
+    font-family: var(--sys-serif);
+  }
+
+  &__name {
+    width: 100%;
+    overflow: hidden;
+    font-family: var(--sys-serif);
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // 가격: 금빛 글씨, 위에 짧은 금선
+  &__price {
+    padding-top: 5px;
+    border-top: 1px solid var(--sys-gold-soft);
+    color: var(--sys-gold);
+    font-family: var(--sys-serif);
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
 .system-hourglasses {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
@@ -16948,35 +17027,6 @@ body .search__popout__menu__item {
   }
 }
 
-// 상점 화면: 상점 이름·설명 아래 아이템 카드 (재화·인벤토리 화면과 같은 카드), 이름 아래 가격
-.shop-page {
-  &__shop + &__shop {
-    margin-top: 24px;
-  }
-
-  &__description {
-    margin-bottom: 12px;
-    color: var(--color-dim, $darker-text-color);
-    font-size: 13px;
-  }
-
-  &__price {
-    display: inline-flex;
-    gap: 3px;
-    align-items: center;
-    font-size: 13px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-
-    .icon {
-      width: 14px;
-      height: 14px;
-    }
-  }
-}
-
-// 아이템 모달 (인벤토리·상점): 확인 모달 틀에 그림 + 이름·설명, 개수, 받는 사람 검색창
-// 받는 사람 드롭다운이 모달 밖으로 나올 수 있게 overflow 를 연다
 // 세로로 긴 모양: 사진 → 이름 → 설명 → (개수·받는 사람) → 버튼
 .item-modal {
   width: 360px;

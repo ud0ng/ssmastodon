@@ -1,17 +1,15 @@
-// 웹 '상점' 메뉴 (/shop): 상점마다 파는 아이템 카드. 누르면 구매 모달 (shop_item_modal)
+// 웹 '상점' 메뉴 (/shop): 상점마다 파는 아이템 양피지 카드 (시스템 화면 스타일). 누르면 구매 모달 (shop_item_modal)
 import { useCallback, useEffect, useState } from 'react';
 
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
 import { Helmet } from 'react-helmet';
 
-import DiamondIcon from '@/material-icons/400-24px/diamond.svg?react';
 import ShopIcon from '@/styles/bird-theme-svg/shop.svg?react';
 import { openModal } from 'mastodon/actions/modal';
 import { apiRequestGet } from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
-import { Icon } from 'mastodon/components/icon';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 import { useAppDispatch } from 'mastodon/store';
 
@@ -79,36 +77,30 @@ const ShopPage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
     <Column bindToDocument={!multiColumn} label={title}>
       <ColumnHeader icon='shop' iconComponent={ShopIcon} title={title} multiColumn={multiColumn} />
 
-      <div className='scrollable wallet-page'>
+      {/* 시스템 화면과 같은 해리포터 분위기: 상점 이름은 금빛 선 제목, 아이템은 양피지 카드 */}
+      <div className='scrollable system-page shop-page'>
         {!data ? (
           <LoadingIndicator />
         ) : (
           <>
-            <div className='wallet-page__summary'>
-              <Icon id='diamond' icon={DiamondIcon} />
-              <strong>{data.money.toLocaleString()}</strong>
-              <span>{data.currency}</span>
-            </div>
-
             {data.shops.length === 0 && (
-              <p className='wallet-page__empty'>
+              <p className='system-page__empty'>
                 <FormattedMessage id='shop.empty' defaultMessage='Nothing for sale right now.' />
               </p>
             )}
 
             {data.shops.map((shop) => (
-              <section key={shop.id} className='shop-page__shop'>
-                <h3 className='wallet-page__title'>{shop.name}</h3>
+              <section key={shop.id} className='system-section'>
+                <h3 className='system-section__title'>{shop.name}</h3>
                 {shop.description && <p className='shop-page__description'>{shop.description}</p>}
-                <ul className='wallet-page__items'>
+                <ul className='shop-page__items'>
                   {shop.items.map((item) => (
                     <li key={item.id}>
-                      <button type='button' className='wallet-page__item' onClick={() => { open(item); }}>
+                      <button type='button' className='shop-card' onClick={() => { open(item); }}>
                         <ItemImage item={item} />
-                        <span className='wallet-page__item-name'>{item.name}</span>
-                        <span className='shop-page__price'>
-                          <Icon id='diamond' icon={DiamondIcon} />
-                          {item.price.toLocaleString()}
+                        <span className='shop-card__name'>{item.name}</span>
+                        <span className='shop-card__price'>
+                          {item.price.toLocaleString()} {data.currency}
                         </span>
                       </button>
                     </li>
