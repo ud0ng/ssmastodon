@@ -4,7 +4,7 @@
 # DM 으로 진행한 판은 참가자에게만 보인다.
 class Api::V1::System::GamesController < Api::BaseController
   LIST_LIMIT = 15
-  RANK_LIMIT = 10
+  RANK_LIMIT = 5
 
   before_action -> { doorkeeper_authorize! :read }
   before_action :require_user!
@@ -18,9 +18,10 @@ class Api::V1::System::GamesController < Api::BaseController
       key: @kind.key,
       name: @kind.display_name,
       group: Game::Guide.group_of(@kind),
+      event: @kind.event?,
       enabled: @kind.enabled?,
       system_acct: Game::System.username,
-      command: @kind.lesson? ? nil : @kind.config['command'],
+      command: @kind.config['command'],
       max_opponents: @kind.max_opponents,
       summary: guide[:summary],
       steps: guide[:steps],
@@ -41,14 +42,9 @@ class Api::V1::System::GamesController < Api::BaseController
     not_found if @kind.nil?
   end
 
-  # 점수·보상 한눈에 (수업은 등급별)
+  # 점수·보상 한눈에
   def rules
     config = @kind.config
-    if @kind.lesson?
-      lessons = Game::Lessons.config
-      return %w(O E A).map { |grade| { label: grade, points: lessons["points_#{grade}"].to_i, money: lessons["reward_money_#{grade}"].to_i } }
-    end
-
     [
       { label: 'win', points: config['points_win'].to_i, money: config['reward_money_win'].to_i, items: Array(config['reward_items_win']).map { |line| line.to_s.split('|').first } },
       { label: 'draw', points: config['points_draw'].to_i, money: config['reward_money_draw'].to_i },
@@ -57,19 +53,19 @@ class Api::V1::System::GamesController < Api::BaseController
   end
 
   def record
-    results = GamePlayer.joins(:session).where(account: current_account, game_sessions: { kind: @kind.key, status: 'finished' }).group(:result).count
+    results = GamePlayer.joins(:session).merge(GameSession.current_kinds).where(account: current_account, game_sessions: { kind: @kind.key, status: 'finished' }).group(:result).count
     { win: results['win'].to_i, lose: results['lose'].to_i, draw: results['draw'].to_i }
   end
 
   # 내가 지금 하고 있는 (또는 신청받은) 이 컨텐츠 판 → 게임 화면에 바로 띄운다
   def my_session
-    GameSession.joins(:players).where(kind: @kind.key, status: %w(pending active), game_players: { account_id: current_account.id })
+    GameSession.current_kinds.joins(:players).where(kind: @kind.key, status: %w(pending active), game_players: { account_id: current_account.id })
                .order(updated_at: :desc).first
   end
 
   def visible_sessions
     mine = GamePlayer.where(account: current_account).select(:game_session_id)
-    GameSession.where(kind: @kind.key).where('game_sessions.visibility <> ? OR game_sessions.id IN (?)', 'direct', mine).includes(players: :account)
+    GameSession.current_kinds.where(kind: @kind.key).where('game_sessions.visibility <> ? OR game_sessions.id IN (?)', 'direct', mine).includes(players: :account)
   end
 
   def session_json(session)
@@ -87,7 +83,7 @@ class Api::V1::System::GamesController < Api::BaseController
 
   # 이 컨텐츠 승리 수 순위
   def ranking
-    wins = GamePlayer.joins(:session).where(result: 'win', game_sessions: { kind: @kind.key, status: 'finished' }).group(:account_id).count
+    wins = GamePlayer.joins(:session).merge(GameSession.current_kinds).where(result: 'win', game_sessions: { kind: @kind.key, status: 'finished' }).group(:account_id).count
     top = wins.sort_by { |_, count| -count }.first(RANK_LIMIT)
     accounts = Account.where(id: top.map(&:first)).index_by(&:id)
     top.filter_map do |account_id, count|

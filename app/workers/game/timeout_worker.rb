@@ -8,7 +8,7 @@ class Game::TimeoutWorker
 
   def perform(session_id, token)
     session = GameSession.find_by(id: session_id)
-    return if session.nil?
+    return if session.nil? || session.kind_class.nil?
 
     session.with_lock do
       next unless session.open? && session.deadline_token == token && session.deadline_at&.past?

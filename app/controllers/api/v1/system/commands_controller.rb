@@ -4,7 +4,7 @@
 # 진행은 툿으로 하던 그대로 (Game::Engine 이 처리, 앱에서는 멘션 알림으로 보인다).
 #
 #   새 판 신청:  kind, opponents[] (아이디)        → '@시스템 @상대 … [시작 명령어]'
-#   수업·자습:   kind, mode=study|class            → '@시스템 [자습/과목]'
+#   서버 이벤트: kind                              → '@시스템 [이벤트 명령어]'
 #   판 안 명령:  session_id, command, args?, target?, dm?
 #                공개 답장이면 다른 참가자도 태그(알림), 대상이 있으면 대상만, dm 이면 시스템에게 DM
 class Api::V1::System::CommandsController < Api::BaseController
@@ -34,12 +34,6 @@ class Api::V1::System::CommandsController < Api::BaseController
   def new_command
     kind = Game::Kinds.registry[params[:kind].to_s]
     return if kind.nil? || !kind.enabled?
-
-    if kind.lesson?
-      lessons = Game::Lessons.config
-      command = params[:mode] == 'class' ? lessons['cmd_class'] : lessons['cmd_study']
-      return ["#{system_mention} [#{command}/#{kind.display_name}]", nil, 'private']
-    end
 
     return ["#{system_mention} [#{kind.config['command']}]", nil, 'private'] if kind.event?
 

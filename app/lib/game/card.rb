@@ -7,7 +7,7 @@ module Game
   #
   # 공개 결과만 담는다. DM 으로 받은 비밀 선택(주문·조합 등)은 결과가 공개된 뒤의 것만.
   #
-  #   kind / name / lesson / mode   컨텐츠 종류·이름, 마법 수업이면 자습(study)·수업(class)
+  #   kind / name / mode            컨텐츠 종류·이름, 서버 이벤트면 mode=event
   #   phase                         pending(신청·모집) / active / finished / cancelled
   #   turn, deadline_at             턴, 이번 단계 마감 시각
   #   players                       [{ seat, account_id, acct, name, avatar, house, result, accepted }]
@@ -27,7 +27,6 @@ module Game
         'session_id' => session.id.to_s,
         'kind' => session.kind,
         'name' => kind_class&.display_name || session.kind,
-        'lesson' => kind_class&.lesson? || false,
         'mode' => session.state['mode'],
         'phase' => session.status,
         'turn' => session.turn,
@@ -76,7 +75,6 @@ module Game
         'version' => VERSION,
         'kind' => 'tournament',
         'name' => tournament.name,
-        'lesson' => false,
         'phase' => 'finished',
         'turn' => 0,
         'players' => [],
@@ -109,9 +107,7 @@ module Game
       common = Game::Config.for('common')
 
       if session.status == 'pending'
-        if session.state['mode'] == 'class'
-          [action(Game::Lessons.config['cmd_join'], seats: 'others')]
-        elsif session.state['mode'] == 'event'
+        if session.state['mode'] == 'event'
           [action(session.kind_class.config['cmd_join'], seats: 'others')]
         else
           waiting = session.players.reject { |player| player.state['accepted'] }.map(&:seat)

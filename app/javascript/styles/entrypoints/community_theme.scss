@@ -1233,44 +1233,7 @@ body.community-theme:not(.admin) {
     background: color-mix(in srgb, var(--sys-parchment) 92%, #000);
   }
 
-  // 재화 카드·내역: 카드는 포인트색을 연하게 깐 박스(글자는 본문색, 숫자·아이콘만 포인트색), 획득은 포인트색
-  .wallet-card {
-    border: var(--ct-compose-border) solid color-mix(in srgb, var(--ct-point) 30%, var(--ct-line));
-    background: linear-gradient(135deg, color-mix(in srgb, var(--ct-point) 20%, var(--ct-panel-raised)), color-mix(in srgb, var(--ct-point) 7%, var(--ct-panel-raised)));
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--ct-point) 12%, transparent);
-    color: var(--ct-text);
-  }
-
-  .wallet-card__label,
-  .wallet-card__balance span {
-    color: var(--ct-dim);
-    opacity: 1;
-  }
-
-  .wallet-card__balance .icon,
-  .wallet-card__balance strong {
-    color: var(--ct-point);
-  }
-
-  .wallet-card__stats > span {
-    background: color-mix(in srgb, var(--ct-point) 10%, transparent);
-    color: var(--ct-dim);
-  }
-
-  .wallet-card__stats strong {
-    color: var(--ct-text);
-  }
-
-  .wallet-card__gift {
-    background: color-mix(in srgb, var(--ct-point) 16%, transparent);
-    color: var(--ct-point);
-  }
-
-  .wallet-card__gift:hover,
-  .wallet-card__gift:focus-visible {
-    background: color-mix(in srgb, var(--ct-point) 26%, transparent);
-  }
-
+  // 재화 카드는 양피지 카드(components.scss, 글쓰기 패널 재화 줄과 같은 모양). 내역은 획득만 포인트색
   .wallet-record {
     --record-color: var(--ct-dim);
   }

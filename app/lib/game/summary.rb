@@ -43,7 +43,7 @@ module Game
       status = Game::Poster.post(text, mentions: [], thread: nil, visibility: 'private')
       return if status.nil?
 
-      payload = { 'version' => Game::Card::VERSION, 'lesson' => false, 'phase' => 'finished', 'turn' => 0, 'players' => [], 'actions' => [], 'awards' => [] }
+      payload = { 'version' => Game::Card::VERSION, 'phase' => 'finished', 'turn' => 0, 'players' => [], 'actions' => [], 'awards' => [] }
       GameEvent.create!(status: status, payload: payload.merge(card))
       status
     end

@@ -117,6 +117,8 @@ class InitialStateSerializer < ActiveModel::Serializer
       dm_chat_enabled: Mastodon::DmChat.enabled?,
       # 상점 해금 (컨텐츠 설정 > 상점): 꺼지면 왼쪽 상점 메뉴·/shop 화면을 숨긴다
       shop_enabled: Game::Config.for('currency')['shop_open'],
+      # 컨텐츠 툿(시스템 계정 툿·시스템에게 보낸 명령어 툿)은 웹 홈·타임라인·알림에서 숨기고 컨텐츠 메뉴에서만 본다
+      system_acct: Game::System.username,
     }
   end
 

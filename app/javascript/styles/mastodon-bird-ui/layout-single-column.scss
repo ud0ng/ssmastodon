@@ -3746,6 +3746,11 @@ body .compose-form .compose-form__uploads {
     order: 8;
   }
 
+  /* 컨텐츠 메뉴: 상점 바로 아래 (같은 순서, 코드에서 상점 다음) */
+  .layout-single-column .column-link[href="/system"] {
+    order: 8;
+  }
+
   .layout-single-column .column-link[href="/bookmarks"] {
     order: 9;
   }
@@ -4726,6 +4731,11 @@ body .compose-form .compose-form__uploads {
 
   /* 상점 메뉴: 예약 게시물과 같은 순서 → 바로 아래(북마크 위) */
   .layout-single-column .column-link[href="/shop"] {
+    order: 8;
+  }
+
+  /* 컨텐츠 메뉴: 상점 바로 아래 (같은 순서, 코드에서 상점 다음) */
+  .layout-single-column .column-link[href="/system"] {
     order: 8;
   }
 

@@ -24,6 +24,7 @@ import {
   InventoryItemModal,
   ShopItemModal,
   MoneyGiftModal,
+  ChallengeModal,
   DmMemberModal,
   ReplyRecipientsModal,
 } from 'mastodon/features/ui/util/async-components';
@@ -86,6 +87,7 @@ export const MODAL_COMPONENTS = {
   'INVENTORY_ITEM': InventoryItemModal,
   'SHOP_ITEM': ShopItemModal,
   'MONEY_GIFT': MoneyGiftModal,
+  'CHALLENGE': ChallengeModal,
   'DM_MEMBERS': DmMemberModal,
   'REPLY_RECIPIENTS': ReplyRecipientsModal,
 };

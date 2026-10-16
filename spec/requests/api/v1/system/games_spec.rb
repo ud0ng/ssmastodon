@@ -41,8 +41,9 @@ RSpec.describe 'API V1 System games' do
 
     groups = response.parsed_body['catalog'].to_h { |group| [group['key'], group['games'].pluck('key')] }
     expect(groups['duel']).to include('jellybean', 'duel')
-    expect(groups['group']).to include('quidditch', 'maze', 'marauders_map')
-    expect(groups['event']).to eq ['secret_chamber']
+    expect(groups['group']).to include('quidditch', 'flying', 'maze', 'marauders_map')
+    expect(groups['group']).to include('secret_chamber')
+    expect(groups.keys).to eq %w(duel group)
   end
 
   it 'returns 404 for an unknown game' do
@@ -86,5 +87,33 @@ RSpec.describe 'API V1 System games' do
     secret = Status.find(response.parsed_body['status_id'])
     expect(secret.text).to eq '@system [공격/필살]'
     expect(secret.visibility).to eq 'direct'
+  end
+
+  it 'lists my finished games with what each one gave me' do
+    game = finished_game(user.account, rival)
+    house = GameHouse.create!(name: '그리핀도르')
+    GameHousePoint.create!(house: house, account: user.account, session: game, amount: 5, reason: 'jellybean')
+    GameReward.create!(account: user.account, session: game, money: 10, items: [{ 'name' => '깃펜', 'count' => 1 }], reason: 'game:jellybean')
+    finished_game(rival, user.account)
+
+    get '/api/v1/system/history', headers: headers
+
+    games = response.parsed_body['games']
+    expect(games.size).to eq 2
+    expect(games.last).to include('session_id' => game.id.to_s, 'name' => '젤리빈 룰렛', 'result' => 'win', 'points' => 5, 'money' => 10,
+                                  'items' => [{ 'name' => '깃펜', 'count' => 1 }])
+    expect(games.first).to include('result' => 'lose')
+    expect(response.parsed_body['next_max_id']).to be_nil
+
+    get '/api/v1/system/history', headers: headers, params: { filter: 'win' }
+    expect(response.parsed_body['games'].pluck('result')).to eq %w(win)
+  end
+
+  it 'uses the description set in the content settings' do
+    Game::Config.merge!('jellybean', 'description' => '젤리빈 한 봉지로 겨루기')
+
+    get '/api/v1/system/games/jellybean', headers: headers
+
+    expect(response.parsed_body['summary']).to eq '젤리빈 한 봉지로 겨루기'
   end
 end

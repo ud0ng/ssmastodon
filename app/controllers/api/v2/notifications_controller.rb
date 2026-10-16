@@ -110,7 +110,8 @@ class Api::V2::NotificationsController < Api::BaseController
       types: Array(browserable_params[:types]),
       exclude_types: Array(browserable_params[:exclude_types]),
       include_filtered: truthy_param?(:include_filtered),
-      include_direct_messages: !exclude_direct_messages?
+      include_direct_messages: !exclude_direct_messages?,
+      include_game: !truthy_param?(:exclude_game)
     )
   end
 

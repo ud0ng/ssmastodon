@@ -1,30 +1,48 @@
 # frozen_string_literal: true
 
 module Game
-  module Lessons
-    # 비행 마법 (수업 전용): 참가자보다 조금 적은 경로 중 하나를 DM 으로 고른다.
-    # 같은 경로를 고른 사람끼리 충돌(실패), 혼자 고른 사람은 성공. 3라운드, 성공 횟수로 등급.
+  module Kinds
+    # 비행 대결 (여럿이, 2~6명, 예전 '비행' 수업): 라운드마다 참가자보다 조금 적은 경로 중 하나를 DM 으로 고른다.
+    # 같은 경로를 고른 사람끼리 충돌(실패), 혼자 고른 사람은 통과. 정한 라운드가 끝나면 통과 횟수가 가장 많은 사람이 승리
+    # (가장 많은 사람이 여럿이면 그 사람들이 함께 승리, 모두 같으면 무승부).
     class Flying < Base
       KEY = 'flying'
 
-      FIELDS = (lesson_fields(name: '비행', modes: 'class', min_players: 4) + [
-        F.new(key: 'cmd_fly', type: :string, default: '비행', group: 'commands', label: '경로 고르기 명령어', hint: '[비행/번호] 또는 [비행/경로 이름]'),
+      FIELDS = (base_fields(name: '비행 대결', command: '비행대결', points_win: 15, points_draw: 5) + [
+        F.new(key: 'max_opponents', type: :integer, default: 5, group: 'rules', label: '함께 태그할 수 있는 사람 수', hint: '1~5 (최대 6명)'),
         F.new(key: 'rounds', type: :integer, default: 3, group: 'rules', label: '라운드 수'),
         F.new(key: 'routes', type: :lines, group: 'flavors', label: '경로 (줄마다 하나)',
               default: ['천문탑 우회', '검은 호수 위 저공비행', '금지된 숲 가장자리', '퀴디치 경기장 상공', '온실 지붕 위', '부엉이장 옆 바람길', '시계탑 사이', '해그리드 오두막 위']),
+        F.new(key: 'cmd_fly', type: :string, default: '비행', group: 'commands', label: '경로 고르기 명령어', hint: '[비행/번호] 또는 [비행/경로 이름]'),
+        F.new(key: 'msg_start', type: :text, group: 'messages', label: '시작', default: '🧹 %{game} 시작! %{rounds}라운드 동안 겹치지 않는 경로로 날아 보세요.'),
         F.new(key: 'msg_round', type: :text, group: 'messages', label: '라운드 시작',
               default: "🧹 %{round}라운드 경로\n%{routes}\n\n시스템 계정에게 DM으로 [%{fly}/번호]를 보내 주세요. 다른 사람과 겹치면 공중에서 충돌합니다!"),
         F.new(key: 'msg_ask', type: :text, group: 'messages', label: 'DM: 경로 고르기', default: "%{round}라운드 경로\n%{routes}\n\n[%{fly}/번호]로 답해 주세요."),
         F.new(key: 'msg_chosen', type: :text, group: 'messages', label: 'DM: 선택 확인', default: '✔ %{route} 경로로 날아오릅니다.'),
         F.new(key: 'msg_bad_route', type: :text, group: 'messages', label: 'DM: 없는 경로', default: '그런 경로는 없습니다. [%{fly}/번호]로 골라 주세요.'),
         F.new(key: 'msg_result', type: :text, group: 'messages', label: '라운드 결과', default: "%{round}라운드 결과\n\n%{lines}"),
-        F.new(key: 'msg_success', type: :text, group: 'messages', label: '성공', default: '🧹 %{route}: %{player} 무사히 통과!'),
+        F.new(key: 'msg_success', type: :text, group: 'messages', label: '통과', default: '🧹 %{route}: %{player} 무사히 통과!'),
         F.new(key: 'msg_crash', type: :text, group: 'messages', label: '충돌', default: '💥 %{route}: %{players} 공중에서 충돌!'),
         F.new(key: 'msg_idle', type: :text, group: 'messages', label: '시간 초과', default: '🍂 %{players}: 빗자루가 떠오르지 않았다.'),
+        F.new(key: 'msg_board', type: :text, group: 'messages', label: '통과 횟수', default: '통과 횟수: %{board}'),
+        F.new(key: 'msg_winner', type: :text, group: 'messages', label: '승리', default: '🏆 %{winner}의 승리!'),
+        F.new(key: 'msg_draw', type: :text, group: 'messages', label: '무승부', default: '모두 같은 횟수로 무승부입니다.'),
       ]).freeze
 
+      class << self
+        def continues_on_timeout?
+          true
+        end
+
+        def max_opponents
+          config['max_opponents'].to_i.clamp(1, 5)
+        end
+      end
+
       def start!
-        state.merge!('round' => 1, 'wins' => {}, 'choices' => {})
+        state.merge!('round' => 1, 'wins' => players.to_h { |player| [player.seat.to_s, 0] }, 'choices' => {})
+        session.update!(turn: 1)
+        post(render(config['msg_start'], rounds: rounds))
         new_round!
       end
 
@@ -49,8 +67,24 @@ module Game
         resolve!
       end
 
-      def self.continues_on_timeout?
-        true
+      # 카드: 사람마다 통과 횟수, 라운드, 이번 라운드 경로, 고른 사람
+      def card_data
+        {
+          'scores' => state['wins'] || {},
+          'round' => state['round'],
+          'rounds' => rounds,
+          'routes' => state['routes'] || [],
+          'chosen' => (state['choices'] || {}).keys,
+          'last_round' => state['last_round'],
+        }
+      end
+
+      # 버튼: 경로마다 DM 으로 [비행/번호]
+      def card_actions
+        seats = players.map(&:seat)
+        Array(state['routes']).each_with_index.map do |route, index|
+          Game::Card.action("#{config['cmd_fly']}/#{index + 1}", seats: seats, label: route, dm: true)
+        end
       end
 
       private
@@ -84,33 +118,36 @@ module Game
           if route.nil?
             lines << render(config['msg_idle'], players: group.map(&:name).join(', '))
           elsif group.size == 1
-            state['wins'][group.first.seat.to_s] = state['wins'][group.first.seat.to_s].to_i + 1
+            seat = group.first.seat.to_s
+            state['wins'][seat] = state['wins'][seat].to_i + 1
             lines << render(config['msg_success'], route: route, player: group.first)
           else
             lines << render(config['msg_crash'], route: route, players: group.map(&:name).join('·'))
           end
         end
-        result = render(config['msg_result'], round: state['round'], lines: lines.join("\n"))
+        state['last_round'] = { 'choices' => state['choices'].dup }
+        board = players.map { |player| "#{player.name} #{state['wins'][player.seat.to_s].to_i}" }.join(' · ')
+        result = [render(config['msg_result'], round: state['round'], lines: lines.join("\n")), render(config['msg_board'], board: board)].join("\n\n")
 
         if state['round'] >= rounds
-          players.each do |player|
-            wins = state['wins'][player.seat.to_s].to_i
-            grade!(player, grade_for(wins), detail: "성공 #{wins}번", sort: -wins)
-          end
-          finish_lesson!(result)
+          finish_race!(result)
         else
           post(result)
           state['round'] += 1
+          session.update!(turn: session.turn + 1)
           new_round!
         end
       end
 
-      def grade_for(wins)
-        return 'P' if wins.zero?
-        return 'O' if wins >= rounds
-        return 'E' if wins == rounds - 1
-
-        'A'
+      def finish_race!(result)
+        wins = players.to_h { |player| [player, state['wins'][player.seat.to_s].to_i] }
+        best = wins.values.max
+        top = wins.select { |_, count| count == best }.keys
+        if top.size == players.size
+          finish!(draw: true, message: "#{result}\n\n#{render(config['msg_draw'])}")
+        else
+          finish!(winners: top, message: "#{result}\n\n#{render(config['msg_winner'], winner: top.map(&:name).join(', '))}")
+        end
       end
     end
   end

@@ -43,8 +43,8 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
 ## 컨텐츠(게임) — 시스템 계정 @system 이 진행 (관리 > 시스템 > 컨텐츠 설정 /admin/games, 캐릭터 관리 /admin/characters)
 
 - **화면·툿에 보이는 이름은 '컨텐츠', 진행 계정은 '시스템'** ('게임'이라고 쓰지 않는다). 코드 이름은 Game 그대로.
-- 해리포터 세계관 게임. 기획: 2인 대결(젤리빈·곱스톤·마법결투·물약·퀴디치), 마법 수업, 비밀의방(마피아), 웹 전용(도둑 지도·미로) 등.
-  1:1 다섯 가지·마법 수업·비밀의방·미로·도둑 지도·주간 결산까지 됨 (docs/컨텐츠-다음-계획.md). 게임 데이터는 마스토돈 DB (구글 시트 아님), 엔진은 서버 안 (Python 자동봇 아님).
+- 해리포터 세계관 게임. 기획: 2인 대결(젤리빈·곱스톤·마법결투·물약·퀴디치), 여럿이(퀴디치 팀전·비행 대결), 비밀의방(마피아), 웹 전용(도둑 지도·미로) 등.
+  1:1 다섯 가지·비행 대결·비밀의방·미로·도둑 지도·주간 결산까지 됨 (docs/컨텐츠-다음-계획.md). 게임 데이터는 마스토돈 DB (구글 시트 아님), 엔진은 서버 안 (Python 자동봇 아님).
 - 흐름: PostStatusService#enqueue_game_command! → `Game::MentionWorker` → `Game::Engine` (첫 [명령어]).
   모르는 명령어는 조용히 넘긴다 (자동봇 ssbot 과 겹치지 않게). 시간 제한은 `Game::TimeoutWorker` (deadline_token 으로 묵은 작업 무시).
 - 시스템 답장은 방금 명령어를 보낸 툿에 단다 (한 스레드로 이어지게). 공개 범위는 신청 툿 (팔로워 공개 / DM). 앱에서도 멘션 알림만으로 알 수 있게 툿 텍스트로 진행.
@@ -55,7 +55,7 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
 - 캐릭터는 `GameCharacter` (회원 목록에서 자동 생성·탈퇴 시 삭제·정지 시 숨김, `GameRoster`).
 - 캐릭터 관리 탭: 명단(상세: 소속·스탯·메모·전적) / 활동(퍼블·답 툿 수와 글자 수, 재화 내역, 인벤토리, 지급) / 소속(점수 기준 소속, 시즌, 목록) / 스탯(`GameCharacterField` stat·status 수식).
 - 툿 보상(컨텐츠 설정 > 설정 > 재화 설정): 툿이 저장될 때 `Status` after_create_commit → `Game::ActivityWorker` → `Game::Activity.reward!` (웹·앱 모두). 자동봇의 툿 보상은 끔 (/api/v1/bot/config 가 0).
-- 컨텐츠 설정 탭: 설정(봇 계정·재화·공통룰) / 명령어(기본 명령어·일반 문구) — 둘 다 공통 설정, `Game::Config::LAYOUT` 의 [common, 화면] / 컨텐츠 / 수업 / 상점.
+- 컨텐츠 설정 탭: 설정(봇 계정·재화·공통룰) / 명령어(기본 명령어·일반 문구) — 둘 다 공통 설정, `Game::Config::LAYOUT` 의 [common, 화면] / 컨텐츠 / 상점. 마법 수업·자습·성적표는 2026-10 에 없앴다 (비행 수업만 `Kinds::Flying` 비행 대결로, game_grades 테이블은 남김).
 - 소속: `GameHouse.category` house/faction. 공통 설정 `group_mode` 로 점수를 모을 쪽을 고른다 (`GameHouse.active`, `GameCharacter#group`). {소속 이름}(house_term)은 그 이름.
 - 컨텐츠 보상: `Game::Rewards` (돈·아이템, game_rewards). 시스템 툿은 판 잠금 트랜잭션 안에서 올라가므로 `Game::Poster` 가 커밋 뒤 DistributionWorker 를 다시 넣는다 (안 그러면 멘션 알림이 빠짐).
 - PC 웹 카드: 시스템 툿마다 `GameEvent`(payload = `Game::Card.build`) → `REST::StatusSerializer#game_card` → `components/content_card.tsx`. 새 컨텐츠는 Kinds 에 `card_data`·`card_actions` 를 만든다 (공개된 것만, 정답·비밀 선택은 끝난 뒤).

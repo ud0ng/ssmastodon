@@ -4,7 +4,8 @@ module Game
   # 웹 시스템 메뉴의 컨텐츠별 화면에 보여 줄 한 줄 소개와 하는 법.
   # %{이름} 은 그 컨텐츠 설정(명령어 등)과 공통 설정 값으로 채운다.
   module Guide
-    GROUPS = %w(duel group lesson event).freeze
+    # 웹 컨텐츠 메뉴 묶음: 1:1 / 팀(여럿이 하는 컨텐츠 + 서버 이벤트)
+    GROUPS = %w(duel group).freeze
 
     TEXT = {
       'jellybean' => {
@@ -27,6 +28,10 @@ module Game
         summary: '1:1 또는 팀전(2·4·6명) 미니 퀴디치',
         steps: ['[%{command}] @상대 (팀전은 @같은편 … @상대편 …, 신청자와 앞쪽 절반이 한 팀)', '턴마다 DM 으로 [%{cmd_chase}] 득점 · [%{cmd_beat}] 상대 방해 · [%{cmd_seek}] 스니치 찾기', '스니치를 잡거나 마지막 턴이 끝나면 점수가 높은 팀 승리'],
       },
+      'flying' => {
+        summary: '겹치지 않는 경로로 날아 가장 많이 통과하는 사람이 이기는 비행 대결 (최대 %{max_people}명)',
+        steps: ['[%{command}] @상대 … 로 신청, 모두 수락하면 시작', '라운드마다 시스템 DM 에 [%{cmd_fly}/번호] 로 경로 고르기 — 경로는 참가자보다 적다', '혼자 고른 경로는 통과, 겹치면 충돌. %{rounds}라운드 뒤 통과 횟수가 가장 많은 사람 승리'],
+      },
       'maze' => {
         summary: '안개 속 미로에서 우승컵을 먼저 찾는 웹 전용 컨텐츠 (최대 4명)',
         steps: ['[%{command}] @상대 … 로 신청, 모두 수락하면 시스템이 진행 화면 링크를 보냄', '진행 화면에서 이번 턴 경로와 태도(협력/방해)를 골라 보내기', '함정·마법 생물·아이템을 지나 우승컵에 먼저 닿으면 승리'],
@@ -41,26 +46,20 @@ module Game
       },
     }.freeze
 
-    LESSON = {
-      summary: '혼자 하는 자습과 함께하는 수업. 등급이 성적표에 쌓인다',
-      steps: ['자습: [%{cmd_study}/%{name}] (과목당 하루 %{study_daily_limit}번)', '수업: 교수가 [%{cmd_class}/%{name}] 으로 열면 [%{cmd_join}] 으로 참가', '등급(O·E·A·P·D·T)에 따라 점수와 보상'],
-    }.freeze
-
     module_function
 
     def group_of(kind)
-      return 'lesson' if kind.lesson?
-      return 'event' if kind.event?
+      return 'group' if kind.event?
 
       kind.max_opponents > 1 ? 'group' : 'duel'
     end
 
     def for(kind)
-      values = Game::Config.for('common').merge(kind.config).merge('name' => kind.display_name)
-      values = values.merge(Game::Lessons.config) if kind.lesson?
-      text = kind.lesson? ? LESSON : TEXT.fetch(kind.key, { summary: '', steps: [] })
+      values = Game::Config.for('common').merge(kind.config).merge('name' => kind.display_name, 'max_people' => kind.max_opponents + 1)
+      text = TEXT.fetch(kind.key, { summary: '', steps: [] })
       {
-        summary: fill(text[:summary], values),
+        # 관리 > 컨텐츠 설정의 설명을 쓰고, 비어 있으면 기본 소개
+        summary: kind.config['description'].presence || fill(text[:summary], values),
         steps: text[:steps].map { |step| fill(step, values) },
       }
     end

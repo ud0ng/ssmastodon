@@ -2,7 +2,7 @@
 
 module Game
   # 컨텐츠 보상: 돈(캐릭터 money)과 아이템(캐릭터 inventory). 기록은 GameReward.
-  # 컨텐츠마다 설정 'rewards' 묶음 (Kinds::Base.base_fields), 마법 수업은 등급별 (Game::Lessons::FIELDS).
+  # 컨텐츠마다 설정 'rewards' 묶음 (Kinds::Base.base_fields).
   module Rewards
     ITEMS_HINT = '줄마다 아이템|개수|확률% (예: 초콜릿 개구리|1|30). 확률을 비우면 반드시 줍니다. 줄마다 따로 뽑습니다.'
 

@@ -158,7 +158,7 @@ const MoneyView: React.FC<{ wallet: Wallet }> = ({ wallet }) => {
         <div className='wallet-card'>
           <span className='wallet-card__top'>
             <span className='wallet-card__label'>
-              <FormattedMessage id='wallet.balance' defaultMessage='Balance' />
+              <FormattedMessage id='wallet.balance_named' defaultMessage='Your {currency}' values={{ currency: wallet.currency }} />
             </span>
             {wallet.transfer_enabled && (
               <button type='button' className='wallet-card__gift' onClick={openGift} disabled={wallet.money <= 0}>

@@ -51,6 +51,16 @@ RSpec.describe 'API V1 DM rooms' do
       expect(room.reload.last_status_id).to_not be_nil
     end
 
+    it 'does not list DMs with the system account (game secrets live in the game room)' do
+      system = Fabricate(:account, username: 'system')
+      kept = attach(direct_status(me, partner))
+      attach(direct_status(system, me))
+
+      get '/api/v1/dm_rooms', headers: headers
+
+      expect(response.parsed_body.pluck('id')).to eq [kept.id.to_s]
+    end
+
     it 'does not list a room I left' do
       room = attach(direct_status(me, partner))
       room.dm_room_members.find_by(account_id: me.id).hide!

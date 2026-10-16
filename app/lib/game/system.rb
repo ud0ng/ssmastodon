@@ -28,19 +28,9 @@ module Game
       status.mentions.any? { |mention| mention.account_id == system.id && !mention.silent? }
     end
 
-    # 운영진이 시스템 계정으로 직접 쓴 [수업/과목] 툿인가 (수업은 이걸로만 연다).
-    # 시스템이 자동으로 올리는 툿(Game::Poster)은 앱이 없어서 걸리지 않는다.
-    def class_toot?(status)
-      system = account
-      return false if system.nil? || status.account_id != system.id || !status.local? || status.application_id.nil?
-
-      command, = Game::Engine.parse(status.text)
-      command.present? && command == Game::Lessons.config['cmd_class']
-    end
-
     # 게임 명령어로 처리할 툿 (Game::MentionWorker)
     def command_toot?(status)
-      mentioned_in?(status) || class_toot?(status)
+      mentioned_in?(status)
     end
   end
 end

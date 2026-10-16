@@ -1,9 +1,10 @@
 // @ts-check
 
-import { dmChatEnabled, me } from '../initial_state';
+import { dmChatEnabled, me, systemAcct } from '../initial_state';
 import { getLocale } from '../locales';
 import { refreshWallet } from '../features/system/use_wallet';
 import { connectStream } from '../stream';
+import { isGameStatus } from '../utils/game_status';
 
 import {
   fetchAnnouncements,
@@ -100,6 +101,12 @@ export const connectTimelineStream = (timelineId, channelName, params = {}, opti
           const notificationJSON = JSON.parse(data.payload);
 
           if (dmChatEnabled && notificationJSON.type === 'mention' && notificationJSON.status?.visibility === 'direct') {
+            break;
+          }
+
+          // 컨텐츠 알림은 알림 목록 대신 컨텐츠 메뉴 배지로
+          if (notificationJSON.account?.acct === systemAcct || isGameStatus(notificationJSON.status)) {
+            refreshWallet();
             break;
           }
 

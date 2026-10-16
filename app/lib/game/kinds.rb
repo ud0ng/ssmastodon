@@ -12,14 +12,10 @@ module Game
         'duel' => Game::Kinds::Duel,
         'potion' => Game::Kinds::Potion,
         'quidditch' => Game::Kinds::Quidditch,
+        'flying' => Game::Kinds::Flying,
         # 웹 전용
         'maze' => Game::Web::Maze,
         'marauders_map' => Game::Web::MaraudersMap,
-        # 마법 수업
-        'levitation' => Game::Lessons::Levitation,
-        'transfiguration' => Game::Lessons::Transfiguration,
-        'flying' => Game::Lessons::Flying,
-        'practice' => Game::Lessons::Practice,
         # 서버 이벤트
         'secret_chamber' => Game::Events::SecretChamber,
       }
@@ -37,9 +33,9 @@ module Game
       registry.values
     end
 
-    # 신청해서 하는 컨텐츠 (마법 수업·서버 이벤트 제외)
+    # 신청해서 하는 컨텐츠 (서버 이벤트 제외)
     def matches
-      all.reject { |kind| kind.lesson? || kind.event? }
+      all.reject(&:event?)
     end
 
     # 1:1 대결

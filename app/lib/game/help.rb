@@ -131,15 +131,6 @@ module Game
         rows << "#{common['cmd_forfeit']}#{SEP}진행 중인 컨텐츠를 포기합니다."
       end
 
-      lessons = Game::Lessons.all.select(&:enabled?)
-      if lessons.any?
-        lesson = Game::Lessons.config
-        rows << "▸ 마법 수업#{SEP}"
-        rows << "#{lesson['cmd_study']}/과목#{SEP}과목을 혼자 연습합니다. (과목: #{lessons.map(&:display_name).join(', ')})"
-        rows << "#{lesson['cmd_join']}#{SEP}열린 수업에 참가합니다."
-        rows << "#{lesson['cmd_report']}#{SEP}내 성적표를 봅니다."
-      end
-
       events = Game::Kinds.events.select(&:enabled?)
       if events.any?
         rows << "▸ 이벤트#{SEP}"

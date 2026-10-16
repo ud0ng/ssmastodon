@@ -1,19 +1,12 @@
 - kind = Game::Kinds.registry[@key]
-- title = { 'common' => game_t("admin.games.tabs.#{@page}"), 'lessons' => game_t('admin.games.tabs.lessons'), 'help' => game_t('admin.games.tabs.help') }.fetch(@key) { kind.display_name }
+- title = { 'common' => game_t("admin.games.tabs.#{@page}"), 'help' => game_t('admin.games.tabs.help') }.fetch(@key) { kind.display_name }
 - content_for :page_title do
   = title
 
 - content_for :heading do
   = render 'admin/game_settings/heading', save_form: 'edit_game_config'
 
--# 수업: 설정 | 과목들 (탭 안의 탭)
-- if @key == 'lessons' || kind&.lesson?
-  - items = [[game_t('admin.games.lessons_ui.settings'), admin_game_setting_path('lessons'), @key == 'lessons', false]]
-  - items += Game::Lessons.all.map { |lesson| [lesson.display_name, admin_game_setting_path(lesson.key), lesson == kind, !lesson.enabled?] }
-  = render 'admin/ui/subtabs', items: items, label: game_t('admin.games.tabs.lessons')
-  - if @key == 'lessons'
-    %p.hint.game-config__hint= game_t('admin.games.lessons_ui.opener_hint', system: Game::System.username, command: @values['cmd_class'])
-- elsif @key == 'help'
+- if @key == 'help'
   -# 도움말: 상점봇 | 시스템봇 (탭 안의 탭)
   = render 'admin/ui/subtabs', label: game_t('admin.games.tabs.help'),
     items: [[game_t('admin.games.help_ui.shop_bot', account: Game::Config.for('common')['bot_usernames'].presence || 'bot'), admin_game_setting_path('help'), @page == 'shop_bot', false],
@@ -47,18 +40,12 @@
           %span.game-token.game-token--person= '{계정명}'
           %span.game-token= '{컨텐츠}'
           %span.game-token.game-token--particle= '{이가}'
-      - if section == 'grades'
-        -# 수업 > 설정: 등급마다 소속 점수 · 재화 · 아이템 한 표
-        = render 'admin/game_settings/grades_table'
-      - else
-        - if section == 'bonus'
-          %p.ui-section__hint= game_t('admin.games.lessons_ui.bonus_hint')
-        -# 줄을 나눠 보여 줄 칸(Game::Config::ROW_STARTS) 앞에서 새 줄
-        - rows = fields.slice_before { |field| Game::Config::ROW_STARTS.include?(field.key) }
-        - rows.each do |row|
-          = render layout: 'admin/ui/fields' do
-            - row.each do |field|
-              = render 'admin/game_settings/config_field', field: field
+      -# 줄을 나눠 보여 줄 칸(Game::Config::ROW_STARTS) 앞에서 새 줄
+      - rows = fields.slice_before { |field| Game::Config::ROW_STARTS.include?(field.key) }
+      - rows.each do |row|
+        = render layout: 'admin/ui/fields' do
+          - row.each do |field|
+            = render 'admin/game_settings/config_field', field: field
 
   -# 설정 탭: 컨텐츠마다 승리·무승부·패배 점수를 한 표에서
   - if @points_kinds

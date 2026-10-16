@@ -13,6 +13,7 @@
  * @property {boolean} activity_api_enabled
  * @property {boolean} dm_chat_enabled
  * @property {boolean} shop_enabled
+ * @property {string=} system_acct
  * @property {string} admin
  * @property {boolean=} boost_modal
  * @property {boolean=} delete_modal
@@ -92,6 +93,7 @@ export const autoPlayGif = getMeta('auto_play_gif');
 export const boostModal = getMeta('boost_modal');
 export const dmChatEnabled = getMeta('dm_chat_enabled');
 export const shopEnabled = getMeta('shop_enabled') !== false;
+export const systemAcct = getMeta('system_acct');
 export const deleteModal = getMeta('delete_modal');
 export const missingAltTextModal = getMeta('missing_alt_text_modal');
 export const disableSwiping = getMeta('disable_swiping');

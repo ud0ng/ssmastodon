@@ -40,23 +40,22 @@ module Game
       end
 
       def schema(key)
-        return Game::Lessons::FIELDS if key == 'lessons'
         return Game::Help::FIELDS if key == 'help'
 
         SCHEMAS.fetch(key) { Game::Kinds.fetch(key).schema }
       end
 
       def keys
-        SCHEMAS.keys + %w(lessons help) + Game::Kinds.keys
+        SCHEMAS.keys + %w(help) + Game::Kinds.keys
       end
 
       # 관리 화면에서 묶어 보여 줄 칸: [[묶음 이름, 칸들], ...]
-      # 공통 설정은 화면(page)마다 LAYOUT 에 적은 묶음만, 수업·과목·컨텐츠는 LAYOUT 뒤에 나머지 (컨텐츠의 points 는 설정 탭 표로).
+      # 공통 설정은 화면(page)마다 LAYOUT 에 적은 묶음만, 컨텐츠는 LAYOUT 뒤에 나머지 (컨텐츠의 points 는 설정 탭 표로).
       def sections(key, page = nil)
         fields = schema(key)
         layout = key == 'help' ? Game::Help::PAGES.fetch(page || 'shop_bot') : LAYOUT[page ? [key, page] : key]
         kind = Game::Kinds.registry[key]
-        layout ||= LAYOUT[kind.lesson? ? :lesson_subject : :content_subject] if kind
+        layout ||= LAYOUT[:content_subject] if kind
         return fields.group_by(&:group).to_a if layout.nil?
 
         placed = layout.filter_map do |name, groups|
@@ -285,26 +284,11 @@ module Game
       ['common', 'season'] => [
         ['season', %w(season)],
       ],
-      # 수업 > 설정: 명령어 / 기본룰 / 소속 점수 및 보상(등급 표 + 상위 보너스) / 문구
-      'lessons' => [
-        ['lesson_commands', %w(commands)],
-        ['lesson_rules', %w(rules)],
-        ['grades', %w(grades)],
-        ['bonus', %w(bonus)],
-        ['lesson_messages', %w(messages)],
-      ],
       # 컨텐츠 > 각 컨텐츠: 기본 / 룰 설정 / 보상 설정 / 명령어 설정 / 문구 설정 (점수는 설정 탭의 표)
       content_subject: [
         ['basic', %w(basic)],
         ['subject_rules', %w(rules time flavors spells roles)],
         ['rewards', %w(rewards)],
-        ['subject_commands', %w(commands)],
-        ['subject_messages', %w(messages)],
-      ],
-      # 수업 > 과목: 기본 / 룰 설정 / 명령어 설정 / 문구 설정
-      lesson_subject: [
-        ['basic', %w(basic)],
-        ['subject_rules', %w(rules flavors spells)],
         ['subject_commands', %w(commands)],
         ['subject_messages', %w(messages)],
       ],

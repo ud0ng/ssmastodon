@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux';
 
 import { changeComposing, mountCompose, unmountCompose } from 'mastodon/actions/compose';
 import ServerBanner from 'mastodon/components/server_banner';
+import { HousePoints } from 'mastodon/features/compose/components/house_points';
 import { Search } from 'mastodon/features/compose/components/search';
 import { WalletBar } from 'mastodon/features/compose/components/wallet_bar';
 import ComposeFormContainer from 'mastodon/features/compose/containers/compose_form_container';
@@ -48,6 +49,7 @@ const ComposePanel = ({ identity }) => {
         <>
           <ComposeFormContainer singleColumn />
           <WalletBar />
+          <HousePoints />
         </>
       )}
 

@@ -108,8 +108,17 @@ class Api::V1::DmRoomsController < Api::BaseController
   def paginated_rooms
     DmRoom
       .visible_to(current_account)
+      .where.not(id: game_room_ids)
       .includes(:dm_room_reads, members: [:account_stat, { user: :role }], last_status: [:media_attachments, :status_stat, { account: [:account_stat, { user: :role }], active_mentions: :account }])
       .to_a_paginated_by_last_status_id(limit_param(LIMIT), params_slice(:max_id, :since_id, :min_id))
+  end
+
+  # 시스템 계정과의 DM(컨텐츠 비밀 선택)은 채팅 목록에서 빼고 컨텐츠 방에서만 본다
+  def game_room_ids
+    system = Game::System.account
+    return DmRoomMember.none.select(:dm_room_id) if system.nil?
+
+    DmRoomMember.where(account_id: system.id).select(:dm_room_id)
   end
 
   def legacy_conversations

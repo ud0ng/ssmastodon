@@ -27,6 +27,12 @@ class Api::V1::System::WalletsController < Api::BaseController
       spent: rewards.spent.sum(:money),
       item_count: character.item_count,
       record: { win: results['win'].to_i, lose: results['lose'].to_i, draw: results['draw'].to_i },
+      # 왼쪽 컨텐츠 메뉴 배지: 받고 아직 수락하지 않은 신청 수
+      invites: invites_count,
+      # 글쓰기 패널 맨 아래 소속 점수 (점수 기준 소속, 이번 시즌)
+      house_term: Game::Config.for('common')['house_term'],
+      my_house_id: character.group_id&.to_s,
+      houses: GameHouse.active.map { |house| { id: house.id.to_s, name: house.name, color: house.color, total: house.total } },
       inventory: Array(character.inventory).map { |item| inventory_json(item, shop_items[Game::Wallet.key(item['name'])]) },
     }
   end
@@ -62,6 +68,14 @@ class Api::V1::System::WalletsController < Api::BaseController
   end
 
   private
+
+  def invites_count
+    GamePlayer.joins(:session).merge(GameSession.current_kinds)
+              .where(account: current_account, game_sessions: { status: 'pending' })
+              .where("COALESCE(game_players.state->>'accepted', 'false') <> 'true'")
+              .where("COALESCE(game_sessions.state->>'mode', '') <> 'event'")
+              .count
+  end
 
   def currency
     Game::Config.for('common')['currency_name']

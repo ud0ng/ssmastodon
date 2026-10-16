@@ -11,6 +11,7 @@ module Game
         [
           F.new(key: 'enabled', type: :boolean, default: true, group: 'basic', label: '켜기'),
           F.new(key: 'name', type: :string, default: name, group: 'basic', label: '컨텐츠 이름'),
+          F.new(key: 'description', type: :string, default: '', group: 'basic', label: '설명', hint: '웹 컨텐츠 메뉴에 보이는 한 줄 소개. 비우면 기본 소개를 씁니다'),
           F.new(key: 'command', type: :string, default: command, group: 'basic', label: '시작 명령어', hint: '[명령어] 와 상대를 태그해 신청'),
           F.new(key: 'points_win', type: :integer, default: points_win, group: 'points', label: '승리 점수'),
           F.new(key: 'points_draw', type: :integer, default: points_draw, group: 'points', label: '무승부 점수'),
@@ -46,11 +47,6 @@ module Game
         # 턴 시간 초과가 그 컨텐츠 규칙의 일부인가 (곱스톤 빗나감, 결투 주문 실패 등).
         # false 면 시간 초과 = 패배이고, 토너먼트 경기에서는 운영진 판정으로 넘긴다.
         def continues_on_timeout?
-          false
-        end
-
-        # 마법 수업 과목인가 (Game::Lessons::Base)
-        def lesson?
           false
         end
 

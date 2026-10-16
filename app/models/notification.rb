@@ -137,7 +137,7 @@ class Notification < ApplicationRecord
   end
 
   class << self
-    def browserable(types: [], exclude_types: [], from_account_id: nil, include_filtered: false, include_direct_messages: true)
+    def browserable(types: [], exclude_types: [], from_account_id: nil, include_filtered: false, include_direct_messages: true, include_game: true)
       requested_types = if types.empty?
                           TYPES
                         else
@@ -153,7 +153,28 @@ class Notification < ApplicationRecord
       end
 
       scope = scope.without_direct_messages unless include_direct_messages
+      scope = scope.without_game unless include_game
       scope.without_unavailable
+    end
+
+    # 컨텐츠 알림 빼기 (웹): 시스템 계정이 보낸 알림, 시스템 계정을 멘션한 툿(명령어)의 멘션 알림
+    def without_game
+      system = Game::System.account
+      return all if system.nil?
+
+      where.not(from_account_id: system.id).where(
+        <<~SQL.squish,
+          NOT EXISTS (
+            SELECT 1
+              FROM mentions
+              INNER JOIN mentions AS game_mentions ON game_mentions.status_id = mentions.status_id
+             WHERE notifications.activity_type = 'Mention'
+               AND mentions.id = notifications.activity_id
+               AND game_mentions.account_id = :system_id
+          )
+        SQL
+        system_id: system.id
+      )
     end
 
     def without_direct_messages

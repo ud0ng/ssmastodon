@@ -145,43 +145,13 @@ begin
     "#{session.reload.status}, 참가 #{session.players.count}명"
   end
 
-  # 수업
-  Game::Config.merge!('lessons', 'study_daily_limit' => 0)
-  Game::Config.merge!('transfiguration', 'tries' => 1)
-  check.call('변신술 자습') do
-    reset!
-    say('owner', '@system [자습/변신술]')
-    session = latest('transfiguration')
-    say('owner', '@system [약]', session: session)
-    grade = GameGrade.where(session: session).last&.grade
-    "#{session.reload.status}, 등급 #{grade || '-'}, 보상 #{GameReward.where(game_session_id: session.id).count}건"
-  end
-
-  Game::Config.merge!('practice', 'gain_min' => 100, 'gain_max' => 100)
-  check.call('어둠의 마법 방어술 자습') do
-    reset!
-    say('owner', '@system [자습/어둠의 마법 방어술]')
-    session = latest('practice')
-    say('owner', '@system [연습]', session: session)
-    "#{session.reload.status}, 등급 #{GameGrade.where(session: session).last&.grade || '-'}"
-  end
-
-  check.call('일반 마법 자습') do
-    reset!
-    say('owner', '@system [자습/일반 마법]')
-    session = latest('levitation')
-    "#{session.reload.status} (신호까지 기다리는 중, 신호 시각 #{session.deadline_at&.strftime('%H:%M:%S')})"
-  end
-
-  check.call('비행 수업 (시스템 계정으로 열기)') do
-    reset!
-    app = Doorkeeper::Application.find_by(name: 'Web') || Doorkeeper::Application.first
-    say('system', '[수업/비행]', application: app)
-    session = latest('flying')
-    next '열리지 않음' if session.nil? || session.created_at < 1.minute.ago
-
-    %w(owner luna ron draco).each { |name| say(name, '@system [참가]', session: session) }
-    "#{session.reload.status}, 참가 #{session.players.count}명 (모집 끝나면 시작)"
+  Game::Config.merge!('flying', 'rounds' => 1)
+  check.call('비행 대결 3명') do
+    duel_flow('flying', '비행대결', players: %w(owner luna ron)) do
+      say('owner', '@system [비행/1]', dm: true)
+      say('luna', '@system [비행/1]', dm: true)
+      say('ron', '@system [비행/2]', dm: true)
+    end
   end
 ensure
   reset!

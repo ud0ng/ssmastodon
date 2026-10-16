@@ -35,6 +35,10 @@ export interface Wallet {
   item_count: number;
   record: { win: number; lose: number; draw: number };
   inventory: WalletItem[];
+  house_term: string;
+  my_house_id: string | null;
+  houses: { id: string; name: string; color: string; total: number }[];
+  invites: number;
 }
 
 export type RecordFilter = 'all' | 'gain' | 'spend' | 'items';

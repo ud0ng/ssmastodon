@@ -87,6 +87,7 @@ namespace :api, format: false do
       resources :games, only: [:show]
       resources :commands, only: [:create]
       resources :members, only: [:index]
+      resource :history, only: [:show]
       resource :wallet, only: [:show] do
         get :records
         post :gift

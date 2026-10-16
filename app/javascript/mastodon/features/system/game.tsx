@@ -1,24 +1,25 @@
-// 컨텐츠별 게임 화면 (/system/games/:key): 지금 하는 판(게임판), 새 판 신청(상대 고르기), 하는 법, 점수·보상,
-// 내 전적, 진행 중·최근 판, 순위. 버튼은 서버원 대신 시스템에게 툿을 보낸다 (board.tsx).
-import { useCallback, useEffect, useMemo, useState } from 'react';
+// 컨텐츠 세부 화면 (/system/games/:key): 게임 소개 · 룰 · 순위(5명) · [시작하기](상대 고르기 모달) · 방 목록(진행 중/완료).
+// 방을 누르면 컨텐츠 방(session.tsx)으로 — 내가 낀 방이 아니면 관전. 버튼은 서버원 대신 시스템에게 툿을 보낸다 (board.tsx).
+import { useCallback, useEffect, useState } from 'react';
 
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
 import { Link, useParams } from 'react-router-dom';
 
 import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
+import { openModal } from 'mastodon/actions/modal';
 import { apiRequestGet } from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
 import { ICONS } from 'mastodon/components/content_card';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
+import { useAppDispatch } from 'mastodon/store';
 
-import { GameBoard, sendCommand } from './board';
+import { sendCommand } from './board';
 
 const messages = defineMessages({
   title: { id: 'system.game.title', defaultMessage: 'Game' },
-  search: { id: 'system.game.search', defaultMessage: 'Find a member' },
   win: { id: 'system.result.win', defaultMessage: 'Win' },
   draw: { id: 'system.result.draw', defaultMessage: 'Draw' },
   lose: { id: 'system.result.lose', defaultMessage: 'Loss' },
@@ -38,7 +39,8 @@ interface SessionRow {
 interface GameInfo {
   key: string;
   name: string;
-  group: 'duel' | 'group' | 'lesson' | 'event';
+  group: 'duel' | 'group';
+  event: boolean;
   enabled: boolean;
   system_acct: string;
   command: string | null;
@@ -54,188 +56,111 @@ interface GameInfo {
   ranking: { name: string; acct: string; wins: number; me: boolean }[];
 }
 
-interface Member {
-  acct: string;
-  name: string;
-  avatar: string;
-  house: { name: string; color: string; emoji: string } | null;
-}
-
-// 새 판 신청: 상대(여럿이면 여러 명) 고르기
-const NewGame: React.FC<{ game: GameInfo; onSent: () => void }> = ({ game, onSent }) => {
-  const intl = useIntl();
-  const [members, setMembers] = useState<Member[]>([]);
-  const [picked, setPicked] = useState<string[]>([]);
-  const [query, setQuery] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState(false);
-
-  useEffect(() => {
-    if (game.group === 'lesson' || game.group === 'event') return;
-    apiRequestGet<Member[]>('v1/system/members')
-      .then((list) => {
-        setMembers(list);
-        return list;
-      })
-      .catch(() => {
-        setMembers([]);
-      });
-  }, [game.group]);
-
-  const shown = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return q ? members.filter((member) => member.name.toLowerCase().includes(q) || member.acct.toLowerCase().includes(q)) : members;
-  }, [members, query]);
-
-  const toggle = useCallback(
-    (acct: string) => {
-      setPicked((current) => {
-        if (current.includes(acct)) return current.filter((item) => item !== acct);
-        if (game.max_opponents === 1) return [acct];
-        return current.length >= game.max_opponents ? current : [...current, acct];
-      });
-    },
-    [game.max_opponents],
-  );
-
-  const send = useCallback(
-    (params: Record<string, unknown>) => {
-      setBusy(true);
-      sendCommand({ kind: game.key, ...params })
-        .then((response) => {
-          setSent(true);
-          setPicked([]);
-          window.setTimeout(onSent, 2_000);
-          return response;
-        })
-        .finally(() => {
-          setBusy(false);
-        });
-    },
-    [game.key, onSent],
-  );
-
-  if (!game.enabled) {
-    return (
-      <p className='system-page__empty'>
-        <FormattedMessage id='system.game.disabled' defaultMessage='This game is turned off right now.' />
-      </p>
-    );
-  }
-
-  if (game.group === 'lesson') {
-    return (
-      <div className='system-newgame system-newgame--simple'>
-        <button type='button' className='content-card__action' disabled={busy} onClick={() => { send({ mode: 'study' }); }}>
-          <FormattedMessage id='system.game.study' defaultMessage='Self-study' />
-        </button>
-        <button type='button' className='content-card__action content-card__action--secondary' disabled={busy} onClick={() => { send({ mode: 'class' }); }}>
-          <FormattedMessage id='system.game.open_class' defaultMessage='Open a class' />
-        </button>
-        {sent && <span className='system-board__sent'><FormattedMessage id='system.game.sent' defaultMessage='Sent. The system will answer in a moment.' /></span>}
-      </div>
-    );
-  }
-
-  if (game.group === 'event') {
-    return (
-      <div className='system-newgame system-newgame--simple'>
-        <button type='button' className='content-card__action' disabled={busy} onClick={() => { send({}); }}>
-          <FormattedMessage id='system.game.open_event' defaultMessage='Open the event' />
-        </button>
-        {sent && <span className='system-board__sent'><FormattedMessage id='system.game.sent' defaultMessage='Sent. The system will answer in a moment.' /></span>}
-      </div>
-    );
-  }
-
-  return (
-    <div className='system-newgame'>
-      <div className='system-newgame__head'>
-        <strong>
-          {game.max_opponents > 1 ? (
-            <FormattedMessage id='system.game.pick_many' defaultMessage='Pick up to {max} people' values={{ max: game.max_opponents }} />
-          ) : (
-            <FormattedMessage id='system.game.pick_one' defaultMessage='Pick an opponent' />
-          )}
-        </strong>
-        <input
-          type='search'
-          value={query}
-          onChange={(event) => { setQuery(event.target.value); }}
-          placeholder={intl.formatMessage(messages.search)}
-          aria-label={intl.formatMessage(messages.search)}
-        />
-      </div>
-      <div className='system-newgame__members'>
-        {shown.map((member) => {
-          const index = picked.indexOf(member.acct);
-          return (
-            <button
-              key={member.acct}
-              type='button'
-              className={index >= 0 ? 'system-member system-member--picked' : 'system-member'}
-              style={{ '--house-color': member.house?.color || '#6b5b3e' } as React.CSSProperties}
-              onClick={() => { toggle(member.acct); }}
-            >
-              <img src={member.avatar} alt='' />
-              <span className='system-member__name'>{member.name}</span>
-              {member.house && <span className='system-member__house'>{member.house.name}</span>}
-              {index >= 0 && game.max_opponents > 1 && <span className='system-member__order'>{index + 1}</span>}
-            </button>
-          );
-        })}
-      </div>
-      <div className='system-newgame__actions'>
-        {game.key === 'quidditch' && picked.length > 1 && (
-          <span className='hint'>
-            <FormattedMessage id='system.game.teams_hint' defaultMessage='You and the first {half} picked are one team.' values={{ half: Math.max(Math.floor((picked.length + 1) / 2) - 1, 0) }} />
-          </span>
-        )}
-        <button type='button' className='content-card__action' disabled={busy || picked.length === 0} onClick={() => { send({ opponents: picked }); }}>
-          <FormattedMessage id='system.game.invite' defaultMessage='Challenge' />
-        </button>
-        {sent && <span className='system-board__sent'><FormattedMessage id='system.game.sent' defaultMessage='Sent. The system will answer in a moment.' /></span>}
-      </div>
-    </div>
-  );
-};
-
-const SessionList: React.FC<{ rows: SessionRow[] }> = ({ rows }) => {
-  const intl = useIntl();
-  return (
-    <ul className='system-sessions'>
-      {rows.map((row) => (
-        <li key={row.id}>
-          <Link to={`/system/sessions/${row.id}`} className='system-sessions__row'>
-            <span className='system-sessions__players'>
-              {row.players.map((player, index) => (
-                <span key={player.acct} className={player.me ? 'system-sessions__me' : undefined}>
-                  {index > 0 && ' · '}
-                  {player.name}
-                  {player.result && player.result !== 'lose' && ` (${intl.formatMessage(messages[player.result])})`}
-                </span>
-              ))}
-            </span>
-            <span className='system-sessions__time'>
-              {row.status === 'finished' && row.finished_at ? (
-                <RelativeTimestamp timestamp={row.finished_at} />
-              ) : row.status === 'pending' ? (
-                <FormattedMessage id='system.game.pending' defaultMessage='Waiting for accept' />
-              ) : (
-                <FormattedMessage id='system.game.turn' defaultMessage='Turn {turn}' values={{ turn: row.turn }} />
-              )}
-            </span>
-          </Link>
-        </li>
-      ))}
-    </ul>
-  );
-};
-
 const RULE_LABELS: Record<string, React.ReactNode> = {
   win: <FormattedMessage id='system.result.win' defaultMessage='Win' />,
   draw: <FormattedMessage id='system.result.draw' defaultMessage='Draw' />,
   lose: <FormattedMessage id='system.result.lose' defaultMessage='Loss' />,
+};
+
+// [시작하기]: 상대 고르기 모달. 서버 이벤트는 바로 열기, 내가 하는 방이 있으면 그 방으로
+const StartButton: React.FC<{ game: GameInfo; onSent: () => void }> = ({ game, onSent }) => {
+  const dispatch = useAppDispatch();
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const openChallenge = useCallback(() => {
+    dispatch(openModal({ modalType: 'CHALLENGE', modalProps: { gameKey: game.key, name: game.name, maxOpponents: game.max_opponents } }));
+  }, [dispatch, game.key, game.name, game.max_opponents]);
+
+  const openEvent = useCallback(() => {
+    setBusy(true);
+    sendCommand({ kind: game.key })
+      .then((response) => {
+        setSent(true);
+        window.setTimeout(onSent, 2_000);
+        return response;
+      })
+      .finally(() => {
+        setBusy(false);
+      });
+  }, [game.key, onSent]);
+
+  if (game.my_session_id) {
+    return (
+      <Link to={`/system/sessions/${game.my_session_id}`} className='system-start'>
+        <FormattedMessage id='system.game.enter_room' defaultMessage='Go to my room' />
+      </Link>
+    );
+  }
+
+  if (!game.enabled) {
+    return (
+      <span className='system-start system-start--off'>
+        <FormattedMessage id='system.game.disabled' defaultMessage='This game is turned off right now.' />
+      </span>
+    );
+  }
+
+  if (game.event) {
+    return sent ? (
+      <span className='system-start system-start--off'>
+        <FormattedMessage id='system.game.sent' defaultMessage='Sent. The system will answer in a moment.' />
+      </span>
+    ) : (
+      <button type='button' className='system-start' disabled={busy} onClick={openEvent}>
+        <FormattedMessage id='system.game.open_event' defaultMessage='Open the event' />
+      </button>
+    );
+  }
+
+  return (
+    <button type='button' className='system-start' onClick={openChallenge}>
+      <FormattedMessage id='system.game.start' defaultMessage='Start' />
+    </button>
+  );
+};
+
+// 방 목록 한 줄: 참가자 · 상태(턴/결과/수락 대기) · 내 방이 아니면 [관전]
+const RoomList: React.FC<{ rows: SessionRow[] }> = ({ rows }) => {
+  const intl = useIntl();
+  return (
+    <ul className='system-rooms'>
+      {rows.map((row) => {
+        const mine = row.players.some((player) => player.me);
+        return (
+          <li key={row.id}>
+            <Link to={`/system/sessions/${row.id}`} className='system-rooms__row'>
+              <span className='system-rooms__players'>
+                {row.players.map((player, index) => (
+                  <span key={player.acct} className={player.me ? 'system-rooms__me' : undefined}>
+                    {index > 0 && <span className='system-rooms__vs'>{row.players.length === 2 ? ' vs ' : ' · '}</span>}
+                    {player.name}
+                    {player.result && player.result !== 'lose' && ` (${intl.formatMessage(messages[player.result])})`}
+                  </span>
+                ))}
+              </span>
+              <span className='system-rooms__state'>
+                {row.status === 'finished' && row.finished_at ? (
+                  <RelativeTimestamp timestamp={row.finished_at} />
+                ) : row.status === 'pending' ? (
+                  <FormattedMessage id='system.game.pending' defaultMessage='Waiting for accept' />
+                ) : (
+                  <FormattedMessage id='system.game.turn' defaultMessage='Turn {turn}' values={{ turn: row.turn }} />
+                )}
+              </span>
+              <span className={mine ? 'system-rooms__tag system-rooms__tag--mine' : 'system-rooms__tag'}>
+                {mine ? (
+                  <FormattedMessage id='system.game.my_room' defaultMessage='Mine' />
+                ) : (
+                  <FormattedMessage id='system.game.spectate' defaultMessage='Watch' />
+                )}
+              </span>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
 };
 
 const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
@@ -243,6 +168,7 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
   const { key } = useParams<{ key: string }>();
   const [game, setGame] = useState<GameInfo | null>(null);
   const [failed, setFailed] = useState(false);
+  const [tab, setTab] = useState<'active' | 'recent'>('active');
 
   const load = useCallback(() => {
     apiRequestGet<GameInfo>(`v1/system/games/${key}`)
@@ -265,6 +191,7 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
   }, [load]);
 
   const title = game?.name ?? intl.formatMessage(messages.title);
+  const rooms = game ? game[tab] : [];
 
   return (
     <Column bindToDocument={!multiColumn} label={title}>
@@ -280,41 +207,24 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
 
         {game && (
           <>
+            {/* 게임 소개 + 시작하기 */}
             <header className='system-game-page__hero'>
               <span className='system-game-page__icon' aria-hidden>{ICONS[game.key] ?? '📜'}</span>
-              <div>
+              <div className='system-game-page__intro'>
                 <h2>{game.name}</h2>
                 <p>{game.summary}</p>
+                <span className='system-game-page__record'>
+                  <FormattedMessage id='system.record' defaultMessage='{win} W · {lose} L · {draw} D' values={game.record} />
+                </span>
               </div>
-              <div className='system-game-page__record'>
-                <FormattedMessage id='system.record' defaultMessage='{win} W · {lose} L · {draw} D' values={game.record} />
-              </div>
+              <StartButton game={game} onSent={load} />
             </header>
 
-            <section className='system-section'>
-              <h2 className='system-section__title'>
-                {game.my_session_id ? (
-                  <FormattedMessage id='system.game.now' defaultMessage='Your game' />
-                ) : (
-                  <FormattedMessage id='system.game.new' defaultMessage='New game' />
-                )}
-              </h2>
-              {game.my_session_id ? (
-                <>
-                  <GameBoard key={game.my_session_id} sessionId={game.my_session_id} onChanged={load} />
-                  <Link className='system-game-page__more' to={`/system/sessions/${game.my_session_id}`}>
-                    <FormattedMessage id='system.game.whole' defaultMessage='See the whole game' />
-                  </Link>
-                </>
-              ) : (
-                <NewGame game={game} onSent={load} />
-              )}
-            </section>
-
             <div className='system-game-page__columns'>
+              {/* 룰 */}
               <section className='system-section'>
                 <h2 className='system-section__title'>
-                  <FormattedMessage id='system.game.how' defaultMessage='How to play' />
+                  <FormattedMessage id='system.game.rules' defaultMessage='Rules' />
                 </h2>
                 <ol className='system-game-page__steps'>
                   {game.steps.map((step) => <li key={step}>{step}</li>)}
@@ -342,6 +252,7 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
                 </table>
               </section>
 
+              {/* 순위 (최대 5명) */}
               <section className='system-section'>
                 <h2 className='system-section__title'>
                   <FormattedMessage id='system.game.ranking' defaultMessage='Most wins' />
@@ -363,25 +274,30 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
               </section>
             </div>
 
+            {/* 방 목록: 진행 중 / 완료 */}
             <section className='system-section'>
               <h2 className='system-section__title'>
-                <FormattedMessage id='system.active' defaultMessage='In progress' />
+                <FormattedMessage id='system.game.rooms' defaultMessage='Rooms' />
               </h2>
-              {game.active.length > 0 ? <SessionList rows={game.active} /> : (
+              <div className='notification__filter-bar system-rooms__tabs'>
+                <button type='button' className={tab === 'active' ? 'active' : undefined} onClick={() => { setTab('active'); }}>
+                  <FormattedMessage id='system.active' defaultMessage='In progress' />
+                  {game.active.length > 0 && ` ${game.active.length}`}
+                </button>
+                <button type='button' className={tab === 'recent' ? 'active' : undefined} onClick={() => { setTab('recent'); }}>
+                  <FormattedMessage id='system.game.finished' defaultMessage='Finished' />
+                </button>
+              </div>
+              {rooms.length > 0 ? <RoomList rows={rooms} /> : (
                 <p className='system-page__empty'>
-                  <FormattedMessage id='system.active.empty' defaultMessage='No game in progress.' />
+                  {tab === 'active' ? (
+                    <FormattedMessage id='system.active.empty' defaultMessage='No game in progress.' />
+                  ) : (
+                    <FormattedMessage id='system.game.no_finished' defaultMessage='No finished games yet.' />
+                  )}
                 </p>
               )}
             </section>
-
-            {game.recent.length > 0 && (
-              <section className='system-section'>
-                <h2 className='system-section__title'>
-                  <FormattedMessage id='system.game.recent' defaultMessage='Recent results' />
-                </h2>
-                <SessionList rows={game.recent} />
-              </section>
-            )}
           </>
         )}
       </div>

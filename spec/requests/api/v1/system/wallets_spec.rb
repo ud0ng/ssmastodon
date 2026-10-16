@@ -27,6 +27,20 @@ RSpec.describe 'API V1 System wallet' do
     expect(body['inventory']).to contain_exactly(a_hash_including('name' => '초콜릿 개구리', 'count' => 3, 'description' => '폴짝'))
   end
 
+  it 'shows the group points for the bottom of the compose panel' do
+    GameHouse.ensure_defaults!
+    house = GameHouse.houses.first
+    GameCharacter.for(user.account).update!(house: house)
+    GameHousePoint.create!(house: house, amount: 12, reason: 'test')
+
+    get '/api/v1/system/wallet', headers: headers
+
+    body = response.parsed_body
+    expect(body).to include('house_term' => '기숙사', 'my_house_id' => house.id.to_s)
+    expect(body['houses']).to include('id' => house.id.to_s, 'name' => house.name, 'color' => house.color, 'total' => 12)
+    expect(body['houses'].size).to eq GameHouse.houses.count
+  end
+
   it 'pages the history and filters it' do
     get '/api/v1/system/wallet/records', headers: headers
 

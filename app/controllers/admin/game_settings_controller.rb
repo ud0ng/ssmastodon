@@ -24,9 +24,9 @@ module Admin
       kind = Game::Kinds.registry[@key]
       if @page == 'settings'
         # 설정 탭: 컨텐츠마다 승리·무승부·패배 점수를 한 표에서 고친다
-        @points_kinds = Game::Kinds.all.reject(&:lesson?)
+        @points_kinds = Game::Kinds.all
         @scoring_mode = @values['scoring_mode']
-      elsif kind && !kind.lesson?
+      elsif kind
         # 컨텐츠 화면에서는 점수 칸을 빼고 설정 탭의 표에서만 고친다
         @sections = @sections.reject { |section, _| section == 'points' }
       end
@@ -47,7 +47,7 @@ module Admin
     def update_points!
       params.fetch(:points, {}).permit!.to_h.each do |key, values|
         kind = Game::Kinds.registry[key]
-        next if kind.nil? || kind.lesson?
+        next if kind.nil?
 
         Game::Config.merge!(key, %w(win draw lose).to_h { |outcome| ["points_#{outcome}", [values[outcome].to_i, 0].max] })
       end

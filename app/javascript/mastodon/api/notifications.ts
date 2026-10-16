@@ -10,7 +10,8 @@ import type {
   ApiNotificationJSON,
 } from 'mastodon/api_types/notifications';
 
-const EXCLUDE_DIRECT_MESSAGES = { exclude_direct_messages: true };
+// 웹은 DM(채팅 화면에서 봄)과 컨텐츠 알림(컨텐츠 메뉴에서 봄)을 알림 목록에서 뺀다
+const EXCLUDE_DIRECT_MESSAGES = { exclude_direct_messages: true, exclude_game: true };
 
 export const apiFetchNotifications = async (
   params?: {

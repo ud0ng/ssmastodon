@@ -166,6 +166,10 @@ export function SystemGame() {
   return import('../../system/game');
 }
 
+export function SystemRecord() {
+  return import('../../system/record');
+}
+
 export function ScheduleModal() {
   return import('../components/schedule_modal');
 }
@@ -300,4 +304,8 @@ export function ListEdit() {
 
 export function ListMembers() {
   return import('../../lists/members');
+}
+
+export function ChallengeModal() {
+  return import('../../system/challenge_modal');
 }

@@ -16120,79 +16120,6 @@ body .search__popout__menu__item {
   }
 }
 
-// 성적표 (양피지 장부): 과목 — 점선 — 등급
-.system-report {
-  @extend %system-parchment;
-
-  padding: 16px 20px;
-  font-family: var(--sys-serif);
-
-  &__grades {
-    display: grid;
-    gap: 6px;
-    margin: 0;
-  }
-
-  &__row {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    font-size: 14px;
-
-    dt {
-      flex: 0 0 auto;
-    }
-
-    // 과목과 등급 사이 점선
-    &::after {
-      content: '';
-      order: 1;
-      flex: 1;
-      border-bottom: 1px dotted var(--sys-gold-soft);
-    }
-
-    dd {
-      order: 2;
-      margin: 0;
-    }
-  }
-
-  &__grade {
-    min-width: 1.6em;
-    color: var(--color-dim, $darker-text-color);
-    font-size: 17px;
-    font-weight: 700;
-    text-align: center;
-
-    &--O,
-    &--E {
-      color: var(--sys-gold);
-    }
-
-    &--T,
-    &--D {
-      color: #8b3a3a;
-    }
-  }
-
-  &__extra {
-    display: grid;
-    gap: 4px;
-    margin-top: 12px;
-    padding-top: 10px;
-    border-top: 1px solid var(--sys-gold-soft);
-    font-size: 13px;
-  }
-
-  &__points {
-    margin-top: 10px;
-    color: var(--sys-gold);
-    font-size: 13px;
-    font-weight: 700;
-    text-align: end;
-  }
-}
-
 // ── 시스템 메뉴: 컨텐츠 고르기·게임 화면 ──
 .system-strips {
   display: grid;
@@ -16557,13 +16484,18 @@ body .search__popout__menu__item {
   }
 }
 
-.system-sessions {
+// 컨텐츠 세부 화면: 방 목록 (진행 중/완료 탭, 내 방 / 관전)
+.system-rooms {
+  &__tabs {
+    margin-bottom: 4px;
+  }
+
   &__row {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
+    align-items: center;
     gap: 4px 12px;
-    padding: 9px 4px;
+    padding: 10px 4px;
     border-bottom: 1px dashed var(--sys-gold-soft);
     color: inherit;
     font-size: 14px;
@@ -16574,13 +16506,120 @@ body .search__popout__menu__item {
     }
   }
 
+  &__players {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--sys-serif);
+  }
+
+  &__vs {
+    color: var(--sys-gold);
+    font-size: 12px;
+  }
+
   &__me {
     font-weight: 700;
   }
 
-  &__time {
+  &__state {
     color: var(--color-dim, $darker-text-color);
     font-size: 12px;
+  }
+
+  &__tag {
+    padding: 2px 10px;
+    border: 1px solid var(--sys-gold-soft);
+    border-radius: 999px;
+    color: var(--sys-gold);
+    font-size: 12px;
+    font-weight: 700;
+
+    &--mine {
+      background: var(--sys-gold);
+      color: #fff;
+    }
+  }
+}
+
+// 컨텐츠 세부 화면 [시작하기] (금빛 도장 버튼)
+.system-start {
+  flex: 0 0 auto;
+  padding: 10px 22px;
+  border: 1px solid color-mix(in srgb, var(--sys-gold) 70%, #000);
+  border-radius: 4px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sys-gold) 85%, #fff), var(--sys-gold));
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 25%), 0 1px 3px rgb(0 0 0 / 20%);
+  color: #fff;
+  font-family: var(--sys-serif);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 30%);
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    filter: brightness(1.06);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  &--off {
+    border-color: var(--sys-gold-soft);
+    background: transparent;
+    box-shadow: none;
+    color: var(--color-dim, $darker-text-color);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-shadow: none;
+    cursor: default;
+  }
+}
+
+// [시작하기] 모달: 상대 고르기
+.challenge-modal {
+  --sys-gold: #b08d3c;
+  --sys-gold-soft: color-mix(in srgb, var(--sys-gold) 45%, transparent);
+  --sys-serif: 'Noto Serif KR', 'Nanum Myeongjo', 'Batang', 'AppleMyungjo', georgia, serif;
+
+  &__head {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+
+    h1 {
+      font-family: var(--sys-serif);
+    }
+  }
+
+  &__icon {
+    font-size: 36px;
+    line-height: 1;
+  }
+
+  &__search {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--sys-gold-soft);
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+  }
+
+  &__members {
+    max-height: 320px;
+  }
+
+  &__result {
+    font-size: 15px;
+    text-align: center;
   }
 }
 
@@ -16605,15 +16644,23 @@ body .search__popout__menu__item {
   }
 }
 
-// 글쓰기창 아래 재화 | 인벤토리 | 전적 (compose/components/wallet_bar.tsx)
+// 글쓰기 패널 아래 해리포터 분위기 (시스템 화면과 같은 양피지·금테·명조체). 색 변수는 시스템 화면 밖이라 여기서도 정한다.
+.compose-panel,
+.wallet-page {
+  --sys-gold: #b08d3c;
+  --sys-gold-soft: color-mix(in srgb, var(--sys-gold) 45%, transparent);
+  --sys-parchment: color-mix(in srgb, var(--color-bg-compose-form, var(--surface-background-color)) 82%, #c9a96a);
+  --sys-serif: 'Noto Serif KR', 'Nanum Myeongjo', 'Batang', 'AppleMyungjo', georgia, serif;
+}
+
+// 글쓰기창 아래: (재화) | 인벤토리 | 전적 — 양피지 띠에 금빛 칸막이
 .wallet-bar {
+  @extend %system-parchment;
+
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: 10px;
   overflow: hidden;
-  border: 1px solid var(--color-border, var(--background-border-color));
-  border-radius: 12px;
-  background: var(--color-bg-compose-form, var(--background-color));
 
   &__item {
     display: flex;
@@ -16621,23 +16668,26 @@ body .search__popout__menu__item {
     gap: 2px;
     align-items: center;
     min-width: 0;
-    padding: 8px 6px;
+    padding: 9px 6px;
     color: inherit;
     text-decoration: none;
 
     & + & {
-      border-inline-start: 1px solid var(--color-border, var(--background-border-color));
+      border-inline-start: 1px dashed var(--sys-gold-soft);
     }
 
     &:hover,
     &:focus-visible {
-      background: var(--color-hover, rgb(127 127 127 / 8%));
+      background: color-mix(in srgb, var(--sys-gold) 12%, transparent);
     }
   }
 
   &__label {
-    color: var(--color-dim, $darker-text-color);
+    color: var(--sys-gold);
+    font-family: var(--sys-serif);
     font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
   }
 
   &__value {
@@ -16646,6 +16696,7 @@ body .search__popout__menu__item {
     align-items: center;
     max-width: 100%;
     overflow: hidden;
+    font-family: var(--sys-serif);
     font-size: 14px;
     font-weight: 700;
     white-space: nowrap;
@@ -16655,6 +16706,7 @@ body .search__popout__menu__item {
       flex: 0 0 auto;
       width: 18px;
       height: 18px;
+      color: var(--sys-gold);
     }
   }
 }
@@ -16854,19 +16906,19 @@ body .search__popout__menu__item {
 }
 
 .wallet-card {
+  @extend %system-parchment;
+
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 20px 22px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, var(--color-accent, $ui-highlight-color), color-mix(in srgb, var(--color-accent, $ui-highlight-color) 62%, #000));
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-accent, $ui-highlight-color) 28%, transparent);
-  color: #fff;
+  padding: 18px 20px;
 
   &__label {
+    color: var(--sys-gold);
+    font-family: var(--sys-serif);
     font-size: 13px;
-    font-weight: 600;
-    opacity: 0.85;
+    font-weight: 700;
+    letter-spacing: 0.04em;
   }
 
   &__top {
@@ -16875,17 +16927,18 @@ body .search__popout__menu__item {
     justify-content: space-between;
   }
 
-  // 카드 안 [선물]: 카드 위에 반투명 흰 알약
+  // 카드 안 [선물]: 금테 알약
   &__gift {
     display: inline-flex;
     gap: 4px;
     align-items: center;
-    padding: 5px 12px;
-    border: 0;
+    padding: 4px 12px;
+    border: 1px solid var(--sys-gold-soft);
     border-radius: 999px;
-    background: rgb(255 255 255 / 22%);
-    color: inherit;
+    background: transparent;
+    color: var(--sys-gold);
     font: inherit;
+    font-family: var(--sys-serif);
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
@@ -16897,7 +16950,7 @@ body .search__popout__menu__item {
 
     &:hover,
     &:focus-visible {
-      background: rgb(255 255 255 / 34%);
+      background: color-mix(in srgb, var(--sys-gold) 12%, transparent);
     }
 
     &:disabled {
@@ -16910,44 +16963,54 @@ body .search__popout__menu__item {
     display: flex;
     gap: 8px;
     align-items: baseline;
+    font-family: var(--sys-serif);
 
     .icon {
       width: 26px;
       height: 26px;
       align-self: center;
+      color: var(--sys-gold);
     }
 
     strong {
-      font-size: 36px;
-      font-weight: 800;
+      font-size: 34px;
+      font-weight: 700;
       font-variant-numeric: tabular-nums;
       line-height: 1.1;
     }
 
     span {
+      color: var(--sys-gold);
       font-size: 15px;
-      font-weight: 600;
-      opacity: 0.85;
+      font-weight: 700;
     }
   }
 
+  // 아래 칸들: 글쓰기 패널 재화 줄처럼 금빛 점선 칸막이
   &__stats {
     display: flex;
-    gap: 8px;
     margin-top: 10px;
+    border-top: 1px dashed var(--sys-gold-soft);
 
     > span {
       display: flex;
       flex: 1;
       flex-direction: column;
       gap: 2px;
-      padding: 8px 12px;
-      border-radius: 12px;
-      background: rgb(255 255 255 / 16%);
+      align-items: center;
+      padding: 10px 6px 0;
+      color: var(--sys-gold);
+      font-family: var(--sys-serif);
       font-size: 12px;
+      font-weight: 700;
+
+      & + span {
+        border-inline-start: 1px dashed var(--sys-gold-soft);
+      }
     }
 
     strong {
+      color: var(--color-text, $primary-text-color);
       font-size: 16px;
       font-variant-numeric: tabular-nums;
     }
@@ -17249,5 +17312,379 @@ body .search__popout__menu__item {
 
   .link-footer {
     margin-top: auto;
+  }
+
+}
+
+// 컨텐츠·성적 화면 맨 위: 소속 | 캐릭터 이름 / 전적 (system/character_header.tsx)
+.system-hero {
+  @extend %system-parchment;
+
+  display: flex;
+  align-items: stretch;
+  margin-bottom: 20px;
+  padding: 0;
+  overflow: hidden;
+
+  &__house {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+    padding: 18px 16px;
+    border-inline-end: 1px dashed var(--sys-gold-soft);
+    background: color-mix(in srgb, var(--house-color) 14%, transparent);
+
+    .system-crest {
+      --crest-size: 44px;
+    }
+  }
+
+  &__house-name {
+    font-family: var(--sys-serif);
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  &__main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 6px;
+    justify-content: center;
+    min-width: 0;
+    padding: 18px 22px;
+  }
+
+  &__name {
+    overflow: hidden;
+    font-family: var(--sys-serif);
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  &__record {
+    color: var(--color-dim, $darker-text-color);
+    font-family: var(--sys-serif);
+    font-size: 16px;
+    letter-spacing: 0.04em;
+  }
+
+  @media screen and (width <= 480px) {
+    &__house {
+      min-width: 92px;
+      padding: 14px 10px;
+    }
+
+    &__main {
+      padding: 14px 16px;
+    }
+
+    &__name {
+      font-size: 22px;
+    }
+  }
+}
+
+// 성적 화면 (features/system/record.tsx): 재화 화면과 같은 카드·탭·날짜별 기록
+.record-card {
+  &__who {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    font-size: 14px;
+
+    .system-crest {
+      --crest-size: 20px;
+    }
+  }
+
+  &__record strong {
+    font-size: 32px;
+  }
+}
+
+// 기록 한 줄: 재화 기록 줄(wallet-record)에 링크, 오른쪽은 결과 (승리=포인트색, 패배·무승부=회색)
+.record-row {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--color-hover, rgb(127 127 127 / 8%));
+  }
+
+  &__icon {
+    font-size: 20px;
+  }
+
+  &__result strong {
+    font-size: 15px;
+  }
+}
+
+// 글쓰기 패널 재화 줄 아래: 소속 점수 카드 (compose/components/house_points.tsx) — 재화 줄과 같은 칸 모양
+.house-points {
+  @extend %system-parchment;
+
+  display: grid;
+  flex: 0 0 auto;
+  margin-top: 10px;
+  overflow: hidden;
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+    min-width: 0;
+    padding: 9px 4px;
+
+    & + & {
+      border-inline-start: 1px dashed var(--sys-gold-soft);
+    }
+
+    &--mine {
+      background: color-mix(in srgb, var(--sys-gold) 12%, transparent);
+    }
+  }
+
+  &__name {
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--sys-gold);
+    font-family: var(--sys-serif);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  &__value {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    font-family: var(--sys-serif);
+    font-size: 14px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+
+    .system-crest {
+      --crest-size: 16px;
+    }
+  }
+}
+
+// 컨텐츠 방 (features/system/session.tsx): DM 채팅방처럼. 시스템은 가운데 사회자 창, 참가자는 말풍선(내 것은 오른쪽)
+.game-room {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  &__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+
+    a {
+      color: var(--sys-gold);
+      font-family: var(--sys-serif);
+      font-weight: 700;
+      text-decoration: none;
+    }
+  }
+
+  &__log {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 8px;
+  }
+
+  // 사회자: 가운데 양피지 창
+  &__host {
+    display: flex;
+    justify-content: center;
+  }
+
+  &__host-box {
+    @extend %system-parchment;
+
+    width: min(100%, 520px);
+    padding: 10px 14px 12px;
+    text-align: center;
+
+    .content-card {
+      margin-top: 8px;
+      text-align: start;
+    }
+  }
+
+  &__host-head {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    color: var(--sys-gold);
+    font-family: var(--sys-serif);
+    font-size: 12px;
+    font-weight: 700;
+
+    img {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    time {
+      color: var(--color-dim, $darker-text-color);
+      font-family: inherit;
+      font-weight: 400;
+    }
+  }
+
+  &__host-text {
+    margin-top: 6px;
+    font-family: var(--sys-serif);
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  // 참가자 말풍선
+  &__msg {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    max-width: 80%;
+
+    &--mine {
+      flex-direction: row-reverse;
+      align-self: flex-end;
+
+      .game-room__msg-body {
+        align-items: flex-end;
+      }
+
+      .game-room__bubble {
+        border-color: transparent;
+        border-radius: 16px 4px 16px 16px;
+        background: var(--sys-gold);
+        color: #fff;
+      }
+    }
+  }
+
+  &__avatar {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  &__msg-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  &__msg-name {
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  &__bubble {
+    padding: 8px 12px;
+    border: 1px solid var(--sys-gold-soft);
+    border-radius: 4px 16px 16px;
+    background: var(--sys-parchment);
+    font-size: 14px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  &__msg-time {
+    color: var(--color-dim, $darker-text-color);
+    font-size: 11px;
+  }
+
+  &__secret {
+    display: inline-flex;
+    gap: 2px;
+    align-items: center;
+    margin-inline-end: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    opacity: 0.8;
+
+    .icon {
+      width: 13px;
+      height: 13px;
+    }
+  }
+
+  // 맨 아래 입력 칸
+  &__composer {
+    --sys-gold: #b08d3c;
+    --sys-gold-soft: color-mix(in srgb, var(--sys-gold) 45%, transparent);
+    --sys-serif: 'Noto Serif KR', 'Nanum Myeongjo', 'Batang', 'AppleMyungjo', georgia, serif;
+
+    display: flex;
+    flex: 0 0 auto;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 12px;
+    border-top: 1px solid var(--background-border-color);
+    background: var(--color-bg-compose-form, var(--background-color));
+
+    input[type='text'] {
+      flex: 1;
+      min-width: 0;
+      padding: 9px 14px;
+      border: 1px solid var(--sys-gold-soft);
+      border-radius: 999px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+    }
+
+    .system-start {
+      padding: 8px 16px;
+    }
+  }
+
+  &__dm {
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-dim, $darker-text-color);
+    cursor: pointer;
+
+    input {
+      position: absolute;
+      opacity: 0;
+    }
+
+    &:has(input:checked) {
+      color: var(--sys-gold);
+    }
+
+    &:has(input:focus-visible) {
+      outline: 2px solid var(--sys-gold);
+      border-radius: 4px;
+    }
   }
 }

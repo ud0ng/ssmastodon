@@ -44,8 +44,7 @@ export interface GameCard {
   session_id?: string;
   kind: string;
   name: string;
-  lesson: boolean;
-  mode: 'study' | 'class' | null;
+  mode: 'event' | null;
   phase: 'pending' | 'active' | 'finished' | 'cancelled';
   turn: number;
   deadline_at: string | null;
@@ -64,10 +63,7 @@ export const ICONS: Record<string, string> = {
   duel: '⚡',
   potion: '⚗️',
   quidditch: '🧹',
-  levitation: '🪶',
   flying: '🧹',
-  transfiguration: '🐈',
-  practice: '✨',
   tournament: '🏆',
   secret_chamber: '🐍',
   maze: '🏆',
@@ -107,7 +103,7 @@ const Hearts: React.FC<{ left: number; full: number }> = ({ left, full }) => (
   </span>
 );
 
-// 플레이어 옆에 붙는 한 줄 (점수·체력·시도 수·등급)
+// 플레이어 옆에 붙는 한 줄 (점수·체력·시도 수)
 const PlayerStat: React.FC<{ card: GameCard; player: CardPlayer }> = ({ card, player }) => {
   const seat = String(player.seat);
   const { data } = card;
@@ -116,6 +112,7 @@ const PlayerStat: React.FC<{ card: GameCard; player: CardPlayer }> = ({ card, pl
   switch (card.kind) {
     case 'gobstones':
     case 'quidditch':
+    case 'flying':
       return <span className='content-card__score'>{num(bySeat(data.scores)[seat])}</span>;
     case 'duel':
       return <Hearts left={num(bySeat(data.hp)[seat])} full={num(data.max_hp)} />;
@@ -129,15 +126,8 @@ const PlayerStat: React.FC<{ card: GameCard; player: CardPlayer }> = ({ card, pl
           />
         </span>
       );
-    default: {
-      if (!card.lesson) return null;
-      const grade = bySeat(bySeat(data.grades)[seat]).grade as string | undefined;
-      return grade ? (
-        <span className={`content-card__grade content-card__grade--${grade}`} title={String(bySeat(data.grade_names)[grade] ?? '')}>
-          {grade}
-        </span>
-      ) : null;
-    }
+    default:
+      return null;
   }
 };
 
@@ -186,7 +176,7 @@ const Players: React.FC<{ card: GameCard }> = ({ card }) => {
                     <FormattedMessage id='content_card.chosen' defaultMessage='Chosen' />
                   </span>
                 )}
-                {card.phase === 'pending' && !card.lesson && (
+                {card.phase === 'pending' && card.mode !== 'event' && (
                   <span className='content-card__badge'>
                     {player.accepted ? (
                       <FormattedMessage id='content_card.accepted' defaultMessage='Ready' />
@@ -216,7 +206,7 @@ const Players: React.FC<{ card: GameCard }> = ({ card }) => {
 const Board: React.FC<{ card: GameCard }> = ({ card }) => {
   const { data } = card;
   // 신청·모집 중에는 아직 판이 없다
-  if (card.phase === 'pending' && !card.lesson && card.kind !== 'secret_chamber') return null;
+  if (card.phase === 'pending' && card.kind !== 'secret_chamber') return null;
   const names = Object.fromEntries(card.players.map((player) => [String(player.seat), player.name]));
 
   switch (card.kind) {
@@ -267,6 +257,38 @@ const Board: React.FC<{ card: GameCard }> = ({ card }) => {
               <span className={last.hit ? 'content-card__chip content-card__chip--good' : num(last.score) < 0 ? 'content-card__chip content-card__chip--bad' : 'content-card__chip'}>
                 {last.hit ? `+${num(last.score)}` : num(last.score) < 0 ? `${num(last.score)}` : '0'}
               </span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    case 'flying': {
+      const round = num(data.round);
+      const rounds = num(data.rounds);
+      const routes = Array.isArray(data.routes) ? (data.routes as string[]) : [];
+      const chosen = Array.isArray(data.chosen) ? data.chosen.length : 0;
+      const last = bySeat(bySeat(data.last_round).choices);
+      return (
+        <div className='content-card__board'>
+          <div className='content-card__progress'>
+            <span style={{ width: `${rounds ? (Math.min(round, rounds) / rounds) * 100 : 0}%` }} />
+          </div>
+          <div className='content-card__line'>
+            <FormattedMessage id='content_card.flying_round' defaultMessage='Round {round}/{rounds} · {chosen}/{total} chosen' values={{ round, rounds, chosen, total: card.players.length }} />
+          </div>
+          {card.phase === 'active' && routes.length > 0 && (
+            <div className='content-card__chips'>
+              {routes.map((route, index) => (
+                <span key={route} className='content-card__chip'>{index + 1}. {route}</span>
+              ))}
+            </div>
+          )}
+          {Object.keys(last).length > 0 && (
+            <div className='content-card__chips'>
+              {Object.entries(last).map(([seat, route]) => (
+                <span key={seat} className='content-card__chip'>{names[seat]} → {String(route)}</span>
+              ))}
             </div>
           )}
         </div>
@@ -533,14 +555,6 @@ const Board: React.FC<{ card: GameCard }> = ({ card }) => {
     }
 
     default:
-      if (card.lesson)
-        return (
-          <div className='content-card__board'>
-            <div className='content-card__line'>
-              {String(data.subject ?? card.name)} · {String(data.mode_name ?? '')}
-            </div>
-          </div>
-        );
       return null;
   }
 };
@@ -548,7 +562,7 @@ const Board: React.FC<{ card: GameCard }> = ({ card }) => {
 const PhaseBadge: React.FC<{ card: GameCard }> = ({ card }) => {
   switch (card.phase) {
     case 'pending':
-      return card.mode === 'class' ? (
+      return card.mode === 'event' ? (
         <FormattedMessage id='content_card.phase.recruiting' defaultMessage='Recruiting' />
       ) : (
         <FormattedMessage id='content_card.phase.invite' defaultMessage='Challenge' />

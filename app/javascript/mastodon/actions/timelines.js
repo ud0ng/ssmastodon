@@ -3,6 +3,7 @@ import { Map as ImmutableMap, List as ImmutableList } from 'immutable';
 import api, { getLinks } from 'mastodon/api';
 import { compareId } from 'mastodon/compare_id';
 import { usePendingItems as preferPendingItems } from 'mastodon/initial_state';
+import { hidesGameStatuses, isGameStatus } from 'mastodon/utils/game_status';
 
 import { importFetchedStatus, importFetchedStatuses } from './importer';
 import { submitMarkers } from './markers';
@@ -35,6 +36,11 @@ export const loadPending = timeline => ({
 export function updateTimeline(timeline, status, accept) {
   return (dispatch, getState) => {
     if (typeof accept === 'function' && !accept(status)) {
+      return;
+    }
+
+    // 컨텐츠 툿은 컨텐츠 메뉴에서만
+    if (hidesGameStatuses(timeline) && isGameStatus(status)) {
       return;
     }
 
@@ -119,7 +125,8 @@ export function expandTimeline(timelineId, path, params = {}) {
       const next = getLinks(response).refs.find(link => link.rel === 'next');
 
       dispatch(importFetchedStatuses(response.data));
-      dispatch(expandTimelineSuccess(timelineId, response.data, next ? next.uri : null, response.status === 206, isLoadingRecent, isLoadingMore, isLoadingRecent && preferPendingItems));
+      const shown = hidesGameStatuses(timelineId) ? response.data.filter(status => !isGameStatus(status)) : response.data;
+      dispatch(expandTimelineSuccess(timelineId, shown, next ? next.uri : null, response.status === 206, isLoadingRecent, isLoadingMore, isLoadingRecent && preferPendingItems));
 
       if (timelineId === 'home' && !isLoadingMore && !isLoadingRecent) {
         const now = new Date();

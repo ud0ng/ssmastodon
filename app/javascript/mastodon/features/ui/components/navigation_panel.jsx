@@ -28,6 +28,8 @@ import NotificationsIcon from '@/material-icons/400-24px/notifications.svg?react
 import ScheduledStatusesIcon from '@/styles/bird-theme-svg/calendar-clock.svg?react';
 import ShopActiveIcon from '@/styles/bird-theme-svg/shop-fill.svg?react';
 import ShopIcon from '@/styles/bird-theme-svg/shop.svg?react';
+import StarActiveIcon from '@/styles/bird-theme-svg/star-fill.svg?react';
+import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
 import FollowRequestsActiveIcon from '@/styles/bird-theme-svg/user-add-fill.svg?react';
 import FollowRequestsIcon from '@/styles/bird-theme-svg/user-add.svg?react';
 import PendingMentionsActiveIcon from '@/styles/bird-theme-svg/messages-fill.svg?react';
@@ -43,6 +45,7 @@ import { Icon } from 'mastodon/components/icon';
 import { IconWithBadge } from 'mastodon/components/icon_with_badge';
 import { WordmarkLogo } from 'mastodon/components/logo';
 import { NavigationPortal } from 'mastodon/components/navigation_portal';
+import { useWallet } from 'mastodon/features/system/use_wallet';
 import { identityContextPropShape, withIdentity } from 'mastodon/identity_context';
 import { timelinePreview, trendsEnabled, dmChatEnabled, shopEnabled } from 'mastodon/initial_state';
 import { canManageDirectMessages } from 'mastodon/permissions';
@@ -88,6 +91,7 @@ const messages = defineMessages({
   bookmarks: { id: 'navigation_bar.bookmarks', defaultMessage: 'Bookmarks' },
   scheduledStatuses: { id: 'navigation_bar.scheduled_statuses', defaultMessage: 'Scheduled posts' },
   shop: { id: 'navigation_bar.shop', defaultMessage: 'Shop' },
+  contents: { id: 'navigation_bar.contents', defaultMessage: 'Contents' },
   scheduledStatusesFailed: { id: 'navigation_bar.scheduled_statuses_failed', defaultMessage: 'Scheduled posts (failed)' },
   lists: { id: 'navigation_bar.lists', defaultMessage: 'Lists' },
   preferences: { id: 'navigation_bar.preferences', defaultMessage: 'Preferences' },
@@ -210,6 +214,23 @@ const ProfileLink = () => {
       iconComponent={ProfileIcon}
       activeIconComponent={ProfileActiveIcon}
       text={intl.formatMessage(messages.profile)}
+    />
+  );
+};
+
+// 컨텐츠 메뉴: 받은 신청(아직 수락 안 함) 수를 배지로 (컨텐츠 툿은 알림 대신 여기서 알린다)
+const ContentsLink = () => {
+  const wallet = useWallet();
+  const intl = useIntl();
+  const count = wallet?.invites ?? 0;
+
+  return (
+    <ColumnLink
+      transparent
+      to='/system'
+      icon={<IconWithBadge id='star' icon={StarIcon} count={count} className='column-link__icon' />}
+      activeIcon={<IconWithBadge id='star' icon={StarActiveIcon} count={count} className='column-link__icon' />}
+      text={intl.formatMessage(messages.contents)}
     />
   );
 };
@@ -433,6 +454,7 @@ class NavigationPanel extends Component {
         )}
         <ScheduledStatusesLink />
         {shopEnabled && <ColumnLink transparent to='/shop' icon='shop' iconComponent={ShopIcon} activeIconComponent={ShopActiveIcon} text={intl.formatMessage(messages.shop)} />}
+        <ContentsLink />
         <ColumnLink transparent to='/bookmarks' icon='bookmarks' iconComponent={BookmarksIcon} activeIconComponent={BookmarksActiveIcon} text={bookmarksLabel} />
         <ColumnLink transparent to='/lists' icon='list-ul' iconComponent={ListAltIcon} activeIconComponent={ListAltActiveIcon} text={listsLabel} />
         <ColumnLink transparent href={settingsHref} icon='cog' iconComponent={SettingsIcon} text={preferencesLabel} />
