@@ -68,6 +68,10 @@ module Game
       end
 
       # 카드: 사람마다 통과 횟수, 라운드, 이번 라운드 경로, 고른 사람
+      def max_turns
+        config['rounds'].to_i.clamp(1, 20)
+      end
+
       def card_data
         {
           'scores' => state['wins'] || {},

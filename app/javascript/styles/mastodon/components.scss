@@ -18881,6 +18881,17 @@ body.app-body.layout-game-room.layout-single-column {
     fill: none;
     stroke: currentColor;
   }
+
+  // Tabler SVG 맨 앞의 24x24 배경 사각형은 그리지 않는다
+  path[d='M0 0h24v24H0z'] {
+    display: none;
+  }
+
+  // 채운 아이콘 (남은 HP 하트)
+  &--heart-fill path {
+    fill: currentColor;
+    stroke: none;
+  }
 }
 
 // 최악의 맛 칸: 아바타는 원 가운데 그대로, 💩는 오른쪽 아래에 겹쳐 얹는다 (아바타를 밀지 않는다)
@@ -18964,4 +18975,107 @@ body.app-body.layout-game-room.layout-single-column {
   &__name {
     color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
   }
+}
+
+// 마법약 결과 배지: [P ×n] 완벽(초록) · [T ×n] 조금 노력(주황)
+.command-badge--perfect {
+  --cmd-color: #2f9e5b;
+}
+
+.command-badge--try {
+  --cmd-color: #d98a1f;
+}
+
+// 결투 HP 하트: 남은 HP는 채운 하트, 잃은 HP는 선 하트, 피해는 깨진 하트
+.content-card__hearts {
+  display: inline-flex;
+  gap: 2px;
+  font-size: 17px;
+  letter-spacing: 0;
+}
+
+.content-card__heart {
+  display: inline-flex;
+  color: #e0245e;
+
+  &--lost {
+    color: color-mix(in srgb, #e0245e 70%, transparent);
+  }
+}
+
+.command-heart {
+  margin: 0 1px;
+  color: #e0245e;
+  font-size: 1.1em;
+  vertical-align: -0.2em;
+}
+
+// 시스템 DM(비밀 선택 안내 등): 다른 바탕색 (테마 서브색을 옅게)
+.game-room__host--secret {
+  background: color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 10%, transparent);
+}
+
+// 마법약 방 상단: 재료 개수 배지, 아이템(방어권·재시도권) 소지 0/1
+.content-card__board--potion {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.content-card__potion-badge {
+  padding: 1px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 14%, transparent);
+  color: var(--ct-point, #{$ui-highlight-color});
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 22px;
+}
+
+.content-card__potion-answer {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
+  font-size: 13px;
+}
+
+.content-card__items {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.content-card__item {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+  color: var(--ct-point, #{$ui-highlight-color});
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+
+  &--empty {
+    color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
+    opacity: 0.7;
+  }
+
+  .game-icon {
+    font-size: 15px;
+  }
+}
+
+// 입력창 위 버튼: 줄 사이(일반 기술 ↔ 필살·아이템) 위아래 여백
+.game-room__turn-actions {
+  row-gap: 10px;
+
+  & + & {
+    margin-top: 10px;
+  }
+}
+
+.game-room__turn {
+  padding-bottom: 4px;
 }

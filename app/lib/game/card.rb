@@ -30,6 +30,7 @@ module Game
         'mode' => session.state['mode'],
         'phase' => session.status,
         'turn' => session.turn,
+        'max_turns' => safe { kind&.max_turns },
         'deadline_at' => session.deadline_at&.iso8601,
         'players' => session.players.map { |player| player_card(player) },
         'data' => safe { kind&.card_data } || {},
@@ -127,8 +128,9 @@ module Game
     end
 
     # 웹 버튼 하나: 누르면 '@시스템 [command]' 툿을 쓰는 창이 열린다 (dm 이면 DM 으로)
-    def action(command, seats:, label: nil, dm: false, style: 'primary')
-      { 'label' => label || command, 'command' => command, 'seats' => seats, 'dm' => dm, 'style' => style }
+    # row: 버튼 줄 (웹 방 입력창 위에서 줄 단위로 나눈다. 필살기처럼 다음 줄에 둘 때 2)
+    def action(command, seats:, label: nil, dm: false, style: 'primary', row: 1)
+      { 'label' => label || command, 'command' => command, 'seats' => seats, 'dm' => dm, 'style' => style, 'row' => row }
     end
 
     # 카드는 덤이라 계산하다 잘못돼도 툿 올리기를 막지 않는다

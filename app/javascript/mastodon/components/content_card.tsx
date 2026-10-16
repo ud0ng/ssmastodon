@@ -35,6 +35,8 @@ export interface CardAction {
   seats: number[] | 'others';
   dm: boolean;
   style: 'primary' | 'secondary';
+  // 버튼 줄 (필살기처럼 일반 기술 다음 줄에 둘 때 2)
+  row?: number;
 }
 
 type Data = Record<string, unknown>;
@@ -46,6 +48,8 @@ export interface GameCard {
   mode: 'event' | null;
   phase: 'pending' | 'active' | 'finished' | 'cancelled';
   turn: number;
+  // 최대 라운드(턴) 수 — 방 맨 위에 '1라운드 / 10라운드' (없으면 현재 라운드만)
+  max_turns?: number | null;
   deadline_at: string | null;
   players: CardPlayer[];
   data: Data;
@@ -88,7 +92,7 @@ const Hearts: React.FC<{ left: number; full: number }> = ({ left, full }) => (
         key={index}
         className={index < left ? 'content-card__heart' : 'content-card__heart content-card__heart--lost'}
       >
-        <GameIcon name='heart' />
+        <GameIcon name={index < left ? 'heart-fill' : 'heart'} />
       </span>
     ))}
   </span>
@@ -107,16 +111,21 @@ const PlayerStat: React.FC<{ card: GameCard; player: CardPlayer }> = ({ card, pl
       return <span className='content-card__score'>{num(bySeat(data.scores)[seat])}</span>;
     case 'duel':
       return <Hearts left={num(bySeat(data.hp)[seat])} full={num(data.max_hp)} />;
-    case 'potion':
+    case 'potion': {
+      // 아이템 소지 개수: 방어권·재시도권 아이콘 + 남은/처음 (0/1)
+      const owned = bySeat(bySeat(data.items)[seat]);
+      const max = bySeat(data.item_max);
       return (
-        <span className='content-card__chip'>
-          <FormattedMessage
-            id='content_card.tries'
-            defaultMessage='{tries}/{max} tries'
-            values={{ tries: num(bySeat(data.tries)[seat]), max: num(data.max_tries) }}
-          />
+        <span className='content-card__items'>
+          {(['shield', 'retry'] as const).map((key) => (
+            <span key={key} className={num(owned[key]) > 0 ? 'content-card__item' : 'content-card__item content-card__item--empty'}>
+              <GameIcon name={key} />
+              {num(owned[key])}/{num(max[key])}
+            </span>
+          ))}
         </span>
       );
+    }
     default:
       return null;
   }
@@ -255,7 +264,11 @@ const RoomMiddle: React.FC<{ card: GameCard }> = ({ card }) => (
         {card.phase === 'finished' ? (
           <FormattedMessage id='content_card.round_ended' defaultMessage='Ended in round {turn}' values={{ turn: card.turn }} />
         ) : (
-          <FormattedMessage id='content_card.round' defaultMessage='Round {turn}' values={{ turn: card.turn }} />
+          card.max_turns ? (
+            <FormattedMessage id='content_card.round_of' defaultMessage='Round {turn} / {max}' values={{ turn: card.turn, max: card.max_turns }} />
+          ) : (
+            <FormattedMessage id='content_card.round' defaultMessage='Round {turn}' values={{ turn: card.turn }} />
+          )
         )}
       </span>
     ) : (
@@ -266,8 +279,10 @@ const RoomMiddle: React.FC<{ card: GameCard }> = ({ card }) => (
 );
 
 const RoomHead: React.FC<{ card: GameCard }> = ({ card }) => {
-  if (card.players.length === 2) {
-    const [left, right] = card.players as [CardPlayer, CardPlayer];
+  // 내 메시지가 오른쪽에 붙으니 내 캐릭터도 오른쪽에 둔다 (여럿이면 맨 뒤)
+  const ordered = [...card.players].sort((a, b) => Number(a.account_id === me) - Number(b.account_id === me));
+  if (ordered.length === 2) {
+    const [left, right] = ordered as [CardPlayer, CardPlayer];
     return (
       <div className='room-head'>
         <RoomPlayer card={card} player={left} side='left' />
@@ -281,7 +296,7 @@ const RoomHead: React.FC<{ card: GameCard }> = ({ card }) => {
     <div className='room-head room-head--many'>
       <RoomMiddle card={card} />
       <div className='room-head__many'>
-        {card.players.map((player) => <RoomPlayer key={player.seat} card={card} player={player} side='left' />)}
+        {ordered.map((player) => <RoomPlayer key={player.seat} card={card} player={player} side='left' />)}
       </div>
     </div>
   );
@@ -463,6 +478,8 @@ const Board: React.FC<{ card: GameCard; room?: boolean }> = ({ card, room = fals
 
     case 'duel':
     case 'quidditch': {
+      // 결투 방 맨 위는 HP 하트만 (고른 주문·최대 턴 줄 없음)
+      if (room && card.kind === 'duel') return null;
       const last = data.last_round ? bySeat(data.last_round) : null;
       const choices = last ? bySeat(last.choices) : {};
       const winner = last?.winner_seat;
@@ -504,46 +521,18 @@ const Board: React.FC<{ card: GameCard; room?: boolean }> = ({ card, room = fals
     }
 
     case 'potion': {
-      const ingredients = Array.isArray(data.ingredients) ? (data.ingredients as string[]) : [];
-      const answer = Array.isArray(data.answer) ? (data.answer as string[]) : null;
-      const guesses = bySeat(data.guesses);
+      // 약 이름·재료 이름은 보여 주지 않는다: 재료 개수 배지만 (끝나면 정답 번호). 이번 라운드 시도 결과도 넣지 않는다.
+      const numbers = Array.isArray(data.answer_numbers) ? (data.answer_numbers as number[]) : null;
       return (
-        <div className='content-card__board'>
-          <div className='content-card__line content-card__line--title'>
-            {String(data.potion ?? '')}
-            <span className='content-card__dim'>
-              <FormattedMessage id='content_card.answer_size' defaultMessage='{size} ingredients in order' values={{ size: num(data.answer_size) }} />
+        <div className='content-card__board content-card__board--potion'>
+          <span className='content-card__potion-badge'>
+            <FormattedMessage id='content_card.potion_size' defaultMessage='{size} ingredients' values={{ size: num(data.answer_size) }} />
+          </span>
+          {numbers && (
+            <span className='content-card__potion-answer'>
+              <FormattedMessage id='content_card.answer_label' defaultMessage='Answer' />
+              {numbers.map((number, index) => <kbd key={index} className='command-badge'>{number}</kbd>)}
             </span>
-          </div>
-          <div className='content-card__chips'>
-            {ingredients.map((name, index) => (
-              <span key={name} className={answer?.includes(name) ? 'content-card__chip content-card__chip--good' : 'content-card__chip'}>
-                {index + 1}. {name}
-              </span>
-            ))}
-          </div>
-          {Object.keys(guesses).length > 0 && (
-            <div className='content-card__guesses'>
-              {card.players.map((player) => {
-                const result = bySeat(guesses[String(player.seat)]);
-                const strike = num(result.strike);
-                const ball = num(result.ball);
-                return (
-                  <span key={player.seat} className='content-card__guess'>
-                    {player.name}
-                    <span className='content-card__dots'>
-                      {Array.from({ length: strike }, (_, i) => <span key={`s${i}`} className='content-card__dot content-card__dot--strike' />)}
-                      {Array.from({ length: ball }, (_, i) => <span key={`b${i}`} className='content-card__dot' />)}
-                    </span>
-                  </span>
-                );
-              })}
-            </div>
-          )}
-          {answer && (
-            <div className='content-card__line'>
-              <FormattedMessage id='content_card.answer' defaultMessage='Answer: {answer}' values={{ answer: answer.join(' → ') }} />
-            </div>
           )}
         </div>
       );

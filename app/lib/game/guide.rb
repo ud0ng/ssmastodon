@@ -21,8 +21,8 @@ module Game
         steps: ['[%{command}] @상대 로 신청', '턴마다 DM 으로 [%{cmd_attack}] [%{cmd_disarm}] [%{cmd_defend}] 중 하나', '필살기는 한 번만: [%{cmd_attack}/%{cmd_special}]', 'HP 가 먼저 0 이 되면 패배'],
       },
       'potion' => {
-        summary: '재료 순서를 추리해 물약을 먼저 완성하는 대결',
-        steps: ['[%{command}] @상대 로 신청', 'DM 으로 [%{cmd_brew}/재료1 재료2 …] (맞은 자리·순서만 틀린 수를 알려 줌)', '정답을 먼저 맞히면 승리'],
+        summary: '재료 순서를 추리해 마법약을 먼저 완성하는 대결',
+        steps: ['[%{command}] @상대 로 신청', '라운드마다 DM 으로 [%{cmd_brew}] 재료 번호 (0번은 첫 자리 불가, 두 사람이 모두 보내면 결과 공개)', '[P] 재료·순서 맞음 · [T] 순서만 틀림. 아이템: [%{cmd_shield}] 결과 하나 가림 · [%{cmd_retry}] 두 번 조합, 정답을 먼저 맞히면 승리'],
       },
       'quidditch' => {
         summary: '1:1 또는 팀전(2·4·6명) 미니 퀴디치',

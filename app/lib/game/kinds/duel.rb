@@ -36,8 +36,8 @@ module Game
         F.new(key: 'msg_chosen', type: :text, group: 'messages', label: 'DM: 선택 확인', default: '✔ 주문을 정했습니다. 상대를 기다립니다.'),
         F.new(key: 'msg_round', type: :text, group: 'messages', label: '턴 결과',
               default: "%{turn}턴\n\n%{player_a} [%{choice_a}] vs %{player_b} [%{choice_b}]\n%{outcome}\n\n%{hearts}"),
-        F.new(key: 'msg_round_win', type: :text, group: 'messages', label: '한쪽 승리', default: '%{winner}의 주문이 통했습니다! (%{loser} -%{damage})'),
-        F.new(key: 'msg_round_backfire', type: :text, group: 'messages', label: '필살기 역풍', default: '%{winner}의 주문이 통했습니다! 필살기가 빗나간 %{loser}{은는} -%{damage}'),
+        F.new(key: 'msg_round_win', type: :text, group: 'messages', label: '한쪽 승리', default: '%{winner}의 주문이 통했습니다! 💔 %{loser} -%{damage}'),
+        F.new(key: 'msg_round_backfire', type: :text, group: 'messages', label: '필살기 역풍', default: '%{winner}의 주문이 통했습니다! 필살기가 빗나간 💔 %{loser}{은는} -%{damage}'),
         F.new(key: 'msg_round_tie', type: :text, group: 'messages', label: '같은 주문', default: '같은 주문이 맞부딪혀 흩어졌습니다. (피해 없음)'),
         F.new(key: 'msg_both_fail', type: :text, group: 'messages', label: '둘 다 시간 초과', default: '두 사람 모두 주문을 외우지 못했습니다. (피해 없음)'),
         F.new(key: 'msg_fail', type: :text, group: 'messages', label: '주문 실패 (시간 초과)', default: '주문 실패'),
@@ -76,6 +76,10 @@ module Game
         resolve!
       end
 
+      def max_turns
+        config['max_turns'].to_i
+      end
+
       def card_data
         {
           'hp' => state['hp'] || {},
@@ -92,7 +96,7 @@ module Game
         seats = players.map(&:seat)
         spells = SPELLS.map { |key| Game::Card.action(config["cmd_#{key}"], seats: seats, dm: true) }
         fresh = seats.reject { |seat| state.dig('special_used', seat.to_s) }
-        specials = fresh.empty? ? [] : SPELLS.map { |key| Game::Card.action("#{config["cmd_#{key}"]}/#{config['cmd_special']}", label: "#{config["cmd_#{key}"]}·#{config['cmd_special']}", seats: fresh, dm: true, style: 'secondary') }
+        specials = fresh.empty? ? [] : SPELLS.map { |key| Game::Card.action("#{config["cmd_#{key}"]}/#{config['cmd_special']}", label: "#{config["cmd_#{key}"]}·#{config['cmd_special']}", seats: fresh, dm: true, style: 'secondary', row: 2) }
         spells + specials
       end
 

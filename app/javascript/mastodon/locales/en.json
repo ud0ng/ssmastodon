@@ -1210,5 +1210,9 @@
   "system.room.with_command": "Add a line or (dialogue) — or just send",
   "system.room.remove_command": "Remove command",
   "content_card.round_ended": "Ended in round {turn}",
-  "system.tile.off": "Off (staff only)"
+  "system.tile.off": "Off (staff only)",
+  "content_card.potion_hint2": "Press the button, then type the ingredient numbers in order, e.g. 1 5 3",
+  "content_card.round_of": "Round {turn} / {max}",
+  "content_card.potion_size": "{size} ingredients",
+  "content_card.answer_label": "Answer"
 }

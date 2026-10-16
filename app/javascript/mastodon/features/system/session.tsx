@@ -72,7 +72,7 @@ const Secret: React.FC = () => (
 
 // 시스템(사회자) 메시지: 전체 너비 박스, 진행 문구만 (이름·시간 없음. 지금 상태 카드는 맨 위에 고정)
 const HostMessage: React.FC<{ message: RoomMessage; people: TextPerson[] }> = ({ message, people }) => (
-  <div className='game-room__host'>
+  <div className={message.secret ? 'game-room__host game-room__host--secret' : 'game-room__host'}>
     {message.secret && <Secret />}
     {message.text && <p className='game-room__host-text'><CommandText text={message.text} people={people} noEmoji /></p>}
   </div>
@@ -196,28 +196,31 @@ const TurnPanel: React.FC<{
         </div>
         {card.kind === 'potion' && card.phase === 'active' && (
           <p className='game-room__turn-hint'>
-            <FormattedMessage id='content_card.potion_hint' defaultMessage='Send [{brew}] with your ingredients by DM, e.g. [{brew}] 1 5 3' values={{ brew: String(card.data.brew ?? '') }} />
+            <FormattedMessage id='content_card.potion_hint2' defaultMessage='Press the button, then type the ingredient numbers in order, e.g. 1 5 3' />
           </p>
         )}
-        <div className='game-room__turn-actions'>
-          {actions.map((action) => (
-            <button
-              key={`${action.command}${action.mention ?? ''}`}
-              type='button'
-              className={[
-                'game-room__action',
-                action.style !== 'primary' && 'game-room__action--secondary',
-                picked?.command === action.command && picked.mention === action.mention && 'game-room__action--picked',
-              ].filter(Boolean).join(' ')}
-              disabled={busy}
-              onClick={() => { onAction(action); }}
-              title={action.dm ? `DM: [${action.command}]` : `[${action.command}]`}
-            >
-              {action.label}
-              {action.dm && <span className='game-room__action-dm'>DM</span>}
-            </button>
-          ))}
-        </div>
+        {/* 버튼 줄: action.row 별로 나눈다 (결투 필살기는 일반 기술 다음 줄) */}
+        {[...new Set(actions.map((action) => action.row ?? 1))].sort((x, y) => x - y).map((row) => (
+          <div key={row} className='game-room__turn-actions'>
+            {actions.filter((action) => (action.row ?? 1) === row).map((action) => (
+              <button
+                key={`${action.command}${action.mention ?? ''}`}
+                type='button'
+                className={[
+                  'game-room__action',
+                  action.style !== 'primary' && 'game-room__action--secondary',
+                  picked?.command === action.command && picked.mention === action.mention && 'game-room__action--picked',
+                ].filter(Boolean).join(' ')}
+                disabled={busy}
+                onClick={() => { onAction(action); }}
+                title={action.dm ? `DM: [${action.command}]` : `[${action.command}]`}
+              >
+                {action.label}
+                {action.dm && <span className='game-room__action-dm'>DM</span>}
+              </button>
+            ))}
+          </div>
+        ))}
       </div>
     );
   }

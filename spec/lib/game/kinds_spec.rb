@@ -117,15 +117,16 @@ RSpec.describe 'Game kinds' do
   describe Game::Kinds::Potion do
     before do
       Game::Config.update!('potion', 'answer_min' => '3', 'answer_max' => '3')
-      start('물약')
+      start('마법약')
     end
 
     def answer_numbers
-      session.state['answer'].map { |name| session.state['shown'].index(name) + 1 }
+      session.state['answer'].map { |name| session.state['shown'].index(name) }
     end
 
     it 'shows ingredients in public and by DM' do
-      expect(session.state['shown'].size).to eq 9
+      expect(session.state['shown'].size).to eq 10
+      expect(session.state['answer'].first).not_to eq session.state['shown'].first
       expect(session.state['answer'].size).to eq 3
       expect(@replies.find { |status| status.visibility == 'private' }.text).to include('재료:', '[조합]')
       expect(replies_to(alice, 'direct')).to be_present
@@ -135,11 +136,11 @@ RSpec.describe 'Game kinds' do
       wrong = (1..9).to_a - answer_numbers
       toot(alice, "@system [조합] #{answer_numbers.reverse.join(' ')}", visibility: 'direct')
       hint = @replies.last.text
-      expect(hint).to include('1번째 시도', '순서가 틀린 재료')
+      expect(hint).to include('1번째 시도', '[P ×')
 
       toot(bob, "@system [조합] #{wrong.first(3).join(' ')}", visibility: 'direct')
       result = @replies.find { |status| status.visibility == 'private' }
-      expect(result.text).to include('1턴', '드레이코: 정답 0 · 순서 틀림 0')
+      expect(result.text).to include('1라운드', '드레이코: [P ×0] [T ×0]')
       expect(session.turn).to eq 2
     end
 
@@ -154,6 +155,23 @@ RSpec.describe 'Game kinds' do
       toot(alice, '@system [조합] 1 2', visibility: 'direct')
       expect(@replies.last.text).to include('겹치지 않게')
       expect(session.state['tries']).to be_empty
+    end
+
+    it 'does not allow ingredient 0 in the first place' do
+      toot(alice, '@system [조합] 0 1 2', visibility: 'direct')
+      expect(@replies.last.text).to include('0번 재료')
+      expect(session.state['tries']).to be_empty
+    end
+
+    it 'lets a retry ticket brew twice in a round and a shield hide one result' do
+      toot(alice, '@system [재시도권]', visibility: 'direct')
+      expect(session.state['allowed']['0']).to eq 2
+      expect(session.state['items']['0']['retry']).to eq 0
+      toot(alice, '@system [방어권]', visibility: 'direct')
+      toot(alice, "@system [조합] #{answer_numbers.join(' ')}", visibility: 'direct')
+      expect(session.state['guesses']['0'].size).to eq 1
+      toot(alice, '@system [재시도권]', visibility: 'direct')
+      expect(@replies.last.text).to include('쓸 수 없습니다')
     end
   end
 

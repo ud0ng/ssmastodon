@@ -1,7 +1,7 @@
 // 컨텐츠 화면 전용 아이콘 (이모티콘 대신). Tabler Icons(outline, MIT)를 images/tabler 에서 가져온다.
 // 글자 크기(1em)·글자색(currentColor)을 따른다. 칠하기는 .game-icon CSS (components.scss).
 //   컨텐츠를 대표하는 아이콘은 쓰지 않는다 (사용자 요청). 상태·보상·행동 표시용 아이콘만.
-//   그 밖: heart · crown · hourglass · check · star · coin · gift · cloak · scope · compass · bulb · stun · sword · hands · foot · sparkle · sun · moon
+//   그 밖: heart(선) · heart-fill(채움) · heart-broken · crown · hourglass · check · star · coin · gift · cloak · scope · compass · bulb · stun · sword · hands · foot · sparkle · sun · moon
 import BulbIcon from '@/images/tabler/bulb.svg?react';
 import CheckIcon from '@/images/tabler/check.svg?react';
 import CoinIcon from '@/images/tabler/coin.svg?react';
@@ -11,12 +11,16 @@ import FileTextIcon from '@/images/tabler/file-text.svg?react';
 import GiftIcon from '@/images/tabler/gift.svg?react';
 import HangerIcon from '@/images/tabler/hanger.svg?react';
 import HandshakeIcon from '@/images/tabler/heart-handshake.svg?react';
+import HeartBrokenIcon from '@/images/tabler/heart-broken.svg?react';
+import HeartFilledIcon from '@/images/tabler/heart-filled.svg?react';
 import HeartIcon from '@/images/tabler/heart.svg?react';
 import HourglassIcon from '@/images/tabler/hourglass.svg?react';
 import DizzyIcon from '@/images/tabler/mood-sad-dizzy.svg?react';
 import MoonIcon from '@/images/tabler/moon.svg?react';
 import PawIcon from '@/images/tabler/paw.svg?react';
 import SparklesIcon from '@/images/tabler/sparkles.svg?react';
+import RefreshIcon from '@/images/tabler/refresh.svg?react';
+import ShieldIcon from '@/images/tabler/shield.svg?react';
 import StarIcon from '@/images/tabler/star.svg?react';
 import SunIcon from '@/images/tabler/sun.svg?react';
 import SwordsIcon from '@/images/tabler/swords.svg?react';
@@ -28,6 +32,10 @@ type SvgComponent = React.FC<React.SVGProps<SVGSVGElement>>;
 const ICONS: Record<string, SvgComponent> = {
   tournament: TrophyIcon,
   heart: HeartIcon,
+  shield: ShieldIcon,
+  retry: RefreshIcon,
+  'heart-fill': HeartFilledIcon,
+  'heart-broken': HeartBrokenIcon,
   crown: CrownIcon,
   hourglass: HourglassIcon,
   check: CheckIcon,

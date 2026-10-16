@@ -61,6 +61,10 @@ module Game
         true
       end
 
+      def max_turns
+        rounds
+      end
+
       def card_data
         {
           'scores' => state['scores'] || {},

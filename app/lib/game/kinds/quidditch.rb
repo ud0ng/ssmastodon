@@ -93,6 +93,10 @@ module Game
       end
 
       # 카드: 사람마다 자기 팀 점수 (scores), 팀 구성 (teams, team_names)
+      def max_turns
+        config['max_turns'].to_i
+      end
+
       def card_data
         {
           'scores' => players.to_h { |player| [player.seat.to_s, team_score(player)] },

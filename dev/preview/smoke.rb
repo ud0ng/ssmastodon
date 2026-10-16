@@ -85,12 +85,12 @@ begin
   end
 
   Game::Config.merge!('potion', 'max_tries' => 1)
-  check.call('물약') do
-    duel_flow('potion', '물약') do |s|
+  check.call('마법약') do
+    duel_flow('potion', '마법약') do |s|
       answer = s.reload.state['answer']
       # 번호로 보낸다 (재료 이름에 띄어쓰기가 있을 수 있다)
       shown = s.state['shown']
-      say('owner', "@system [조합] #{answer.map { |name| shown.index(name) + 1 }.join(' ')}", dm: true)
+      say('owner', "@system [조합] #{answer.map { |name| shown.index(name) }.join(' ')}", dm: true)
       say('luna', "@system [조합] #{(1..answer.size).to_a.reverse.join(' ')}", dm: true)
     end
   end

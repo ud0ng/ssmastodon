@@ -18,6 +18,9 @@ module Game
     HANGUL = (0xAC00..0xD7A3)
     CLOSERS = /[\s」』)\]}>'"”’》〉]+\z/
 
+    # 이름을 바꾸기 전 한글 토큰 (관리 화면에서 저장해 둔 문구가 계속 읽히게)
+    LEGACY_LABELS = { potion: ['물약 이름'], tries: ['시도 횟수'] }.freeze
+
     # 사람이 들어가는 값: 역할 → 한글 앞말 ({앞말계정명} {앞말계정아이디} {앞말계정 아바타})
     ROLES = {
       player: '', opponent: '상대 ', winner: '승자 ', loser: '패자 ', next: '다음 차례 ',
@@ -30,8 +33,8 @@ module Game
       house: '소속', emoji: '소속 이모지', amount: '점수', points: '점수', reward: '우승 점수',
       turn: '턴', turns: '턴 수', round: '라운드', rounds: '라운드 수', minutes: '분', seconds: '초', number: '경기 번호',
       lines: '결과 목록', board: '점수판', outcome: '결과', result: '이번 결과', tally: '승수', reason: '사유',
-      players: '사람들', names: '참가자 명단', try: '시도 번호', tries: '시도 횟수', left: '남은 시도',
-      target_name: '변신 결과물', score: '이번 점수', potion: '물약 이름', strength: '강도', size: '재료 수',
+      players: '사람들', names: '참가자 명단', try: '시도 번호', tries: '최대 라운드', left: '남은 시도',
+      target_name: '변신 결과물', score: '이번 점수', potion: '마법약 이름', strength: '강도', size: '재료 수',
       route: '경로', routes: '경로 목록', count: '개수', worst: '최악의 맛 수', remaining: '남은 개수',
       eaten: '먹은 젤리빈', flavor: '맛', max: '최대 개수', answer: '정답', guess: '조합', strike: '정답 수',
       ball: '순서 틀림 수', ingredients: '재료 목록', spell: '주문', level: '레벨', patronus: '수호령',
@@ -44,7 +47,7 @@ module Game
       accept: '수락 명령어', decline: '거절 명령어', eat: '먹기 명령어', weak: '약 명령어', mid: '중 명령어',
       strong: '강 명령어', low: '약 명령어', high: '강 명령어', chase: '추격 명령어', beat: '몰이 명령어',
       seek: '수색 명령어', attack: '공격 명령어', disarm: '무장해제 명령어', defend: '방어 명령어',
-      special: '필살 명령어', fly: '비행 명령어', brew: '조합 명령어', cast: '주문 명령어', practice: '연습 명령어',
+      special: '필살 명령어', fly: '비행 명령어', brew: '조합 명령어', shield: '방어권 명령어', retry: '재시도권 명령어', cast: '주문 명령어', practice: '연습 명령어',
       study: '자습 명령어', join: '참가 명령어',
       day: '일차', traitor: '배신자 이름', traitors: '배신자 수', faction: '진영', role: '역할', roles: '역할 공개',
       mates: '동료 배신자', how: '할 일', accuse: '고발 명령어', petrify: '석화 명령어', investigate: '조사 명령어',
@@ -75,6 +78,7 @@ module Game
       end
       by_label = tokens.each_with_object({}) do |(key, value), labels|
         labels[LABELS[key] || key.to_s] = value
+        LEGACY_LABELS.fetch(key, []).each { |legacy| labels[legacy] = value }
       end
 
       text = template.to_s.gsub(/%\{(\w+)\}/) { tokens.fetch(Regexp.last_match(1).to_sym, '') }

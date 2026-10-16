@@ -103,6 +103,11 @@ module Game
         []
       end
 
+      # 최대 라운드(턴) 수: 방 맨 위에 '1라운드 / 10라운드' 로 보여 준다. 정해져 있지 않으면 nil
+      def max_turns
+        nil
+      end
+
       # 수락되어 게임이 시작될 때
       def start!
         raise NotImplementedError
