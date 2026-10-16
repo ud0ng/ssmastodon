@@ -43,24 +43,31 @@ class Api::V1::System::CommandsController < Api::BaseController
     ["#{system_mention} #{opponents.map { |account| "@#{account.acct}" }.join(' ')} [#{kind.config['command']}]", nil, 'private']
   end
 
+  # text 가 오면 [명령어]를 따로 만들지 않고 그대로 올린다: 그냥 하는 말(시스템은 답하지 않는다) 또는 [명령어]가 섞인 말
   def session_command
     session = GameSession.find(params[:session_id])
     player = session.players.find { |item| item.account_id == current_account.id }
+    body = params[:text].to_s.strip.presence || session_command_body
+    return if body.blank?
+
+    if ActiveModel::Type::Boolean.new.cast(params[:dm])
+      thread = player && Status.find_by(id: player.state['dm_status_id'])
+      return ["#{system_mention} #{body}", thread, 'direct']
+    end
+
+    target = clean(params[:target]).delete_prefix('@')
+    others = target.present? ? [] : session.players.reject { |item| item.account_id == current_account.id }.map { |item| "@#{item.account.acct}" }
+    mentions = [system_mention, *others].join(' ')
+    text = "#{mentions} #{body}#{" @#{target}" if target.present?}"
+    thread = Status.find_by(id: session.last_status_id || session.root_status_id)
+    [text, thread, session.visibility == 'direct' ? 'direct' : 'private']
+  end
+
+  def session_command_body
     command = clean(params[:command])
     return if command.blank?
 
     command = "#{command}/#{clean(params[:args])}" if params[:args].present?
-    target = clean(params[:target]).delete_prefix('@')
-
-    if ActiveModel::Type::Boolean.new.cast(params[:dm])
-      thread = player && Status.find_by(id: player.state['dm_status_id'])
-      return ["#{system_mention} [#{command}]", thread, 'direct']
-    end
-
-    others = target.present? ? [] : session.players.reject { |item| item.account_id == current_account.id }.map { |item| "@#{item.account.acct}" }
-    mentions = [system_mention, *others].join(' ')
-    text = "#{mentions} [#{command}]#{" @#{target}" if target.present?}"
-    thread = Status.find_by(id: session.last_status_id || session.root_status_id)
-    [text, thread, session.visibility == 'direct' ? 'direct' : 'private']
+    "[#{command}]"
   end
 end

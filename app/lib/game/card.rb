@@ -52,17 +52,25 @@ module Game
     # 이 판으로 받은 소속 점수 (결과 툿 아래에 '🦁 그리핀도르 +5')
     def awards(session)
       GameHousePoint.where(game_session_id: session.id).includes(:house).order(:id).map do |point|
-        { 'house' => house_card(point.house), 'amount' => point.amount }
+        { 'house' => house_card(point.house), 'amount' => point.amount, 'account_id' => point.account_id&.to_s }
       end
     end
 
     # 이 판으로 받은 돈·아이템 (사람마다 한 줄)
     def rewards(session)
       currency = Game::Config.for('common')['currency_name']
+      images = GameShopItem.by_key
       GameReward.where(game_session_id: session.id).includes(:account).order(:id).map do |reward|
-        { 'name' => GameCharacter.for(reward.account).display_name, 'money' => reward.money, 'currency' => currency,
-          'items' => reward.items.map { |item| Game::Rewards.item_label(item) } }
+        { 'name' => GameCharacter.for(reward.account).display_name, 'account_id' => reward.account_id.to_s, 'money' => reward.money, 'currency' => currency,
+          'items' => reward.items.map { |item| Game::Rewards.item_label(item) },
+          # 웹 방 화면: 아이템 그림과 개수 (그림은 상점 아이템에 올린 것)
+          'item_list' => reward.items.map { |item| item_card(item, images) } }
       end
+    end
+
+    def item_card(item, images)
+      image = images[Game::Wallet.key(item['name'])]&.image
+      { 'name' => item['name'], 'count' => item['count'].to_i.clamp(1, nil), 'image' => image.present? ? image.url(:small) : nil }
     end
 
     def house_card(house)

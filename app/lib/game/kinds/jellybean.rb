@@ -53,9 +53,11 @@ module Game
         eaten = []
         worst = false
         state['last_eaten'] = { 'seat' => player.seat, 'beans' => [] }
+        state['eaten_log'] ||= []
         count.times do
           bean = bag.shift
           state['last_eaten']['beans'] << bean
+          state['eaten_log'] << { 'seat' => player.seat, 'worst' => bean['worst'], 'flavor' => bean['flavor'] }
           eaten << render(config['msg_eat'], player: player, flavor: bean['flavor'])
           if bean['worst']
             worst = true
@@ -84,6 +86,8 @@ module Game
           'worst_flavor' => config['worst_flavor'],
           'current_seat' => state['seat'],
           'last_eaten' => state['last_eaten'],
+          # 먹은 순서대로 누가 먹었는지 (웹 게임판: 젤리빈마다 먹은 사람 인장, 최악의 맛은 해골)
+          'eaten' => state['eaten_log'] || [],
         }
       end
 

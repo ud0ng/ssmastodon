@@ -13,7 +13,7 @@ import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
 import { apiRequestGet } from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
-import { ICONS } from 'mastodon/components/content_card';
+import { GameIcon } from 'mastodon/components/game_icons';
 import { Countdown } from 'mastodon/components/countdown';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 
@@ -102,7 +102,7 @@ const GameRow: React.FC<{ game: Game }> = ({ game }) => {
 
   return (
     <Link className={`system-live system-live--${game.status}`} to={`/system/sessions/${game.id}`}>
-      <span className='system-live__icon' aria-hidden>{ICONS[game.kind] ?? '📜'}</span>
+      <span className='system-live__icon' aria-hidden><GameIcon name={game.kind} /></span>
       <span className='system-live__main'>
         <strong className='system-live__name'>{game.name}</strong>
         {opponents && (
@@ -179,7 +179,7 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                 <div className='system-tiles'>
                   {group.games.map((game) => (
                     <Link key={game.key} className={game.mine ? 'system-tile system-tile--mine' : 'system-tile'} to={`/system/games/${game.key}`}>
-                      <span className='system-tile__icon' aria-hidden>{ICONS[game.key] ?? '📜'}</span>
+                      <span className='system-tile__icon' aria-hidden><GameIcon name={game.key} /></span>
                       <span className='system-tile__name'>{game.name}</span>
                       <span className='system-tile__summary'>{game.summary}</span>
                       <span className='system-tile__meta'>

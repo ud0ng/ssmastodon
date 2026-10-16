@@ -12,7 +12,7 @@ import FlagIcon from '@/material-icons/400-24px/flag.svg?react';
 import { apiRequestGet } from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
-import { ICONS } from 'mastodon/components/content_card';
+import { GameIcon } from 'mastodon/components/game_icons';
 import { LoadMore } from 'mastodon/components/load_more';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 
@@ -76,7 +76,7 @@ const RecordRow: React.FC<{ game: HistoryGame; currency: string }> = ({ game, cu
   return (
     <li>
       <Link to={`/system/sessions/${game.session_id}`} className={`wallet-record wallet-record--${game.result ? ROW_TONES[game.result] : 'item'} record-row`}>
-        <span className='wallet-record__icon record-row__icon' aria-hidden>{ICONS[game.kind] ?? '📜'}</span>
+        <span className='wallet-record__icon record-row__icon' aria-hidden><GameIcon name={game.kind} /></span>
         <div className='wallet-record__main'>
           <span className='wallet-record__title'>{game.name}</span>
           <span className='wallet-record__meta'>

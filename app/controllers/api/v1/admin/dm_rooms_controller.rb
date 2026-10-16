@@ -33,8 +33,17 @@ class Api::V1::Admin::DmRoomsController < Api::BaseController
 
   def paginated_rooms
     DmRoom.where.not(last_status_id: nil)
+          .where.not(id: game_room_ids)
           .includes(members: [:account_stat, { user: :role }], last_status: [:media_attachments, :status_stat, { account: [:account_stat, { user: :role }], active_mentions: :account }])
           .to_a_paginated_by_last_status_id(limit_param(LIMIT), params_slice(:max_id, :since_id, :min_id))
+  end
+
+  # 시스템 계정과의 DM(컨텐츠)은 전체 채팅에서도 뺀다 — 컨텐츠 방에서 다 보인다
+  def game_room_ids
+    system = Game::System.account
+    return DmRoomMember.none.select(:dm_room_id) if system.nil?
+
+    DmRoomMember.where(account_id: system.id).select(:dm_room_id)
   end
 
   def set_room

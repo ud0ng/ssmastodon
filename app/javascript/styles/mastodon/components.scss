@@ -16265,7 +16265,7 @@ body .search__popout__menu__item {
       font-size: 13px;
     }
 
-    > div:nth-child(2) {
+    .system-game-page__intro {
       flex: 1;
       min-width: 0;
     }
@@ -17900,12 +17900,13 @@ body .search__popout__menu__item {
   border-bottom: 1px solid var(--ct-line, var(--background-border-color));
   background: var(--ct-panel, var(--background-color));
 
+  // 박스 없이 (방 위쪽 바탕에 바로)
   .content-card--room {
     margin: 0;
-    padding: 12px 14px;
-    border: 1px solid var(--ct-line, var(--background-border-color));
-    border-radius: 14px;
-    background: var(--ct-panel-raised, var(--color-bg-compose-form, var(--surface-background-color)));
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     box-shadow: none;
   }
 
@@ -17927,51 +17928,64 @@ body .search__popout__menu__item {
   }
 }
 
-// 아바타 | 소속 | 이름  VS  아바타 | 소속 | 이름 (가운데 단계·LIVE·남은 시간)
+// 방 맨 위: 박스 없이
+//   아바타 | 소속 배지 · 이름          VS          이름 · 소속 배지 | 아바타
+//          | 상태 · 점수            라운드·남은 시간          상태 · 점수 |
+//          | 보상 (끝난 판)                                   보상 |
 .room-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: 10px;
-  align-items: center;
-  margin-bottom: 10px;
+  align-items: start;
+  margin-bottom: 12px;
 
   &--many {
     display: flex;
     flex-direction: column;
+    align-items: stretch;
   }
 
   &__many {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px 18px;
+    gap: 12px 20px;
     justify-content: center;
   }
 
   &__player {
     display: flex;
     gap: 10px;
-    align-items: center;
+    align-items: flex-start;
     min-width: 0;
 
     &--right {
       flex-direction: row-reverse;
       text-align: end;
 
-      .room-head__house,
-      .room-head__stat {
+      .room-head__name-line,
+      .room-head__stat,
+      .room-head__rewards {
         justify-content: flex-end;
       }
     }
 
-    &--lose {
-      opacity: 0.6;
+    &--lose .room-head__avatar {
+      opacity: 0.55;
+      filter: grayscale(0.6);
+    }
+
+    &--win .room-head__avatar {
+      border-color: #e0b43a;
+      box-shadow:
+        0 0 0 2px color-mix(in srgb, #e0b43a 35%, transparent),
+        0 0 14px color-mix(in srgb, #e0b43a 55%, transparent);
     }
   }
 
   &__avatar {
     flex: 0 0 auto;
-    width: 46px;
-    height: 46px;
+    width: 48px;
+    height: 48px;
     border: 2px solid var(--house-color);
     border-radius: 50%;
     object-fit: cover;
@@ -17984,8 +17998,20 @@ body .search__popout__menu__item {
   &__who {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     min-width: 0;
+  }
+
+  &__name-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  &__player--right &__name-line {
+    flex-direction: row-reverse;
   }
 
   &__name {
@@ -17996,47 +18022,120 @@ body .search__popout__menu__item {
     text-overflow: ellipsis;
   }
 
+  // 소속 배지: 소속 색 바탕 연하게
   &__house {
-    display: flex;
-    gap: 4px;
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: 3px;
     align-items: center;
-    color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
-    font-size: 12px;
+    padding: 1px 7px 1px 4px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--house-color) 16%, transparent);
+    color: color-mix(in srgb, var(--house-color) 80%, var(--ct-text, #{$primary-text-color}));
+    font-size: 11px;
+    font-weight: 700;
 
     .system-crest {
-      --crest-size: 14px;
+      --crest-size: 13px;
     }
   }
 
   &__stat {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 4px 6px;
     align-items: center;
-    min-height: 0;
 
     &:empty {
       display: none;
     }
   }
 
+  // 상태: 차례 / 대기 / 승리 / 패배 / 무승부
+  &__state {
+    padding: 0 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ct-dim, #{$darker-text-color}) 14%, transparent);
+    color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 20px;
+
+    &--turn {
+      background: var(--ct-point, #{$ui-highlight-color});
+      color: var(--ct-on-point, #fff);
+    }
+
+    &--win {
+      background: #e0b43a;
+      color: #3a2a00;
+    }
+  }
+
+  // 보상: 테두리 없는 가벼운 배지 (재화 · 아이템 그림 ×개수 · 소속 점수)
+  &__rewards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  &__reward {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 9%, transparent);
+    font-size: 12px;
+    line-height: 20px;
+    white-space: nowrap;
+
+    .icon {
+      width: 14px;
+      height: 14px;
+      color: var(--ct-point, #{$ui-highlight-color});
+    }
+
+    img {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      object-fit: cover;
+    }
+
+    .system-crest {
+      --crest-size: 13px;
+    }
+  }
+
+  &__reward-count {
+    font-weight: 700;
+  }
+
   &__middle {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
     align-items: center;
+    padding-top: 4px;
     font-size: 12px;
   }
 
   &__vs {
     color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
-    font-size: 14px;
+    font-size: 15px;
     font-style: italic;
     font-weight: 800;
   }
 
   &__phase {
     color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
+    font-weight: 700;
+    white-space: nowrap;
+
+    &--done {
+      color: #b8891c;
+    }
   }
 
   &__time {
@@ -18354,24 +18453,27 @@ body.app-body.layout-game-room.layout-single-column {
   gap: 12px;
   align-items: center;
   padding: 12px 14px;
-  border: 1px solid var(--ct-line, var(--background-border-color));
+  border: 0;
   border-radius: 14px;
-  background: var(--ct-panel-raised, var(--color-bg-compose-form, var(--surface-background-color)));
+  // 테두리 없이 낮/밤 박스 색을 옅게
+  background: color-mix(in srgb, var(--ct-panel-raised, var(--color-bg-compose-form, var(--surface-background-color))) 65%, transparent);
   color: inherit;
   text-decoration: none;
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease;
+  transition: background 0.15s ease;
 
   &:hover,
   &:focus-visible {
-    border-color: color-mix(in srgb, var(--rc-point) 55%, transparent);
-    background: var(--ct-hover, var(--color-hover, rgb(127 127 127 / 8%)));
+    background: var(--ct-hover, var(--color-hover, rgb(127 127 127 / 10%)));
   }
 
+  // 내 방: 테마색 바탕
   &--mine {
-    border-color: color-mix(in srgb, var(--rc-point) 45%, transparent);
-    box-shadow: inset 3px 0 0 var(--rc-point);
+    background: color-mix(in srgb, var(--rc-point) 12%, transparent);
+
+    &:hover,
+    &:focus-visible {
+      background: color-mix(in srgb, var(--rc-point) 18%, transparent);
+    }
   }
 
   &__players {
@@ -18397,9 +18499,6 @@ body.app-body.layout-game-room.layout-single-column {
     min-width: 0;
     max-width: 100%;
 
-    &--me .system-room-card__name {
-      color: var(--rc-point);
-    }
 
     // 패배: 흐리게
     &--lose {
@@ -18419,7 +18518,9 @@ body.app-body.layout-game-room.layout-single-column {
           0 0 12px color-mix(in srgb, var(--rc-gold) 55%, transparent);
       }
 
+      // 이긴 사람 이름은 테마색
       .system-room-card__name {
+        color: var(--rc-point);
         font-weight: 800;
       }
     }
@@ -18498,18 +18599,301 @@ body.app-body.layout-game-room.layout-single-column {
     font-size: 14px;
     font-weight: 700;
   }
+}
 
-  &__tag {
-    padding: 1px 10px;
-    border: 1px solid color-mix(in srgb, var(--rc-point) 55%, transparent);
-    border-radius: 999px;
-    color: var(--rc-point);
-    font-size: 12px;
-    font-weight: 700;
+// 젤리빈 게임판 (방 맨 위): 가운데 정렬, 먹은 젤리빈에는 먹은 사람 인장(아바타), 최악의 맛은 해골
+.content-card--jellybean .content-card__beans {
+  justify-content: center;
+}
 
-    &--mine {
-      background: var(--rc-point);
-      color: var(--ct-on-point, #fff);
+.content-card--room.content-card--jellybean {
+  .content-card__beans {
+    gap: 8px;
+    max-width: 420px;
+    margin: 4px auto 6px;
+  }
+
+  .content-card__bean {
+    width: 24px;
+    height: 32px;
+  }
+}
+
+.content-card__bean {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &--eaten {
+    background: color-mix(in srgb, hsl(var(--bean-hue) 70% 62%) 18%, transparent);
+  }
+
+  &--worst {
+    background: color-mix(in srgb, var(--color-text-error, #e0245e) 22%, transparent);
+    box-shadow: inset 0 0 0 1.5px var(--color-text-error, #e0245e);
+  }
+}
+
+.content-card__bean-seal {
+  width: 78%;
+  aspect-ratio: 1;
+  border: 1.5px solid var(--house-color);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.content-card__bean-skull {
+  font-size: 15px;
+  line-height: 1;
+}
+
+// 방 메시지: [명령어]만 보낸 말은 말풍선 없이 배지만
+.game-room__command {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+
+  .command-badge {
+    margin: 0;
+    font-size: 14px;
+  }
+}
+
+.dm-message--mine .game-room__command {
+  justify-content: flex-end;
+
+  .command-badge {
+    --cmd-color: var(--ct-bracket, var(--color-fg, #{$primary-text-color}));
+  }
+}
+
+// 시스템 메시지: 이름·시간 없이 문구만
+.game-room__host .game-room__host-text {
+  margin-top: 0;
+}
+
+// 시스템 문구 안 캐릭터 이름: 아바타 | 굵은 이름 (components/command_text.tsx people)
+.command-person {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin: 0 1px;
+  vertical-align: -4px;
+
+  img {
+    width: 20px;
+    height: 20px;
+    border: 0;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  strong {
+    font-weight: 800;
+  }
+}
+
+// 버튼으로 고른 [명령어]: 입력칸 앞 배지 (× 로 빼기), 고른 버튼은 눌린 모양
+.game-room__picked {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 4px;
+  align-items: center;
+  align-self: center;
+  padding-inline-start: 4px;
+
+  .command-badge {
+    margin: 0;
+  }
+}
+
+.game-room__picked-remove {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--ct-hover, rgb(127 127 127 / 12%));
+  }
+}
+
+.game-room__action--picked {
+  box-shadow:
+    0 0 0 2px var(--ct-panel, var(--background-color)),
+    0 0 0 4px var(--ct-point, #{$ui-highlight-color});
+}
+
+// ── 방 상단 다듬기 (2026-10-17): 소속은 문장 배지만, 끝난 판은 이름 옆 결과 + 둘째 줄 작은 보상 배지 ──
+.room-head {
+  &__house {
+    padding: 0;
+    background: none;
+
+    .system-crest {
+      --crest-size: 16px;
     }
   }
+
+  &__name-line &__state {
+    font-size: 11px;
+    line-height: 18px;
+  }
+
+  &__rewards {
+    gap: 3px;
+  }
+
+  &__reward {
+    padding: 0 6px;
+    font-size: 11px;
+    line-height: 18px;
+
+    .icon {
+      width: 12px;
+      height: 12px;
+    }
+
+    img {
+      width: 14px;
+      height: 14px;
+    }
+
+    .system-crest {
+      --crest-size: 11px;
+    }
+  }
+
+  &__phase--done {
+    color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
+  }
+}
+
+// 젤리빈 게임판: 동그라미, 테두리 없이 바탕색만. 먹은 칸은 옅게 + 먹은 사람 인장, 진 턴(최악의 맛)은 해골
+.content-card--room.content-card--jellybean {
+  .content-card__bean {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    box-shadow: none;
+  }
+
+  .content-card__bean--eaten {
+    background: color-mix(in srgb, hsl(var(--bean-hue) 70% 62%) 22%, transparent);
+    box-shadow: none;
+  }
+
+  .content-card__bean--worst {
+    background: color-mix(in srgb, var(--color-text-error, #e0245e) 25%, transparent);
+    box-shadow: none;
+  }
+
+  .content-card__bean-seal {
+    width: 22px;
+    border: 0;
+  }
+}
+
+// [명령어]만 보낸 말: 보낸 사람에 따라 DM 말풍선 색 (내 것은 보낸 말풍선=테마색, 남의 것은 받은 말풍선 색)
+.game-room__command .command-badge {
+  border: 0;
+  background: var(--color-recieve-message-background);
+  color: var(--color-fg, #{$primary-text-color});
+  padding: 2px 10px;
+  border-radius: 10px;
+}
+
+.dm-message--mine .game-room__command .command-badge {
+  background: var(--color-sent-message-background);
+  color: var(--color-sent-message-text);
+}
+
+// 시스템 메시지: 테두리 없이 옅은 바탕
+.game-room__host {
+  border: 0;
+  background: color-mix(in srgb, var(--ct-text, var(--color-fg, #{$primary-text-color})) 6%, transparent);
+}
+
+// 젤리빈 게임판 색: 한 가지(테마색). 먹은 칸은 옅게 + 먹은 사람 아바타, 최악의 맛은 아바타 + 💩
+.content-card--jellybean .content-card__bean {
+  background: var(--ct-point, #{$ui-highlight-color});
+
+  &--eaten {
+    background: color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 18%, transparent);
+  }
+
+  &--worst {
+    background: color-mix(in srgb, #8a5a2b 28%, transparent);
+  }
+}
+
+.content-card--room.content-card--jellybean {
+  .content-card__bean-seal {
+    width: 24px;
+    border: 0;
+  }
+}
+
+.content-card__bean-poop {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  font-size: 15px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 25%));
+}
+
+// 젤리빈 호버: 먹은 사람 · 맛 (바로 뜨는 말풍선)
+.content-card__bean[data-tip]:hover {
+  z-index: 3;
+
+  &::after {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    padding: 3px 9px;
+    border-radius: 8px;
+    background: var(--ct-text, #222);
+    color: var(--ct-panel, #fff);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+    content: attr(data-tip);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+}
+
+// 컨텐츠 화면 아이콘 (Tabler outline, components/game_icons.tsx): 글자 크기·색을 따라간다
+.game-icon {
+  flex: 0 0 auto;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+
+  path {
+    fill: none;
+    stroke: currentColor;
+  }
+}
+
+// 최악의 맛 칸: 아바타는 원 가운데 그대로, 💩는 오른쪽 아래에 겹쳐 얹는다 (아바타를 밀지 않는다)
+.content-card__bean--worst {
+  overflow: visible;
+}
+
+// 젤리빈 방 상단: 캐릭터 정보와 게임판 사이 구분선 없음
+.content-card--room.content-card--jellybean .content-card__board {
+  padding-top: 0;
+  border-top: 0;
 }

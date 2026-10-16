@@ -12,8 +12,8 @@ import { apiRequestGet } from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
 import { CommandText } from 'mastodon/components/command_text';
-import { ICONS } from 'mastodon/components/content_card';
 import { Countdown } from 'mastodon/components/countdown';
+import { GameIcon } from 'mastodon/components/game_icons';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 import { useAppDispatch } from 'mastodon/store';
@@ -139,8 +139,8 @@ const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => 
   );
 };
 
-// 방 목록 카드: 참가자 아바타 · 이름 (VS) · 상태(턴·남은 시간 / 끝난 때) · 내 방 / 관전.
-// 끝난 판은 승리자 아바타에 금빛 테두리 + 왕관, 패배자는 흐리게, 무승부는 '무' 표시
+// 방 목록 카드: 참가자 아바타 · 이름 (VS) · 상태(턴·남은 시간 / 끝난 때). 내 방은 테마색 바탕.
+// 끝난 판은 승리자 아바타에 금빛 테두리 + 왕관, 이름은 테마색. 패배자는 흐리게, 무승부는 '무' 표시
 const RoomList: React.FC<{ rows: SessionRow[] }> = ({ rows }) => {
   const intl = useIntl();
   return (
@@ -167,7 +167,7 @@ const RoomList: React.FC<{ rows: SessionRow[] }> = ({ rows }) => {
                     >
                       <span className='system-room-card__avatar'>
                         <img src={player.avatar} alt='' />
-                        {player.result === 'win' && <span className='system-room-card__crown' aria-hidden>👑</span>}
+                        {player.result === 'win' && <span className='system-room-card__crown' aria-hidden><GameIcon name='crown' /></span>}
                       </span>
                       <span className='system-room-card__name'>{player.name}</span>
                       {player.result && player.result !== 'lose' && (
@@ -191,13 +191,6 @@ const RoomList: React.FC<{ rows: SessionRow[] }> = ({ rows }) => {
                   )}
                 </span>
                 {row.status !== 'finished' && row.deadline_at && <Countdown until={row.deadline_at} className='system-room-card__time' />}
-                <span className={mine ? 'system-room-card__tag system-room-card__tag--mine' : 'system-room-card__tag'}>
-                  {mine ? (
-                    <FormattedMessage id='system.game.my_room' defaultMessage='Mine' />
-                  ) : (
-                    <FormattedMessage id='system.game.spectate' defaultMessage='Watch' />
-                  )}
-                </span>
               </span>
             </Link>
           </li>
@@ -261,7 +254,6 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
           <>
             {/* 게임 소개 + 시작하기 */}
             <header className='system-game-page__hero'>
-              <span className='system-game-page__icon' aria-hidden>{ICONS[game.key] ?? '📜'}</span>
               <div className='system-game-page__intro'>
                 <h2>{game.name}</h2>
                 <p>{game.summary}</p>

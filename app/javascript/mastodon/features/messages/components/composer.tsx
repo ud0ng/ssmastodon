@@ -136,6 +136,9 @@ interface Props {
 
   // 컨텐츠 방(features/system/session.tsx)처럼 다른 안내 문구를 쓸 때
   placeholder?: string;
+  // 입력칸 앞에 붙는 것 (컨텐츠 방: 고른 [명령어] 배지). hasPrefixContent 면 글이 없어도 보낼 수 있다
+  prefix?: React.ReactNode;
+  hasPrefixContent?: boolean;
 }
 
 export const Composer: React.FC<Props> = ({
@@ -153,6 +156,8 @@ export const Composer: React.FC<Props> = ({
   onChange,
   onSubmit,
   placeholder,
+  prefix,
+  hasPrefixContent = false,
 }) => {
   const intl = useIntl();
   const textarea = useRef<HTMLTextAreaElement>(null);
@@ -176,7 +181,7 @@ export const Composer: React.FC<Props> = ({
 
   const hasReadyMedia = uploads.some((upload) => upload.state === 'done');
 
-  const hasContent = value.trim() !== '' || hasReadyMedia;
+  const hasContent = value.trim() !== '' || hasReadyMedia || hasPrefixContent;
 
   const canSubmit =
     !disabled && !tooLong && !isUploading && !isSending && hasContent;
@@ -354,6 +359,7 @@ export const Composer: React.FC<Props> = ({
         )}
 
         <div className='dm-composer__field'>
+          {prefix}
           <textarea
             ref={textarea}
             className='dm-composer__textarea'

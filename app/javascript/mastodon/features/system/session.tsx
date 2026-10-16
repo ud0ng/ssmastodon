@@ -5,7 +5,7 @@
 //   미로·도둑 지도는 맨 위에 전용 진행판.
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import { defineMessages, FormattedMessage, FormattedTime, useIntl } from 'react-intl';
+import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
 import { useParams } from 'react-router-dom';
 
@@ -14,12 +14,14 @@ import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
 import { apiRequestGet } from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
-import { CommandText } from 'mastodon/components/command_text';
+import type { TextPerson } from 'mastodon/components/command_text';
+import { CommandText, isCommandOnly } from 'mastodon/components/command_text';
 import type { CardAction, GameCard } from 'mastodon/components/content_card';
 import { ContentCardView, myActions } from 'mastodon/components/content_card';
 import { Countdown } from 'mastodon/components/countdown';
 import { Icon } from 'mastodon/components/icon';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
+import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 import { Composer } from 'mastodon/features/messages/components/composer';
 import { DateDivider } from 'mastodon/features/messages/components/date_divider';
 
@@ -29,7 +31,9 @@ import { MazePlay } from './maze';
 
 const messages = defineMessages({
   title: { id: 'system.session.title', defaultMessage: 'Game' },
-  placeholder: { id: 'system.room.placeholder', defaultMessage: 'Command, e.g. eat or brew/dragon blood' },
+  placeholder: { id: 'system.room.placeholder', defaultMessage: 'Message or [command], e.g. [eat]' },
+  withCommand: { id: 'system.room.with_command', defaultMessage: 'Add a line (optional)' },
+  removeCommand: { id: 'system.room.remove_command', defaultMessage: 'Remove command' },
 });
 
 const REFRESH_MS = 5_000;
@@ -66,65 +70,74 @@ const Secret: React.FC = () => (
   </span>
 );
 
-// 시스템(사회자) 메시지: 전체 너비 박스 (진행 문구만. 지금 상태 카드는 맨 위에 고정)
-const HostMessage: React.FC<{ message: RoomMessage }> = ({ message }) => (
+// 시스템(사회자) 메시지: 전체 너비 박스, 진행 문구만 (이름·시간 없음. 지금 상태 카드는 맨 위에 고정)
+const HostMessage: React.FC<{ message: RoomMessage; people: TextPerson[] }> = ({ message, people }) => (
   <div className='game-room__host'>
-    <div className='game-room__host-head'>
-      <img src={message.avatar} alt='' />
-      <span>{message.name}</span>
-      {message.secret && <Secret />}
-      <FormattedTime value={message.created_at} hour='2-digit' minute='2-digit' hour12={false} />
-    </div>
-    {message.text && <p className='game-room__host-text'><CommandText text={message.text} /></p>}
+    {message.secret && <Secret />}
+    {message.text && <p className='game-room__host-text'><CommandText text={message.text} people={people} /></p>}
   </div>
 );
 
-// 참가자 메시지: DM 채팅 말풍선 그대로 (dm-message, 내 것은 오른쪽). 같은 사람이 이어 보내면 한 묶음
-const PlayerMessage: React.FC<{ message: RoomMessage; first: boolean; last: boolean }> = ({ message, first, last }) => (
-  <div
-    className={[
-      'dm-message',
-      message.mine ? 'dm-message--mine' : 'dm-message--theirs',
-      first && 'dm-message--first',
-      last && 'dm-message--last',
-      first && 'dm-message--sender-changed',
-    ].filter(Boolean).join(' ')}
-  >
-    {!message.mine && (
-      <div className='dm-message__avatar' aria-hidden='true'>
-        {first && <img className='game-room__avatar' src={message.avatar} alt='' />}
-      </div>
-    )}
-
-    <div className='dm-message__body'>
-      {first && !message.mine && <span className='dm-message__sender'>{message.name}</span>}
-      <div className='dm-message__bubble'>
-        <div className='dm-message__bubble__text'>
-          <p>
-            {message.secret && <Secret />}
-            <CommandText text={message.text} />
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <div className='dm-message__aside'>
-      {last && (
-        <div className='dm-message__meta'>
-          <time className='dm-message__time' dateTime={message.created_at}>
-            <FormattedTime value={message.created_at} hour='2-digit' minute='2-digit' hour12={false} />
-          </time>
+// 참가자 메시지: DM 채팅 말풍선 그대로 (dm-message, 내 것은 오른쪽). 같은 사람이 이어 보내면 한 묶음.
+// [명령어]만 보낸 말은 말풍선 없이 배지만. 시간은 'n분 전'
+const PlayerMessage: React.FC<{ message: RoomMessage; first: boolean; last: boolean }> = ({ message, first, last }) => {
+  const commandOnly = isCommandOnly(message.text);
+  return (
+    <div
+      className={[
+        'dm-message',
+        message.mine ? 'dm-message--mine' : 'dm-message--theirs',
+        first && 'dm-message--first',
+        last && 'dm-message--last',
+        first && 'dm-message--sender-changed',
+      ].filter(Boolean).join(' ')}
+    >
+      {!message.mine && (
+        <div className='dm-message__avatar' aria-hidden='true'>
+          {first && <img className='game-room__avatar' src={message.avatar} alt='' />}
         </div>
       )}
+
+      <div className='dm-message__body'>
+        {first && !message.mine && <span className='dm-message__sender'>{message.name}</span>}
+        {commandOnly ? (
+          <div className='game-room__command'>
+            {message.secret && <Secret />}
+            <CommandText text={message.text} />
+          </div>
+        ) : (
+          <div className='dm-message__bubble'>
+            <div className='dm-message__bubble__text'>
+              <p>
+                {message.secret && <Secret />}
+                <CommandText text={message.text} />
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className='dm-message__aside'>
+        {last && (
+          <div className='dm-message__meta'>
+            <time className='dm-message__time' dateTime={message.created_at}>
+              <RelativeTimestamp timestamp={message.created_at} />
+            </time>
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const dayOf = (value: string) => new Date(value).toDateString();
 
 // 메시지 목록: 날짜가 바뀌면 DM 처럼 날짜 줄, 참가자 메시지는 같은 사람이 이어지면 묶는다
 const RoomLog: React.FC<{ messages: RoomMessage[] }> = ({ messages: list }) => {
   const shown = list.filter((message) => !message.system || message.text);
+  // 시스템 문구 안 캐릭터 이름 → 아바타 | 굵은 이름 (참가자는 마지막 카드에서)
+  const players = [...list].reverse().find((message) => message.card)?.card?.players ?? [];
+  const people: TextPerson[] = players.map((player) => ({ name: player.name, avatar: player.avatar, color: player.house?.color }));
   return (
     <>
       {shown.map((message, index) => {
@@ -137,7 +150,7 @@ const RoomLog: React.FC<{ messages: RoomMessage[] }> = ({ messages: list }) => {
           <Fragment key={message.id}>
             {newDay && <DateDivider date={new Date(message.created_at)} />}
             {message.system ? (
-              <HostMessage message={message} />
+              <HostMessage message={message} people={people} />
             ) : (
               <div className='dm-room__group'>
                 <PlayerMessage message={message} first={!sameAsPrev} last={!sameAsNext} />
@@ -167,8 +180,9 @@ const TurnPanel: React.FC<{
   card: GameCard | null;
   actions: CardAction[];
   busy: boolean;
+  picked: CardAction | null;
   onAction: (action: CardAction) => void;
-}> = ({ card, actions, busy, onAction }) => {
+}> = ({ card, actions, busy, picked, onAction }) => {
   if (!card || !card.live) return null;
 
   if (actions.length > 0) {
@@ -190,7 +204,11 @@ const TurnPanel: React.FC<{
             <button
               key={`${action.command}${action.mention ?? ''}`}
               type='button'
-              className={action.style === 'primary' ? 'game-room__action' : 'game-room__action game-room__action--secondary'}
+              className={[
+                'game-room__action',
+                action.style !== 'primary' && 'game-room__action--secondary',
+                picked?.command === action.command && picked.mention === action.mention && 'game-room__action--picked',
+              ].filter(Boolean).join(' ')}
               disabled={busy}
               onClick={() => { onAction(action); }}
               title={action.dm ? `DM: [${action.command}]` : `[${action.command}]`}
@@ -226,6 +244,7 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   const [busy, setBusy] = useState(false);
   const [command, setCommand] = useState('');
   const [dm, setDm] = useState(false);
+  const [picked, setPicked] = useState<CardAction | null>(null);
   const timers = useRef<number[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
@@ -282,19 +301,42 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
     [id, load],
   );
 
-  const handleAction = useCallback(
-    (action: CardAction) => {
-      send({ command: action.command, dm: action.dm, target: action.mention });
-    },
-    [send],
-  );
+  // 버튼: 바로 보내지 않고 입력창 앞에 [명령어] 배지로 붙인다 → 대사·말을 덧붙여 보낸다
+  const handleAction = useCallback((action: CardAction) => {
+    setPicked(action);
+    dockRef.current?.querySelector<HTMLTextAreaElement>('textarea')?.focus();
+  }, []);
 
+  const clearPicked = useCallback(() => {
+    setPicked(null);
+  }, []);
+
+  // 보내기: 고른 버튼이 있으면 '[명령어] 덧붙인 말'.
+  // 아니면 [명령어]가 들어 있으면 그대로, 지금 판의 명령어 이름(예: 먹기, 먹기/2)이면 명령어로,
+  // 그 밖의 말은 그냥 메시지 (시스템은 답하지 않고, 다음 명령어가 오면 다시 진행한다)
   const handleSubmit = useCallback(() => {
-    const [name, ...rest] = command.replace(/[[\]]/g, '').split('/');
-    if (!name?.trim()) return;
-    send({ command: name.trim(), args: rest.join('/').trim() || undefined, dm });
+    const raw = command.trim();
+
+    if (picked) {
+      send({ text: `[${picked.command}] ${raw}`.trim(), dm: picked.dm || dm, target: picked.mention });
+      setPicked(null);
+      setCommand('');
+      return;
+    }
+
+    if (!raw) return;
+
+    const last = data ? [...data.messages].reverse().find((message) => message.card)?.card : null;
+    const known = new Set((last?.actions ?? []).map((action) => action.command.split('/')[0]));
+    const [name = '', ...rest] = raw.split('/');
+
+    if (/\[[^\]\n]+\]/.test(raw) || !known.has(name.trim())) {
+      send({ text: raw, dm });
+    } else {
+      send({ command: name.trim(), args: rest.join('/').trim() || undefined, dm });
+    }
     setCommand('');
-  }, [command, dm, send]);
+  }, [command, data, dm, picked, send]);
 
   const title = data?.name ?? intl.formatMessage(messages.title);
   const open = data ? data.status === 'pending' || data.status === 'active' : false;
@@ -302,6 +344,13 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   const current = data ? [...data.messages].reverse().find((message) => message.card)?.card ?? null : null;
   const actions = data?.player && open && current ? myActions(current) : [];
   const myTurn = actions.length > 0;
+
+  // 고른 버튼이 더는 없으면 (차례가 넘어감 등) 배지도 뺀다
+  useEffect(() => {
+    if (picked && !actions.some((action) => action.command === picked.command && action.mention === picked.mention)) {
+      setPicked(null);
+    }
+  }, [actions, picked]);
 
   // 내 차례가 되면 입력창으로 포커스 (효과는 .game-room__dock--turn)
   useEffect(() => {
@@ -339,7 +388,7 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
       {/* 입력창 (맨 아래 고정): 내 차례면 강조 + 할 일 버튼, DM 채팅과 같은 입력칸·보내기 버튼 */}
       {data?.player && open && (
         <div ref={dockRef} className={myTurn ? 'game-room__dock game-room__dock--turn' : 'game-room__dock'}>
-          <TurnPanel card={current} actions={actions} busy={busy} onAction={handleAction} />
+          <TurnPanel card={current} actions={actions} busy={busy} picked={picked} onAction={handleAction} />
           <div className='game-room__dock-row'>
             <label className='game-room__dm' title={intl.formatMessage({ id: 'system.board.secret', defaultMessage: 'Secret (DM)' })}>
               <input type='checkbox' checked={dm} onChange={(event) => { setDm(event.target.checked); }} />
@@ -350,7 +399,15 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
               onChange={setCommand}
               onSubmit={handleSubmit}
               isSending={busy}
-              placeholder={intl.formatMessage(messages.placeholder)}
+              placeholder={intl.formatMessage(picked ? messages.withCommand : messages.placeholder)}
+              hasPrefixContent={Boolean(picked)}
+              prefix={picked && (
+                <span className='game-room__picked'>
+                  <kbd className='command-badge'>{picked.label}</kbd>
+                  {(picked.dm || dm) && <span className='game-room__action-dm'>DM</span>}
+                  <button type='button' className='game-room__picked-remove' onClick={clearPicked} aria-label={intl.formatMessage(messages.removeCommand)}>×</button>
+                </span>
+              )}
             />
           </div>
         </div>

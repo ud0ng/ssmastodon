@@ -3,7 +3,7 @@ import { Map as ImmutableMap, List as ImmutableList } from 'immutable';
 import api, { getLinks } from 'mastodon/api';
 import { compareId } from 'mastodon/compare_id';
 import { usePendingItems as preferPendingItems } from 'mastodon/initial_state';
-import { hidesGameStatuses, isGameStatus } from 'mastodon/utils/game_status';
+import { isGameStatus } from 'mastodon/utils/game_status';
 
 import { importFetchedStatus, importFetchedStatuses } from './importer';
 import { submitMarkers } from './markers';
@@ -40,7 +40,7 @@ export function updateTimeline(timeline, status, accept) {
     }
 
     // 컨텐츠 툿은 컨텐츠 메뉴에서만
-    if (hidesGameStatuses(timeline) && isGameStatus(status)) {
+    if (isGameStatus(status)) {
       return;
     }
 
@@ -96,7 +96,8 @@ const parseTags = (tags = {}, mode) => {
   });
 };
 
-export function expandTimeline(timelineId, path, params = {}) {
+// gameHops: 한 페이지가 통째로 컨텐츠 툿이라 다 숨겨졌을 때 다음 페이지를 이어 읽은 횟수
+export function expandTimeline(timelineId, path, params = {}, gameHops = 0) {
   return async (dispatch, getState) => {
     const timeline = getState().getIn(['timelines', timelineId], ImmutableMap());
     const isLoadingMore = !!params.max_id;
@@ -125,8 +126,15 @@ export function expandTimeline(timelineId, path, params = {}) {
       const next = getLinks(response).refs.find(link => link.rel === 'next');
 
       dispatch(importFetchedStatuses(response.data));
-      const shown = hidesGameStatuses(timelineId) ? response.data.filter(status => !isGameStatus(status)) : response.data;
+      const shown = response.data.filter(status => !isGameStatus(status));
       dispatch(expandTimelineSuccess(timelineId, shown, next ? next.uri : null, response.status === 206, isLoadingRecent, isLoadingMore, isLoadingRecent && preferPendingItems));
+
+      // 컨텐츠 툿만 있던 페이지면 (프로필 답글 등) 빈 화면 대신 다음 페이지를 몇 번 더 읽는다
+      if (!isLoadingRecent && next && response.data.length > 0 && shown.length === 0 && gameHops < 5) {
+        const lastId = response.data[response.data.length - 1].id;
+        await dispatch(expandTimeline(timelineId, path, { ...params, max_id: lastId }, gameHops + 1));
+        return;
+      }
 
       if (timelineId === 'home' && !isLoadingMore && !isLoadingRecent) {
         const now = new Date();

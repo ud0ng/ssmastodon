@@ -30,7 +30,6 @@ import { Audio } from 'mastodon/features/audio';
 import scheduleIdleTask from 'mastodon/features/ui/util/schedule_idle_task';
 import { Video } from 'mastodon/features/video';
 
-import { ContentCard } from 'mastodon/components/content_card';
 
 import Card from './card';
 
@@ -360,7 +359,6 @@ export const DetailedStatus: React.FC<{
 
         {expanded && (
           <>
-            {status.get('game_card') && <ContentCard status={status} />}
 
             <StatusContent
               status={status}

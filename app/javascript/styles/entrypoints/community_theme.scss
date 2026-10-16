@@ -284,7 +284,11 @@ body.community-theme:not(.admin) {
     color: var(--ct-bracket);
   }
 
-  .status__content .dialogue--paren {
+  // 컨텐츠 방·룰 문구 (components/command_text.tsx) 도 같은 (소괄호) 모양
+  .status__content .dialogue--paren,
+  .game-room .dialogue--paren,
+  .game-room__status .dialogue--paren,
+  .system-game-page .dialogue--paren {
     color: var(--ct-paren);
     font-size: var(--community-theme-paren-size, 100%);
   }

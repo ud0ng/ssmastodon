@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FormattedMessage } from 'react-intl';
 
 import { apiRequestGet, apiRequestPost } from 'mastodon/api';
+import { GameIcon } from 'mastodon/components/game_icons';
 import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 
 type Dir = 'N' | 'E' | 'S' | 'W';
@@ -133,14 +134,14 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
           <FormattedMessage id='maze.turn' defaultMessage='Turn {turn}' values={{ turn: view.turn }} />
         </strong>
         {view.deadline_at && (
-          <span>⏳ <RelativeTimestamp timestamp={view.deadline_at} futureDate /></span>
+          <span><GameIcon name='hourglass' /> <RelativeTimestamp timestamp={view.deadline_at} futureDate /></span>
         )}
         {view.cup_direction && (
           <span className='maze-play__compass' title='Point Me'>
-            🧭 {view.cup_direction}
+            <GameIcon name='compass' /> {view.cup_direction}
           </span>
         )}
-        {view.lumos > 0 && <span>💡 {view.lumos}</span>}
+        {view.lumos > 0 && <span><GameIcon name='bulb' /> {view.lumos}</span>}
       </div>
 
       <div className='maze-play__grid' style={{ '--maze-size': view.size } as React.CSSProperties}>
@@ -177,9 +178,9 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
             >
               {me && <span className='maze-play__token maze-play__token--me'>●</span>}
               {!me && other && <span className={other.hostile ? 'maze-play__token maze-play__token--hostile' : 'maze-play__token'} title={other.name}>●</span>}
-              {!me && !other && cup && <span title='Cup'>🏆</span>}
-              {!me && !other && !cup && item && <span title={item.name}>{item.item === 'lumos' ? '💡' : '🧭'}</span>}
-              {!me && !other && !cup && creature && <span title={creature.name}>🐾</span>}
+              {!me && !other && cup && <span title='Cup'><GameIcon name='tournament' /></span>}
+              {!me && !other && !cup && item && <span title={item.name}><GameIcon name={item.item === 'lumos' ? 'bulb' : 'compass'} /></span>}
+              {!me && !other && !cup && creature && <span title={creature.name}><GameIcon name='foot' /></span>}
             </button>
           );
         })}
@@ -199,10 +200,10 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
             </p>
             <div className='maze-play__stance'>
               <button type='button' className={stance === 'cooperate' ? 'maze-play__toggle maze-play__toggle--on' : 'maze-play__toggle'} onClick={() => { setStance('cooperate'); }}>
-                🤝 <FormattedMessage id='maze.cooperate' defaultMessage='Cooperate' />
+                <GameIcon name='hands' /> <FormattedMessage id='maze.cooperate' defaultMessage='Cooperate' />
               </button>
               <button type='button' className={stance === 'hinder' ? 'maze-play__toggle maze-play__toggle--on' : 'maze-play__toggle'} onClick={() => { setStance('hinder'); }}>
-                ⚔️ <FormattedMessage id='maze.hinder' defaultMessage='Hinder' />
+                <GameIcon name='sword' /> <FormattedMessage id='maze.hinder' defaultMessage='Hinder' />
               </button>
             </div>
             <div className='maze-play__actions'>

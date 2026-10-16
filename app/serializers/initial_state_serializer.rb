@@ -119,6 +119,7 @@ class InitialStateSerializer < ActiveModel::Serializer
       shop_enabled: Game::Config.for('currency')['shop_open'],
       # 컨텐츠 툿(시스템 계정 툿·시스템에게 보낸 명령어 툿)은 웹 홈·타임라인·알림에서 숨기고 컨텐츠 메뉴에서만 본다
       system_acct: Game::System.username,
+      system_account_id: Game::System.account&.id&.to_s,
     }
   end
 

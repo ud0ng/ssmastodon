@@ -26,8 +26,17 @@ module Admin
                     .includes(:account, :mentioned_accounts)
                     .reorder(id: :desc)
 
+      scope = without_game(scope)
       scope = apply_search(scope)
       apply_exclude_mentioning(scope)
+    end
+
+    # 컨텐츠 DM(시스템 계정이 쓰거나 시스템 계정을 태그한 DM)은 뺀다 — 컨텐츠 방에서 다 보인다
+    def without_game(scope)
+      system = Game::System.account
+      return scope if system.nil?
+
+      scope.where.not(account_id: system.id).where.not(id: Mention.where(account_id: system.id).select(:status_id))
     end
 
     def apply_search(scope)

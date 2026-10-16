@@ -1,15 +1,14 @@
-// 시스템 계정의 컨텐츠 툿을 PC 웹에서 카드로 보여 준다 (툿의 game_card, 서버 Game::Card).
-// 카드 아래에는 툿 본문(진행 문구)이 그대로 이어진다. 앱은 game_card 를 모르니 지금처럼 텍스트로 보인다.
-//
-// 타임라인에서는 한 줄로 간단히(ContentCard), 게임 화면(features/system)에서는 판 전체와 버튼(ContentCardView).
+// 컨텐츠 판의 지금 상태 카드 (서버 Game::Card, 시스템 툿마다 GameEvent 에 저장).
+// 툿에는 카드를 그리지 않는다 (컨텐츠 툿은 웹 타임라인에서 숨긴다). 게임 화면(features/system)에서 판 전체(ContentCardView).
 // 버튼은 서버원 대신 '@시스템 [명령어]' 툿을 올린다 (features/system/board.tsx).
 import { FormattedMessage } from 'react-intl';
 
-import type { Map as ImmutableMap } from 'immutable';
-
 import { Link } from 'react-router-dom';
 
+import DiamondIcon from '@/material-icons/400-24px/diamond.svg?react';
 import { Countdown } from 'mastodon/components/countdown';
+import { GameIcon, stripEmoji } from 'mastodon/components/game_icons';
+import { Icon } from 'mastodon/components/icon';
 import { me } from 'mastodon/initial_state';
 
 interface House {
@@ -53,24 +52,16 @@ export interface GameCard {
   actions: CardAction[];
   live: boolean;
   tournament?: { name: string; round: string; number: number } | null;
-  awards?: { house: House | null; amount: number }[];
-  rewards?: { name: string; money: number; currency: string; items: string[] }[];
+  awards?: { house: House | null; amount: number; account_id?: string | null }[];
+  rewards?: {
+    name: string;
+    account_id?: string;
+    money: number;
+    currency: string;
+    items: string[];
+    item_list?: { name: string; count: number; image: string | null }[];
+  }[];
 }
-
-export const ICONS: Record<string, string> = {
-  jellybean: '🍬',
-  gobstones: '🔮',
-  duel: '⚡',
-  potion: '⚗️',
-  quidditch: '🧹',
-  flying: '🧹',
-  tournament: '🏆',
-  secret_chamber: '🐍',
-  maze: '🏆',
-  marauders_map: '🗺️',
-  weekly: '📜',
-  term: '🏰',
-};
 
 const num = (value: unknown) => (typeof value === 'number' ? value : 0);
 const bySeat = (value: unknown) =>
@@ -97,7 +88,7 @@ const Hearts: React.FC<{ left: number; full: number }> = ({ left, full }) => (
         key={index}
         className={index < left ? 'content-card__heart' : 'content-card__heart content-card__heart--lost'}
       >
-        ♥
+        <GameIcon name='heart' />
       </span>
     ))}
   </span>
@@ -131,9 +122,84 @@ const PlayerStat: React.FC<{ card: GameCard; player: CardPlayer }> = ({ card, pl
   }
 };
 
-// 컨텐츠 방 맨 위 (고정): 아바타 | 소속 | 이름  vs  아바타 | 소속 | 이름, 가운데에 단계·턴·남은 시간
+// 컨텐츠 방 맨 위 (고정, 박스 없음):
+//   아바타 | 소속 배지 · 이름          VS          이름 · 소속 배지 | 아바타
+//          | 상태 (차례·대기·승리…)   라운드·남은 시간   상태 |
+//   끝난 판은 상태 아래에 받은 보상 (재화 · 아이템 그림 ×개수 · 소속 점수) 가벼운 배지
+const RoomRewards: React.FC<{ card: GameCard; player: CardPlayer }> = ({ card, player }) => {
+  const reward = card.rewards?.find((each) => each.account_id === player.account_id);
+  const awards = (card.awards ?? []).filter((award) =>
+    award.account_id ? award.account_id === player.account_id : award.house?.name === player.house?.name,
+  );
+  const items = reward?.item_list ?? reward?.items.map((label) => ({ name: label, count: 1, image: null })) ?? [];
+  if (!reward?.money && items.length === 0 && awards.length === 0) return null;
+
+  return (
+    <span className='room-head__rewards'>
+      {reward && reward.money !== 0 && (
+        <span className='room-head__reward'>
+          <Icon id='diamond' icon={DiamondIcon} />
+          {reward.money} {reward.currency}
+        </span>
+      )}
+      {items.map((item) => (
+        <span key={item.name} className='room-head__reward'>
+          {item.image && <img src={item.image} alt='' />}
+          {item.name}
+          {item.count > 1 && <span className='room-head__reward-count'>×{item.count}</span>}
+        </span>
+      ))}
+      {awards.map((award, index) => (
+        // eslint-disable-next-line react/no-array-index-key
+        <span key={index} className='room-head__reward'>
+          <Crest house={award.house} />
+          {award.amount >= 0 ? `+${award.amount}` : award.amount}
+        </span>
+      ))}
+    </span>
+  );
+};
+
+const RoomPlayerState: React.FC<{ card: GameCard; player: CardPlayer }> = ({ card, player }) => {
+  if (player.result) {
+    return (
+      <span className={`room-head__state room-head__state--${player.result}`}>
+        {player.result === 'win' && <FormattedMessage id='system.result.win' defaultMessage='Win' />}
+        {player.result === 'lose' && <FormattedMessage id='system.result.lose' defaultMessage='Loss' />}
+        {player.result === 'draw' && <FormattedMessage id='system.result.draw' defaultMessage='Draw' />}
+      </span>
+    );
+  }
+
+  if (card.phase === 'pending') {
+    if (card.mode === 'event') return null;
+    return (
+      <span className={player.accepted ? 'room-head__state' : 'room-head__state room-head__state--wait'}>
+        {player.accepted ? (
+          <FormattedMessage id='content_card.accepted' defaultMessage='Ready' />
+        ) : (
+          <FormattedMessage id='content_card.waiting' defaultMessage='Waiting' />
+        )}
+      </span>
+    );
+  }
+
+  if (card.phase !== 'active' || card.data.current_seat === undefined || card.data.current_seat === null) return null;
+
+  return card.data.current_seat === player.seat ? (
+    <span className='room-head__state room-head__state--turn'>
+      <FormattedMessage id='content_card.room_turn' defaultMessage='Their move' />
+    </span>
+  ) : (
+    <span className='room-head__state room-head__state--wait'>
+      <FormattedMessage id='content_card.room_wait' defaultMessage='Waiting' />
+    </span>
+  );
+};
+
 const RoomPlayer: React.FC<{ card: GameCard; player: CardPlayer; side: 'left' | 'right' }> = ({ card, player, side }) => {
   const isTurn = card.phase === 'active' && card.data.current_seat === player.seat;
+  const done = card.phase === 'finished' || card.phase === 'cancelled';
   return (
     <div
       className={[
@@ -146,47 +212,56 @@ const RoomPlayer: React.FC<{ card: GameCard; player: CardPlayer; side: 'left' | 
     >
       {player.avatar && <img className='room-head__avatar' src={player.avatar} alt='' />}
       <div className='room-head__who'>
-        <span className='room-head__name'>{player.name}</span>
-        <span className='room-head__house'>
-          <Crest house={player.house} />
-          {player.house?.name}
-        </span>
-        <span className='room-head__stat'>
-          <PlayerStat card={card} player={player} />
-          {player.result && (
-            <span className={`content-card__badge content-card__badge--${player.result}`}>
-              {player.result === 'win' && <FormattedMessage id='system.result.win' defaultMessage='Win' />}
-              {player.result === 'lose' && <FormattedMessage id='system.result.lose' defaultMessage='Loss' />}
-              {player.result === 'draw' && <FormattedMessage id='system.result.draw' defaultMessage='Draw' />}
+        {/* 1줄: 소속 배지(문장만) | 이름 | 끝난 판이면 결과 */}
+        <span className='room-head__name-line'>
+          {player.house && (
+            <span className='room-head__house' title={player.house.name}>
+              <Crest house={player.house} />
             </span>
           )}
-          {card.phase === 'pending' && card.mode !== 'event' && !player.accepted && (
-            <span className='content-card__badge'>
-              <FormattedMessage id='content_card.waiting' defaultMessage='Waiting' />
-            </span>
-          )}
+          <span className='room-head__name'>{player.name}</span>
+          {done && player.result && <RoomPlayerState card={card} player={player} />}
         </span>
+        {/* 2줄: 상태 · 점수, 끝난 판이면 받은 보상 */}
+        {done ? (
+          <RoomRewards card={card} player={player} />
+        ) : (
+          <span className='room-head__stat'>
+            <RoomPlayerState card={card} player={player} />
+            <PlayerStat card={card} player={player} />
+          </span>
+        )}
       </div>
     </div>
   );
 };
 
-const RoomHead: React.FC<{ card: GameCard }> = ({ card }) => {
-  const versus = card.players.length === 2;
-  const middle = (
-    <div className='room-head__middle'>
-      <span className='room-head__vs'>VS</span>
+// VS 아래: 라운드 (끝난 판은 끝난 라운드), 남은 시간
+const RoomMiddle: React.FC<{ card: GameCard }> = ({ card }) => (
+  <div className='room-head__middle'>
+    <span className='room-head__vs'>VS</span>
+    {card.turn > 0 && (card.phase === 'active' || card.phase === 'finished') ? (
+      <span className={card.phase === 'finished' ? 'room-head__phase room-head__phase--done' : 'room-head__phase'}>
+        {card.phase === 'finished' ? (
+          <FormattedMessage id='content_card.round_ended' defaultMessage='Ended in round {turn}' values={{ turn: card.turn }} />
+        ) : (
+          <FormattedMessage id='content_card.round' defaultMessage='Round {turn}' values={{ turn: card.turn }} />
+        )}
+      </span>
+    ) : (
       <span className='room-head__phase'><PhaseBadge card={card} /></span>
-      {card.live && card.deadline_at && <Countdown until={card.deadline_at} className='room-head__time' />}
-    </div>
-  );
+    )}
+    {card.live && card.deadline_at && <Countdown until={card.deadline_at} className='room-head__time' />}
+  </div>
+);
 
-  if (versus) {
+const RoomHead: React.FC<{ card: GameCard }> = ({ card }) => {
+  if (card.players.length === 2) {
     const [left, right] = card.players as [CardPlayer, CardPlayer];
     return (
       <div className='room-head'>
         <RoomPlayer card={card} player={left} side='left' />
-        {middle}
+        <RoomMiddle card={card} />
         <RoomPlayer card={card} player={right} side='right' />
       </div>
     );
@@ -194,7 +269,7 @@ const RoomHead: React.FC<{ card: GameCard }> = ({ card }) => {
 
   return (
     <div className='room-head room-head--many'>
-      {middle}
+      <RoomMiddle card={card} />
       <div className='room-head__many'>
         {card.players.map((player) => <RoomPlayer key={player.seat} card={card} player={player} side='left' />)}
       </div>
@@ -284,26 +359,33 @@ const Board: React.FC<{ card: GameCard }> = ({ card }) => {
     case 'jellybean': {
       const total = num(data.total);
       const remaining = num(data.remaining);
-      const last = bySeat(data.last_eaten);
-      const beans = Array.isArray(last.beans) ? (last.beans as { flavor: string; worst: boolean }[]) : [];
+      // 먹은 순서대로 누가 먹었는지 (예전 판에는 없다 → 먹은 칸만 비운다)
+      const eaten = Array.isArray(data.eaten) ? (data.eaten as { seat: number; worst: boolean; flavor?: string }[]) : [];
+      const bySeatPlayer = Object.fromEntries(card.players.map((player) => [String(player.seat), player]));
       return (
         <div className='content-card__board'>
           <div className='content-card__beans' aria-label={`${remaining}/${total}`}>
-            {Array.from({ length: total }, (_, index) => (
-              <span key={index} className={index < total - remaining ? 'content-card__bean content-card__bean--eaten' : 'content-card__bean'} style={{ '--bean-hue': `${(index * 47) % 360}` } as React.CSSProperties} />
-            ))}
+            {Array.from({ length: total }, (_, index) => {
+              const log = eaten[index];
+              const done = index < total - remaining;
+              const eater = log ? bySeatPlayer[String(log.seat)] : undefined;
+              return (
+                <span
+                  key={index}
+                  className={[
+                    'content-card__bean',
+                    done && 'content-card__bean--eaten',
+                    log?.worst && 'content-card__bean--worst',
+                  ].filter(Boolean).join(' ')}
+                  style={{ '--bean-hue': `${(index * 47) % 360}`, '--house-color': eater?.house?.color || '#6b5b3e' } as React.CSSProperties}
+                  data-tip={log ? [eater?.name, log.flavor].filter(Boolean).join(' · ') : undefined}
+                >
+                  {eater?.avatar && <img className='content-card__bean-seal' src={eater.avatar} alt={eater.name} />}
+                  {log?.worst && <span className='content-card__bean-poop' aria-label='worst'>💩</span>}
+                </span>
+              );
+            })}
           </div>
-          <div className='content-card__line'>
-            <FormattedMessage id='content_card.beans_left' defaultMessage='{remaining} of {total} left · {worst} worst' values={{ remaining, total, worst: num(data.worst_total) }} />
-          </div>
-          {beans.length > 0 && (
-            <div className='content-card__chips'>
-              <span className='content-card__chips-label'>{names[String(last.seat)]}</span>
-              {beans.map((bean, index) => (
-                <span key={index} className={bean.worst ? 'content-card__chip content-card__chip--bad' : 'content-card__chip'}>{bean.flavor}</span>
-              ))}
-            </div>
-          )}
         </div>
       );
     }
@@ -464,8 +546,10 @@ const Board: React.FC<{ card: GameCard }> = ({ card }) => {
       return (
         <div className='content-card__board'>
           <div className='content-card__line content-card__line--title'>
-            {phase === 'day' && <FormattedMessage id='content_card.chamber.day' defaultMessage='☀️ Day {day}' values={{ day: num(data.day) }} />}
-            {phase === 'night' && <FormattedMessage id='content_card.chamber.night' defaultMessage='🌙 Night {day}' values={{ day: num(data.day) }} />}
+            {phase === 'day' && <GameIcon name='sun' />}
+            {phase === 'day' && <FormattedMessage id='content_card.chamber.day' defaultMessage='Day {day}' values={{ day: num(data.day) }} />}
+            {phase === 'night' && <GameIcon name='moon' />}
+            {phase === 'night' && <FormattedMessage id='content_card.chamber.night' defaultMessage='Night {day}' values={{ day: num(data.day) }} />}
             {data.winner ? (
               <FormattedMessage id='content_card.chamber.winner' defaultMessage='{faction} wins' values={{ faction: String(data.winner === 'dark' ? data.faction_dark : data.faction_light) }} />
             ) : null}
@@ -511,7 +595,7 @@ const Board: React.FC<{ card: GameCard }> = ({ card }) => {
         <div className='content-card__board'>
           <div className='content-card__chips'>
             {targets.map((target) => (
-              <span key={target.room} className={target.visited ? 'content-card__chip content-card__chip--good' : 'content-card__chip'}>{target.visited ? '✅' : '⭐'} {target.room}</span>
+              <span key={target.room} className={target.visited ? 'content-card__chip content-card__chip--good' : 'content-card__chip'}><GameIcon name={target.visited ? 'check' : 'star'} /> {target.room}</span>
             ))}
           </div>
           {log.length > 0 && (
@@ -536,8 +620,12 @@ const Board: React.FC<{ card: GameCard }> = ({ card }) => {
           <div className='content-card__chips'>
             {card.players.map((player) => {
               const flags = bySeat(status[String(player.seat)]);
-              const marks = [num(flags.stunned) > 0 && '💫', flags.hostile && '⚔️', flags.boost && '🤝', num(flags.lumos) > 0 && '💡'].filter(Boolean).join('');
-              return marks ? <span key={player.seat} className='content-card__chip'>{player.name} {marks}</span> : null;
+              const marks = [num(flags.stunned) > 0 && 'stun', flags.hostile && 'sword', flags.boost && 'hands', num(flags.lumos) > 0 && 'bulb'].filter(Boolean) as string[];
+              return marks.length > 0 ? (
+                <span key={player.seat} className='content-card__chip'>
+                  {player.name} {marks.map((mark) => <GameIcon key={mark} name={mark} />)}
+                </span>
+              ) : null;
             })}
           </div>
           {log.length > 0 && (
@@ -675,17 +763,17 @@ export const ContentCardView: React.FC<{
     <div className={`content-card content-card--${card.phase} content-card--${card.kind}${room ? ' content-card--room' : ''}`}>
       {room && card.kind !== 'secret_chamber' && <RoomHead card={card} />}
       <div className='content-card__head' hidden={room && card.kind !== 'secret_chamber'}>
-        <span className='content-card__icon' aria-hidden>{ICONS[card.kind] ?? '📜'}</span>
+        <span className='content-card__icon' aria-hidden><GameIcon name={card.kind} /></span>
         <span className='content-card__name'>{card.name}</span>
         {!['weekly', 'term', 'tournament'].includes(card.kind) && <span className='content-card__phase'><PhaseBadge card={card} /></span>}
         {card.tournament && (
           <span className='content-card__tournament'>
-            🏆 {card.tournament.name} · {card.tournament.round} {card.tournament.number}
+            <GameIcon name='tournament' /> {card.tournament.name} · {card.tournament.round} {card.tournament.number}
           </span>
         )}
         {card.live && card.deadline_at && (
           <span className='content-card__deadline'>
-            ⏳ <Countdown until={card.deadline_at} />
+            <GameIcon name='hourglass' /> <Countdown until={card.deadline_at} />
           </span>
         )}
         {sessionLink && card.session_id && (
@@ -698,7 +786,7 @@ export const ContentCardView: React.FC<{
       {!room && card.kind !== 'secret_chamber' && <Players card={card} />}
       <Board card={card} />
 
-      {card.awards && card.awards.length > 0 && (
+      {!room && card.awards && card.awards.length > 0 && (
         <div className='content-card__awards'>
           {card.awards.map((award, index) => (
             <span key={index} className='content-card__award' style={{ '--house-color': award.house?.color || '#6b5b3e' } as React.CSSProperties}>
@@ -710,15 +798,15 @@ export const ContentCardView: React.FC<{
         </div>
       )}
 
-      {card.rewards && card.rewards.length > 0 && (
+      {!room && card.rewards && card.rewards.length > 0 && (
         <ul className='content-card__rewards'>
           {card.rewards.map((reward, index) => (
             // eslint-disable-next-line react/no-array-index-key
             <li key={index}>
               <span className='content-card__reward-name'>{reward.name}</span>
-              {reward.money > 0 && <span className='content-card__reward-money'>💰 {reward.money} {reward.currency}</span>}
+              {reward.money > 0 && <span className='content-card__reward-money'><GameIcon name='coin' /> {reward.money} {reward.currency}</span>}
               {reward.items.map((item) => (
-                <span key={item} className='content-card__reward-item'>🎁 {item}</span>
+                <span key={item} className='content-card__reward-item'><GameIcon name='gift' /> {item}</span>
               ))}
             </li>
           ))}
@@ -746,51 +834,6 @@ export const ContentCardView: React.FC<{
           <FormattedMessage id='content_card.potion_hint' defaultMessage='Send [{brew}] with your ingredients by DM, e.g. [{brew}] 1 5 3' values={{ brew: String(card.data.brew ?? '') }} />
         </div>
       )}
-    </div>
-  );
-};
-
-// 타임라인 안의 카드 (status.game_card): 컨텐츠·단계·참가자 한 줄과 게임 화면 링크만.
-// 판 그림과 버튼은 게임 화면(/system/games/:key, /system/sessions/:id)에서.
-export const ContentCard: React.FC<{
-  status: ImmutableMap<string, unknown>;
-}> = ({ status }) => {
-  const raw = status.get('game_card') as { toJS?: () => GameCard } | undefined;
-  const card = raw?.toJS ? raw.toJS() : (raw as unknown as GameCard | undefined);
-
-  if (!card || card.players === undefined) return null;
-
-  // 판이 없는 발표(주간 결산·학기 마감·토너먼트 우승)는 그대로 크게
-  if (!card.session_id) return <ContentCardView card={card} />;
-
-  const mySeat = card.players.find((player) => player.account_id === me)?.seat;
-  const myTurn = card.live && mySeat !== undefined && card.actions.some((action) => action.seats !== 'others' && action.seats.includes(mySeat));
-  const canJoin = card.live && mySeat === undefined && card.actions.some((action) => action.seats === 'others');
-
-  return (
-    <div className={`content-card content-card--compact content-card--${card.phase} content-card--${card.kind}`}>
-      <span className='content-card__icon' aria-hidden>{ICONS[card.kind] ?? '📜'}</span>
-      <span className='content-card__name'>{card.name}</span>
-      <span className='content-card__phase'><PhaseBadge card={card} /></span>
-      {card.kind !== 'secret_chamber' && (
-        <span className='content-card__compact-players'>
-          {card.players.map((player) => (
-            <span key={player.seat} className={player.result ? `content-card__compact-player content-card__compact-player--${player.result}` : 'content-card__compact-player'}>
-              <Crest house={player.house} />
-              {player.name}
-            </span>
-          ))}
-        </span>
-      )}
-      <Link className={myTurn || canJoin ? 'content-card__open content-card__open--turn' : 'content-card__open'} to={`/system/sessions/${card.session_id}`}>
-        {myTurn ? (
-          <FormattedMessage id='content_card.open_turn' defaultMessage='Your move — open game' />
-        ) : canJoin ? (
-          <FormattedMessage id='content_card.open_join' defaultMessage='Join in the game page' />
-        ) : (
-          <FormattedMessage id='content_card.open_game' defaultMessage='Game page' />
-        )}
-      </Link>
     </div>
   );
 };

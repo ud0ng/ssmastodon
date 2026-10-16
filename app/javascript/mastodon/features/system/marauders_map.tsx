@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { FormattedMessage } from 'react-intl';
 
 import { apiRequestGet, apiRequestPost } from 'mastodon/api';
+import { GameIcon } from 'mastodon/components/game_icons';
 import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 
 interface Room { id: number; name: string; x: number; y: number }
@@ -100,9 +101,9 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
           <FormattedMessage id='maze.turn' defaultMessage='Turn {turn}' values={{ turn: view.turn }} /> / {view.max_turns}
         </strong>
         <span className='map-play__role'>{view.role_name}</span>
-        {view.deadline_at && <span>⏳ <RelativeTimestamp timestamp={view.deadline_at} futureDate /></span>}
-        {view.cloak > 0 && <span>🧥 {view.cloak}</span>}
-        {zoneClue && <span>🔭 {zoneClue.zone} ({zoneClue.turn})</span>}
+        {view.deadline_at && <span><GameIcon name='hourglass' /> <RelativeTimestamp timestamp={view.deadline_at} futureDate /></span>}
+        {view.cloak > 0 && <span><GameIcon name='cloak' /> {view.cloak}</span>}
+        {zoneClue && <span><GameIcon name='scope' /> {zoneClue.zone} ({zoneClue.turn})</span>}
       </div>
 
       <svg className='map-play__svg' viewBox={`0 0 ${width} ${width}`} role='img'>
@@ -138,11 +139,11 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
             >
               <rect x={x} y={y} width={CELL - 16} height={CELL - 16} rx={8} />
               <text x={x + ((CELL - 16) / 2)} y={y + 22} textAnchor='middle' className='map-play__name'>{room.name}</text>
-              {targets.has(room.id) && <text x={x + ((CELL - 16) / 2)} y={y + 44} textAnchor='middle'>{targets.get(room.id) ? '✅' : '⭐'}</text>}
+              {targets.has(room.id) && <GameIcon name={targets.get(room.id) ? 'check' : 'star'} x={x + ((CELL - 16) / 2) - 9} y={y + 28} size={18} />}
               {clue && (
-                <text x={x + (CELL - 30)} y={y + 22} textAnchor='middle'>
-                  {{ footprint: '👣', target: '✨', revelio: '🔦', zone: '' }[clue.kind]}
-                </text>
+                clue.kind !== 'zone' && (
+                  <GameIcon name={{ footprint: 'foot', target: 'sparkle', revelio: 'bulb' }[clue.kind] ?? 'sparkle'} x={x + (CELL - 30) - 8} y={y + 6} size={16} />
+                )
               )}
               {tokens.map((token, index) => (
                 <g key={token.seat}>
@@ -168,12 +169,12 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
             <div className='maze-play__stance'>
               {view.cloak_available && (
                 <button type='button' className={special ? 'maze-play__toggle maze-play__toggle--on' : 'maze-play__toggle'} onClick={() => { setSpecial(!special); }}>
-                  🧥 <FormattedMessage id='map.cloak' defaultMessage='Invisibility cloak' />
+                  <GameIcon name='cloak' /> <FormattedMessage id='map.cloak' defaultMessage='Invisibility cloak' />
                 </button>
               )}
               {view.revelio_available && (
                 <button type='button' className={special ? 'maze-play__toggle maze-play__toggle--on' : 'maze-play__toggle'} onClick={() => { setSpecial(!special); }}>
-                  🔦 <FormattedMessage id='map.revelio' defaultMessage='Homenum Revelio' />
+                  <GameIcon name='bulb' /> <FormattedMessage id='map.revelio' defaultMessage='Homenum Revelio' />
                 </button>
               )}
             </div>
