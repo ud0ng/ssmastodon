@@ -341,6 +341,19 @@ export const setupGameConfigEditor = () => {
     chips: form.dataset.chipsPlaceholder ?? 'Add',
     unknown: form.dataset.unknownLabel ?? 'Unknown: {tokens}',
   };
+  // {먹은 젤리빈} 은 '먹기 한 개' 문구(msg_eat)가 먹은 개수만큼 줄마다 그대로 들어간다 — 미리보기도 그 칸의 지금 글을 따른다
+  const eatInput = form.querySelector<HTMLTextAreaElement>('#game_config_msg_eat');
+  const previewSamples = (): Record<string, string> => {
+    if (!eatInput) return samples;
+    const eaten = segmentsOf(eatInput.value, samples, [])
+      .map((segment) => (segment.kind === 'text' || segment.kind === 'value' ? segment.text : `{${segment.text}}`))
+      .join('');
+    return { ...samples, '먹은 젤리빈': eaten };
+  };
+  const updaters: (() => void)[] = [];
+  eatInput?.addEventListener('input', () => {
+    updaters.forEach((run) => { run(); });
+  });
   const fields = Array.from(form.querySelectorAll<HTMLElement>('.game-field')).map(
     (element) => new FieldState(element),
   );
@@ -371,8 +384,9 @@ export const setupGameConfigEditor = () => {
       warn.dataset.template = labels.unknown;
 
       const update = () => {
-        renderPreview(body, warn, textarea.value, samples, allowed);
+        renderPreview(body, warn, textarea.value, previewSamples(), allowed);
       };
+      updaters.push(update);
       textarea.addEventListener('input', update);
       field.element.classList.add('game-field--message');
       textarea.closest('.label_input')?.append(preview);

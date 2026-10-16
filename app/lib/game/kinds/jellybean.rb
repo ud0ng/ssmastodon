@@ -16,7 +16,7 @@ module Game
               default: %w(딸기\ 맛 잘린\ 풀\ 맛 비누\ 맛 귀지\ 맛 정어리\ 맛 후추\ 맛 코딱지\ 맛 버터맥주\ 맛 시금치\ 맛 바닐라\ 맛 썩은\ 달걀\ 맛 마멀레이드\ 맛)),
         F.new(key: 'msg_start', type: :text, group: 'messages', label: '시작',
               default: "🍬 %{game} 시작!\n봉지에 젤리빈 %{count}개, 그중 최악의 맛이 %{worst}개 숨어 있습니다.\n\n첫 차례: %{player}\n[%{eat}] 또는 [%{eat}/개수]로 답해 주세요. (한 번에 %{max}개까지)"),
-        F.new(key: 'msg_eat', type: :text, group: 'messages', label: '먹기 한 개', default: '%{player}{이가} 젤리빈을 먹습니다. [%{flavor}]'),
+        F.new(key: 'msg_eat', type: :text, group: 'messages', label: '먹기 한 개', hint: '{먹은 젤리빈} 자리에 이 문구가 먹은 개수만큼 줄마다 그대로 들어갑니다', default: '%{player}{이가} 젤리빈을 먹습니다. [%{flavor}]'),
         F.new(key: 'msg_turn', type: :text, group: 'messages', label: '턴 결과',
               default: "%{turn}턴\n\n%{eaten}\n남은 젤리빈은 %{remaining}개입니다.\n\n다음 차례: %{next}"),
         F.new(key: 'msg_worst', type: :text, group: 'messages', label: '최악의 맛',
