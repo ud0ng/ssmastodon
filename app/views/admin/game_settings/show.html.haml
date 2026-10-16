@@ -14,7 +14,11 @@
   - if @key == 'lessons'
     %p.hint.game-config__hint= game_t('admin.games.lessons_ui.opener_hint', system: Game::System.username, command: @values['cmd_class'])
 - elsif @key == 'help'
-  %p.hint.game-config__hint= game_t('admin.games.help_hint')
+  -# 도움말: 상점봇 | 시스템봇 (탭 안의 탭)
+  = render 'admin/ui/subtabs', label: game_t('admin.games.tabs.help'),
+    items: [[game_t('admin.games.help_ui.shop_bot', account: Game::Config.for('common')['bot_usernames'].presence || 'bot'), admin_game_setting_path('help'), @page == 'shop_bot', false],
+            [game_t('admin.games.help_ui.system_bot', account: Game::System.username), admin_game_setting_path('help_system'), @page == 'system_bot', false]]
+  %p.hint.game-config__hint= game_t("admin.games.help_ui.#{@page}_hint")
 - elsif kind
   -# 컨텐츠: 목록 | 컨텐츠들 (탭 안의 탭) + 한 줄 안내
   = render 'admin/game_settings/content_tabs', current: kind

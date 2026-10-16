@@ -173,4 +173,17 @@ RSpec.describe Game::Engine do
     toot(alice, '@system [내전적]')
     expect(last_reply.text).to include('해리의 전적: 0승 0패 0무')
   end
+
+  it 'answers its own help with the content commands set in the help settings' do
+    toot(alice, '@system [도움말]')
+    expect(last_reply.text).to include('컨텐츠 명령어는 @system에게 멘션으로 보냅니다.', '▸ 대결', '[젤리빈] @상대 젤리빈 룰렛을 신청합니다.')
+
+    Game::Config.merge!('help', 'system_cmd_help' => '컨텐츠 안내', 'rows_content' => "젤리빈|젤리빈 한 판
+수락|받기", 'intro_content' => '')
+    toot(alice, '@system [컨텐츠 안내]')
+    expect(last_reply.text).to include("컨텐츠 안내
+
+[젤리빈] 젤리빈 한 판
+[수락] 받기")
+  end
 end

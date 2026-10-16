@@ -54,7 +54,7 @@ module Game
       # 공통 설정은 화면(page)마다 LAYOUT 에 적은 묶음만, 수업·과목·컨텐츠는 LAYOUT 뒤에 나머지 (컨텐츠의 points 는 설정 탭 표로).
       def sections(key, page = nil)
         fields = schema(key)
-        layout = key == 'help' ? Game::Help::LAYOUT : LAYOUT[page ? [key, page] : key]
+        layout = key == 'help' ? Game::Help::PAGES.fetch(page || 'shop_bot') : LAYOUT[page ? [key, page] : key]
         kind = Game::Kinds.registry[key]
         layout ||= LAYOUT[kind.lesson? ? :lesson_subject : :content_subject] if kind
         return fields.group_by(&:group).to_a if layout.nil?
@@ -311,7 +311,7 @@ module Game
     }.freeze
 
     # 관리 화면에서 이 칸부터 새 줄에 놓는다 (기본 명령어: 수락·거절·기권 / 소속 점수 보기·내 전적 보기)
-    ROW_STARTS = (%w(cmd_points) + %w(cmd_shop_help cmd_content_help cmd_admin_help)).freeze
+    ROW_STARTS = %w(cmd_points).freeze
 
     # 공통 설정의 화면들 (컨텐츠 설정의 '설정' / '명령어' 탭)
     COMMON_PAGES = %w(settings commands).freeze

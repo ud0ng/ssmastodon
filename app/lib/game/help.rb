@@ -1,11 +1,9 @@
 # frozen_string_literal: true
 
 module Game
-  # 자동봇 도움말 (컨텐츠 설정 > 도움말, /api/v1/bot/config 로 자동봇에 보낸다).
-  #   [도움말]         기본 명령어 + 분류별 도움말 목록
-  #   [상점 도움말]    재화·아이템·상점 명령어
-  #   [컨텐츠 도움말]  시스템 계정이 처리하는 컨텐츠 명령어
-  #   [운영진 도움말]  운영진 명령어 (운영진만)
+  # 봇별 도움말 (컨텐츠 설정 > 도움말 > 상점봇 · 시스템봇).
+  #   상점봇(자동봇): [도움말] 기본 명령어 + 분류 목록, [상점 도움말], [운영진 도움말] (운영진만). /api/v1/bot/config 로 보낸다
+  #   시스템봇(@system): [도움말] 컨텐츠 명령어. Game::Engine 이 답한다
   # 도움말 줄은 '명령어|설명' 표로 고친다. 설명이 비면 그 줄은 소제목(▸ 대결 등)으로 보인다.
   # 표를 고치지 않으면 지금 설정(명령어 이름·켜진 컨텐츠·양도/출석)으로 만든 기본 줄을 쓴다.
   module Help
@@ -14,32 +12,30 @@ module Game
     SEP = '|'
 
     FIELDS = [
-      # 도움말 명령어와 [도움말] 에 보이는 분류 안내 (명령어 | 설명 짝으로 한 줄씩, Game::Config::ROW_STARTS)
-      F.new(key: 'cmd_help', type: :string, default: '도움말', group: 'help_commands', label: '도움말'),
-      F.new(key: 'cmd_shop_help', type: :string, default: '상점 도움말', group: 'help_commands', label: '상점 도움말'),
-      F.new(key: 'desc_shop_help', type: :string, default: '재화·아이템·상점 명령어를 보여줍니다.', group: 'help_commands', label: '상점 도움말 설명'),
-      F.new(key: 'cmd_content_help', type: :string, default: '컨텐츠 도움말', group: 'help_commands', label: '컨텐츠 도움말'),
-      F.new(key: 'desc_content_help', type: :string, default: '대결·마법 수업 등 컨텐츠 명령어를 보여줍니다.', group: 'help_commands', label: '컨텐츠 도움말 설명'),
-      F.new(key: 'cmd_admin_help', type: :string, default: '운영진 도움말', group: 'help_commands', label: '운영진 도움말'),
-      F.new(key: 'desc_admin_help', type: :string, default: '운영진 명령어를 보여줍니다.', group: 'help_commands', label: '운영진 도움말 설명', hint: '운영진에게만 보입니다'),
-
-      F.new(key: 'rows_basic', type: :lines, group: 'help_basic', label: '기본 도움말', columns: COLUMNS,
-            default: ['NdM|M면체 주사위를 N개 굴립니다.', '랜덤/A, B, C...|여러 옵션 중 1개를 골라 출력합니다.', '운세|오늘의 운세를 확인합니다.'],
-            hint: '[도움말] 맨 위에 보입니다. 모두 지우면 자동봇 시트의 도움말을 씁니다'),
+      # 상점봇 · 도움말: 이름 + 맨 위 기본 줄
+      F.new(key: 'cmd_help', type: :string, default: '도움말', group: 'help_shop_bot', label: '도움말 명령어'),
+      F.new(key: 'rows_basic', type: :lines, group: 'help_shop_bot', label: '기본 도움말', columns: COLUMNS,
+            default: -> { Game::Help.default_basic_rows }, hint: '[도움말] 맨 위에 보입니다. 아래 분류 도움말 안내는 자동으로 붙습니다'),
+      # 상점봇 · 상점 도움말 / 운영진 도움말: 명령어 | [도움말]에 보일 설명, 그리고 내용 표
+      F.new(key: 'cmd_shop_help', type: :string, default: '상점 도움말', group: 'help_shop', label: '명령어'),
+      F.new(key: 'desc_shop_help', type: :string, default: '재화·아이템·상점 명령어를 보여줍니다.', group: 'help_shop', label: '설명', hint: '[도움말]의 분류 안내에 보입니다'),
       F.new(key: 'rows_shop', type: :lines, group: 'help_shop', label: '상점 도움말', columns: COLUMNS, default: -> { Game::Help.default_shop_rows }),
-      F.new(key: 'intro_content', type: :string, group: 'help_content', label: '첫 줄', default: -> { "컨텐츠 명령어는 @#{Game::System.username}에게 멘션으로 보냅니다." }),
-      F.new(key: 'rows_content', type: :lines, group: 'help_content', label: '컨텐츠 도움말', columns: COLUMNS, default: -> { Game::Help.default_content_rows },
-            hint: '설명을 비우면 소제목 줄이 됩니다 (▸ 대결)'),
+      F.new(key: 'cmd_admin_help', type: :string, default: '운영진 도움말', group: 'help_admin', label: '명령어'),
+      F.new(key: 'desc_admin_help', type: :string, default: '운영진 명령어를 보여줍니다.', group: 'help_admin', label: '설명', hint: '운영진에게만 보입니다'),
       F.new(key: 'rows_admin', type: :lines, group: 'help_admin', label: '운영진 도움말', columns: COLUMNS, default: -> { Game::Help.default_admin_rows }),
+
+      # 시스템봇 · 도움말: 이름 + 첫 줄 + 컨텐츠 명령어 표
+      F.new(key: 'system_cmd_help', type: :string, default: '도움말', group: 'help_system_bot', label: '도움말 명령어'),
+      F.new(key: 'intro_content', type: :string, group: 'help_system_bot', label: '첫 줄', default: -> { "컨텐츠 명령어는 @#{Game::System.username}에게 멘션으로 보냅니다." }),
+      F.new(key: 'rows_content', type: :lines, group: 'help_system_bot', label: '컨텐츠 도움말', columns: COLUMNS, default: -> { Game::Help.default_content_rows },
+            hint: '설명을 비우면 소제목 줄이 됩니다 (▸ 대결)'),
     ].freeze
 
-    LAYOUT = [
-      ['help_commands', %w(help_commands)],
-      ['help_basic', %w(help_basic)],
-      ['help_shop', %w(help_shop)],
-      ['help_content', %w(help_content)],
-      ['help_admin', %w(help_admin)],
-    ].freeze
+    # 화면(page) → 묶음. 도움말 탭 안의 탭: 상점봇 | 시스템봇
+    PAGES = {
+      'shop_bot' => [['help_shop_bot', %w(help_shop_bot)], ['help_shop', %w(help_shop)], ['help_admin', %w(help_admin)]],
+      'system_bot' => [['help_system_bot', %w(help_system_bot)]],
+    }.freeze
 
     module_function
 
@@ -47,19 +43,30 @@ module Game
       Game::Config.for('help')
     end
 
-    # 자동봇에 보내는 도움말 (/api/v1/bot/config)
+    # 상점봇(자동봇)에 보내는 도움말 (/api/v1/bot/config)
     def bot_json
       values = config
       {
         help_command: values['cmd_help'],
         basic_help: lines(values['rows_basic']),
         help: lines(values['rows_shop']),
-        content_help: [values['intro_content'].presence, *lines(values['rows_content'])].compact,
         admin_help: lines(values['rows_admin']),
-        help_topics: %w(shop content admin).map do |topic|
+        help_topics: %w(shop admin).map do |topic|
           { key: topic, command: values["cmd_#{topic}_help"], description: values["desc_#{topic}_help"], admin: topic == 'admin' }
         end,
       }
+    end
+
+    # 시스템봇 [도움말] 명령어. 기본 줄(lambda)에서도 부르므로 config 전체를 계산하지 않고 저장된 값만 본다
+    def system_command
+      stored = GameConfig.find_by(key: 'help')&.data || {}
+      (stored['system_cmd_help'].presence || FIELDS.find { |field| field.key == 'system_cmd_help' }.default).to_s.strip
+    end
+
+    def system_text
+      values = config
+      [values['system_cmd_help'], '', values['intro_content'].presence, *lines(values['rows_content'])].compact.join("
+").strip
     end
 
     # '명령어|설명' 줄 → '[명령어] 설명'. 설명이 없으면 소제목 (앞에 빈 줄)
@@ -75,6 +82,17 @@ module Game
           result << "[#{command}] #{description}"
         end
       end
+    end
+
+    # 기본 줄: 주사위·랜덤·운세 + 컨텐츠는 시스템봇에게 묻도록 안내 (소제목 줄)
+    def default_basic_rows
+      ['NdM|M면체 주사위를 N개 굴립니다.', '랜덤/A, B, C...|여러 옵션 중 1개를 골라 출력합니다.', '운세|오늘의 운세를 확인합니다.',
+       "컨텐츠 명령어는 @#{Game::System.username}에게 #{system_help_mention}#{SEP}"]
+    end
+
+    def system_help_mention
+      command = system_command.presence || '도움말'
+      "[#{command}]#{Game::Text.particle(command[-1], '을를')} 보내 확인하세요."
     end
 
     # 기본 줄: 자동봇 상점 명령어 (꺼진 양도·출석은 뺀다)

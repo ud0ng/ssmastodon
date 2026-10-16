@@ -53,6 +53,8 @@ module Game
       when common['cmd_forfeit'] then forfeit
       when common['cmd_points'] then reply(Game::Points.board)
       when common['cmd_record'] then reply(Game::Points.record(actor))
+      # 시스템봇 [도움말]: 컨텐츠 명령어 (컨텐츠 설정 > 도움말 > 시스템봇)
+      when Game::Help.system_command.presence then reply(Game::Help.system_text)
       else
         event = Game::Kinds.events.find { |each| each.enabled? && each.config['command'] == command }
         return open_event(event) if event

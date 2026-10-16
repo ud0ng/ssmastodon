@@ -53,9 +53,9 @@ module Admin
       end
     end
 
-    # 공통 설정은 '설정'(common) / '명령어'(commands) 두 화면으로 나눠 보여 준다
+    # 공통 설정은 '설정'(common) / '명령어'(commands), 도움말은 상점봇(help) / 시스템봇(help_system) 화면으로 나눠 보여 준다
     def set_key
-      @key, @page = { 'common' => %w(common settings), 'commands' => %w(common commands) }.fetch(params[:id]) { [params[:id], nil] }
+      @key, @page = { 'common' => %w(common settings), 'commands' => %w(common commands), 'help' => %w(help shop_bot), 'help_system' => %w(help system_bot) }.fetch(params[:id]) { [params[:id], nil] }
       raise ActiveRecord::RecordNotFound unless Game::Config.keys.include?(@key)
     end
   end
