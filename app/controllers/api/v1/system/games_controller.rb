@@ -3,6 +3,7 @@
 # 웹 시스템 메뉴의 컨텐츠별 화면 (/system/games/:key): 하는 법, 내 전적, 진행 중·최근 판, 순위.
 # DM 으로 진행한 판은 참가자에게만 보인다.
 class Api::V1::System::GamesController < Api::BaseController
+  include Api::GameGate
   include RoutingHelper
 
   LIST_LIMIT = 15
@@ -10,6 +11,7 @@ class Api::V1::System::GamesController < Api::BaseController
 
   before_action -> { doorkeeper_authorize! :read }
   before_action :require_user!
+  before_action :require_contents_open!
   before_action :set_kind
 
   def show

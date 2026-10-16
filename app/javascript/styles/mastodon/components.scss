@@ -18897,3 +18897,22 @@ body.app-body.layout-game-room.layout-single-column {
   padding-top: 0;
   border-top: 0;
 }
+
+// 허브: 해금이 꺼진 컨텐츠 (운영진에게만 보임)
+.system-tile--off {
+  opacity: 0.55;
+}
+
+// 방 상단 게임판은 캐릭터 정보와 구분선 없이 (모든 컨텐츠 방 공통)
+.content-card--room .content-card__board {
+  padding-top: 0;
+  border-top: 0;
+}
+
+// 곱스톤: 캐릭터 아래 점수
+.room-head__score {
+  color: var(--ct-text, var(--color-fg, #{$primary-text-color}));
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}

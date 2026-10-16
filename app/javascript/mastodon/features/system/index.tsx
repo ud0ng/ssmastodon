@@ -13,7 +13,6 @@ import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
 import { apiRequestGet } from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
-import { GameIcon } from 'mastodon/components/game_icons';
 import { Countdown } from 'mastodon/components/countdown';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 
@@ -87,7 +86,7 @@ export interface Overview {
   recent: Game[];
   games: { key: string; name: string; command: string; max_opponents: number }[];
   commands: Record<'accept' | 'decline' | 'forfeit' | 'points' | 'record', string>;
-  catalog: { key: string; games: { key: string; name: string; summary: string; open: number; mine: boolean }[] }[];
+  catalog: { key: string; games: { key: string; name: string; summary: string; open: number; mine: boolean; enabled?: boolean }[] }[];
 }
 
 // 진행 중인 컨텐츠 한 줄 (카드): [아이콘] 컨텐츠 / vs 상대 … 상태 배지 · 남은 시간 (분):(초) 실시간
@@ -102,7 +101,6 @@ const GameRow: React.FC<{ game: Game }> = ({ game }) => {
 
   return (
     <Link className={`system-live system-live--${game.status}`} to={`/system/sessions/${game.id}`}>
-      <span className='system-live__icon' aria-hidden><GameIcon name={game.kind} /></span>
       <span className='system-live__main'>
         <strong className='system-live__name'>{game.name}</strong>
         {opponents && (
@@ -178,11 +176,11 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                 <h2 className='system-section__title'>{GROUP_TITLES[group.key]}</h2>
                 <div className='system-tiles'>
                   {group.games.map((game) => (
-                    <Link key={game.key} className={game.mine ? 'system-tile system-tile--mine' : 'system-tile'} to={`/system/games/${game.key}`}>
-                      <span className='system-tile__icon' aria-hidden><GameIcon name={game.key} /></span>
+                    <Link key={game.key} className={['system-tile', game.mine && 'system-tile--mine', game.enabled === false && 'system-tile--off'].filter(Boolean).join(' ')} to={`/system/games/${game.key}`}>
                       <span className='system-tile__name'>{game.name}</span>
                       <span className='system-tile__summary'>{game.summary}</span>
                       <span className='system-tile__meta'>
+                        {game.enabled === false && <span className='system-tile__badge'><FormattedMessage id='system.tile.off' defaultMessage='Off (staff only)' /></span>}
                         {game.mine && <span className='system-tile__badge'><FormattedMessage id='system.tile.mine' defaultMessage='Playing' /></span>}
                         {game.open > 0 && <FormattedMessage id='system.tile.open' defaultMessage='{count} in progress' values={{ count: game.open }} />}
                       </span>

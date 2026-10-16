@@ -47,7 +47,7 @@ import { WordmarkLogo } from 'mastodon/components/logo';
 import { NavigationPortal } from 'mastodon/components/navigation_portal';
 import { useWallet } from 'mastodon/features/system/use_wallet';
 import { identityContextPropShape, withIdentity } from 'mastodon/identity_context';
-import { timelinePreview, trendsEnabled, dmChatEnabled, shopEnabled } from 'mastodon/initial_state';
+import { timelinePreview, trendsEnabled, dmChatEnabled, shopEnabled, contentsEnabled } from 'mastodon/initial_state';
 import { canManageDirectMessages } from 'mastodon/permissions';
 import { selectUnreadDmCount } from 'mastodon/features/messages/selectors';
 import { selectUnreadNotificationGroupsCount } from 'mastodon/selectors/notifications';
@@ -454,7 +454,7 @@ class NavigationPanel extends Component {
         )}
         <ScheduledStatusesLink />
         {shopEnabled && <ColumnLink transparent to='/shop' icon='shop' iconComponent={ShopIcon} activeIconComponent={ShopActiveIcon} text={intl.formatMessage(messages.shop)} />}
-        <ContentsLink />
+        {contentsEnabled && <ContentsLink />}
         <ColumnLink transparent to='/bookmarks' icon='bookmarks' iconComponent={BookmarksIcon} activeIconComponent={BookmarksActiveIcon} text={bookmarksLabel} />
         <ColumnLink transparent to='/lists' icon='list-ul' iconComponent={ListAltIcon} activeIconComponent={ListAltActiveIcon} text={listsLabel} />
         <ColumnLink transparent href={settingsHref} icon='cog' iconComponent={SettingsIcon} text={preferencesLabel} />

@@ -1,7 +1,7 @@
 // 컨텐츠 문구 꾸미기 — 룰 설명·시스템 메시지·방 말풍선.
 //   [명령어] → 배지 (색은 디자인 탭의 [대괄호] 색 --ct-bracket, 대괄호는 떼고 보여 준다)
 //   (대사)   → 툿과 같은 커뮤니티 테마 (소괄호) 글자색·크기 (dialogue--paren)
-//   서버 문구 안의 이모티콘은 지운다 (아이콘만 쓴다)
+//   noEmoji: 서버가 쓴 문구(시스템 메시지·룰) 안의 이모티콘은 지운다 (아이콘만 쓴다). 캐릭터가 입력한 말은 그대로 둔다
 //   people 을 주면 문구 안의 캐릭터 이름을 아바타 | 굵은 이름으로 (시스템 메시지의 '다음 차례: ○○' 등)
 import { Fragment } from 'react';
 
@@ -35,9 +35,9 @@ const withPeople = (text: string, people: TextPerson[], keyPrefix: string): Reac
   });
 };
 
-export const CommandText: React.FC<{ text: string; people?: TextPerson[] }> = ({ text, people = [] }) => (
+export const CommandText: React.FC<{ text: string; people?: TextPerson[]; noEmoji?: boolean }> = ({ text, people = [], noEmoji = false }) => (
   <>
-    {stripEmoji(text).split(PATTERN).map((part, index) => {
+    {(noEmoji ? stripEmoji(text) : text).split(PATTERN).map((part, index) => {
       if (part.startsWith('[') && part.endsWith(']')) {
         return <kbd key={index} className='command-badge'>{part.slice(1, -1)}</kbd>;
       }

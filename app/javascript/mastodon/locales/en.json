@@ -1209,5 +1209,6 @@
   "content_card.round": "Round {turn}",
   "system.room.with_command": "Add a line or (dialogue) — or just send",
   "system.room.remove_command": "Remove command",
-  "content_card.round_ended": "Ended in round {turn}"
+  "content_card.round_ended": "Ended in round {turn}",
+  "system.tile.off": "Off (staff only)"
 }

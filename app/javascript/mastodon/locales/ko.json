@@ -1346,5 +1346,6 @@
   "content_card.round": "{turn}라운드",
   "system.room.with_command": "덧붙일 말이나 (대사) — 없으면 바로 보내기",
   "system.room.remove_command": "명령어 빼기",
-  "content_card.round_ended": "{turn}라운드 종료"
+  "content_card.round_ended": "{turn}라운드 종료",
+  "system.tile.off": "꺼짐 (운영진만 보임)"
 }

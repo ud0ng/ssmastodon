@@ -137,6 +137,8 @@ module Game
                 label: '툿 보상 재화', hint: '단위를 채울 때마다 자동으로 주는 재화'),
 
       # 공통룰 설정
+      Field.new(key: 'contents_open', type: :boolean, default: true, group: 'rules',
+                label: '컨텐츠 해금', hint: '끄면 사용자 화면에서 컨텐츠 메뉴가 사라집니다 (운영진은 항상 보입니다)'),
       Field.new(key: 'invite_minutes', type: :integer, default: 10, group: 'rules', label: '수락 대기 (분)', hint: '응답이 없으면 신청 취소'),
       Field.new(key: 'turn_seconds', type: :integer, default: 300, group: 'rules', label: '한 턴 대기 (초)', hint: '시간이 지나면 그 턴 패배 처리'),
       Field.new(key: 'one_game_per_person', type: :boolean, default: true, group: 'rules',
@@ -221,7 +223,7 @@ module Game
     # 상점 (컨텐츠 설정 > 상점). 자동봇이 /api/v1/bot/config 로 읽는다 (명령어 이름·운영진·도움말)
     CURRENCY = [
       # 상점 해금: 끄면 웹 상점 메뉴·화면이 사라지고 웹·자동봇 구매를 받지 않는다 (인벤토리·사용·양도는 그대로)
-      Field.new(key: 'shop_open', type: :boolean, default: true, group: 'shop_open', label: '상점 해금', hint: '끄면 사용자 화면에서 상점 메뉴가 사라지고 [상점]·[구매]를 받지 않습니다'),
+      Field.new(key: 'shop_open', type: :boolean, default: true, group: 'shop_open', label: '상점 해금', hint: '끄면 사용자 화면에서 상점 메뉴가 사라지고 [상점]·[구매]를 받지 않습니다 (운영진은 웹에서 항상 보입니다)'),
 
       # 상점 명령어 (자동봇이 처리). 이름만 바꾸면 자동봇 도움말도 같이 바뀐다
       Field.new(key: 'cmd_bag', type: :string, default: '가방', group: 'shop_commands', label: '가방', hint: '소지금과 소지품'),

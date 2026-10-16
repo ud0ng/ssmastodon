@@ -1,27 +1,18 @@
 // 컨텐츠 화면 전용 아이콘 (이모티콘 대신). Tabler Icons(outline, MIT)를 images/tabler 에서 가져온다.
 // 글자 크기(1em)·글자색(currentColor)을 따른다. 칠하기는 .game-icon CSS (components.scss).
-//   <GameIcon name='jellybean' />   컨텐츠 종류 (jellybean·gobstones·duel·potion·quidditch·flying·tournament·secret_chamber·maze·marauders_map·weekly·term)
+//   컨텐츠를 대표하는 아이콘은 쓰지 않는다 (사용자 요청). 상태·보상·행동 표시용 아이콘만.
 //   그 밖: heart · crown · hourglass · check · star · coin · gift · cloak · scope · compass · bulb · stun · sword · hands · foot · sparkle · sun · moon
-import BallIcon from '@/images/tabler/ball-baseball.svg?react';
-import BoltIcon from '@/images/tabler/bolt.svg?react';
-import CandyIcon from '@/images/tabler/candy.svg?react';
-import CastleIcon from '@/images/tabler/building-castle.svg?react';
 import BulbIcon from '@/images/tabler/bulb.svg?react';
 import CheckIcon from '@/images/tabler/check.svg?react';
 import CoinIcon from '@/images/tabler/coin.svg?react';
 import CompassIcon from '@/images/tabler/compass.svg?react';
 import CrownIcon from '@/images/tabler/crown.svg?react';
-import CrystalBallIcon from '@/images/tabler/crystal-ball.svg?react';
-import FeatherIcon from '@/images/tabler/feather.svg?react';
 import FileTextIcon from '@/images/tabler/file-text.svg?react';
-import FlaskIcon from '@/images/tabler/flask.svg?react';
 import GiftIcon from '@/images/tabler/gift.svg?react';
 import HangerIcon from '@/images/tabler/hanger.svg?react';
 import HandshakeIcon from '@/images/tabler/heart-handshake.svg?react';
 import HeartIcon from '@/images/tabler/heart.svg?react';
 import HourglassIcon from '@/images/tabler/hourglass.svg?react';
-import MapIcon from '@/images/tabler/map-2.svg?react';
-import MaskIcon from '@/images/tabler/mask.svg?react';
 import DizzyIcon from '@/images/tabler/mood-sad-dizzy.svg?react';
 import MoonIcon from '@/images/tabler/moon.svg?react';
 import PawIcon from '@/images/tabler/paw.svg?react';
@@ -35,18 +26,7 @@ import TrophyIcon from '@/images/tabler/trophy.svg?react';
 type SvgComponent = React.FC<React.SVGProps<SVGSVGElement>>;
 
 const ICONS: Record<string, SvgComponent> = {
-  jellybean: CandyIcon,
-  gobstones: CrystalBallIcon,
-  duel: BoltIcon,
-  potion: FlaskIcon,
-  quidditch: BallIcon,
-  flying: FeatherIcon,
   tournament: TrophyIcon,
-  maze: TrophyIcon,
-  secret_chamber: MaskIcon,
-  marauders_map: MapIcon,
-  weekly: FileTextIcon,
-  term: CastleIcon,
   heart: HeartIcon,
   crown: CrownIcon,
   hourglass: HourglassIcon,

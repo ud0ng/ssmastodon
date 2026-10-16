@@ -8,8 +8,10 @@
 #   판 안 명령:  session_id, command, args?, target?, dm?
 #                공개 답장이면 다른 참가자도 태그(알림), 대상이 있으면 대상만, dm 이면 시스템에게 DM
 class Api::V1::System::CommandsController < Api::BaseController
+  include Api::GameGate
   before_action -> { doorkeeper_authorize! :write }
   before_action :require_user!
+  before_action :require_contents_open!
 
   def create
     text, thread, visibility = params[:session_id].present? ? session_command : new_command

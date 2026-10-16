@@ -267,7 +267,7 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
             {/* 동시 진행을 막았을 때: [시작하기]를 누르면 신청하지 않고 바로 안내 */}
             {busyShown && game.busy && !game.my_session_id && (
               <div className='system-busy' role='alert'>
-                <span className='system-busy__text'><CommandText text={game.busy.message} /></span>
+                <span className='system-busy__text'><CommandText text={game.busy.message} noEmoji /></span>
                 <Link to={`/system/sessions/${game.busy.session_id}`} className='system-busy__link'>
                   {game.busy.name ? (
                     <FormattedMessage id='system.game.busy_room' defaultMessage='Go to {name}' values={{ name: game.busy.name }} />
@@ -303,7 +303,7 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
                     {game.steps.map((step, index) => (
                       <li key={step} className='system-steps__item'>
                         <span className='system-steps__number'>{index + 1}</span>
-                        <span className='system-steps__text'><CommandText text={step} /></span>
+                        <span className='system-steps__text'><CommandText text={step} noEmoji /></span>
                       </li>
                     ))}
                   </ol>

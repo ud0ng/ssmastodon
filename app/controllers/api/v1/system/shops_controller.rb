@@ -35,7 +35,9 @@ class Api::V1::System::ShopsController < Api::BaseController
 
   # 상점 해금이 꺼져 있으면 (컨텐츠 설정 > 상점) 목록도 구매도 받지 않는다
   def require_shop_open!
-    render json: { error: '지금은 상점이 열려 있지 않습니다.' }, status: 403 unless Game::Config.for('currency')['shop_open']
+    return if Game::Config.for('currency')['shop_open'] || Game::Staff.web?(current_user)
+
+    render json: { error: '지금은 상점이 열려 있지 않습니다.' }, status: 403
   end
 
   def currency

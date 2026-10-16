@@ -74,7 +74,7 @@ const Secret: React.FC = () => (
 const HostMessage: React.FC<{ message: RoomMessage; people: TextPerson[] }> = ({ message, people }) => (
   <div className='game-room__host'>
     {message.secret && <Secret />}
-    {message.text && <p className='game-room__host-text'><CommandText text={message.text} people={people} /></p>}
+    {message.text && <p className='game-room__host-text'><CommandText text={message.text} people={people} noEmoji /></p>}
   </div>
 );
 

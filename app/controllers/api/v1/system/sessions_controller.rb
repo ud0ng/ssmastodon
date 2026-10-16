@@ -3,6 +3,7 @@
 # 웹 컨텐츠 진행 화면 (/system/sessions/:id): 한 판의 시스템 툿 카드를 순서대로.
 # DM 으로 진행한 판은 참가자만 본다. 팔로워 공개 판은 서버원 누구나 (서버원끼리 서로 팔로우한다).
 class Api::V1::System::SessionsController < Api::BaseController
+  include Api::GameGate
   include RoutingHelper
 
   MESSAGE_LIMIT = 200
@@ -10,6 +11,7 @@ class Api::V1::System::SessionsController < Api::BaseController
   before_action -> { doorkeeper_authorize! :read }, only: [:show, :view]
   before_action -> { doorkeeper_authorize! :write }, only: [:move]
   before_action :require_user!
+  before_action :require_contents_open!
   before_action :set_session
 
   def show

@@ -2,12 +2,14 @@
 
 # 웹 '시스템' 메뉴: 기숙사 점수, 내 캐릭터·전적, 진행 중인 게임, 최근 게임, 열린 게임 목록
 class Api::V1::SystemController < Api::BaseController
+  include Api::GameGate
   include RoutingHelper
 
   RECENT_LIMIT = 10
 
   before_action -> { doorkeeper_authorize! :read }
   before_action :require_user!
+  before_action :require_contents_open!
 
   def show
     common = Game::Config.for('common')
@@ -57,12 +59,13 @@ class Api::V1::SystemController < Api::BaseController
   def catalog
     open = GameSession.current_kinds.where(status: %w(pending active)).group(:kind).count
     mine = GamePlayer.joins(:session).where(account: current_account, game_sessions: { status: %w(pending active) }).distinct.pluck('game_sessions.kind')
-    kinds = Game::Kinds.all.select(&:enabled?)
+    # 해금이 꺼진(컨텐츠 설정 > 켜기) 컨텐츠 카드는 서버원에게 숨기고, 운영진에게만 '꺼짐' 표시와 함께 보여 준다
+    kinds = Game::Staff.web?(current_user) ? Game::Kinds.all : Game::Kinds.all.select(&:enabled?)
     Game::Guide::GROUPS.map do |group|
       {
         key: group,
         games: kinds.select { |kind| Game::Guide.group_of(kind) == group }.map do |kind|
-          { key: kind.key, name: kind.display_name, summary: Game::Guide.for(kind)[:summary], open: open.fetch(kind.key, 0), mine: mine.include?(kind.key) }
+          { key: kind.key, name: kind.display_name, summary: Game::Guide.for(kind)[:summary], open: open.fetch(kind.key, 0), mine: mine.include?(kind.key), enabled: kind.enabled? }
         end,
       }
     end

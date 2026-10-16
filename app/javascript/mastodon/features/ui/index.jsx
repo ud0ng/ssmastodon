@@ -27,7 +27,7 @@ import { uploadCompose, resetCompose, changeComposeSpoilerness } from '../../act
 import { clearHeight } from '../../actions/height_cache';
 import { fetchServer, fetchServerTranslationLanguages } from '../../actions/server';
 import { expandHomeTimeline } from '../../actions/timelines';
-import initialState, { me, owner, singleUserMode, trendsEnabled, trendsAsLanding, disableHoverCards, shopEnabled } from '../../initial_state';
+import initialState, { me, owner, singleUserMode, trendsEnabled, trendsAsLanding, disableHoverCards, shopEnabled, contentsEnabled } from '../../initial_state';
 
 import BundleColumnError from './components/bundle_column_error';
 import { UploadArea } from './components/upload_area';
@@ -242,13 +242,14 @@ class SwitchingColumnsArea extends PureComponent {
             <WrappedRoute path='/messages' component={Messages} content={children} />
             <WrappedRoute path='/scheduled_statuses' component={ScheduledStatuses} content={children} />
             {shopEnabled ? <WrappedRoute path='/shop' component={SystemShop} content={children} /> : <Redirect from='/shop' to='/home' exact />}
-            <WrappedRoute path='/system/sessions/:id' component={SystemSession} content={children} />
-            <WrappedRoute path='/system/games/:key' component={SystemGame} content={children} />
+            {/* 컨텐츠 해금이 꺼져 있으면(운영진 제외) 컨텐츠 화면은 홈으로 */}
+            {contentsEnabled ? <WrappedRoute path='/system/sessions/:id' component={SystemSession} content={children} /> : <Redirect from='/system/sessions/:id' to='/home' />}
+            {contentsEnabled ? <WrappedRoute path='/system/games/:key' component={SystemGame} content={children} /> : <Redirect from='/system/games/:key' to='/home' />}
             <WrappedRoute path='/system/:section(wallet|inventory)' component={SystemWallet} content={children} />
             <WrappedRoute path='/system/record' component={SystemRecord} content={children} />
             <Redirect from='/system/me' to='/system/record' exact />
             <Redirect from='/system/houses' to='/system' exact />
-            <WrappedRoute path='/system' component={SystemPage} content={children} exact />
+            {contentsEnabled ? <WrappedRoute path='/system' component={SystemPage} content={children} exact /> : <Redirect from='/system' to='/home' exact />}
             <WrappedRoute path='/favourites' component={FavouritedStatuses} content={children} />
 
             <WrappedRoute path='/bookmarks' component={BookmarkedStatuses} content={children} />

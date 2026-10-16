@@ -8,7 +8,6 @@ import { useHistory } from 'react-router-dom';
 
 import { apiRequestGet } from 'mastodon/api';
 import { Button } from 'mastodon/components/button';
-import { GameIcon } from 'mastodon/components/game_icons';
 
 import { sendCommand, waitForSession } from './board';
 
@@ -93,7 +92,6 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, onClose 
     <div className='modal-root__modal safety-action-modal challenge-modal'>
       <div className='safety-action-modal__top'>
         <div className='challenge-modal__head'>
-          <span className='challenge-modal__icon' aria-hidden><GameIcon name={gameKey} /></span>
           <div className='safety-action-modal__confirmation'>
             <h1>{name}</h1>
             <p>

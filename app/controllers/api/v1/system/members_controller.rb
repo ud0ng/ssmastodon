@@ -2,8 +2,10 @@
 
 # 웹 게임 화면에서 상대 고르기: 컨텐츠에 낄 수 있는 서버원과 캐릭터 이름·소속
 class Api::V1::System::MembersController < Api::BaseController
+  include Api::GameGate
   before_action -> { doorkeeper_authorize! :read }
   before_action :require_user!
+  before_action :require_contents_open!
 
   def index
     accounts = GameCharacter.eligible_accounts.where.not(id: current_account.id).order(:username)

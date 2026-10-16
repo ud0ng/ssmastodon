@@ -160,6 +160,13 @@ const RoomRewards: React.FC<{ card: GameCard; player: CardPlayer }> = ({ card, p
   );
 };
 
+// 곱스톤: 캐릭터 아래에 점수만 ('n점')
+const RoomScore: React.FC<{ card: GameCard; player: CardPlayer }> = ({ card, player }) => (
+  <span className='room-head__score'>
+    <FormattedMessage id='system.game.points_value' defaultMessage='{points} pts' values={{ points: num(bySeat(card.data.scores)[String(player.seat)]) }} />
+  </span>
+);
+
 const RoomPlayerState: React.FC<{ card: GameCard; player: CardPlayer }> = ({ card, player }) => {
   if (player.result) {
     return (
@@ -224,11 +231,14 @@ const RoomPlayer: React.FC<{ card: GameCard; player: CardPlayer; side: 'left' | 
         </span>
         {/* 2줄: 상태 · 점수, 끝난 판이면 받은 보상 */}
         {done ? (
-          <RoomRewards card={card} player={player} />
+          <>
+            {card.kind === 'gobstones' && <span className='room-head__stat'><RoomScore card={card} player={player} /></span>}
+            <RoomRewards card={card} player={player} />
+          </>
         ) : (
           <span className='room-head__stat'>
             <RoomPlayerState card={card} player={player} />
-            <PlayerStat card={card} player={player} />
+            {card.kind === 'gobstones' ? <RoomScore card={card} player={player} /> : <PlayerStat card={card} player={player} />}
           </span>
         )}
       </div>
@@ -349,7 +359,8 @@ const Players: React.FC<{ card: GameCard }> = ({ card }) => {
 };
 
 // 컨텐츠별 가운데 판
-const Board: React.FC<{ card: GameCard }> = ({ card }) => {
+// room: 컨텐츠 방 맨 위 (글자 기록 줄은 줄이고, 점수는 캐릭터 아래에)
+const Board: React.FC<{ card: GameCard; room?: boolean }> = ({ card, room = false }) => {
   const { data } = card;
   // 신청·모집 중에는 아직 판이 없다
   if (card.phase === 'pending' && card.kind !== 'secret_chamber') return null;
@@ -400,10 +411,12 @@ const Board: React.FC<{ card: GameCard }> = ({ card }) => {
           <div className='content-card__progress'>
             <span style={{ width: `${total ? (throws / total) * 100 : 0}%` }} />
           </div>
-          <div className='content-card__line'>
-            <FormattedMessage id='content_card.throws' defaultMessage='{throws}/{total} throws' values={{ throws, total }} />
-          </div>
-          {last && (
+          {!room && (
+            <div className='content-card__line'>
+              <FormattedMessage id='content_card.throws' defaultMessage='{throws}/{total} throws' values={{ throws, total }} />
+            </div>
+          )}
+          {!room && last && (
             <div className='content-card__chips'>
               <span className='content-card__chips-label'>{names[String(last.seat)]}</span>
               {last.strength ? <span className='content-card__chip'>{String(last.strength)}</span> : null}
@@ -763,7 +776,6 @@ export const ContentCardView: React.FC<{
     <div className={`content-card content-card--${card.phase} content-card--${card.kind}${room ? ' content-card--room' : ''}`}>
       {room && card.kind !== 'secret_chamber' && <RoomHead card={card} />}
       <div className='content-card__head' hidden={room && card.kind !== 'secret_chamber'}>
-        <span className='content-card__icon' aria-hidden><GameIcon name={card.kind} /></span>
         <span className='content-card__name'>{card.name}</span>
         {!['weekly', 'term', 'tournament'].includes(card.kind) && <span className='content-card__phase'><PhaseBadge card={card} /></span>}
         {card.tournament && (
@@ -784,7 +796,7 @@ export const ContentCardView: React.FC<{
       </div>
 
       {!room && card.kind !== 'secret_chamber' && <Players card={card} />}
-      <Board card={card} />
+      <Board card={card} room={room} />
 
       {!room && card.awards && card.awards.length > 0 && (
         <div className='content-card__awards'>
