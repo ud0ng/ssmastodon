@@ -1139,5 +1139,12 @@
   "video.skip_forward": "Skip forward",
   "video.unmute": "Unmute",
   "video.volume_down": "Volume down",
-  "video.volume_up": "Volume up"
+  "video.volume_up": "Volume up",
+  "wallet.inventory": "Inventory",
+  "wallet.money": "Currency",
+  "wallet.no_items": "No items yet.",
+  "wallet.no_records": "No history yet.",
+  "wallet.record": "Record",
+  "wallet.record_summary": "{win}W {lose}L {draw}D",
+  "wallet.records": "History"
 }

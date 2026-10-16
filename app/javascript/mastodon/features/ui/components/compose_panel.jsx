@@ -5,6 +5,7 @@ import { useDispatch } from 'react-redux';
 import { changeComposing, mountCompose, unmountCompose } from 'mastodon/actions/compose';
 import ServerBanner from 'mastodon/components/server_banner';
 import { Search } from 'mastodon/features/compose/components/search';
+import { WalletBar } from 'mastodon/features/compose/components/wallet_bar';
 import ComposeFormContainer from 'mastodon/features/compose/containers/compose_form_container';
 import { LinkFooter } from 'mastodon/features/ui/components/link_footer';
 import { withIdentity } from 'mastodon/identity_context';
@@ -44,7 +45,10 @@ const ComposePanel = ({ identity }) => {
       )}
 
       {signedIn && (
-        <ComposeFormContainer singleColumn />
+        <>
+          <ComposeFormContainer singleColumn />
+          <WalletBar />
+        </>
       )}
 
       <LinkFooter />

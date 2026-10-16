@@ -138,6 +138,10 @@ export function SystemPage() {
   return import('../../system');
 }
 
+export function SystemWallet() {
+  return import('../../system/wallet');
+}
+
 export function SystemSession() {
   return import('../../system/session');
 }
