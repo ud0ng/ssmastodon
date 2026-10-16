@@ -125,6 +125,7 @@ en:
         messages_invalid: Messages · invalid requests
         messages_match: Messages · requests and play
         messages_score: Messages · points, rewards, record
+        messages_gift: Messages · gift notifications
         season: Season messages
         basic: Basic
         lesson_messages: Messages

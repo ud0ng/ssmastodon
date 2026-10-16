@@ -1,30 +1,79 @@
 # frozen_string_literal: true
 
-# 웹 글쓰기 패널 아래 재화 | 인벤토리 | 전적 버튼과 재화·인벤토리 화면: 내 재화·재화 기록·인벤토리·전적
+# 웹 글쓰기 패널 아래 재화 | 인벤토리 | 전적 버튼과 재화·인벤토리 화면
+#   show     내 재화·누적 획득/사용·인벤토리·전적
+#   records  재화 기록 (filter: all gain spend items, max_id 로 다음 쪽)
+#   gift     재화 선물 (받는 사람에게 시스템 DM)
 class Api::V1::System::WalletsController < Api::BaseController
   include RoutingHelper
 
-  RECORDS = 50
+  RECORDS = 30
 
-  before_action -> { doorkeeper_authorize! :read }
+  before_action -> { doorkeeper_authorize! :read }, except: [:gift]
+  before_action -> { doorkeeper_authorize! :write }, only: [:gift]
   before_action :require_user!
 
   def show
     character = GameCharacter.for(current_account)
     shop_items = GameShopItem.all.index_by { |item| Game::Wallet.key(item.name) }
     results = GamePlayer.joins(:session).where(account: current_account, game_sessions: { status: 'finished' }).group(:result).count
+    rewards = GameReward.where(account: current_account)
 
     render json: {
-      currency: Game::Config.for('common')['currency_name'],
+      currency: currency,
       money: character.money,
+      transfer_enabled: transfer_enabled?,
+      gained: rewards.gained.sum(:money),
+      spent: rewards.spent.sum(:money),
       item_count: character.item_count,
       record: { win: results['win'].to_i, lose: results['lose'].to_i, draw: results['draw'].to_i },
       inventory: Array(character.inventory).map { |item| inventory_json(item, shop_items[Game::Wallet.key(item['name'])]) },
-      records: GameReward.where(account: current_account).order(id: :desc).limit(RECORDS).map { |record| record_json(record) },
     }
   end
 
+  def records
+    scope = GameReward.where(account: current_account)
+    scope = { 'gain' => scope.gained, 'spend' => scope.spent, 'items' => scope.with_items }.fetch(params[:filter].to_s, scope)
+    scope = scope.where(id: ...params[:max_id].to_i) if params[:max_id].present?
+    page = scope.order(id: :desc).limit(RECORDS + 1).to_a
+
+    render json: {
+      records: page.first(RECORDS).map { |record| record_json(record) },
+      next_max_id: page.size > RECORDS ? page[RECORDS - 1].id.to_s : nil,
+    }
+  end
+
+  def gift
+    return fail!('지금은 선물할 수 없습니다.') unless transfer_enabled?
+
+    amount = params[:amount].to_i
+    return fail!('1 이상만 선물할 수 있습니다.') unless amount.positive?
+
+    receiver = GameCharacter.eligible_accounts.where.not(id: current_account.id).find_by(username: params[:acct].to_s.delete_prefix('@'))
+    return fail!('받을 사람을 골라 주세요.') if receiver.nil?
+
+    name = GameCharacter.for(receiver).display_name
+    character = Game::Wallet.apply!([{ account: current_account, money: -amount }, { account: receiver, money: amount }],
+                                    kind: 'transfer', detail: "#{amount}#{currency} → #{name}", actor: 'web').first
+    Game::Gift.notify(Game::Config.for('common')['msg_gift_money'], receiver, player: current_account, target: receiver, money: amount, currency: currency)
+    render json: { message: "#{name}에게 #{amount}#{currency}#{Game::Text.particle(currency.to_s.strip[-1], '을를')} 선물했습니다.", money: character.money }
+  rescue Game::Wallet::Error => e
+    fail!(e.message)
+  end
+
   private
+
+  def currency
+    Game::Config.for('common')['currency_name']
+  end
+
+  def transfer_enabled?
+    Game::Config.for('currency')['transfer_enabled']
+  end
+
+  def fail!(message)
+    render json: { error: message }, status: 422
+  end
 
   def inventory_json(item, shop_item)
     {
@@ -32,6 +81,9 @@ class Api::V1::System::WalletsController < Api::BaseController
       count: item['count'].to_i,
       note: item['note'].to_s,
       description: shop_item&.description.to_s,
+      usable: shop_item.nil? || shop_item.usable,
+      stat: shop_item&.stat_name.presence,
+      stat_value: shop_item&.stat_name.present? ? shop_item.stat_value : nil,
       image: shop_item&.image.present? ? full_asset_url(shop_item.image.url(:small)) : nil,
     }
   end

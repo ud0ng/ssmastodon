@@ -64,6 +64,7 @@ import {
   ScheduledStatuses,
   SystemPage,
   SystemWallet,
+  SystemShop,
   SystemSession,
   SystemGame,
   FollowedTags,
@@ -239,6 +240,7 @@ class SwitchingColumnsArea extends PureComponent {
             <WrappedRoute path='/messages/all' component={AdminMessages} content={children} />
             <WrappedRoute path='/messages' component={Messages} content={children} />
             <WrappedRoute path='/scheduled_statuses' component={ScheduledStatuses} content={children} />
+            <WrappedRoute path='/shop' component={SystemShop} content={children} />
             <WrappedRoute path='/system/sessions/:id' component={SystemSession} content={children} />
             <WrappedRoute path='/system/games/:key' component={SystemGame} content={children} />
             <WrappedRoute path='/system/:section(wallet|inventory)' component={SystemWallet} content={children} />

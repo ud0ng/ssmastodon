@@ -2,6 +2,7 @@
 
 import { dmChatEnabled, me } from '../initial_state';
 import { getLocale } from '../locales';
+import { refreshWallet } from '../features/system/use_wallet';
 import { connectStream } from '../stream';
 
 import {
@@ -137,6 +138,10 @@ export const connectTimelineStream = (timelineId, channelName, params = {}, opti
           break;
         case 'announcement.delete':
           dispatch(deleteAnnouncement(data.payload));
+          break;
+        // 재화·아이템이 바뀌었다 (구매·선물 받음·컨텐츠 보상 등): 글쓰기창 아래 버튼과 재화·인벤토리·상점 화면을 다시 읽는다
+        case 'wallet.changed':
+          refreshWallet();
           break;
         }
       },

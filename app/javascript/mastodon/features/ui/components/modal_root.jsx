@@ -21,6 +21,9 @@ import {
   AnnualReportModal,
   ScheduleModal,
   DmRecipientModal,
+  InventoryItemModal,
+  ShopItemModal,
+  MoneyGiftModal,
   DmMemberModal,
   ReplyRecipientsModal,
 } from 'mastodon/features/ui/util/async-components';
@@ -80,6 +83,9 @@ export const MODAL_COMPONENTS = {
   'ANNUAL_REPORT': AnnualReportModal,
   'SCHEDULE': ScheduleModal,
   'DM_RECIPIENT': DmRecipientModal,
+  'INVENTORY_ITEM': InventoryItemModal,
+  'SHOP_ITEM': ShopItemModal,
+  'MONEY_GIFT': MoneyGiftModal,
   'DM_MEMBERS': DmMemberModal,
   'REPLY_RECIPIENTS': ReplyRecipientsModal,
 };

@@ -142,6 +142,22 @@ export function SystemWallet() {
   return import('../../system/wallet');
 }
 
+export function SystemShop() {
+  return import('../../system/shop');
+}
+
+export function InventoryItemModal() {
+  return import('../../system/item_modal');
+}
+
+export function MoneyGiftModal() {
+  return import('../../system/money_gift_modal');
+}
+
+export function ShopItemModal() {
+  return import('../../system/shop_item_modal');
+}
+
 export function SystemSession() {
   return import('../../system/session');
 }

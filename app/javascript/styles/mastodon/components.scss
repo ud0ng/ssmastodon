@@ -16662,7 +16662,20 @@ body .search__popout__menu__item {
     flex-direction: column;
     gap: 6px;
     align-items: center;
+    width: 100%;
     min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+
+    &:hover .wallet-page__item-image,
+    &:focus-visible .wallet-page__item-image {
+      outline: 2px solid var(--color-accent, $ui-highlight-color);
+      outline-offset: 1px;
+    }
   }
 
   &__item-image {
@@ -16712,6 +16725,443 @@ body .search__popout__menu__item {
     text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+}
+
+// 재화 화면: 보유 재화 카드 → 전체/획득/사용 탭(알림 필터 바) → 날짜별 내역
+.wallet-page--money {
+  padding: 0;
+
+  .wallet-page__padded {
+    padding: 16px;
+  }
+
+  .wallet-page__empty {
+    padding: 32px 16px;
+  }
+}
+
+.wallet-page__filter {
+  border-inline: 0;
+}
+
+.wallet-page__day-title {
+  padding: 16px 16px 4px;
+  color: var(--color-dim, $darker-text-color);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.wallet-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 22px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--color-accent, $ui-highlight-color), color-mix(in srgb, var(--color-accent, $ui-highlight-color) 62%, #000));
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-accent, $ui-highlight-color) 28%, transparent);
+  color: #fff;
+
+  &__label {
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0.85;
+  }
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  // 카드 안 [선물]: 카드 위에 반투명 흰 알약
+  &__gift {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    padding: 5px 12px;
+    border: 0;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 22%);
+    color: inherit;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+
+    .icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: rgb(255 255 255 / 34%);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  }
+
+  &__balance {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+
+    .icon {
+      width: 26px;
+      height: 26px;
+      align-self: center;
+    }
+
+    strong {
+      font-size: 36px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+
+    span {
+      font-size: 15px;
+      font-weight: 600;
+      opacity: 0.85;
+    }
+  }
+
+  &__stats {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+
+    > span {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 2px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: rgb(255 255 255 / 16%);
+      font-size: 12px;
+    }
+
+    strong {
+      font-size: 16px;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+}
+
+// 내역 한 줄: 종류 아이콘(획득=포인트색, 사용=빨강, 아이템만=회색) · 무엇/종류·시각/아이템 칩 · 금액
+.wallet-record {
+  --record-color: var(--color-dim, #{$darker-text-color});
+
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 16px;
+
+  &--gain {
+    --record-color: var(--color-accent, #{$ui-highlight-color});
+  }
+
+  &--spend {
+    --record-color: var(--color-red, #{$error-red});
+  }
+
+  &__icon {
+    display: flex;
+    flex: 0 0 40px;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--record-color) 14%, transparent);
+    color: var(--record-color);
+
+    .icon {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  &__main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__title {
+    overflow: hidden;
+    font-size: 15px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__meta {
+    color: var(--color-dim, $darker-text-color);
+    font-size: 12px;
+  }
+
+  &__items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+  }
+
+  &__item {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-accent, #{$ui-highlight-color}) 12%, transparent);
+    color: var(--color-accent, $ui-highlight-color);
+    font-size: 12px;
+    font-weight: 600;
+
+    &--minus {
+      background: color-mix(in srgb, var(--color-red, #{$error-red}) 12%, transparent);
+      color: var(--color-red, $error-red);
+    }
+  }
+
+  &__amount {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: flex-end;
+    color: var(--record-color);
+
+    strong {
+      font-size: 16px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    span {
+      font-size: 11px;
+      opacity: 0.8;
+    }
+  }
+}
+
+// 상점 화면: 상점 이름·설명 아래 아이템 카드 (재화·인벤토리 화면과 같은 카드), 이름 아래 가격
+.shop-page {
+  &__shop + &__shop {
+    margin-top: 24px;
+  }
+
+  &__description {
+    margin-bottom: 12px;
+    color: var(--color-dim, $darker-text-color);
+    font-size: 13px;
+  }
+
+  &__price {
+    display: inline-flex;
+    gap: 3px;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+
+    .icon {
+      width: 14px;
+      height: 14px;
+    }
+  }
+}
+
+// 아이템 모달 (인벤토리·상점): 확인 모달 틀에 그림 + 이름·설명, 개수, 받는 사람 검색창
+// 받는 사람 드롭다운이 모달 밖으로 나올 수 있게 overflow 를 연다
+// 세로로 긴 모양: 사진 → 이름 → 설명 → (개수·받는 사람) → 버튼
+.item-modal {
+  width: 360px;
+  overflow: visible;
+
+  .safety-action-modal__top {
+    gap: 16px;
+    align-items: center;
+  }
+
+  &__head {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+    width: 100%;
+
+    .wallet-page__item-image {
+      width: 180px;
+      flex: 0 0 auto;
+      border-radius: 20px;
+    }
+
+    .safety-action-modal__confirmation {
+      width: 100%;
+      text-align: center;
+    }
+  }
+
+  // 재화 선물 모달 머리: 아이템 사진 자리에 동그란 재화 아이콘
+  &__coin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-accent, #{$ui-highlight-color}) 16%, transparent);
+    color: var(--color-accent, $ui-highlight-color);
+
+    .icon {
+      width: 48px;
+      height: 48px;
+    }
+  }
+
+  &__effect {
+    display: block;
+    margin-top: 4px;
+    color: var(--color-dim, $darker-text-color);
+    font-size: 13px;
+  }
+
+  &__menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+  }
+
+  &__menu-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+
+  &__count {
+    justify-content: center;
+  }
+
+  &__total,
+  &__ask,
+  &__result,
+  &__error {
+    justify-content: center;
+    text-align: center;
+  }
+
+  &__description {
+    white-space: pre-wrap;
+  }
+
+  &__note,
+  &__money,
+  &__count-max {
+    color: var(--color-dim, $darker-text-color);
+    font-size: 13px;
+  }
+
+  &__count {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    width: 100%;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  // 개수: 둥근 테두리 안에 − 숫자 +
+  &__stepper {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px;
+    border: 1px solid var(--color-border, var(--background-border-color));
+    border-radius: 999px;
+
+    .icon-button {
+      padding: 6px;
+      border-radius: 50%;
+    }
+
+    input {
+      width: 44px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 16px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+
+      &:focus {
+        outline: 0;
+      }
+    }
+  }
+
+  &__total {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    width: 100%;
+
+    .icon {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  &__ask,
+  &__result {
+    width: 100%;
+    font-size: 15px;
+  }
+
+  &__result {
+    font-weight: 600;
+    white-space: pre-wrap;
+  }
+
+  &__error {
+    width: 100%;
+    color: var(--color-red, $error-red);
+    font-size: 14px;
+  }
+
+  .search.item-modal__gift {
+    width: 100%;
+  }
+
+  .search__popout {
+    max-height: 260px;
+    overflow-y: auto;
+  }
+
+  &__member {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  &__acct {
+    opacity: 0.7;
+    font-size: 13px;
+  }
+
+  &__avatar {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
   }
 }
 

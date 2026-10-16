@@ -4300,8 +4300,8 @@ body .compose-form .compose-form__uploads {
     order: 8;
   }
 
-  /* 시스템 메뉴: 예약 게시물과 같은 순서 → 바로 아래(북마크 위) */
-  .layout-multiple-columns .column-link[href="/system"] {
+  /* 상점 메뉴: 예약 게시물과 같은 순서 → 바로 아래(북마크 위) */
+  .layout-multiple-columns .column-link[href="/shop"] {
     order: 8;
   }
 
@@ -5669,10 +5669,10 @@ div[tabindex="-1"] + div[tabindex="-1"] > .status__wrapper > .status-reply.statu
   outline: 0;
 }
 
-/* 시스템 메뉴 아이콘 (별) */
-.layout-multiple-columns .column-link .icon-system {
-  mask-image: url('./bird-theme-svg/star.svg');
-  -webkit-mask-image: url('./bird-theme-svg/star.svg');
+/* 상점 메뉴 아이콘 (쇼핑백) */
+.layout-multiple-columns .column-link .icon-shop {
+  mask-image: url('./bird-theme-svg/shop.svg');
+  -webkit-mask-image: url('./bird-theme-svg/shop.svg');
   mask-size: contain;
   -webkit-mask-size: contain;
   mask-repeat: no-repeat;
@@ -5683,12 +5683,12 @@ div[tabindex="-1"] + div[tabindex="-1"] > .status__wrapper > .status-reply.statu
   background-image: none;
 }
 
-.layout-multiple-columns .column-link.active .icon-system {
-  mask-image: url('./bird-theme-svg/star-fill.svg');
-  -webkit-mask-image: url('./bird-theme-svg/star-fill.svg');
+.layout-multiple-columns .column-link.active .icon-shop {
+  mask-image: url('./bird-theme-svg/shop-fill.svg');
+  -webkit-mask-image: url('./bird-theme-svg/shop-fill.svg');
 }
 
-.layout-multiple-columns .column-link:not(.active):hover .icon-system,
-.layout-multiple-columns .column-link:not(.active):focus-visible .icon-system {
+.layout-multiple-columns .column-link:not(.active):hover .icon-shop,
+.layout-multiple-columns .column-link:not(.active):focus-visible .icon-shop {
   background-color: var(--color-column-link-hover);
 }

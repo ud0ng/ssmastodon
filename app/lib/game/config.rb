@@ -180,6 +180,12 @@ module Game
       Field.new(key: 'msg_board', type: :text, group: 'messages_score', label: '[점수] 머리말', default: '🏆 %{term} 점수'),
       Field.new(key: 'msg_record', type: :text, group: 'messages_score', label: '[내전적]', default: '%{player}의 전적: %{win}승 %{lose}패 %{draw}무'),
 
+      # 웹에서 선물했을 때 받는 사람에게 가는 DM (시스템 계정)
+      Field.new(key: 'msg_gift_item', type: :text, group: 'messages_gift', label: '아이템 선물',
+                default: '🎁 %{player}{이가} %{item} %{count}개{을를} 선물했습니다. 인벤토리에서 확인해 보세요.'),
+      Field.new(key: 'msg_gift_money', type: :text, group: 'messages_gift', label: '재화 선물',
+                default: '🎁 %{player}{이가} %{money}%{currency}{을를} 선물했습니다.'),
+
       # 시즌 문구 (캐릭터 관리 > 소속 > 시즌)
       Field.new(key: 'msg_season_interim', type: :text, group: 'season', label: '중간 결산',
                 default: "📊 %{season} 중간 결산\n\n%{houses}"),
@@ -268,6 +274,7 @@ module Game
         ['messages_match', %w(messages_match)],
         ['messages_invalid', %w(messages_invalid)],
         ['messages_score', %w(messages_score)],
+        ['messages_gift', %w(messages_gift)],
       ],
       ['common', 'season'] => [
         ['season', %w(season)],

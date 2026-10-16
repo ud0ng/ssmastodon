@@ -1200,4 +1200,100 @@ body.community-theme:not(.admin) {
     background: var(--ct-point);
     color: var(--ct-on-point);
   }
+
+  .wallet-page__item:hover .wallet-page__item-image,
+  .wallet-page__item:focus-visible .wallet-page__item-image {
+    outline-color: var(--ct-point);
+  }
+
+  .shop-page__description,
+  .item-modal__note,
+  .item-modal__money,
+  .item-modal__count-max {
+    color: var(--ct-dim);
+  }
+
+  .shop-page__price .icon,
+  .item-modal__total .icon {
+    color: var(--ct-point);
+  }
+
+  // 재화 카드·내역: 카드는 서브색(포인트) 그라데이션, 획득은 포인트색
+  .wallet-card {
+    background: linear-gradient(135deg, var(--ct-point), color-mix(in srgb, var(--ct-point) 62%, #000));
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--ct-point) 28%, transparent);
+    color: var(--ct-on-point);
+  }
+
+  .wallet-record {
+    --record-color: var(--ct-dim);
+  }
+
+  .item-modal__coin {
+    background: color-mix(in srgb, var(--ct-point) 16%, transparent);
+    color: var(--ct-point);
+  }
+
+  .item-modal__effect {
+    color: var(--ct-dim);
+  }
+
+  .wallet-record--gain {
+    --record-color: var(--ct-point);
+  }
+
+  // 사용(차감)은 테마와 상관없이 빨강 계열
+  .wallet-record--spend {
+    --record-color: #e5484d;
+  }
+
+  .wallet-record__meta,
+  .wallet-page__day-title {
+    color: var(--ct-dim);
+  }
+
+  .wallet-record__item {
+    background: color-mix(in srgb, var(--ct-point) 14%, transparent);
+    color: var(--ct-point);
+  }
+
+  .wallet-record__item--minus {
+    background: color-mix(in srgb, #e5484d 12%, transparent);
+    color: #e5484d;
+  }
+
+  .wallet-page__filter {
+    border-color: var(--ct-line);
+  }
+
+  // 아이템 모달: 일반 박스보다 두 배 투명하게(박스 투명도 92% → 84%) + 뒤를 흐리게
+  .item-modal {
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--ct-base) max(0%, calc(var(--ct-panel-alpha) * 2 - 100%)), transparent);
+    backdrop-filter: blur(20px);
+  }
+
+  .item-modal .safety-action-modal__top,
+  .item-modal .safety-action-modal__bottom {
+    background: transparent;
+  }
+
+  // 모달 안 검색창: 고른 사람·개수는 흐린 글자 말고 본문 글자색으로
+  .item-modal .search__input,
+  .item-modal__stepper input {
+    color: var(--ct-text);
+  }
+
+  .item-modal__stepper {
+    border-color: var(--ct-line);
+    background: var(--ct-panel-raised);
+  }
+
+  .item-modal__stepper .icon-button:not(:disabled) {
+    color: var(--ct-point);
+  }
+
+  .item-modal__stepper .icon-button:not(:disabled):hover {
+    background: var(--ct-hover);
+  }
 }

@@ -33,6 +33,7 @@
   /publish
   /scheduled_statuses
   /search
+  /shop
   /system
   /system/(*any)
   /start/(*any)
