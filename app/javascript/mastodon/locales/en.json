@@ -1254,5 +1254,9 @@
   "chamber.notes": "Notes",
   "chamber.dark_chat": "Secret chat (allies only)",
   "chamber.send": "Send",
-  "chamber.send_prophecy": "Send prophecy"
+  "chamber.send_prophecy": "Send prophecy",
+  "chamber.petrified": "Petrified",
+  "chamber.expelled": "Expelled",
+  "chamber.finished": "Finished",
+  "chamber.alive_of": "{alive} / {total} alive"
 }

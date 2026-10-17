@@ -232,6 +232,7 @@ module Game
           end,
           my_role: role && { key: role, name: role_name(role), faction: faction_name(role), dark: DARK.include?(role), how: role_how(player), mates: mates },
           my_vote: votes[seat.to_s],
+          votes: votes.transform_keys(&:to_s),
           night: night_view(player, role),
           notes: Array(state.dig('notes', seat.to_s)),
           dark_chat: role == 'traitor' ? Array(state['dark_chat']) : [],

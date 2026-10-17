@@ -37,6 +37,7 @@ interface ChamberView {
   players: ChamberPlayer[];
   my_role: { key: string; name: string; faction: string; dark: boolean; how: string; mates: number[] } | null;
   my_vote: number | null;
+  votes: Record<string, number>;
   night: { kind: 'petrify' | 'investigate' | 'protect'; picked: number | null; used?: boolean; blocked?: number | null } | null;
   notes: { day: number; text: string }[];
   dark_chat: { name: string; text: string }[];
@@ -94,11 +95,11 @@ export const ChamberPlay: React.FC<{ sessionId: string; onMoved?: () => void }> 
   );
 
   const total = view?.players.length ?? 0;
-  const size = Math.min(17, Math.max(9, 150 / Math.max(total, 1)));
+  const size = Math.min(14, Math.max(8.5, 120 / Math.max(total, 1)));
   const positions = useMemo(
     () => Array.from({ length: total }, (_, index) => {
       const angle = (-Math.PI / 2) + ((index / Math.max(total, 1)) * Math.PI * 2);
-      return { x: 50 + (Math.cos(angle) * 39), y: 50 + (Math.sin(angle) * 39) };
+      return { x: 50 + (Math.cos(angle) * 36), y: 50 + (Math.sin(angle) * 36) };
     }),
     [total],
   );
@@ -147,17 +148,75 @@ export const ChamberPlay: React.FC<{ sessionId: string; onMoved?: () => void }> 
 
   return (
     <div className='chamber-play'>
-      <div className='chamber-play__head'>
-        {view.phase === 'day' && <span className='chamber-play__chip'><GameIcon name='sun' /> <FormattedMessage id='chamber.day' defaultMessage='Day {day}' values={{ day: view.day }} /></span>}
-        {view.phase === 'night' && <span className='chamber-play__chip chamber-play__chip--night'><GameIcon name='moon' /> <FormattedMessage id='chamber.night' defaultMessage='Night {day}' values={{ day: view.day }} /></span>}
-        {view.phase === 'recruit' && <span className='chamber-play__chip'><FormattedMessage id='chamber.recruit' defaultMessage='Recruiting {count} / {min}-{max}' values={{ count: total, min: view.min_players, max: view.max_players }} /></span>}
-        {playing && <span className='chamber-play__chip'><FormattedMessage id='chamber.phase' defaultMessage='Phase {no} / {max}' values={{ no: view.phase_no, max: view.max_phases }} /></span>}
-        {view.deadline_at && playing && <span className='chamber-play__chip'><GameIcon name='hourglass' /> <RelativeTimestamp timestamp={view.deadline_at} futureDate /></span>}
-        {view.ends_at && playing && <span className='chamber-play__chip chamber-play__chip--dim'><FormattedMessage id='chamber.ends' defaultMessage='Ends' /> <RelativeTimestamp timestamp={view.ends_at} futureDate /></span>}
+      {/* 맨 위 고정 헤더: 지금 페이즈(낮/밤) · 시간 · 참가자 */}
+      <div className='chamber-head'>
+        <div className='chamber-head__phase'>
+          <span className={view.phase === 'night' ? 'chamber-head__icon chamber-head__icon--night' : 'chamber-head__icon'}>
+            <GameIcon name={view.phase === 'night' ? 'moon' : 'sun'} />
+          </span>
+          <div className='chamber-head__title'>
+            <strong>
+              {view.phase === 'day' && <FormattedMessage id='chamber.day' defaultMessage='Day {day}' values={{ day: view.day }} />}
+              {view.phase === 'night' && <FormattedMessage id='chamber.night' defaultMessage='Night {day}' values={{ day: view.day }} />}
+              {view.phase === 'recruit' && <FormattedMessage id='chamber.recruit' defaultMessage='Recruiting {count} / {min}-{max}' values={{ count: total, min: view.min_players, max: view.max_players }} />}
+              {view.phase === 'finished' && <FormattedMessage id='chamber.finished' defaultMessage='Finished' />}
+            </strong>
+            {playing && <small><FormattedMessage id='chamber.phase' defaultMessage='Phase {no} / {max}' values={{ no: view.phase_no, max: view.max_phases }} /></small>}
+          </div>
+        </div>
+        {playing && (
+          <div className='chamber-head__time'>
+            {view.deadline_at && <span><GameIcon name='hourglass' /> <RelativeTimestamp timestamp={view.deadline_at} futureDate /></span>}
+            {view.ends_at && <small><FormattedMessage id='chamber.ends' defaultMessage='Ends' /> <RelativeTimestamp timestamp={view.ends_at} futureDate /></small>}
+          </div>
+        )}
+        <div className='chamber-head__people'>
+          <span className='chamber-head__avatars'>
+            {view.players.map((player) => (
+              <span key={player.seat} className={player.alive ? 'chamber-head__avatar' : 'chamber-head__avatar chamber-head__avatar--out'} title={player.name}>
+                {player.avatar && <img src={player.avatar} alt='' />}
+              </span>
+            ))}
+          </span>
+          <small><FormattedMessage id='chamber.alive_of' defaultMessage='{alive} / {total} alive' values={{ alive: alivePlayers.length, total }} /></small>
+        </div>
       </div>
 
       {/* 아바타 원탁 */}
       <div className={view.phase === 'night' ? 'chamber-play__table chamber-play__table--night' : 'chamber-play__table'}>
+        <div className='chamber-play__disc' />
+
+        {/* 고발 화살표: 누가 누구를 고발했는지 */}
+        {view.phase === 'day' && (
+          <svg className='chamber-play__arrows' viewBox='0 0 100 100' aria-hidden='true'>
+            <defs>
+              <marker id='chamber-arrow' viewBox='0 0 10 10' refX='7' refY='5' markerWidth='4' markerHeight='4' orient='auto-start-reverse'>
+                <path d='M0 0 L10 5 L0 10 z' className='chamber-play__arrow-head' />
+              </marker>
+            </defs>
+            {Object.entries(view.votes).map(([voter, targetSeat]) => {
+              const from = positions[view.players.findIndex((player) => player.seat === Number(voter))];
+              const to = positions[view.players.findIndex((player) => player.seat === targetSeat)];
+              if (!from || !to) return null;
+              const length = Math.hypot(to.x - from.x, to.y - from.y) || 1;
+              const ux = (to.x - from.x) / length;
+              const uy = (to.y - from.y) / length;
+              const gap = size / 2 + 1;
+              return (
+                <line
+                  key={voter}
+                  className={Number(voter) === view.me ? 'chamber-play__arrow chamber-play__arrow--mine' : 'chamber-play__arrow'}
+                  x1={from.x + (ux * gap)}
+                  y1={from.y + (uy * gap)}
+                  x2={to.x - (ux * gap)}
+                  y2={to.y - (uy * gap)}
+                  markerEnd='url(#chamber-arrow)'
+                />
+              );
+            })}
+          </svg>
+        )}
+
         <div className='chamber-play__center'>
           {view.winner ? (
             <strong className='chamber-play__winner'>
@@ -198,6 +257,11 @@ export const ChamberPlay: React.FC<{ sessionId: string; onMoved?: () => void }> 
                 {(player.out?.by === 'vote' || player.out?.by === 'forfeit') && <span className='chamber-seat__mark chamber-seat__mark--expelled'><GameIcon name='x' /></span>}
               </span>
               {player.votes > 0 && view.phase === 'day' && <span className='chamber-seat__votes'>{player.votes}</span>}
+              {player.out && (
+                <span className={player.out.by === 'petrify' ? 'chamber-seat__tag chamber-seat__tag--stone' : 'chamber-seat__tag chamber-seat__tag--expelled'}>
+                  {player.out.by === 'petrify' ? <FormattedMessage id='chamber.petrified' defaultMessage='Petrified' /> : <FormattedMessage id='chamber.expelled' defaultMessage='Expelled' />}
+                </span>
+              )}
               <span className='chamber-seat__name'>{player.name}</span>
               {(player.out || player.role_name) && (
                 <span className={(player.out?.dark ?? player.dark) ? 'chamber-seat__role chamber-seat__role--dark' : 'chamber-seat__role'}>

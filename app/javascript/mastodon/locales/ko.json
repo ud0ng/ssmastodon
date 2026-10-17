@@ -1391,5 +1391,9 @@
   "chamber.notes": "기록 노트",
   "chamber.dark_chat": "비밀 단톡 (동료끼리만 보여요)",
   "chamber.send": "보내기",
-  "chamber.send_prophecy": "예언 전하기"
+  "chamber.send_prophecy": "예언 전하기",
+  "chamber.petrified": "석화",
+  "chamber.expelled": "퇴학",
+  "chamber.finished": "종료",
+  "chamber.alive_of": "{alive} / {total}명 생존"
 }
