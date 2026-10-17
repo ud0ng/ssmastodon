@@ -83,8 +83,18 @@ module Game
         end
 
         # 인원이 규칙에 맞지 않으면 안내 문구 (total: 신청자 포함 인원)
-        def invite_error(_total)
+        def invite_error(_total, _args = [])
           nil
+        end
+
+        # 신청 명령어의 [명령어/값] 에서 판 시작 상태로 넘길 값
+        def invite_state(_args)
+          {}
+        end
+
+        # 팀 인원이 달라도 되는 팀 대결인가 (도둑 지도): 웹 신청에서 우리 팀 인원 수를 고른다
+        def uneven_teams?
+          false
         end
       end
 

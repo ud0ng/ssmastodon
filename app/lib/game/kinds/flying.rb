@@ -51,7 +51,7 @@ module Game
           min_total - 1
         end
 
-        def invite_error(total)
+        def invite_error(total, _args = [])
           return if total >= min_total
 
           Game::Text.render(config['msg_players'], game: display_name, min: min_total, max: max_total)

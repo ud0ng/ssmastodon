@@ -54,7 +54,9 @@ class Api::V1::System::CommandsController < Api::BaseController
     opponents = Account.local.where(username: usernames).where.not(id: current_account.id).sort_by { |account| usernames.index(account.username) }
     return if opponents.empty?
 
-    ["#{system_mention} #{opponents.map { |account| "@#{account.acct}" }.join(' ')} [#{kind.config['command']}]", nil, 'private']
+    command = kind.config['command']
+    command = "#{command}/#{params[:team_size].to_i}" if kind.uneven_teams? && params[:team_size].to_i.positive?
+    ["#{system_mention} #{opponents.map { |account| "@#{account.acct}" }.join(' ')} [#{command}]", nil, 'private']
   end
 
   # text 가 오면 [명령어]를 따로 만들지 않고 그대로 올린다: 그냥 하는 말(시스템은 답하지 않는다) 또는 [명령어]가 섞인 말

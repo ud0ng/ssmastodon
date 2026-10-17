@@ -62,7 +62,7 @@ module Game
 
         kind = Game::Kinds.by_command(command)
         if kind
-          invite(kind)
+          invite(kind, args)
         elsif (disabled = Game::Kinds.disabled_by_command(command))
           reply(Game::Text.render(common['msg_disabled'], game: disabled.display_name))
         else
@@ -109,7 +109,7 @@ module Game
     end
 
     # 게임 신청: 상대 한 명을 태그해야 한다
-    def invite(kind)
+    def invite(kind, args = [])
       system = Game::System.account
       opponents = status.mentions.map(&:account).uniq.reject { |account| account.id == actor.id || account.id == system&.id || !account.local? }
 
@@ -118,7 +118,7 @@ module Game
         key = kind.max_opponents > 1 ? 'msg_many_opponents' : 'msg_one_opponent'
         return reply(Game::Text.render(common[key], game: kind.display_name, max: kind.max_opponents))
       end
-      error = kind.invite_error(opponents.size + 1)
+      error = kind.invite_error(opponents.size + 1, args)
       return reply(error) if error
 
       opponent = opponents.first
@@ -128,7 +128,7 @@ module Game
       end
 
       session = GameSession.transaction do
-        GameSession.create!(kind: kind.key, visibility: visibility, root_status_id: status.id).tap do |created|
+        GameSession.create!(kind: kind.key, visibility: visibility, root_status_id: status.id, state: kind.invite_state(args)).tap do |created|
           created.players.create!(account: actor, seat: 0, state: { 'accepted' => true })
           opponents.each_with_index { |account, index| created.players.create!(account: account, seat: index + 1) }
         end

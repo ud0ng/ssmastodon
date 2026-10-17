@@ -29,6 +29,7 @@ class Api::V1::System::GamesController < Api::BaseController
       max_opponents: @kind.max_opponents,
       min_opponents: @kind.min_opponents,
       team: @kind.team_game?,
+      uneven_teams: @kind.uneven_teams?,
       summary: guide[:summary],
       rules_text: guide[:rules],
       roles: guide[:roles],

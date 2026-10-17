@@ -88,25 +88,26 @@ module Game
         steps: ['[%{command}] @상대 … 로 신청 (최대 4명)', '턴마다 지도에서 이동할 칸을 눌러 보내기 (제자리는 [%{cmd_stay}])', '마주친 상황은 아래 버튼에서 주문 또는 협력/방해 고르기', '모두 고르면 그 턴의 일이 공개되고 다음 턴으로'],
       },
       'marauders_map' => {
-        summary: '%{student_name} 한 명과 %{prefect_name}들의 숨바꼭질, 웹 전용',
+        summary: '%{student_name} 팀과 %{prefect_name} 팀의 숨바꼭질, 웹 전용',
         rules: [
           { icon: 'compass', title: '지도', text: '호그와트의 방들이 복도와 계단으로 이어진 지도입니다 (%{width}×%{height}). 일부 길은 막혀 있습니다.' },
           { icon: 'moon', title: '비밀 통로', text: '멀리 떨어진 두 방을 바로 잇는 통로로, %{student_name}만 쓸 수 있습니다. 판마다 후보 중 %{secret_passages}곳만 열리고, 통로를 쓴 턴에는 도착한 방에 발자국이 남습니다.' },
           { icon: 'retry', title: '움직이는 계단', text: '%{stairs_every}턴마다 일부 연결이 바뀝니다. 지도에 점선으로 그려진 길이 계단이며, 바뀌기 전에 건너야 할 수도 있습니다.' },
-          { icon: 'hourglass', title: '턴 진행', text: '%{student_name}{이가} 먼저 이동을 정하고, 이어서 %{prefect_name} 팀이 동시에 정합니다. 모두 정하면 결과가 반영되고 중요한 사건만 공개됩니다.' },
+          { icon: 'hourglass', title: '턴 진행', text: '%{student_name} 팀이 먼저 이동을 정하고, 이어서 %{prefect_name} 팀이 동시에 정합니다. %{student_name} 팀은 한 덩어리로 움직이며, 팀원이 고른 방 중 가장 많이 고른 방(같으면 먼저 고른 방)으로 갑니다. 모두 정하면 결과가 반영되고 중요한 사건만 공개됩니다.' },
           { icon: 'foot', title: '발자국과 힌트', text: '목표 장소에 도착한 턴과 비밀 통로를 쓴 턴에는 정확한 방에 발자국이 남고, %{hint_every}턴마다 대략적인 구역만 공개됩니다.' },
-          { icon: 'scope', title: '체포', text: '%{prefect_name}{이가} %{student_name}{과와} 같은 방에 들어가거나 길에서 엇갈리면 붙잡힙니다.' },
+          { icon: 'scope', title: '체포', text: '%{prefect_name} 중 한 명이라도 %{student_name} 팀과 같은 방에 들어가거나 길에서 엇갈리면 팀 전체가 붙잡힙니다.' },
+          { icon: 'hands', title: '팀 인원', text: '%{student_name} 팀은 1명부터 %{prefect_name} 팀 인원 수까지, %{prefect_name} 팀은 1~%{max_opponents}명입니다.' },
           { icon: 'shield', title: '밸런스', text: '%{prefect_name}{이가} %{balance_prefects}명 이상이면 목표 장소가 %{targets_reduced}곳으로 줄고 투명 망토가 %{cloaks_bonus}개 늘어납니다.' },
         ],
         roles: [
-          { name: '%{student_name}', win: '목표 장소 %{targets}곳을 모두 다녀오면 승리합니다.', notes: ['내 위치는 %{prefect_name}에게 비밀이고, %{prefect_name}들의 위치는 모두 볼 수 있습니다.', '붙어 있는 방으로 한 칸(또는 제자리), 비밀 통로로는 먼 방까지 이동합니다.'] },
+          { name: '%{student_name}', win: '목표 장소 %{targets}곳을 모두 다녀오면 승리합니다.', notes: ['팀의 위치는 %{prefect_name}에게 비밀이고, %{prefect_name}들의 위치는 모두 볼 수 있습니다.', '붙어 있는 방으로 한 칸(또는 제자리), 비밀 통로로는 먼 방까지 이동합니다.', '팀 채팅([%{cmd_team}/내용])으로 %{student_name}끼리만 몰래 상의할 수 있습니다.'] },
           { name: '%{prefect_name}', win: '%{student_name}{을를} 붙잡거나, 최대 턴(%{max_turns}턴)이 지날 때까지 막으면 승리합니다.', notes: ['서로의 위치는 공개되지만 %{student_name} 위치는 모릅니다. 발자국·구역 힌트로 추리합니다.', '매 턴 한 칸만 이동합니다. 팀 채팅([%{cmd_team}/내용])으로 %{prefect_name}끼리만 몰래 상의할 수 있습니다.'] },
         ],
         items: [
           ['%{cmd_cloak}', '%{cloak_turns}턴 동안 발자국과 구역 힌트가 남지 않습니다. (%{cloaks}개, %{prefect_name}이 %{balance_prefects}명 이상이면 %{cloaks_bonus}개 추가)', 'cloak'],
           ['%{cmd_revelio}', '주변 %{revelio_range}칸 안에 %{student_name}{이가} 있는지만 알려 줍니다. 한 사람이 %{revelio}번.', 'bulb'],
         ],
-        steps: ['[%{command}] @사감1 @사감2 … 로 신청 (신청자가 %{student_name})', '지도에서 붙어 있는 방을 눌러 이동 (DM 으로 자동 전송, 제자리는 [%{cmd_hide}])', '아이템은 이동을 정하기 전에 지도 아래 버튼으로 사용'],
+        steps: ['[%{command}/학생 수] @학생팀원 … @사감1 @사감2 … 로 신청 (신청자가 %{student_name} 팀 첫 번째, 학생 수를 안 쓰면 1명)', '지도에서 붙어 있는 방을 눌러 이동 (DM 으로 자동 전송, 제자리는 [%{cmd_hide}])', '아이템은 이동을 정하기 전에 지도 아래 버튼으로 사용'],
       },
       'secret_chamber' => {
         summary: '학생들 사이에 숨은 비밀의 방 주인을 찾아내는 사회적 추리 게임',

@@ -2,7 +2,9 @@
 
 module Game
   module Web
-    # 도둑 지도 (웹 전용, 학생 1 vs 사감 1~4). 신청한 사람이 학생, 태그한 사람들이 사감.
+    # 도둑 지도 (웹 전용, 학생 팀 vs 사감 팀). 학생 팀은 1명부터 사감 팀 인원 수까지, 사감 팀은 1~4명.
+    # 신청할 때 학생 팀(신청자 포함)을 먼저 태그하고 이어서 사감 팀을 태그한다: [도둑지도/학생 수] @학생… @사감…
+    # 학생 팀은 한 덩어리로 움직인다 (각자 고른 방 중 가장 많이 고른 방으로, 같으면 먼저 고른 방). 팀 채팅은 학생 팀·사감 팀 각자.
     # 지도는 웹 컨텐츠 화면에서 보고, 행동은 마법 결투처럼 시스템에게 DM 으로 고른다 (지도에서 방을 누르면 DM 이 자동으로 나간다).
     #
     #   방은 가로×세로 격자(기본 5×5 = 25개)에 놓인 그래프이고, 복도·계단이 간선이다. 일부 길은 막혀 있다.
@@ -31,7 +33,7 @@ module Game
       FIELDS = (base_fields(name: '도둑 지도', command: '도둑지도', points_win: 10) + [
         F.new(key: 'width', type: :integer, default: 5, group: 'rules', label: '지도 가로 (방)', hint: '3~8, 가로×세로가 방 수 (기본 5×5 = 25개)'),
         F.new(key: 'height', type: :integer, default: 5, group: 'rules', label: '지도 세로 (방)', hint: '3~8'),
-        F.new(key: 'max_opponents', type: :integer, default: 4, group: 'rules', label: '사감 최대 인원', hint: '1~4'),
+        F.new(key: 'max_opponents', type: :integer, default: 4, group: 'rules', label: '사감 팀 최대 인원', hint: '1~4 (학생 팀은 1명부터 사감 팀 인원 수까지)'),
         F.new(key: 'max_turns', type: :integer, default: 20, group: 'rules', label: '최대 턴', hint: '지나면 사감 승리'),
         F.new(key: 'targets', type: :integer, default: 3, group: 'rules', label: '학생이 들러야 하는 목표 장소 수'),
         F.new(key: 'targets_reduced', type: :integer, default: 2, group: 'rules', label: '사감이 많을 때 목표 장소 수', hint: '사감이 아래 인원 이상이면 이 수로 줄입니다'),
@@ -50,18 +52,20 @@ module Game
         F.new(key: 'cmd_hide', type: :string, default: '숨기', group: 'commands', label: '제자리 명령어'),
         F.new(key: 'cmd_cloak', type: :string, default: '투명망토', group: 'commands', label: '투명 망토 명령어 (학생)'),
         F.new(key: 'cmd_revelio', type: :string, default: '레벨리오', group: 'commands', label: '호메눔 레벨리오 명령어 (사감)'),
-        F.new(key: 'cmd_team', type: :string, default: '팀채팅', group: 'commands', label: '팀 채팅 명령어 (사감)', hint: '[팀채팅/내용] 으로 사감끼리만 몰래 상의합니다'),
+        F.new(key: 'cmd_team', type: :string, default: '팀채팅', group: 'commands', label: '팀 채팅 명령어', hint: '[팀채팅/내용] 으로 같은 팀끼리만 몰래 상의합니다 (학생 팀·사감 팀 각자)'),
         F.new(key: 'msg_start', type: :text, group: 'messages', label: '시작',
-              default: "%{game} 시작! %{student}: %{player} / %{prefect}: %{players}\n지도는 이 컨텐츠 방에서 볼 수 있습니다. 턴마다 %{seconds}초 안에 움직일 방을 골라 주세요."),
+              default: "%{game} 시작!\n%{student}: %{player} vs %{prefect}: %{players}\n턴마다 %{seconds}초 안에 움직일 방을 골라 주세요."),
         F.new(key: 'msg_ask_student', type: :text, group: 'messages', label: 'DM: 학생 이동 고르기',
-              default: "%{turn}턴 | 지금 %{room} 에 있습니다. 갈 수 있는 방: %{rooms}\n[%{move}/방 이름] 으로 이동하거나 [%{hide}] 로 제자리에 숨으세요.\n남은 목표 장소: %{targets}\n투명 망토 %{cloaks}개: [%{cloak}]"),
+              default: "%{turn}턴\n[%{move}/방 이름] 으로 이동하거나 [%{hide}] 로 제자리에 숨으세요.\n\n갈 수 있는 방: %{rooms}\n남은 목표 장소: %{targets}\n투명 망토 %{cloaks}개: [%{cloak}]"),
         F.new(key: 'msg_ask_prefect', type: :text, group: 'messages', label: 'DM: 사감 이동 고르기',
-              default: "%{turn}턴 | 지금 %{room} 에 있습니다. 갈 수 있는 방: %{rooms}\n[%{move}/방 이름] 으로 이동하거나 [%{hide}] 로 제자리에 있으세요.\n호메눔 레벨리오 %{revelios}개: [%{revelio}]"),
-        F.new(key: 'msg_role_student', type: :text, group: 'messages', label: 'DM: 학생 시작 안내', default: "당신은 %{student}입니다. 목표 장소: %{targets}\n모두 다녀오면 승리합니다. %{prefect}에게 붙잡히지 마세요."),
-        F.new(key: 'msg_role_prefect', type: :text, group: 'messages', label: 'DM: 사감 시작 안내', default: "당신은 %{prefect}입니다. %{student}{을를} 같은 방에서 붙잡으면 승리합니다."),
+              default: "%{turn}턴\n[%{move}/방 이름] 으로 이동하거나 [%{hide}] 로 제자리에 있으세요.\n\n갈 수 있는 방: %{rooms}\n호메눔 레벨리오 %{revelios}개: [%{revelio}]"),
+        F.new(key: 'msg_role_student', type: :text, group: 'messages', label: 'DM: 학생 시작 안내', default: "당신은 %{student}입니다.\n%{prefect}에게 붙잡히지 않고 %{targets}에 모두 다녀오면 승리합니다."),
+        F.new(key: 'msg_role_prefect', type: :text, group: 'messages', label: 'DM: 사감 시작 안내', default: "당신은 %{prefect}입니다.\n%{student}{을를} 붙잡으면 승리합니다."),
+        F.new(key: 'msg_team_size', type: :text, group: 'messages', label: '팀 인원이 맞지 않음',
+              default: "%{game}은 %{student} 팀이 %{prefect} 팀보다 많을 수 없고, %{prefect} 팀은 1~%{max}명입니다.\n%{student} 팀(신청자 포함)을 먼저, 이어서 %{prefect} 팀을 태그해 주세요."),
         F.new(key: 'msg_chosen', type: :text, group: 'messages', label: 'DM: 선택 확인', default: '선택했습니다.'),
         F.new(key: 'msg_team', type: :text, group: 'messages', label: 'DM: 팀 채팅 전달', default: '[팀 채팅] %{player}: %{text}'),
-        F.new(key: 'msg_bad_move', type: :text, group: 'messages', label: 'DM: 갈 수 없는 방', default: '갈 수 없는 방입니다. 붙어 있는 방을 골라 주세요.'),
+        F.new(key: 'msg_bad_move', type: :text, group: 'messages', label: 'DM: 갈 수 없는 방', default: '갈 수 없는 방입니다.'),
         F.new(key: 'msg_wrong_time', type: :text, group: 'messages', label: 'DM: 지금은 할 수 없음', default: '지금은 할 수 없는 선택입니다.'),
         F.new(key: 'msg_no_item', type: :text, group: 'messages', label: 'DM: 아이템 없음', default: '%{item}{이가} 없습니다.'),
         F.new(key: 'msg_cloak_on', type: :text, group: 'messages', label: 'DM: 투명 망토 사용', default: '투명 망토를 썼습니다. %{turns}턴 동안 흔적이 남지 않습니다.'),
@@ -75,9 +79,9 @@ module Game
         F.new(key: 'msg_cloak', type: :text, group: 'messages', label: '망토', default: '지도에서 흔적이 희미해졌습니다.'),
         F.new(key: 'msg_revelio_found', type: :text, group: 'messages', label: '레벨리오: 있음', default: '%{player}{이가} 호메눔 레벨리오를 사용했습니다. 주변에 누군가 있습니다.'),
         F.new(key: 'msg_revelio_none', type: :text, group: 'messages', label: '레벨리오: 없음', default: '%{player}{이가} 호메눔 레벨리오를 사용했습니다. 아무도 없습니다.'),
-        F.new(key: 'msg_caught', type: :text, group: 'messages', label: '체포', default: '%{player}{이가} %{room}에서 %{target}{을를} 붙잡았습니다. %{prefect}의 승리!'),
-        F.new(key: 'msg_escaped', type: :text, group: 'messages', label: '학생 승리', default: '%{player}{이가} 목표 장소를 모두 다녀왔습니다. %{student}의 승리!'),
-        F.new(key: 'msg_limit', type: :text, group: 'messages', label: '시간 초과', default: '%{turns}턴이 지났습니다. %{student}{은는} 목표를 채우지 못했습니다. %{prefect}의 승리!'),
+        F.new(key: 'msg_caught', type: :text, group: 'messages', label: '체포', default: "%{player}{이가} %{room}에서 %{target}{을를} 붙잡았습니다.\n%{prefect}의 승리!"),
+        F.new(key: 'msg_escaped', type: :text, group: 'messages', label: '학생 승리', default: "%{player}{이가} 목표 장소를 모두 다녀왔습니다.\n%{student}의 승리!"),
+        F.new(key: 'msg_limit', type: :text, group: 'messages', label: '시간 초과', default: "%{turns}턴이 지났습니다. %{student}{은는} 목표를 채우지 못했습니다.\n%{prefect}의 승리!"),
       ]).freeze
 
       class << self
@@ -89,8 +93,34 @@ module Game
           true
         end
 
-        def max_opponents
+        def prefect_limit
           config['max_opponents'].to_i.clamp(1, 4)
+        end
+
+        # 학생 팀 + 사감 팀 (학생 수 ≤ 사감 수 ≤ 4) 에서 신청자를 뺀 최대 인원
+        def max_opponents
+          (prefect_limit * 2) - 1
+        end
+
+        def uneven_teams?
+          true
+        end
+
+        def student_count_from(args)
+          [Array(args).first.to_s.to_i, 1].max
+        end
+
+        def invite_state(args)
+          { 'student_count' => student_count_from(args) }
+        end
+
+        # total: 신청자 포함 전체 인원, args: [학생 수]
+        def invite_error(total, args = [])
+          students = student_count_from(args)
+          prefects = total - students
+          return if prefects >= 1 && students <= prefects && prefects <= prefect_limit
+
+          Game::Text.render(config['msg_team_size'], game: display_name, student: config['student_name'], prefect: config['prefect_name'], max: prefect_limit)
         end
 
         def continues_on_timeout?
@@ -102,8 +132,8 @@ module Game
         width = config['width'].to_i.clamp(3, 8)
         height = config['height'].to_i.clamp(3, 8)
         count = width * height
-        student = players.first
-        prefects = players.drop(1)
+        students = players.first(student_count)
+        prefects = players.drop(students.size)
         balanced = prefects.size >= config['balance_prefects'].to_i.clamp(1, 4)
 
         build_map!(width, height)
@@ -116,16 +146,18 @@ module Game
         targets = ((0...count).to_a - [start, *hubs, *near]).sample([wanted, count - 2 - near.size].min)
 
         state.merge!(
-          'positions' => { student.seat.to_s => start }.merge(prefects.each_with_index.to_h { |player, index| [player.seat.to_s, hubs[index]] }),
+          'student_count' => students.size,
+          'positions' => students.to_h { |player| [player.seat.to_s, start] }.merge(prefects.each_with_index.to_h { |player, index| [player.seat.to_s, hubs[index]] }),
           'targets' => targets, 'visited' => [], 'clues' => [], 'cloak' => 0,
           'cloaks_left' => config['cloaks'].to_i.clamp(0, 5) + (balanced ? config['cloaks_bonus'].to_i.clamp(0, 5) : 0),
           'revelio_left' => prefects.to_h { |player| [player.seat.to_s, config['revelio'].to_i.clamp(0, 5)] },
+          'team_chat' => { 'student' => [], 'prefect' => [] },
           'trail' => [start], 'phase' => 'student', 'moves' => {}, 'cloak_now' => false, 'revelio_now' => {}, 'log' => []
         )
         session.update!(turn: 1)
-        post(render(config['msg_start'], student: config['student_name'], prefect: config['prefect_name'], player: student,
+        post(render(config['msg_start'], student: config['student_name'], prefect: config['prefect_name'], player: students.map(&:name).join(', '),
                                          players: prefects.map(&:name).join(', '), **Game::Config.turn_time))
-        dm(student, render(config['msg_role_student'], student: config['student_name'], prefect: config['prefect_name'], targets: targets.map { |room| name_of(room) }.join(', ')))
+        students.each { |player| dm(player, render(config['msg_role_student'], student: config['student_name'], prefect: config['prefect_name'], targets: targets.map { |room| name_of(room) }.join(', '))) }
         prefects.each { |player| dm(player, render(config['msg_role_prefect'], student: config['student_name'], prefect: config['prefect_name'])) }
         ask_student!
       end
@@ -147,8 +179,6 @@ module Game
 
       def timeout!
         if state['phase'] == 'student'
-          state['moves'][players.first.seat.to_s] ||= { 'room' => state['positions'][players.first.seat.to_s] }
-          session.save!
           ask_prefects!
         else
           resolve!
@@ -170,6 +200,7 @@ module Game
           secret: student ? state['secret'].map { |a, b| { a: a, b: b } } : [],
           role: student ? 'student' : 'prefect',
           role_name: student ? config['student_name'] : config['prefect_name'],
+          student_name: config['student_name'], prefect_name: config['prefect_name'],
           me: player.seat,
           position: here,
           moves: my_turn ? adjacent(here, student: student) : [],
@@ -180,7 +211,7 @@ module Game
           end,
           targets: student ? state['targets'].map { |room| { room: room, visited: state['visited'].include?(room) } } : [],
           clues: state['clues'].map { |clue| clue.merge('room_name' => clue['room'] && name_of(clue['room'])) },
-          team_chat: student ? [] : Array(state['team_chat']),
+          team_chat: chat_of(student ? 'student' : 'prefect'),
           items: student ? { cloak: state['cloaks_left'].to_i } : { revelio: state['revelio_left'][seat].to_i },
           item_info: item_info,
           commands: ACTIONS.to_h { |key| [key, config["cmd_#{key}"]] },
@@ -205,7 +236,7 @@ module Game
           rooms: (0...room_count).map { |index| { id: index, name: name_of(index), x: index % state['width'], y: index / state['width'] } },
           edges: edges.map { |a, b| { a: a, b: b, stairs: stairs?(a, b) } },
           secret: state['secret'].map { |a, b| { a: a, b: b } },
-          role: 'spectator', role_name: player ? config['student_name'] : '관전', me: player&.seat, position: nil, moves: [],
+          role: 'spectator', role_name: player ? config['student_name'] : '관전', student_name: config['student_name'], prefect_name: config['prefect_name'], me: player&.seat, position: nil, moves: [],
           tokens: players.map { |other| { seat: other.seat, name: other.name, room: state['positions'][other.seat.to_s], student: student?(other), me: other.id == player&.id } },
           targets: state['targets'].map { |room| { room: room, visited: state['visited'].include?(room) } },
           clues: state['clues'].map { |clue| clue.merge('room_name' => clue['room'] && name_of(clue['room'])) },
@@ -229,7 +260,7 @@ module Game
           'clues' => Array(state['clues']).last(6).map { |clue| clue.merge('room_name' => clue['room'] && name_of(clue['room'])) },
           'log' => state['log'] || [],
           'max_turns' => config['max_turns'].to_i,
-          'student_seat' => players.first&.seat,
+          'student_seats' => student_seats,
           'student_name' => config['student_name'],
           'prefect_name' => config['prefect_name'],
           'phase' => state['phase'],
@@ -261,15 +292,37 @@ module Game
         ROOMS[room] || "복도 #{room - ROOMS.size + 1}"
       end
 
+      def student_count
+        [state['student_count'].to_i, 1].max.clamp(1, [players.size - 1, 1].max)
+      end
+
+      def student_seats
+        players.first(student_count).map(&:seat)
+      end
+
       def student?(player)
-        player.seat == players.first.seat
+        student_seats.include?(player.seat)
+      end
+
+      def students
+        players.first(student_count)
+      end
+
+      def prefects
+        players.drop(student_count)
+      end
+
+      # 팀 채팅 기록 (예전 판은 사감 팀 한 줄짜리 배열)
+      def chat_of(team)
+        chats = state['team_chat']
+        chats.is_a?(Hash) ? Array(chats[team]) : (team == 'prefect' ? Array(chats) : [])
       end
 
       def waiting_on
         if state['phase'] == 'student'
-          state['moves'].key?(players.first.seat.to_s) ? [] : [players.first]
+          students.reject { |player| state['moves'].key?(player.seat.to_s) }
         else
-          players.drop(1).reject { |player| state['moves'].key?(player.seat.to_s) }
+          prefects.reject { |player| state['moves'].key?(player.seat.to_s) }
         end
       end
 
@@ -380,25 +433,26 @@ module Game
         "#{ZONES_X[[x * 3 / state['width'], 2].min]} #{ZONES_Y[[y * 3 / state['height'], 2].min]}"
       end
 
-      # ── 턴: 학생 → 사감 팀 ──
+      # ── 턴: 학생 팀 → 사감 팀 ──
       def ask_student!
         state['phase'] = 'student'
         state['moves'] = {}
         state['cloak_now'] = false
         state['revelio_now'] = {}
-        student = players.first
-        here = state['positions'][student.seat.to_s]
+        here = state['positions'][students.first.seat.to_s]
         remaining = state['targets'].reject { |room| state['visited'].include?(room) }
-        dm(student, render(config['msg_ask_student'], turn: session.turn, room: name_of(here), rooms: adjacent(here, student: true).map { |room| name_of(room) }.join(', '),
-                                                      move: config['cmd_move'], hide: config['cmd_hide'], cloak: config['cmd_cloak'], cloaks: state['cloaks_left'].to_i,
-                                                      targets: remaining.map { |room| name_of(room) }.join(', ')))
+        students.each do |student|
+          dm(student, render(config['msg_ask_student'], turn: session.turn, room: name_of(here), rooms: adjacent(here, student: true).map { |room| name_of(room) }.join(', '),
+                                                        move: config['cmd_move'], hide: config['cmd_hide'], cloak: config['cmd_cloak'], cloaks: state['cloaks_left'].to_i,
+                                                        targets: remaining.map { |room| name_of(room) }.join(', ')))
+        end
         session.save!
         wait_for_turn!
       end
 
       def ask_prefects!
         state['phase'] = 'prefects'
-        players.drop(1).each do |player|
+        prefects.each do |player|
           here = state['positions'][player.seat.to_s]
           dm(player, render(config['msg_ask_prefect'], turn: session.turn, room: name_of(here), rooms: adjacent(here, student: false).map { |room| name_of(room) }.join(', '),
                                                        move: config['cmd_move'], hide: config['cmd_hide'], revelio: config['cmd_revelio'], revelios: state['revelio_left'][player.seat.to_s].to_i))
@@ -424,6 +478,7 @@ module Game
         room = arg.nil? ? here : room_from(arg)
         return dm(player, render(config['msg_bad_move'])) if room.nil? || (room != here && !adjacent(here, student: student).include?(room))
 
+        state['moves'].delete(seat) # 바꿔 고르면 순서를 새로 (같은 수일 때 먼저 고른 방이 이긴다)
         state['moves'][seat] = { 'room' => room }
         session.save!
         dm(player, render(config['msg_chosen']))
@@ -432,14 +487,26 @@ module Game
         student ? ask_prefects! : resolve!
       end
 
-      # 사감끼리만 하는 팀 채팅: 다른 사감에게 DM 으로 전달하고, 웹 지도 화면에도 남긴다 (학생에게는 보이지 않는다)
+      # 학생 팀이 고른 방 중 가장 많이 고른 방 (같으면 먼저 고른 방), 아무도 안 골랐으면 제자리
+      def team_room
+        votes = students.filter_map { |player| state.dig('moves', player.seat.to_s, 'room') }
+        return state['positions'][students.first.seat.to_s] if votes.empty?
+
+        counts = votes.tally
+        votes.max_by { |room| [counts[room], -votes.index(room)] }
+      end
+
+      # 같은 팀끼리만 하는 팀 채팅: 같은 팀 다른 사람에게 DM 으로 전달하고, 웹 지도 화면에도 남긴다 (상대 팀에게는 보이지 않는다)
       def team_chat!(player, args)
         text = Array(args).join('/').strip[0, TEAM_CHAT_LENGTH]
-        return dm(player, render(config['msg_wrong_time'])) if student?(player) || text.blank?
+        return dm(player, render(config['msg_wrong_time'])) if text.blank?
 
-        state['team_chat'] = (Array(state['team_chat']) + [{ 'name' => player.name, 'text' => text }]).last(TEAM_CHAT_KEEP)
+        team = student?(player) ? 'student' : 'prefect'
+        chats = state['team_chat'].is_a?(Hash) ? state['team_chat'] : { 'student' => [], 'prefect' => Array(state['team_chat']) }
+        chats[team] = (Array(chats[team]) + [{ 'name' => player.name, 'text' => text }]).last(TEAM_CHAT_KEEP)
+        state['team_chat'] = chats
         session.save!
-        players.drop(1).reject { |other| other.id == player.id }.each { |other| dm(other, render(config['msg_team'], player: player, text: text)) }
+        (team == 'student' ? students : prefects).reject { |other| other.id == player.id }.each { |other| dm(other, render(config['msg_team'], player: player, text: text)) }
       end
 
       def use_cloak!(player)
@@ -466,10 +533,10 @@ module Game
 
       def resolve!
         log = []
-        student = players.first
-        seat = student.seat.to_s
+        seat = students.first.seat.to_s
         from = state['positions'].dup
         moves = state['moves']
+        names = students.map(&:name).join(', ')
 
         if state['cloak_now']
           state['cloak'] = config['cloak_turns'].to_i.clamp(1, 5)
@@ -477,7 +544,10 @@ module Game
         end
         cloaked = state['cloak'].to_i.positive?
 
-        players.each { |player| state['positions'][player.seat.to_s] = moves.dig(player.seat.to_s, 'room') || from[player.seat.to_s] }
+        # 학생 팀은 한 덩어리로 움직인다
+        room = team_room
+        students.each { |player| state['positions'][player.seat.to_s] = room }
+        prefects.each { |player| state['positions'][player.seat.to_s] = moves.dig(player.seat.to_s, 'room') || from[player.seat.to_s] }
         here = state['positions'][seat]
         state['trail'] = Array(state['trail']) + [here] unless Array(state['trail']).last == here
 
@@ -491,11 +561,11 @@ module Game
           state['visited'] << here
           unless cloaked
             state['clues'] << { 'turn' => session.turn, 'kind' => 'target', 'room' => here }
+            log << render(config['msg_target'], room: name_of(here), count: state['visited'].size, total: state['targets'].size)
           end
-          log << render(config['msg_target'], room: name_of(here), count: state['visited'].size, total: state['targets'].size) unless cloaked
         end
 
-        players.drop(1).each do |prefect|
+        prefects.each do |prefect|
           next unless state['revelio_now'][prefect.seat.to_s]
 
           near = graph_distance(state['positions'][prefect.seat.to_s], here, edges) <= config['revelio_range'].to_i.clamp(1, 4)
@@ -503,7 +573,7 @@ module Game
           log << render(config[near ? 'msg_revelio_found' : 'msg_revelio_none'], player: prefect)
         end
 
-        catcher = players.drop(1).find do |prefect|
+        catcher = prefects.find do |prefect|
           now = state['positions'][prefect.seat.to_s]
           before = from[prefect.seat.to_s]
           now == here || (before == here && now == from[seat])
@@ -522,9 +592,9 @@ module Game
         turn_text = render(config['msg_turn'], turn: session.turn, lines: (log.presence || [render(config['msg_quiet'])]).join("\n"))
 
         if catcher
-          finish_team!(false, "#{turn_text}\n\n#{render(config['msg_caught'], player: catcher, target: student, room: name_of(here), prefect: config['prefect_name'])}")
+          finish_team!(false, "#{turn_text}\n\n#{render(config['msg_caught'], player: catcher, target: names, room: name_of(here), prefect: config['prefect_name'])}")
         elsif state['visited'].size >= state['targets'].size
-          finish_team!(true, "#{turn_text}\n\n#{render(config['msg_escaped'], player: student, student: config['student_name'])}")
+          finish_team!(true, "#{turn_text}\n\n#{render(config['msg_escaped'], player: names, student: config['student_name'])}")
         elsif session.turn >= config['max_turns'].to_i
           finish_team!(false, "#{turn_text}\n\n#{render(config['msg_limit'], turns: session.turn, prefect: config['prefect_name'], student: config['student_name'])}")
         else
@@ -534,10 +604,9 @@ module Game
         end
       end
 
-      # 학생 승리면 학생만, 사감 승리면 사감 모두 이긴다
+      # 학생 팀이 이기면 학생 팀 모두, 사감 팀이 이기면 사감 팀 모두 이긴다
       def finish_team!(student_won, message)
-        student = players.first
-        winners = student_won ? [student] : players.drop(1)
+        winners = student_won ? students : prefects
         players.each { |player| player.update!(result: winners.include?(player) ? 'win' : 'lose') }
         session.update!(status: 'finished', finished_at: Time.now.utc, deadline_at: nil)
         reward_lines = give_rewards!

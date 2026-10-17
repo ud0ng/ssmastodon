@@ -2,7 +2,8 @@
 
 require 'rails_helper'
 
-# 도둑 지도 (웹 전용, 학생 1 vs 사감): 학생이 먼저 → 사감 팀 동시, 모두 시스템에게 DM 으로 고른다
+# 도둑 지도 (웹 전용, 학생 팀 vs 사감 팀): 학생 팀이 먼저 → 사감 팀 동시, 모두 시스템에게 DM 으로 고른다
+# 신청: [도둑지도/학생 수] @학생팀원… @사감… (학생 수를 안 쓰면 신청자 혼자 학생)
 RSpec.describe Game::Web::MaraudersMap do
   let!(:system) { Fabricate(:account, username: 'system') }
   let!(:harry) { Fabricate(:account, username: 'harry') }
@@ -150,7 +151,8 @@ RSpec.describe Game::Web::MaraudersMap do
     relayed = Status.where(account: system, visibility: :direct).select { |status| status.text.include?('정문 쪽으로 몰자') }
     expect(relayed.map { |status| status.mentions.map(&:account_id) }.flatten).to eq [severus.id]
     dm(harry, '[팀채팅/난 학생]')
-    expect(session.state['team_chat'].size).to eq 1
+    expect(kind.view_for(session.players.first)[:team_chat]).to eq([{ 'name' => harry.username, 'text' => '난 학생' }]) # 학생 팀 채팅은 따로
+    expect(kind.view_for(session.players.to_a[1])[:team_chat].size).to eq 1
   end
 
   it 'shows spectators the student, the targets and the route live' do
@@ -164,6 +166,70 @@ RSpec.describe Game::Web::MaraudersMap do
     expect(view[:trail]).to eq [0]
     expect(view[:team_chat]).to eq []
     expect(described_class.spectatable?).to be true
+  end
+
+  describe 'with several students' do
+    let!(:extra) { %w(a1 a2).map { |name| Fabricate(:account, username: name) } }
+
+    # 학생 2명(harry, minerva) vs 사감 2명(severus, a1)
+    def start_teams!
+      toot(harry, '@system @minerva @severus @a1 [도둑지도/2]')
+      [minerva, severus, extra.first].each { |account| toot(account, '@system [수락]') }
+    end
+
+    it 'splits the players into a student team and a prefect team by the number in the command' do
+      start_teams!
+
+      expect(session.state['student_count']).to eq 2
+      expect(kind.send(:students).map(&:account_id)).to eq [harry.id, minerva.id]
+      expect(kind.send(:prefects).map(&:account_id)).to eq [severus.id, extra.first.id]
+      expect(session.state['positions'].values_at('0', '1').uniq.size).to eq 1 # 학생 팀은 같은 방에서 시작
+    end
+
+    it 'refuses a student team larger than the prefect team' do
+      toot(harry, '@system @minerva @severus [도둑지도/3]')
+
+      expect(GameSession.where(kind: 'marauders_map').count).to eq 0
+    end
+
+    it 'moves the student team to the most chosen room and waits for every student' do
+      start_teams!
+      plain_map!({ '0' => 0, '1' => 0, '2' => 24, '3' => 23 }, 'targets' => [10, 11, 13])
+
+      dm(harry, '[이동/그리핀도르 휴게실]')
+      expect(session.state['phase']).to eq 'student' # 아직 한 명 남음
+      dm(minerva, '[이동/그리핀도르 휴게실]')
+      expect(session.state['phase']).to eq 'prefects'
+      dm(severus, '[숨기]')
+      dm(extra.first, '[숨기]')
+
+      expect(session.state['positions'].values_at('0', '1')).to eq [1, 1]
+      expect(session.turn).to eq 2
+    end
+
+    it 'catches the whole team when one prefect finds them and gives every prefect the win' do
+      start_teams!
+      plain_map!({ '0' => 11, '1' => 11, '2' => 12, '3' => 24 }, 'targets' => [20, 21, 22])
+
+      dm(harry, '[숨기]')
+      dm(minerva, '[숨기]')
+      dm(severus, '[이동/마법약 교실]')
+      dm(extra.first, '[숨기]')
+
+      expect(session.status).to eq 'finished'
+      expect([harry, minerva].map { |account| session.player_for(account).result }).to eq %w(lose lose)
+      expect([severus, extra.first].map { |account| session.player_for(account).result }).to eq %w(win win)
+    end
+
+    it 'keeps each team chat inside its own team' do
+      start_teams!
+
+      dm(harry, '[팀채팅/비밀 통로로 가자]')
+
+      expect(kind.view_for(session.players.to_a[1])[:team_chat].map { |line| line['text'] }).to eq ['비밀 통로로 가자']
+      expect(kind.view_for(session.players.to_a[2])[:team_chat]).to eq []
+      expect(kind.view_for(session.players.to_a[2])[:secret]).to eq []
+    end
   end
 
   it 'reduces the targets and adds cloaks when there are many prefects' do

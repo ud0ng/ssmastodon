@@ -1460,20 +1460,6 @@
   stroke: none;
 }
 
-.map-play__room--target rect {
-  fill: color-mix(in srgb, var(--ct-point, #e0a030) 22%, var(--ct-panel-raised, #fff));
-}
-
-.map-play__room--reachable rect {
-  fill: color-mix(in srgb, var(--ct-point, #3a9) 30%, var(--ct-panel-raised, #fff));
-  stroke: none;
-}
-
-.map-play__room--selected rect {
-  fill: color-mix(in srgb, var(--ct-point, #e0a030) 45%, var(--ct-panel-raised, #fff));
-  stroke: none;
-}
-
 .map-play__chat,
 .chamber-card,
 .chamber-notes,
@@ -1855,15 +1841,15 @@
     cursor: pointer;
 
     rect {
-      fill: color-mix(in srgb, var(--ct-point, #e0603c) 38%, #f6ead0);
-      stroke: var(--ct-point, #e0603c);
+      fill: #f1d68a;
+      stroke: #9a6a1e;
       stroke-opacity: 1;
       stroke-width: 3;
-      filter: drop-shadow(0 0 6px color-mix(in srgb, var(--ct-point, #e0603c) 55%, transparent));
+      filter: drop-shadow(0 0 6px #c9922e88);
     }
 
     &:hover rect {
-      fill: color-mix(in srgb, var(--ct-point, #e0603c) 60%, #f6ead0);
+      fill: #e8c06a;
     }
 
     text {
@@ -1872,7 +1858,8 @@
   }
 
   &--selected rect {
-    stroke: var(--ct-point, #e0603c);
+    fill: #ecd9a0;
+    stroke: #7a4a14;
     stroke-opacity: 0.9;
     stroke-width: 3;
   }
@@ -1893,4 +1880,114 @@
   fill: #e8c06a;
   stroke: #9a6a1e;
   filter: drop-shadow(0 0 6px #c9922e88);
+}
+
+// 도둑 지도: 방 사이 틈의 복도·계단, 칸 위의 비밀 통로, 잉크 그림, 범례
+.map-play__edge {
+  stroke-width: 6;
+
+  &--stairs {
+    stroke-dasharray: 0.1 8;
+    stroke-width: 6;
+  }
+}
+
+.map-play__edge-hit {
+  stroke: transparent;
+  stroke-width: 22;
+  cursor: help;
+}
+
+.map-play__secret-halo {
+  fill: none;
+  stroke: #ead9ae;
+  stroke-linecap: round;
+  stroke-opacity: 0.8;
+  stroke-width: 8;
+  pointer-events: none;
+}
+
+.map-play__secret {
+  fill: none;
+  stroke: #6b3fa0;
+  stroke-dasharray: 9 7;
+  stroke-linecap: round;
+  stroke-width: 3.5;
+  pointer-events: none;
+}
+
+.map-play__secret-end {
+  cursor: help;
+
+  circle {
+    fill: #6b3fa0;
+    stroke: #ead9ae;
+    stroke-width: 2.5;
+  }
+
+  .map-glyph {
+    fill: #ead9ae;
+    stroke: #ead9ae;
+  }
+}
+
+.map-glyph {
+  fill: #3a2814;
+  stroke: #3a2814;
+
+  &--foot,
+  &--footprint {
+    fill: #4a2d12;
+    stroke: none;
+  }
+
+  &--target {
+    fill: #a0701c;
+    stroke: #5a3e22;
+    stroke-width: 0.8;
+  }
+
+  &--visited {
+    stroke: #2f6b3a;
+    fill: none;
+  }
+
+  &--eye {
+    fill: #6b3fa0;
+    stroke: #6b3fa0;
+  }
+
+  &--stairs {
+    fill: none;
+  }
+}
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--ct-dim, #888);
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .map-play__edge {
+    stroke-opacity: 0.85;
+  }
+
+  .map-play__secret-halo {
+    stroke: transparent;
+  }
+
+  .map-legend__swatch {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
 }

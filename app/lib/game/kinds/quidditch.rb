@@ -80,7 +80,7 @@ module Game
           true
         end
 
-        def invite_error(total)
+        def invite_error(total, _args = [])
           return if total.even? && total.between?(min_total, max_total)
 
           Game::Text.render(config['msg_uneven'], game: display_name, min: min_total, max: max_total)

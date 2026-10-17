@@ -1,5 +1,5 @@
 // 도둑 지도 (웹 전용) 진행판: 호그와트 방 그래프 지도. 갈 수 있는 방을 누르면 시스템에게 DM 으로 자동 전송된다.
-// 학생: 전체 지도 + 내 위치 + 목표 장소 + 사감 위치 / 사감: 사감 위치 + 공개된 발자국·구역 기록.
+// 학생 팀: 전체 지도 + 팀 위치 + 목표 장소 + 사감 위치 + 팀 채팅 / 사감 팀: 사감 위치 + 공개된 발자국·구역 기록 + 팀 채팅.
 // 서버: Game::Web::MaraudersMap#view_for (GET /api/v1/system/sessions/:id/view), 명령은 POST /api/v1/system/commands
 import { useCallback, useEffect, useState } from 'react';
 
@@ -9,6 +9,8 @@ import { apiRequestGet, apiRequestPost } from 'mastodon/api';
 import { GameIcon } from 'mastodon/components/game_icons';
 
 import { AvatarClip, AvatarPin, BoardHeader, BoardTip, useBoardTip } from './board_header';
+import type { MapGlyphName } from './map_glyphs';
+import { MapGlyph } from './map_glyphs';
 
 interface Room { id: number; name: string; x: number; y: number }
 interface Token { seat: number; name: string; room: number; student: boolean; me: boolean }
@@ -23,6 +25,8 @@ interface MapView {
   secret: { a: number; b: number }[];
   role: 'student' | 'prefect' | 'spectator';
   role_name: string;
+  student_name?: string;
+  prefect_name?: string;
   position: number | null;
   players: { seat: number; name: string; account_id: string; avatar?: string | null; student: boolean }[];
   trail?: number[];
@@ -49,8 +53,34 @@ interface MapView {
 }
 
 const REFRESH_MS = 3_000;
-const CELL = 120;
+// 한 칸(방 + 사이 길)의 크기. 방 사이 틈(GAP)에 복도·계단을 직선으로 그린다.
+const CELL = 132;
+const GAP = 30;
+const INSET = GAP / 2;
+const TILE = CELL - GAP;
 const PAD = 12;
+
+const CLUE_GLYPH: Record<string, MapGlyphName> = { footprint: 'foot', target: 'target', revelio: 'eye' };
+
+// 범례 견본에 쓰는 작은 선
+const LegendLine: React.FC<{ kind: 'corridor' | 'stairs' | 'secret' }> = ({ kind }) => (
+  <svg className='map-legend__swatch' viewBox='0 0 40 16' width={40} height={16} aria-hidden>
+    {kind === 'secret' ? (
+      <>
+        <path d='M4 12Q20 -4 36 12' className='map-play__secret-halo' />
+        <path d='M4 12Q20 -4 36 12' className='map-play__secret' />
+      </>
+    ) : (
+      <line x1={4} y1={8} x2={36} y2={8} className={kind === 'stairs' ? 'map-play__edge map-play__edge--stairs' : 'map-play__edge'} />
+    )}
+  </svg>
+);
+
+const LegendGlyph: React.FC<{ name: MapGlyphName }> = ({ name }) => (
+  <svg className='map-legend__swatch map-legend__swatch--glyph' viewBox='0 0 20 20' width={20} height={20} aria-hidden>
+    <MapGlyph name={name} x={1} y={1} size={18} />
+  </svg>
+);
 
 export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => void }> = ({ sessionId, onMoved }) => {
   const [view, setView] = useState<MapView | null>(null);
@@ -126,7 +156,45 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
   const myRoom = (chosen && chosen.turn === view.turn ? chosen.room : null) ?? view.planned_room ?? view.position;
   const student = view.role === 'student';
   const prefect = view.role === 'prefect';
+  const studentName = view.student_name ?? view.role_name;
+  const prefectName = view.prefect_name ?? '';
   const trailPoints = (view.trail ?? []).map((id) => byId.get(id)).filter((room): room is Room => Boolean(room)).map((room) => center(room).join(','));
+  const hasStairs = view.edges.some((edge) => edge.stairs);
+  const hasFootprint = view.clues.some((clue) => clue.kind === 'footprint');
+
+  // 이웃한 두 방 사이 틈에 그리는 직선 (가로 ㅡ / 세로 ㅣ). 이웃이 아니면 중심끼리 잇는다.
+  const gapLine = (a: Room, b: Room) => {
+    const [ax, ay] = center(a);
+    const [bx, by] = center(b);
+    const near = Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
+    if (!near) return { x1: ax, y1: ay, x2: bx, y2: by };
+    const half = (CELL / 2) - INSET;
+    if (a.y === b.y) {
+      const dir = b.x > a.x ? 1 : -1;
+      return { x1: ax + (dir * half), y1: ay, x2: bx - (dir * half), y2: by };
+    }
+    const dir = b.y > a.y ? 1 : -1;
+    return { x1: ax, y1: ay + (dir * half), x2: bx, y2: by - (dir * half) };
+  };
+
+  // 비밀 통로: 두 방 안쪽에서 시작해 칸 위를 휘어 지나는 점선. 양 끝에 열쇠 구멍 표시.
+  const secretPath = (a: Room, b: Room) => {
+    const [ax, ay] = center(a);
+    const [bx, by] = center(b);
+    const dx = bx - ax;
+    const dy = by - ay;
+    const length = Math.hypot(dx, dy) || 1;
+    const reach = (TILE / 2) - 14;
+    const ux = dx / length;
+    const uy = dy / length;
+    // 방 이름(위)과 말(가운데)을 피해 아래쪽에 붙인다
+    const low = (y: number, cy: number) => Math.max(y, cy + 18);
+    const start = [ax + (ux * reach), low(ay + (uy * reach), ay)];
+    const end = [bx - (ux * reach), low(by - (uy * reach), by)];
+    const bow = Math.min(60, length * 0.18);
+    const control = [(ax + bx) / 2 - (uy * bow), (ay + by) / 2 + (ux * bow)];
+    return { start, end, d: `M${start[0]} ${start[1]} Q${control[0]} ${control[1]} ${end[0]} ${end[1]}` };
+  };
 
   const handleRoom = (room: Room) => {
     if (!canPick) return;
@@ -179,35 +247,42 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
         <rect x={0} y={0} width={svgWidth} height={svgHeight} rx={18} filter='url(#map-paper)' pointerEvents='none' />
         <rect x={0} y={0} width={svgWidth} height={svgHeight} rx={18} fill='url(#map-vignette)' pointerEvents='none' />
         <rect className='map-play__frame' x={PAD / 2} y={PAD / 2} width={svgWidth - PAD} height={svgHeight - PAD} rx={14} />
+
+        {/* 방 사이 틈의 복도(실선)와 움직이는 계단(점선) */}
         {view.edges.map((edge) => {
           const a = byId.get(edge.a);
           const b = byId.get(edge.b);
           if (!a || !b) return null;
-          const [x1, y1] = center(a);
-          const [x2, y2] = center(b);
-          return <line key={`${edge.a}-${edge.b}`} x1={x1} y1={y1} x2={x2} y2={y2} className={edge.stairs ? 'map-play__edge map-play__edge--stairs' : 'map-play__edge'} />;
-        })}
-        {view.secret.map((edge) => {
-          const a = byId.get(edge.a);
-          const b = byId.get(edge.b);
-          if (!a || !b) return null;
-          const [x1, y1] = center(a);
-          const [x2, y2] = center(b);
-          return <line key={`s${edge.a}-${edge.b}`} x1={x1} y1={y1} x2={x2} y2={y2} className='map-play__edge map-play__edge--secret' />;
+          const line = gapLine(a, b);
+          const title = edge.stairs ? '움직이는 계단' : '복도';
+          const lines = edge.stairs ? ['점선 · 몇 턴마다 연결이 바뀝니다'] : ['방과 방을 잇는 길'];
+          return (
+            <g
+              key={`${edge.a}-${edge.b}`}
+              onMouseEnter={(event) => { board.api.show(event.currentTarget, `${title}: ${a.name} ↔ ${b.name}`, lines); }}
+              onMouseLeave={board.api.hide}
+            >
+              <line {...line} className={edge.stairs ? 'map-play__edge map-play__edge--stairs' : 'map-play__edge'} />
+              <line {...line} className='map-play__edge-hit' />
+            </g>
+          );
         })}
 
         {/* 학생이 지나온 길 (관전·끝난 판) */}
         {view.revealed && trailPoints.length > 1 && <polyline className='map-play__trail' points={trailPoints.join(' ')} />}
 
         {view.rooms.map((room) => {
-          const x = PAD + (room.x * CELL) + 8;
-          const y = PAD + (room.y * CELL) + 8;
+          const x = PAD + (room.x * CELL) + INSET;
+          const y = PAD + (room.y * CELL) + INSET;
+          const mid = TILE / 2;
           const reachable = canPick && view.moves.includes(room.id);
           const here = room.id === view.position;
           const clue = lastClue.get(room.id);
-          // 내 말은 방금 고른 방에 바로 가 있다 (출발한 방에는 흐린 표시만)
-          const tokens = view.tokens.filter((token) => (token.me && view.position !== null ? myRoom === room.id : token.room === room.id));
+          // 내 팀 말은 방금 고른 방에 바로 가 있다 (출발한 방에는 흐린 표시만)
+          const follows = (token: Token) => (student ? token.student : token.me) && view.position !== null;
+          const tokens = view.tokens.filter((token) => (follows(token) ? myRoom === room.id : token.room === room.id));
           const origin = view.position === room.id && myRoom !== room.id;
+          const spread = tokens.length > 3 ? 22 : 30;
           return (
             <g
               key={room.id}
@@ -216,6 +291,7 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
               onMouseEnter={(event) => {
                 const lines = [
                   targets.has(room.id) ? (targets.get(room.id) ? '목표 장소 (다녀옴)' : '목표 장소') : null,
+                  clue ? ({ footprint: '발자국이 남아 있습니다', target: '누군가 다녀간 흔적', revelio: '호메눔 레벨리오를 쓴 곳' }[clue.kind] ?? null) : null,
                   tokens.length > 0 ? `${tokens.map((token) => token.name).join(', ')}` : null,
                   reachable ? '눌러서 이동' : null,
                 ].filter((line): line is string => Boolean(line));
@@ -223,33 +299,71 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
               }}
               onMouseLeave={board.api.hide}
             >
-              <rect x={x} y={y} width={CELL - 16} height={CELL - 16} rx={8} />
-              <text x={x + ((CELL - 16) / 2)} y={y + 22} textAnchor='middle' className='map-play__name'>{room.name}</text>
-              {origin && <circle className='map-play__origin' cx={x + ((CELL - 16) / 2)} cy={y + ((CELL - 16) / 2)} r={14} />}
-              {targets.has(room.id) && <GameIcon name={targets.get(room.id) ? 'check' : 'star'} x={x + ((CELL - 16) / 2) - 9} y={y + CELL - 16 - 26} size={18} />}
-              {clue && (
-                <GameIcon name={{ footprint: 'foot', target: 'sparkle', revelio: 'bulb' }[clue.kind] ?? 'sparkle'} x={x + (CELL - 30) - 8} y={y + 6} size={16} />
-              )}
+              <rect x={x} y={y} width={TILE} height={TILE} rx={8} />
+              <text x={x + mid} y={y + 22} textAnchor='middle' className='map-play__name'>{room.name}</text>
+              {origin && <circle className='map-play__origin' cx={x + mid} cy={y + mid} r={14} />}
+              {targets.has(room.id) && <MapGlyph name={targets.get(room.id) ? 'visited' : 'target'} x={x + mid - 9} y={y + TILE - 28} size={18} />}
+              {clue && CLUE_GLYPH[clue.kind] && <MapGlyph name={CLUE_GLYPH[clue.kind]} x={x + TILE - 24} y={y + 6} size={17} className={`map-glyph--${clue.kind}`} />}
               {tokens.map((token, index) => (
                 <AvatarPin
                   key={token.seat}
-                  x={x + ((CELL - 16) / 2) + ((index - ((tokens.length - 1) / 2)) * 30)}
-                  y={y + ((CELL - 16) / 2)}
+                  x={x + mid + ((index - ((tokens.length - 1) / 2)) * spread)}
+                  y={y + mid}
                   r={12}
                   name={token.name}
                   avatar={view.players.find((person) => person.seat === token.seat)?.avatar}
-                  color={token.student ? '#c0392b' : 'var(--ct-point, #3f7fd0)'}
+                  color={token.student ? '#c0392b' : '#2f5f8f'}
                   ring={token.student ? 'student' : token.me ? 'me' : null}
                   tip={board.api}
-                  lines={[token.student ? view.role_name === '학생' ? '학생' : '도망자' : '추적자']}
+                  lines={[token.student ? studentName : prefectName]}
                 />
               ))}
+            </g>
+          );
+        })}
+
+        {/* 비밀 통로: 칸 위에 점선으로 겹쳐 그린다 (학생 팀과 관전자만 보임) */}
+        {view.secret.map((edge) => {
+          const a = byId.get(edge.a);
+          const b = byId.get(edge.b);
+          if (!a || !b) return null;
+          const path = secretPath(a, b);
+          return (
+            <g key={`s${edge.a}-${edge.b}`} className='map-play__secret-wrap'>
+              <path d={path.d} className='map-play__secret-halo' />
+              <path d={path.d} className='map-play__secret' />
+              {[[path.start, a, b], [path.end, b, a]].map(([point, from, to]) => {
+                const [px, py] = point as number[];
+                const target = to as Room;
+                return (
+                  <g
+                    key={(from as Room).id}
+                    className='map-play__secret-end'
+                    onMouseEnter={(event) => { board.api.show(event.currentTarget, '비밀 통로', [`${(from as Room).name} → ${target.name}`, '학생 팀만 쓸 수 있습니다']); }}
+                    onMouseLeave={board.api.hide}
+                  >
+                    <circle cx={px} cy={py} r={11} />
+                    <MapGlyph name='secret' x={px - 7} y={py - 7} size={14} />
+                  </g>
+                );
+              })}
             </g>
           );
         })}
       </svg>
       <BoardTip tip={board.tip} />
       </div>
+
+      {/* 범례: 지도 위 그림이 무엇인지 */}
+      <ul className='map-legend'>
+        <li><LegendLine kind='corridor' /><FormattedMessage id='map.legend.corridor' defaultMessage='Corridor' /></li>
+        {hasStairs && <li><LegendLine kind='stairs' /><FormattedMessage id='map.legend.stairs' defaultMessage='Moving stairs (dotted, change every few turns)' /></li>}
+        {(student || view.revealed) && <li><LegendLine kind='secret' /><FormattedMessage id='map.legend.secret' defaultMessage='Secret passage (student team only)' /></li>}
+        <li><LegendGlyph name='target' /><FormattedMessage id='map.legend.target' defaultMessage='Goal room' /></li>
+        {student || view.revealed ? <li><LegendGlyph name='visited' /><FormattedMessage id='map.legend.visited' defaultMessage='Visited' /></li> : null}
+        {(hasFootprint || prefect || view.revealed) && <li><LegendGlyph name='foot' /><FormattedMessage id='map.legend.foot' defaultMessage='Footprints (left on the room where a secret passage ended)' /></li>}
+        {prefect && <li><LegendGlyph name='eye' /><FormattedMessage id='map.legend.eye' defaultMessage='Revelio used here' /></li>}
+      </ul>
 
       <div className='maze-play__foot'>
         <p className='maze-play__hint'>
@@ -293,8 +407,8 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
         </div>}
       </div>
 
-      {/* 사감 팀 채팅: 학생에게는 보이지 않는다 */}
-      {prefect && (
+      {/* 팀 채팅: 같은 팀(학생 팀·사감 팀)끼리만 보인다 */}
+      {(student || prefect) && (
         <div className='map-play__chat'>
           <strong className='map-play__chat-title'>
             <FormattedMessage id='map.team_chat' defaultMessage='Team chat' />

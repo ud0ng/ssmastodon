@@ -49,6 +49,7 @@ interface GameInfo {
   max_opponents: number;
   min_opponents?: number;
   team?: boolean;
+  uneven_teams?: boolean;
   summary: string;
   rules_text?: { icon: string; title: string; text: string; visual?: string | null; nodes?: string[]; table?: { head: string[]; rows: string[][] } | null }[];
   roles?: { name: string | null; win: string; notes: string[] }[];
@@ -84,8 +85,8 @@ const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => 
       onBusy();
       return;
     }
-    dispatch(openModal({ modalType: 'CHALLENGE', modalProps: { gameKey: game.key, name: game.name, maxOpponents: game.max_opponents, minOpponents: game.min_opponents ?? 1, team: game.team ?? false } }));
-  }, [dispatch, game.key, game.name, game.max_opponents, game.min_opponents, game.team, game.busy, onBusy]);
+    dispatch(openModal({ modalType: 'CHALLENGE', modalProps: { gameKey: game.key, name: game.name, maxOpponents: game.max_opponents, minOpponents: game.min_opponents ?? 1, team: (game.team ?? false) || (game.uneven_teams ?? false), unevenTeams: game.uneven_teams ?? false } }));
+  }, [dispatch, game.key, game.name, game.max_opponents, game.min_opponents, game.team, game.uneven_teams, game.busy, onBusy]);
 
   const openEvent = useCallback(() => {
     if (game.busy) {

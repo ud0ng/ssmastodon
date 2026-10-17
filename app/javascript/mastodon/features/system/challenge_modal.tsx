@@ -30,10 +30,12 @@ interface Props {
   minOpponents?: number;
   // 팀 대결(퀴디치): 우리 팀을 먼저 고르고 상대 팀을 고른다
   team?: boolean;
+  // 팀 인원이 달라도 되는 팀 대결(도둑 지도): 우리 팀은 1명부터, 상대 팀은 우리 팀 인원 이상 ~ 최대
+  unevenTeams?: boolean;
   onClose: () => void;
 }
 
-const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOpponents = 1, team = false, onClose }) => {
+const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOpponents = 1, team = false, unevenTeams = false, onClose }) => {
   const intl = useIntl();
   const history = useHistory();
   const [members, setMembers] = useState<Member[]>([]);
@@ -66,16 +68,19 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
   // 팀 대결 인원: 신청자를 포함한 전체가 짝수이고 양 팀이 같다. 우리 팀(나 포함) 크기 = 팀원 수 + 1
   const maxTotal = maxOpponents + 1;
   const minTotal = minOpponents + 1;
-  const minMates = Math.max(Math.ceil(minTotal / 2) - 1, 1);
-  const maxMates = Math.max(Math.floor(maxTotal / 2) - 1, minMates);
+  // 인원이 다른 팀 대결: 상대 팀 최대 = (최대 상대 수 + 1) / 2
+  const rivalMax = unevenTeams ? Math.floor(maxTotal / 2) + (maxTotal % 2) : 0;
+  const minMates = unevenTeams ? 0 : Math.max(Math.ceil(minTotal / 2) - 1, 1);
+  const maxMates = unevenTeams ? rivalMax - 1 : Math.max(Math.floor(maxTotal / 2) - 1, minMates);
   const teamSize = picked.length + 1;
+  const rivalCap = unevenTeams ? rivalMax : teamSize;
 
   const toggle = useCallback(
     (acct: string) => {
       if (team && step === 'rivals') {
         setRivals((current) => {
           if (current.includes(acct)) return current.filter((item) => item !== acct);
-          return current.length >= teamSize ? current : [...current, acct];
+          return current.length >= rivalCap ? current : [...current, acct];
         });
         return;
       }
@@ -87,13 +92,13 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
         return current.length >= maxOpponents ? current : [...current, acct];
       });
     },
-    [team, step, teamSize, maxMates, maxOpponents],
+    [team, step, rivalCap, maxMates, maxOpponents],
   );
 
   const send = useCallback(() => {
     setBusy(true);
     setFailed(false);
-    sendCommand({ kind: gameKey, opponents: team ? [...picked, ...rivals] : picked })
+    sendCommand({ kind: gameKey, opponents: team ? [...picked, ...rivals] : picked, ...(unevenTeams ? { team_size: picked.length + 1 } : {}) })
       .then(() => waitForSession(gameKey))
       .then((sessionId) => {
         if (sessionId) {
@@ -122,6 +127,8 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
               {team ? (
                 step === 'mine' ? (
                   <FormattedMessage id='system.game.pick_team_mine' defaultMessage='Pick your team (you plus {min}-{max} people)' values={{ min: minMates, max: maxMates }} />
+                ) : unevenTeams ? (
+                  <FormattedMessage id='system.game.pick_team_rival_range' defaultMessage='Pick {min}-{max} people for the other team' values={{ min: teamSize, max: rivalMax }} />
                 ) : (
                   <FormattedMessage id='system.game.pick_team_rival' defaultMessage='Pick {count} people for the other team' values={{ count: teamSize }} />
                 )
@@ -140,7 +147,7 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
               <FormattedMessage id='system.game.team_mine' defaultMessage='Your team' /> {picked.length + 1}
             </span>
             <span className={step === 'rivals' ? 'challenge-modal__step challenge-modal__step--on' : 'challenge-modal__step'}>
-              <FormattedMessage id='system.game.team_rival' defaultMessage='Other team' /> {rivals.length}/{teamSize}
+              <FormattedMessage id='system.game.team_rival' defaultMessage='Other team' /> {unevenTeams ? `${rivals.length}/${teamSize}~${rivalMax}` : `${rivals.length}/${teamSize}`}
             </span>
           </div>
         )}
@@ -215,7 +222,7 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
                   <FormattedMessage id='system.game.next' defaultMessage='Next' />
                 </Button>
               ) : (
-                <Button disabled={busy || (team ? rivals.length !== teamSize : picked.length < minOpponents)} onClick={send}>
+                <Button disabled={busy || (team ? (unevenTeams ? rivals.length < teamSize || rivals.length > rivalMax : rivals.length !== teamSize) : picked.length < minOpponents)} onClick={send}>
                   <FormattedMessage id='system.game.invite' defaultMessage='Challenge' />
                 </Button>
               )}
