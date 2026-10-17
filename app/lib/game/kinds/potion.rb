@@ -21,7 +21,7 @@ module Game
       }.freeze
 
       FIELDS = (base_fields(name: '마법약', command: '마법약', points_win: 10, points_draw: 3) + [
-        F.new(key: 'cmd_brew', type: :string, default: '조합', group: 'commands', label: '조합 명령어', hint: '[조합] 재료 번호 … 예: [조합] 1 5 3 (0번은 첫 자리 불가)'),
+        F.new(key: 'cmd_brew', type: :string, default: '조합', group: 'commands', label: '조합 명령어', hint: '[조합] 재료 번호 … 예: [조합] 1 5 3 또는 [조합] 153 (0번은 첫 자리 불가)'),
         F.new(key: 'cmd_shield', type: :string, default: '방어권', group: 'commands', label: '방어권 명령어', hint: '이번 라운드 공개 결과 중 하나를 가린다'),
         F.new(key: 'cmd_retry', type: :string, default: '재시도권', group: 'commands', label: '재시도권 명령어', hint: '이번 라운드에 두 번 조합할 수 있다'),
         F.new(key: 'ingredient_count', type: :integer, default: 10, group: 'rules', label: '보여 줄 재료 수 (0번부터)'),
@@ -210,8 +210,13 @@ module Game
       end
 
       # [조합/재료/재료] 또는 [조합] 뒤의 재료들. 번호(0부터)나 재료 이름. 0번 재료는 첫 번째 자리에 못 온다.
+      # 재료가 10개 이하면 번호를 붙여서 [조합] 123 처럼 보내도 한 자리씩 읽는다.
       def parse_guess(args, text)
         words = args.presence || text.to_s.split(Game::Engine::COMMAND, 2).last.to_s.gsub(/@\S+/, '').split(/[\s,→>]+/).compact_blank
+        guess_from(words) || (state['shown'].size <= 10 ? guess_from(words.flat_map { |word| word.match?(/\A\d{2,}\z/) ? word.chars : [word] }) : nil)
+      end
+
+      def guess_from(words)
         picked = words.map do |word|
           index = Integer(word, exception: false)
           index ? (state['shown'][index] if index.between?(0, state['shown'].size - 1)) : state['shown'].find { |name| name.delete(' ') == word.delete(' ') }

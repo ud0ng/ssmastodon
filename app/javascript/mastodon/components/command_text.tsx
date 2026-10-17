@@ -12,7 +12,8 @@ import { GameIcon, stripEmoji } from 'mastodon/components/game_icons';
 const PATTERN = /(\[[^\]\n]+\]|\([^)\n]+\)|（[^）\n]+）)/;
 const HEARTS = /(❤️?|🖤|💔)/u;
 
-const HEART_ICON: Record<string, string> = { '❤': 'heart-fill', '🖤': 'heart', '💔': 'heart-broken' };
+// 깨진 하트(💔)는 아이콘 없이 지운다
+const HEART_ICON: Record<string, string> = { '❤': 'heart-fill', '🖤': 'heart' };
 
 export interface TextPerson {
   name: string;
@@ -67,6 +68,7 @@ export const CommandText: React.FC<{ text: string; people?: TextPerson[]; noEmoj
   return (
     <>
       {text.split(HEARTS).map((segment, index) => {
+        if (segment === '\uD83D\uDC94') return null;
         const heart = HEART_ICON[segment.replace('\uFE0F', '')];
         if (heart) return <GameIcon key={index} name={heart} className='command-heart' />;
         return <Plain key={index} text={stripEmoji(segment)} people={people} keyPrefix={`s${index}`} />;

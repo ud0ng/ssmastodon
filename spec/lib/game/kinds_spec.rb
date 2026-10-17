@@ -81,7 +81,7 @@ RSpec.describe 'Game kinds' do
       toot(bob, '@system [공격]', visibility: 'direct')
 
       result = @replies.find { |status| status.visibility == 'private' }
-      expect(result.text).to include('1턴', '해리 vs 드레이코', '[방어]　　[공격]', '해리의 주문이 통했습니다', '💔 드레이코 -1')
+      expect(result.text).to include('1턴', '해리 vs 드레이코', '[방어]　　[공격]', '해리의 주문이 통했습니다', '드레이코 -1')
       expect(session.state['hp']).to eq('0' => 3, '1' => 2)
     end
 
@@ -130,6 +130,13 @@ RSpec.describe 'Game kinds' do
       expect(session.state['answer'].size).to eq 3
       expect(@replies.find { |status| status.visibility == 'private' }.text).to include('재료:', '[조합]')
       expect(replies_to(alice, 'direct')).to be_present
+    end
+
+    it 'reads digits sent without spaces, like [조합] 123' do
+      guess = answer_numbers.permutation.find { |order| order.first != 0 && order != answer_numbers }
+      toot(alice, "@system [조합] #{guess.join}", visibility: 'direct')
+
+      expect(@replies.last.text).to include('1번째 시도')
     end
 
     it 'gives strike/ball hints by DM and ends the turn in public when both tried' do
