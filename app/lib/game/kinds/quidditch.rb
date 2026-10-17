@@ -108,6 +108,9 @@ module Game
           'max_turns' => max_turns,
           'chosen' => (state['choices'] || {}).keys,
           'last_round' => state['last_round'],
+          'history' => state['history'] || [],
+          # 자리별 팀 키 (1:1 도 A/B): 턴 트랙의 득점 색을 맞추는 데 쓴다
+          'sides' => players.to_h { |player| [player.seat.to_s, team_of(player)] },
         }.compact
       end
 
@@ -187,6 +190,7 @@ module Game
         choices = state['choices']
         lines = []
         blocked = []
+        gained = Hash.new(0)
 
         # 몰이 먼저: 상대 팀 한 명의 행동을 막을 수 있다
         players.each do |player|
@@ -215,6 +219,7 @@ module Game
           elsif action == 'chase'
             if chance?(config['chase_rate'])
               state['scores'][team] = state['scores'][team].to_i + config['chase_score'].to_i
+              gained[team] += config['chase_score'].to_i
               lines << render(config['msg_goal'], player: player, score: config['chase_score'])
             else
               lines << render(config['msg_no_goal'], player: player)
@@ -222,6 +227,7 @@ module Game
           elsif action == 'seek'
             if chance?(state['seek'][seat])
               state['scores'][team] = state['scores'][team].to_i + config['snitch_score'].to_i
+              gained[team] += config['snitch_score'].to_i
               caught << player
               lines << render(config['msg_snitch'], player: player, score: config['snitch_score'])
             else
@@ -234,6 +240,8 @@ module Game
         board = team_keys.map { |team| "#{team_label(team)} #{state['scores'][team].to_i}" }.join(' : ')
         turn_text = render(config['msg_turn'], turn: session.turn, lines: lines.join("\n"), board: board)
         state['last_round'] = { 'choices' => choices.transform_values { |action| config["cmd_#{action}"] }, 'blocked' => blocked, 'caught' => caught.map(&:seat) }
+        # 턴마다 팀이 얻은 점수: 웹 방 맨 위 턴 트랙의 색 (고른 행동은 담지 않는다)
+        state['history'] = Array(state['history']) + [{ 'turn' => session.turn, 'gained' => gained.to_h }]
         state['choices'] = {}
 
         if caught.any? || session.turn >= max_turns

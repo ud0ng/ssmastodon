@@ -134,7 +134,9 @@ RSpec.describe 'Game kinds' do
 
     it 'gives strike/ball hints by DM and ends the turn in public when both tried' do
       wrong = (1..9).to_a - answer_numbers
-      toot(alice, "@system [조합] #{answer_numbers.reverse.join(' ')}", visibility: 'direct')
+      # 정답이 아니면서 0 으로 시작하지 않는 순서 (0번 재료는 첫 자리 불가)
+      guess = answer_numbers.permutation.find { |order| order.first != 0 && order != answer_numbers }
+      toot(alice, "@system [조합] #{guess.join(' ')}", visibility: 'direct')
       hint = @replies.last.text
       expect(hint).to include('1번째 시도', '[P ×')
 

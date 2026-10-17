@@ -16,6 +16,7 @@ import HeartFilledIcon from '@/images/tabler/heart-filled.svg?react';
 import HeartIcon from '@/images/tabler/heart.svg?react';
 import HourglassIcon from '@/images/tabler/hourglass.svg?react';
 import DizzyIcon from '@/images/tabler/mood-sad-dizzy.svg?react';
+import MinusIcon from '@/images/tabler/minus.svg?react';
 import MoonIcon from '@/images/tabler/moon.svg?react';
 import PawIcon from '@/images/tabler/paw.svg?react';
 import SparklesIcon from '@/images/tabler/sparkles.svg?react';
@@ -26,6 +27,7 @@ import SunIcon from '@/images/tabler/sun.svg?react';
 import SwordsIcon from '@/images/tabler/swords.svg?react';
 import TelescopeIcon from '@/images/tabler/telescope.svg?react';
 import TrophyIcon from '@/images/tabler/trophy.svg?react';
+import CrossIcon from '@/images/tabler/x.svg?react';
 
 type SvgComponent = React.FC<React.SVGProps<SVGSVGElement>>;
 
@@ -37,6 +39,8 @@ const ICONS: Record<string, SvgComponent> = {
   'heart-fill': HeartFilledIcon,
   'heart-broken': HeartBrokenIcon,
   crown: CrownIcon,
+  x: CrossIcon,
+  minus: MinusIcon,
   hourglass: HourglassIcon,
   check: CheckIcon,
   star: StarIcon,

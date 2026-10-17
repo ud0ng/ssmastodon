@@ -19140,3 +19140,119 @@ body.app-body.layout-game-room.layout-single-column {
     color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
   }
 }
+
+// ── 퀴디치·비행 대결 방 게임판 (content_card.tsx QuidditchBoard · FlyingBoard) ──
+.room-board {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  max-width: 420px;
+  margin: 6px auto 2px;
+}
+
+// 점수 대결 막대: 왼쪽 팀 색 ↔ 오른쪽 팀 색, 점수 비율만큼 왼쪽이 길어진다 (숫자는 캐릭터 옆에 있다)
+.room-versus-bar {
+  display: flex;
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--side-right);
+
+  &__left {
+    height: 100%;
+    background: var(--side-left);
+    transition: width 0.4s ease;
+  }
+}
+
+// 턴 트랙: 지난 턴은 득점한 쪽 색(둘 다면 반반), 득점이 없었으면 옅게, 지금 턴은 고리
+.room-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+
+  &__cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--ct-dim, #{$darker-text-color}) 16%, transparent);
+
+    &--done {
+      background: color-mix(in srgb, var(--ct-dim, #{$darker-text-color}) 42%, transparent);
+    }
+
+    &--left {
+      background: var(--side-left);
+    }
+
+    &--right {
+      background: var(--side-right);
+    }
+
+    &--both {
+      background: linear-gradient(90deg, var(--side-left) 50%, var(--side-right) 50%);
+    }
+
+    &--now {
+      box-shadow: 0 0 0 2px var(--ct-panel, var(--background-color)), 0 0 0 4px var(--ct-point, #{$ui-highlight-color});
+    }
+  }
+}
+
+// 비행 레인: 사람마다 한 줄, 라운드마다 결과 칸 (통과 ✓ · 충돌 ✕ · 미선택 −)
+.room-lane {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+
+  &__avatar {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border: 2px solid var(--house-color);
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  &__cells {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  &__cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--ct-dim, #{$darker-text-color}) 14%, transparent);
+    color: var(--ct-dim, #{$darker-text-color});
+    font-size: 15px;
+
+    &--pass {
+      background: color-mix(in srgb, #2f9e5b 22%, transparent);
+      color: #2f9e5b;
+    }
+
+    &--crash {
+      background: color-mix(in srgb, var(--color-text-error, #e0245e) 20%, transparent);
+      color: var(--color-text-error, #e0245e);
+    }
+
+    &--idle {
+      opacity: 0.7;
+    }
+
+    &--now {
+      box-shadow: 0 0 0 2px var(--ct-panel, var(--background-color)), 0 0 0 4px var(--ct-point, #{$ui-highlight-color});
+    }
+  }
+}

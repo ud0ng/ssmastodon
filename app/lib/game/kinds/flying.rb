@@ -79,6 +79,7 @@ module Game
           'routes' => state['routes'] || [],
           'chosen' => (state['choices'] || {}).keys,
           'last_round' => state['last_round'],
+          'history' => state['history'] || [],
         }
       end
 
@@ -119,18 +120,24 @@ module Game
       def resolve!
         by_route = players.group_by { |player| state['choices'][player.seat.to_s] }
         lines = []
+        outcome = {}
         by_route.each do |route, group|
           if route.nil?
+            group.each { |player| outcome[player.seat.to_s] = 'idle' }
             lines << render(config['msg_idle'], players: group.map(&:name).join(', '))
           elsif group.size == 1
             seat = group.first.seat.to_s
             state['wins'][seat] = state['wins'][seat].to_i + 1
+            outcome[seat] = 'pass'
             lines << render(config['msg_success'], route: route, player: group.first)
           else
+            group.each { |player| outcome[player.seat.to_s] = 'crash' }
             lines << render(config['msg_crash'], route: route, players: group.map(&:name).join('·'))
           end
         end
         state['last_round'] = { 'choices' => state['choices'].dup }
+        # 라운드마다 통과·충돌·미선택 기록: 웹 방 맨 위 레인 그림 (선택한 경로는 담지 않는다)
+        state['history'] = Array(state['history']) + [{ 'round' => state['round'], 'results' => outcome }]
         result = render(config['msg_result'], round: state['round'], lines: lines.join("\n"))
 
         if state['round'] >= rounds

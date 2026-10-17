@@ -298,9 +298,91 @@ const RoomMiddle: React.FC<{ card: GameCard }> = ({ card }) => (
   </div>
 );
 
+// 내 메시지가 오른쪽에 붙으니 내 캐릭터도 오른쪽에 둔다 (여럿이면 맨 뒤)
+const orderPlayers = (players: CardPlayer[]) => [...players].sort((a, b) => Number(a.account_id === me) - Number(b.account_id === me));
+
+// 퀴디치 방 게임판: 점수 대결 막대(왼쪽 팀 ↔ 오른쪽 팀) + 턴 트랙(지난 턴은 득점한 쪽 색, 지금 턴은 고리)
+const QuidditchBoard: React.FC<{ card: GameCard }> = ({ card }) => {
+  const players = orderPlayers(card.players);
+  const first = players[0];
+  const last = players[players.length - 1];
+  if (!first || !last) return null;
+
+  const sides = (card.data.sides as Record<string, string> | undefined) ?? {};
+  const key = (player: CardPlayer) => sides[String(player.seat)] ?? String(player.seat);
+  const scores = bySeat(card.data.scores);
+  const left = num(scores[String(first.seat)]);
+  const right = num(scores[String(last.seat)]);
+  const leftPct = left + right > 0 ? (left / (left + right)) * 100 : 50;
+  const history = (Array.isArray(card.data.history) ? card.data.history : []) as { turn: number; gained: Record<string, number> }[];
+  const max = Math.min(card.max_turns ?? history.length + 1, 40);
+
+  return (
+    <div
+      className='room-board room-board--quidditch'
+      style={{ '--side-left': first.house?.color || '#8a94a6', '--side-right': last.house?.color || 'var(--ct-point)' } as React.CSSProperties}
+    >
+      <div className='room-versus-bar' aria-hidden>
+        <span className='room-versus-bar__left' style={{ width: `${leftPct}%` }} />
+        <span className='room-versus-bar__right' />
+      </div>
+      <div className='room-track' aria-hidden>
+        {Array.from({ length: max }, (_, index) => {
+          const turn = index + 1;
+          const entry = history.find((item) => item.turn === turn);
+          const l = num(entry?.gained[key(first)]) > 0;
+          const r = num(entry?.gained[key(last)]) > 0;
+          return (
+            <span
+              key={turn}
+              className={[
+                'room-track__cell',
+                entry && 'room-track__cell--done',
+                l && r ? 'room-track__cell--both' : l ? 'room-track__cell--left' : r ? 'room-track__cell--right' : '',
+                card.phase === 'active' && turn === card.turn && 'room-track__cell--now',
+              ].filter(Boolean).join(' ')}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// 비행 대결 방 게임판: 사람마다 한 줄 레인, 라운드마다 통과(체크)·충돌(엑스)·미선택(빼기), 지금 라운드는 고리
+const FlyingBoard: React.FC<{ card: GameCard }> = ({ card }) => {
+  const players = orderPlayers(card.players);
+  const history = (Array.isArray(card.data.history) ? card.data.history : []) as { round: number; results: Record<string, 'pass' | 'crash' | 'idle'> }[];
+  const rounds = card.max_turns ?? num(card.data.rounds);
+  if (rounds <= 0) return null;
+
+  return (
+    <div className='room-board room-board--flying' aria-hidden>
+      {players.map((player) => (
+        <div key={player.seat} className='room-lane' style={{ '--house-color': player.house?.color || '#8a94a6' } as React.CSSProperties}>
+          {player.avatar && <img className='room-lane__avatar' src={player.avatar} alt='' />}
+          <div className='room-lane__cells'>
+            {Array.from({ length: rounds }, (_, index) => {
+              const round = index + 1;
+              const result = history.find((item) => item.round === round)?.results[String(player.seat)];
+              const now = card.phase === 'active' && round === card.turn;
+              return (
+                <span key={round} className={['room-lane__cell', result && `room-lane__cell--${result}`, now && 'room-lane__cell--now'].filter(Boolean).join(' ')}>
+                  {result === 'pass' && <GameIcon name='check' />}
+                  {result === 'crash' && <GameIcon name='x' />}
+                  {result === 'idle' && <GameIcon name='minus' />}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const RoomHead: React.FC<{ card: GameCard }> = ({ card }) => {
-  // 내 메시지가 오른쪽에 붙으니 내 캐릭터도 오른쪽에 둔다 (여럿이면 맨 뒤)
-  const ordered = [...card.players].sort((a, b) => Number(a.account_id === me) - Number(b.account_id === me));
+  const ordered = orderPlayers(card.players);
   if (ordered.length === 2) {
     const [left, right] = ordered as [CardPlayer, CardPlayer];
     return (
@@ -465,8 +547,8 @@ const Board: React.FC<{ card: GameCard; room?: boolean }> = ({ card, room = fals
     }
 
     case 'flying': {
-      // 비행 방 맨 위는 통과 횟수(점수)와 라운드만 (경로 목록·고른 경로는 시스템 메시지와 버튼에 있다)
-      if (room) return null;
+      // 비행 방 맨 위는 레인 그림 (경로 목록·고른 경로는 시스템 메시지와 버튼에 있다)
+      if (room) return <FlyingBoard card={card} />;
       const round = num(data.round);
       const rounds = num(data.rounds);
       const routes = Array.isArray(data.routes) ? (data.routes as string[]) : [];
@@ -500,8 +582,8 @@ const Board: React.FC<{ card: GameCard; room?: boolean }> = ({ card, room = fals
 
     case 'duel':
     case 'quidditch': {
-      // 결투·퀴디치 방 맨 위는 하트·점수와 라운드만 (고른 주문·스니치 확률·최대 턴 줄 없음)
-      if (room) return null;
+      // 결투 방 맨 위는 하트와 라운드만, 퀴디치는 점수 막대·턴 트랙 (고른 주문·스니치 확률·최대 턴 글자 줄 없음)
+      if (room) return card.kind === 'quidditch' ? <QuidditchBoard card={card} /> : null;
       const last = data.last_round ? bySeat(data.last_round) : null;
       const choices = last ? bySeat(last.choices) : {};
       const winner = last?.winner_seat;
