@@ -374,6 +374,11 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
     setCommand('');
   }, [command, data, dm, picked, send]);
 
+  // 판(지도·미로·원탁)을 보여 줄 때: 진행 중이거나 끝난 미로·도둑 지도(누구나), 비밀의 방(참가자)
+  const boardShown = Boolean(data) && (
+    (['maze', 'marauders_map'].includes(data?.kind ?? '') && ['active', 'finished'].includes(data?.status ?? ''))
+    || (data?.kind === 'secret_chamber' && data.player && data.status !== 'cancelled')
+  );
   const title = data?.name ?? intl.formatMessage(messages.title);
   const open = data ? data.status === 'pending' || data.status === 'active' : false;
   // 맨 위에 고정하는 지금 상태: 마지막 카드
@@ -421,13 +426,13 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
         )}
       />
 
-      {/* 지금 상태 (맨 위 고정): 아바타 | 소속 | 이름 vs …, 가운데 진행 상황 */}
-      {data && (current || (data.player && data.status === 'active' && ['maze', 'marauders_map'].includes(data.kind)) || (data.player && data.kind === 'secret_chamber')) && (
+      {/* 지금 상태 (맨 위 고정): 아바타 | 소속 | 이름 vs …, 가운데 진행 상황. 웹 전용 컨텐츠는 판(지도·원탁)이 대신한다 (참가자가 아니어도 미로·도둑 지도는 실시간으로 볼 수 있다) */}
+      {data && (current || boardShown) && (
         <div className={['maze', 'secret_chamber'].includes(data.kind) ? 'system-page game-room__status game-room__status--maze' : 'system-page game-room__status'}>
-          {current && !(data.player && data.kind === 'secret_chamber') && <ContentCardView card={current} variant='room' />}
-          {data.player && data.kind === 'secret_chamber' && data.status !== 'cancelled' && <ChamberPlay sessionId={data.id} onMoved={load} />}
-          {data.player && data.kind === 'maze' && data.status === 'active' && <MazePlay sessionId={data.id} onMoved={load} />}
-          {data.player && data.kind === 'marauders_map' && data.status === 'active' && <MaraudersMapPlay sessionId={data.id} onMoved={load} />}
+          {current && !boardShown && <ContentCardView card={current} variant='room' />}
+          {boardShown && data.kind === 'secret_chamber' && <ChamberPlay sessionId={data.id} onMoved={load} />}
+          {boardShown && data.kind === 'maze' && <MazePlay sessionId={data.id} onMoved={load} />}
+          {boardShown && data.kind === 'marauders_map' && <MaraudersMapPlay sessionId={data.id} onMoved={load} />}
         </div>
       )}
 

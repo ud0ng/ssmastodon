@@ -85,6 +85,10 @@ module Game
           true
         end
 
+        def spectatable?
+          true
+        end
+
         def max_opponents
           config['max_opponents'].to_i.clamp(1, 4)
         end
@@ -116,7 +120,7 @@ module Game
           'targets' => targets, 'visited' => [], 'clues' => [], 'cloak' => 0,
           'cloaks_left' => config['cloaks'].to_i.clamp(0, 5) + (balanced ? config['cloaks_bonus'].to_i.clamp(0, 5) : 0),
           'revelio_left' => prefects.to_h { |player| [player.seat.to_s, config['revelio'].to_i.clamp(0, 5)] },
-          'phase' => 'student', 'moves' => {}, 'cloak_now' => false, 'revelio_now' => {}, 'log' => []
+          'trail' => [start], 'phase' => 'student', 'moves' => {}, 'cloak_now' => false, 'revelio_now' => {}, 'log' => []
         )
         session.update!(turn: 1)
         post(render(config['msg_start'], student: config['student_name'], prefect: config['prefect_name'], player: student,
@@ -152,6 +156,8 @@ module Game
       end
 
       def view_for(player)
+        return reveal_view(player) if player.nil? || session.status == 'finished'
+
         seat = player.seat.to_s
         student = student?(player)
         here = state['positions'][seat]
@@ -187,7 +193,31 @@ module Game
           max_turns: config['max_turns'].to_i,
           deadline_at: session.deadline_at&.iso8601,
           log: state['log'],
+          players: people, revealed: false, status: session.status,
         }
+      end
+
+      # 관전자와 끝난 판: 학생 위치·목표 장소·비밀 통로·지나온 길까지 실시간으로 다 보인다 (사감 팀 채팅은 제외)
+      def reveal_view(player)
+        {
+          map: true, width: state['width'], height: state['height'],
+          rooms: (0...room_count).map { |index| { id: index, name: name_of(index), x: index % state['width'], y: index / state['width'] } },
+          edges: edges.map { |a, b| { a: a, b: b, stairs: stairs?(a, b) } },
+          secret: state['secret'].map { |a, b| { a: a, b: b } },
+          role: 'spectator', role_name: player ? config['student_name'] : '관전', me: player&.seat, position: nil, moves: [],
+          tokens: players.map { |other| { seat: other.seat, name: other.name, room: state['positions'][other.seat.to_s], student: student?(other), me: other.id == player&.id } },
+          targets: state['targets'].map { |room| { room: room, visited: state['visited'].include?(room) } },
+          clues: state['clues'].map { |clue| clue.merge('room_name' => clue['room'] && name_of(clue['room'])) },
+          team_chat: [], items: {}, item_info: item_info, commands: ACTIONS.to_h { |key| [key, config["cmd_#{key}"]] },
+          phase: state['phase'] || 'student', my_turn: false, cloak: state['cloak'].to_i, submitted: true, waiting: waiting_on.map(&:name),
+          turn: session.turn, max_turns: config['max_turns'].to_i, deadline_at: session.deadline_at&.iso8601, log: state['log'],
+          players: people, trail: Array(state['trail']), revealed: true, spectator: player.nil?, status: session.status,
+        }
+      end
+
+      # 화면 맨 위 참가자 목록 (아바타는 컨트롤러가 붙인다)
+      def people
+        players.map { |other| { seat: other.seat, name: other.name, account_id: other.account_id, student: student?(other) } }
       end
 
       # 카드(툿·방 맨 위): 목표 장소·위치는 담지 않는다 (사감도 보는 곳). 방문한 수와 공개된 단서만.
@@ -448,6 +478,7 @@ module Game
 
         players.each { |player| state['positions'][player.seat.to_s] = moves.dig(player.seat.to_s, 'room') || from[player.seat.to_s] }
         here = state['positions'][seat]
+        state['trail'] = Array(state['trail']) + [here] unless Array(state['trail']).last == here
 
         used_secret = from[seat] != here && state['secret'].any? { |pair| pair.sort == [from[seat], here].sort }
         if used_secret && !cloaked

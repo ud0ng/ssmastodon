@@ -193,3 +193,9 @@ docker compose -f dev/preview/docker-compose.yml exec -T web bin/rails runner /d
 - 웹: `features/system/secret_chamber.tsx` 아바타 원탁(석화=회색, 퇴학=빨간 표시, 득표 수, 진영 공개), 내 역할 카드, 방주 단톡·예언 입력, 기록 노트. 탈락자·종료 후에는 모든 역할이 보인다 (`view_for`). 사람 목록 view 에는 `SessionsController#add_avatars!` 가 아바타를 붙인다.
 - 웹 전용 방(미로·도둑 지도·비밀의 방) 레이아웃 `layout-game-split`: 메뉴는 두고, 방(DM 화면)을 작성 패널 자리로 밀고 그 왼쪽에 같은 너비의 컨텐츠 패널 (1100px 이상).
 - 운영진 판 조작: 관리 > 컨텐츠 > 목록 맨 위 '진행 중인 컨텐츠' 표 (`Admin::GameSessionsController`, `Game::SessionControl`): 단계 넘기기(시간이 다 된 것처럼)·승자 지정·무승부 종료·취소. 토너먼트 경기는 토너먼트 화면에서만.
+
+## 미로·도둑 지도 관전 + 비밀의 방 스타일 헤더
+
+- `Kinds::Base.spectatable?`(미로·도둑 지도만 true): 참가자가 아닌 사람도 `GET /system/sessions/:id/view` 로 판 전체를 본다 (`view_for(nil)` = `reveal_view`). 끝난 판은 참가자에게도 같은 전체 공개. DM 판(visibility direct)은 여전히 참가자만.
+- 미로 `state['trails']`·도둑 지도 `state['trail']`(학생이 지나간 방)에 지나온 길을 쌓아 관전·끝난 판에서 선으로 그린다. 관전 화면은 4초마다 새로 읽는다.
+- `features/system/board_header.tsx`: 비밀의 방·미로·도둑 지도 판 위 고정 헤더(단계 아이콘·제목, 시간, 참가자 아바타) 공통 컴포넌트. 판 목록에는 `players`(account_id)를 담고 컨트롤러가 아바타를 붙인다.

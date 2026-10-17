@@ -8,7 +8,8 @@ import { FormattedMessage } from 'react-intl';
 
 import { apiRequestGet, apiRequestPost } from 'mastodon/api';
 import { GameIcon } from 'mastodon/components/game_icons';
-import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
+
+import { BoardHeader } from './board_header';
 
 type Dir = 'N' | 'E' | 'S' | 'W';
 
@@ -21,11 +22,30 @@ const DIRS: Record<Dir, { dx: number; dy: number; bit: number; name: string }> =
 
 interface Cell { x: number; y: number }
 
+interface MazePerson {
+  seat: number;
+  name: string;
+  account_id: string;
+  avatar?: string | null;
+  stunned: number;
+  boost: boolean;
+  lumos: number;
+  x?: number;
+  y?: number;
+}
+
 interface MazeView {
   width: number;
   height: number;
-  me: number;
-  position: [number, number];
+  me: number | null;
+  position: [number, number] | null;
+  players: MazePerson[];
+  trails?: Record<string, [number, number][]>;
+  hostile?: string[];
+  revealed: boolean;
+  spectator?: boolean;
+  max_turns: number;
+  status: string;
   cells: Record<string, number>;
   visible: number[];
   cup: [number, number] | null;
@@ -61,7 +81,7 @@ interface ViewResponse {
 const REFRESH_MS = 10_000;
 const CELL = 36;
 const PAD = 4;
-const OTHER_COLORS = ['#3f7fd0', '#8a58c9', '#2f9e8f'];
+const OTHER_COLORS = ['#e0603c', '#3f7fd0', '#8a58c9', '#2f9e8f'];
 
 export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = ({ sessionId, onMoved }) => {
   const [view, setView] = useState<MazeView | null>(null);
@@ -78,13 +98,15 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
       });
   }, [sessionId]);
 
+  // 관전자는 더 자주 새로 읽어 실시간처럼 보이게 한다
+  const spectating = view?.revealed ?? false;
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, REFRESH_MS);
+    const timer = window.setInterval(load, spectating ? 4000 : REFRESH_MS);
     return () => {
       window.clearInterval(timer);
     };
-  }, [load]);
+  }, [load, spectating]);
 
   // 보낸 뒤 시스템이 처리하는 걸 잠시 기다렸다가 다시 읽는다
   const send = useCallback(
@@ -109,7 +131,7 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
 
   // 이번 턴에 정한 길 (내 위치에서 이어지는 칸들)
   const plannedCells = useMemo(() => {
-    if (!view?.planned?.length) return [];
+    if (!view?.planned?.length || !view.position) return [];
     let [x, y] = view.position;
     return view.planned.map((dir) => {
       x += DIRS[dir].dx;
@@ -123,7 +145,7 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
   const { width, height } = view;
   const visible = new Set(view.visible);
   const center = (x: number, y: number) => [PAD + (x * CELL) + (CELL / 2), PAD + (y * CELL) + (CELL / 2)] as const;
-  const canMove = view.phase === 'move' && view.stunned === 0;
+  const canMove = !view.revealed && view.phase === 'move' && view.stunned === 0;
   const at = <T extends Cell>(list: T[], x: number, y: number) => list.find((item) => item.x === x && item.y === y);
   const lastPlanned = plannedCells[plannedCells.length - 1];
   const cmd = view.commands;
@@ -157,21 +179,26 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
 
   return (
     <div className='maze-play'>
-      <div className='maze-play__head'>
-        <strong>
-          <FormattedMessage id='maze.turn' defaultMessage='Turn {turn}' values={{ turn: view.turn }} />
-        </strong>
-        {view.deadline_at && (
-          <span className='maze-play__chip'><GameIcon name='hourglass' /> <RelativeTimestamp timestamp={view.deadline_at} futureDate /></span>
-        )}
-        {view.stunned > 0 && <span className='maze-play__chip maze-play__chip--bad'><GameIcon name='stun' /> {view.stunned}</span>}
-        {view.lumos > 0 && <span className='maze-play__chip'><GameIcon name='bulb' /> {view.lumos}</span>}
-        {view.hint && (
-          <span className='maze-play__chip' title={cmd.portkey}>
-            <GameIcon name='compass' /> <span className='maze-play__arrow'>{view.hint.direction}</span>
-          </span>
-        )}
-      </div>
+      <BoardHeader
+        icon='compass'
+        title={<FormattedMessage id='maze.turn' defaultMessage='Turn {turn}' values={{ turn: view.turn }} />}
+        subtitle={<FormattedMessage id='maze.turns_max' defaultMessage='up to {max} turns' values={{ max: view.max_turns }} />}
+        deadline={view.status === 'active' ? view.deadline_at : null}
+        people={view.players.map((person) => ({ key: person.seat, name: person.name, avatar: person.avatar, out: person.stunned > 0 }))}
+        peopleNote={view.status === 'finished' ? <FormattedMessage id='maze.finished' defaultMessage='Finished' /> : <FormattedMessage id='maze.live' defaultMessage='Live' />}
+      />
+
+      {!view.revealed && (view.stunned > 0 || view.lumos > 0 || view.hint) && (
+        <div className='maze-play__head'>
+          {view.stunned > 0 && <span className='maze-play__chip maze-play__chip--bad'><GameIcon name='stun' /> {view.stunned}</span>}
+          {view.lumos > 0 && <span className='maze-play__chip'><GameIcon name='bulb' /> {view.lumos}</span>}
+          {view.hint && (
+            <span className='maze-play__chip' title={cmd.portkey}>
+              <GameIcon name='compass' /> <span className='maze-play__arrow'>{view.hint.direction}</span>
+            </span>
+          )}
+        </div>
+      )}
 
       <svg className='maze-play__svg' viewBox={`0 0 ${(width * CELL) + (PAD * 2)} ${(height * CELL) + (PAD * 2)}`} role='img'>
         <rect className='maze-play__fog' x={0} y={0} width={(width * CELL) + (PAD * 2)} height={(height * CELL) + (PAD * 2)} />
@@ -252,32 +279,65 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
           </g>
         ))}
 
+        {/* 지나온 길 (관전·끝난 판) */}
+        {view.revealed && Object.entries(view.trails ?? {}).map(([seat, trail]) => (
+          <polyline
+            key={`trail${seat}`}
+            className='maze-play__trail'
+            style={{ stroke: OTHER_COLORS[Number(seat) % OTHER_COLORS.length] }}
+            points={trail.map(([x, y]) => center(x, y).join(',')).join(' ')}
+          />
+        ))}
+
         {/* 사람 */}
-        {view.others.map((other) => {
-          const [cx, cy] = center(other.x, other.y);
+        {view.revealed ? view.players.map((person) => {
+          if (person.x === undefined || person.y === undefined) return null;
+          const [cx, cy] = center(person.x, person.y);
+          const mine = person.seat === view.me;
           return (
-            <g key={other.seat} className={other.hostile ? 'maze-play__token maze-play__token--hostile' : 'maze-play__token'}>
-              <title>{other.name}</title>
-              <circle cx={cx + 5} cy={cy - 5} r={9} style={{ fill: OTHER_COLORS[other.seat % OTHER_COLORS.length] }} />
-              <text x={cx + 5} y={cy - 1} textAnchor='middle'>{[...other.name][0]}</text>
-              {other.hostile && <GameIcon className='maze-play__hostile' name='sword' x={cx + 8} y={cy - 18} size={12} />}
+            <g key={person.seat} className='maze-play__token'>
+              <title>{person.name}</title>
+              {mine && <circle className='maze-play__me-ring' cx={cx} cy={cy} r={15} />}
+              <circle cx={cx + 3} cy={cy - 3} r={11} style={{ fill: OTHER_COLORS[person.seat % OTHER_COLORS.length] }} />
+              <text x={cx + 3} y={cy + 1} textAnchor='middle'>{[...person.name][0]}</text>
+              {person.stunned > 0 && <GameIcon className='maze-play__trap' name='stun' x={cx + 8} y={cy - 20} size={12} />}
             </g>
           );
-        })}
-        {(() => {
-          const [cx, cy] = center(view.position[0], view.position[1]);
-          return (
-            <g className='maze-play__token maze-play__token--me'>
-              <circle className='maze-play__me-ring' cx={cx} cy={cy} r={14} />
-              <circle cx={cx} cy={cy} r={9} />
-            </g>
-          );
-        })()}
+        }) : (
+          <>
+            {view.others.map((other) => {
+              const [cx, cy] = center(other.x, other.y);
+              return (
+                <g key={other.seat} className={other.hostile ? 'maze-play__token maze-play__token--hostile' : 'maze-play__token'}>
+                  <title>{other.name}</title>
+                  <circle cx={cx + 5} cy={cy - 5} r={9} style={{ fill: OTHER_COLORS[other.seat % OTHER_COLORS.length] }} />
+                  <text x={cx + 5} y={cy - 1} textAnchor='middle'>{[...other.name][0]}</text>
+                  {other.hostile && <GameIcon className='maze-play__hostile' name='sword' x={cx + 8} y={cy - 18} size={12} />}
+                </g>
+              );
+            })}
+            {view.position && (() => {
+              const [cx, cy] = center(view.position[0], view.position[1]);
+              return (
+                <g className='maze-play__token maze-play__token--me'>
+                  <circle className='maze-play__me-ring' cx={cx} cy={cy} r={14} />
+                  <circle cx={cx} cy={cy} r={9} />
+                </g>
+              );
+            })()}
+          </>
+        )}
       </svg>
 
       <div className='maze-play__foot'>
-        <p className='maze-play__hint'>{status()}</p>
-        <div className='maze-play__items'>
+        <p className='maze-play__hint'>
+          {view.revealed ? (
+            view.status === 'finished'
+              ? <FormattedMessage id='maze.replay' defaultMessage='Finished game: the whole maze and every path are shown.' />
+              : <FormattedMessage id='maze.watching' defaultMessage='Spectating: every position is shown live.' />
+          ) : status()}
+        </p>
+        {!view.revealed && <div className='maze-play__items'>
           <button
             type='button'
             className='maze-play__item'
@@ -296,7 +356,7 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
           >
             <GameIcon name='bulb' /> {cmd.lumos} <span className='maze-play__count'>{view.inventory.lumos}</span>
           </button>
-        </div>
+        </div>}
       </div>
     </div>
   );

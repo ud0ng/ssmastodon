@@ -55,6 +55,11 @@ module Game
           false
         end
 
+        # 참가자가 아닌 사람도 웹 화면에서 판 전체를 실시간으로 볼 수 있는가 (미로·도둑 지도)
+        def spectatable?
+          false
+        end
+
         # 웹 진행 화면에서만 하는 컨텐츠인가 (Game::Web)
         def web?
           false

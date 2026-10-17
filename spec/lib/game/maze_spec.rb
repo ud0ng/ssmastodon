@@ -232,6 +232,25 @@ RSpec.describe Game::Web::Maze do
     expect(state.dig('status', '1', 'stunned')).to eq 2
   end
 
+  it 'shows spectators and finished games everything: the whole maze, cup, traps, creatures, every position and path' do
+    start!
+    open_field!({ '0' => [3, 3], '1' => [14, 14], '2' => [0, 14] }, traps: [[4, 3]], creatures: [[6, 6, '스크루트']], trails: { '0' => [[3, 3]] })
+
+    view = described_class.new(session).view_for(nil)
+    expect(view).to include(revealed: true, spectator: true, cup: [7, 7])
+    expect(view[:cells].size).to eq 225
+    expect(view[:traps]).to eq [{ x: 4, y: 3 }]
+    expect(view[:creatures].size).to eq 1
+    expect(view[:players].map { |p| [p[:x], p[:y]] }).to eq [[3, 3], [14, 14], [0, 14]]
+    expect(view[:trails]).to include('0' => [[3, 3]])
+    expect(described_class.spectatable?).to be true
+
+    dm(harry, '[대기]')
+    everyone_stays(except: [harry])
+    session.update!(status: 'finished')
+    expect(described_class.new(session).view_for(session.players.first)).to include(revealed: true, spectator: false)
+  end
+
   it 'uses a portkey once to point toward the cup and lumos to widen the view' do
     start!
     open_field!({ '0' => [3, 3], '1' => [14, 14], '2' => [0, 14] }, cup: [10, 3])

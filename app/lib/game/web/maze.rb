@@ -85,6 +85,10 @@ module Game
           true
         end
 
+        def spectatable?
+          true
+        end
+
         def max_opponents
           config['max_opponents'].to_i.clamp(1, 3)
         end
@@ -114,6 +118,7 @@ module Game
           'status' => players.to_h { |player| [player.seat.to_s, {}] },
           'seen' => players.to_h { |player| [player.seat.to_s, []] },
           'known_traps' => players.to_h { |player| [player.seat.to_s, []] },
+          'trails' => positions.transform_values { |position| [position] },
           'hint' => {}, 'hostile' => [], 'met' => {}, 'log' => [], 'turn_log' => [],
           'phase' => 'move', 'moves' => {}, 'paths' => {}, 'need' => {}, 'picks' => {}, 'fights' => {}, 'peers' => []
         )
@@ -145,6 +150,8 @@ module Game
 
       # 이 사람에게 보이는 미로 (웹 진행 화면)
       def view_for(player)
+        return reveal_view(player) if player.nil? || session.status == 'finished'
+
         seat = player.seat.to_s
         x, y = state['positions'][seat]
         vision = vision_of(seat)
@@ -185,7 +192,38 @@ module Game
           turn: session.turn,
           deadline_at: session.deadline_at&.iso8601,
           log: state['log'],
+          players: people, max_turns: config['max_turns'].to_i, revealed: false, status: session.status,
         }
+      end
+
+      # 관전자와 끝난 판: 지도 전체·우승컵·함정·생물·모든 사람의 위치와 지나온 길이 실시간으로 다 보인다
+      def reveal_view(player)
+        seat = player&.seat
+        {
+          width: state['width'], height: state['height'], me: seat, position: seat && state['positions'][seat.to_s],
+          cells: state['cells'].each_with_index.to_h { |bits, index| [index, bits] },
+          visible: (0...(state['width'] * state['height'])).to_a,
+          cup: state['cup'], hint: nil, reachable: [],
+          creatures: state['creatures'].map { |cx, cy, name| { x: cx, y: cy, name: name } },
+          traps: state['traps'].map { |tx, ty| { x: tx, y: ty } },
+          others: [], inventory: { portkey: 0, lumos: 0 }, planned: nil,
+          commands: ACTIONS.to_h { |key| [key, config["cmd_#{key}"]] }, item_info: item_info,
+          steps: 0, vision: 0, stunned: 0, lumos: 0, phase: state['phase'] || 'move', need: [], fight: nil, meet: [], submitted: true,
+          waiting: waiting_on.map(&:name), turn: session.turn, deadline_at: session.deadline_at&.iso8601, log: state['log'],
+          players: people(positions: true), trails: state['trails'] || {}, hostile: state['hostile'] || [],
+          max_turns: config['max_turns'].to_i, revealed: true, spectator: player.nil?, status: session.status,
+        }
+      end
+
+      # 화면 맨 위 참가자 목록 (아바타는 컨트롤러가 붙인다). positions: 위치까지 (관전·끝난 판)
+      def people(positions: false)
+        players.map do |other|
+          seat = other.seat.to_s
+          entry = { seat: other.seat, name: other.name, account_id: other.account_id, stunned: state.dig('status', seat, 'stunned').to_i,
+                    boost: state.dig('status', seat, 'boost') ? true : false, lumos: state.dig('status', seat, 'lumos').to_i }
+          entry.merge!(x: state['positions'][seat][0], y: state['positions'][seat][1]) if positions
+          entry
+        end
       end
 
       # 카드(툿·방 맨 위): 위치·우승컵·함정은 담지 않는다. 쉬는 사람·적대 표시·루모스만 공개.
@@ -429,6 +467,8 @@ module Game
             nx = x + DIRS[dir][0]
             ny = y + DIRS[dir][1]
             state['positions'][seat] = [nx, ny]
+            trails = (state['trails'] ||= {})
+            (trails[seat] ||= [[x, y]]) << [nx, ny]
 
             if state['traps'].include?([nx, ny])
               state['known_traps'][seat] |= [[nx, ny]]

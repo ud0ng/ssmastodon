@@ -38,9 +38,11 @@ class Api::V1::System::SessionsController < Api::BaseController
     }
   end
 
-  # 웹 전용 컨텐츠: 내게 보이는 판 (미로 시야 등). 참가자만.
+  # 웹 전용 컨텐츠: 내게 보이는 판 (미로 시야 등). 참가자는 자기 시야만, 관전자(미로·도둑 지도)와 끝난 판은 전체.
   def view
-    player = my_player!
+    player = @session.player_for(current_account)
+    raise ActiveRecord::RecordNotFound if player.nil? && !@session.kind_class.spectatable?
+
     kind = @session.kind_class.new(@session)
     view = kind.respond_to?(:view_for) ? kind.view_for(player) : nil
     add_avatars!(view)

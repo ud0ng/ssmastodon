@@ -1258,5 +1258,11 @@
   "chamber.petrified": "Petrified",
   "chamber.expelled": "Expelled",
   "chamber.finished": "Finished",
-  "chamber.alive_of": "{alive} / {total} alive"
+  "chamber.alive_of": "{alive} / {total} alive",
+  "maze.turns_max": "up to {max} turns",
+  "maze.finished": "Finished",
+  "maze.live": "Live",
+  "maze.replay": "Finished game: the whole maze and every path are shown.",
+  "maze.replay_map": "Finished game: every position and the escape route are shown.",
+  "maze.watching": "Spectating: every position is shown live."
 }

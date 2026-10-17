@@ -7,7 +7,8 @@ import { FormattedMessage } from 'react-intl';
 
 import { apiRequestGet, apiRequestPost } from 'mastodon/api';
 import { GameIcon } from 'mastodon/components/game_icons';
-import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
+
+import { BoardHeader } from './board_header';
 
 interface Room { id: number; name: string; x: number; y: number }
 interface Token { seat: number; name: string; room: number; student: boolean; me: boolean }
@@ -20,9 +21,14 @@ interface MapView {
   rooms: Room[];
   edges: { a: number; b: number; stairs: boolean }[];
   secret: { a: number; b: number }[];
-  role: 'student' | 'prefect';
+  role: 'student' | 'prefect' | 'spectator';
   role_name: string;
-  position: number;
+  position: number | null;
+  players: { seat: number; name: string; account_id: string; avatar?: string | null; student: boolean }[];
+  trail?: number[];
+  revealed: boolean;
+  spectator?: boolean;
+  status: string;
   moves: number[];
   tokens: Token[];
   targets: { room: number; visited: boolean }[];
@@ -61,13 +67,15 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
       });
   }, [sessionId]);
 
+  // 관전자는 더 자주 새로 읽어 실시간처럼 보이게 한다
+  const spectating = view?.revealed ?? false;
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, REFRESH_MS);
+    const timer = window.setInterval(load, spectating ? 4000 : REFRESH_MS);
     return () => {
       window.clearInterval(timer);
     };
-  }, [load]);
+  }, [load, spectating]);
 
   // 보낸 뒤 시스템이 처리하는 걸 잠시 기다렸다가 다시 읽는다
   const send = useCallback(
@@ -111,6 +119,8 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
   const cmd = view.commands;
   const canPick = view.my_turn && !busy;
   const student = view.role === 'student';
+  const prefect = view.role === 'prefect';
+  const trailPoints = (view.trail ?? []).map((id) => byId.get(id)).filter((room): room is Room => Boolean(room)).map((room) => center(room).join(','));
 
   const handleRoom = (room: Room) => {
     if (!canPick) return;
@@ -129,15 +139,21 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
 
   return (
     <div className='map-play'>
-      <div className='maze-play__head'>
-        <strong>
-          <FormattedMessage id='maze.turn' defaultMessage='Turn {turn}' values={{ turn: view.turn }} /> / {view.max_turns}
-        </strong>
-        <span className='map-play__role'>{view.role_name}</span>
-        {view.deadline_at && <span className='maze-play__chip'><GameIcon name='hourglass' /> <RelativeTimestamp timestamp={view.deadline_at} futureDate /></span>}
-        {view.cloak > 0 && <span className='maze-play__chip'><GameIcon name='cloak' /> {view.cloak}</span>}
-        {zoneClue && <span className='maze-play__chip'><GameIcon name='scope' /> {zoneClue.zone} ({zoneClue.turn})</span>}
-      </div>
+      <BoardHeader
+        icon='scope'
+        title={<FormattedMessage id='maze.turn' defaultMessage='Turn {turn}' values={{ turn: view.turn }} />}
+        subtitle={<>{view.role_name} · <FormattedMessage id='maze.turns_max' defaultMessage='up to {max} turns' values={{ max: view.max_turns }} /></>}
+        deadline={view.status === 'active' ? view.deadline_at : null}
+        people={view.players.map((person) => ({ key: person.seat, name: person.name, avatar: person.avatar }))}
+        peopleNote={view.status === 'finished' ? <FormattedMessage id='maze.finished' defaultMessage='Finished' /> : <FormattedMessage id='maze.live' defaultMessage='Live' />}
+      />
+
+      {(view.cloak > 0 || zoneClue) && (
+        <div className='maze-play__head'>
+          {view.cloak > 0 && <span className='maze-play__chip'><GameIcon name='cloak' /> {view.cloak}</span>}
+          {zoneClue && <span className='maze-play__chip'><GameIcon name='scope' /> {zoneClue.zone} ({zoneClue.turn})</span>}
+        </div>
+      )}
 
       <svg className='map-play__svg' viewBox={`0 0 ${svgWidth} ${svgHeight}`} role='img'>
         {view.edges.map((edge) => {
@@ -156,6 +172,9 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
           const [x2, y2] = center(b);
           return <line key={`s${edge.a}-${edge.b}`} x1={x1} y1={y1} x2={x2} y2={y2} className='map-play__edge map-play__edge--secret' />;
         })}
+
+        {/* 학생이 지나온 길 (관전·끝난 판) */}
+        {view.revealed && trailPoints.length > 1 && <polyline className='map-play__trail' points={trailPoints.join(' ')} />}
 
         {view.rooms.map((room) => {
           const x = PAD + (room.x * CELL) + 8;
@@ -189,8 +208,14 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
       </svg>
 
       <div className='maze-play__foot'>
-        <p className='maze-play__hint'>{status()}</p>
-        <div className='maze-play__items'>
+        <p className='maze-play__hint'>
+          {view.revealed ? (
+            view.status === 'finished'
+              ? <FormattedMessage id='maze.replay_map' defaultMessage='Finished game: every position and the escape route are shown.' />
+              : <FormattedMessage id='maze.watching' defaultMessage='Spectating: every position is shown live.' />
+          ) : status()}
+        </p>
+        {!view.revealed && <div className='maze-play__items'>
           <button
             type='button'
             className='maze-play__item'
@@ -221,11 +246,11 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
               <GameIcon name='bulb' /> {cmd.revelio} <span className='maze-play__count'>{view.items.revelio ?? 0}</span>
             </button>
           )}
-        </div>
+        </div>}
       </div>
 
       {/* 사감 팀 채팅: 학생에게는 보이지 않는다 */}
-      {!student && (
+      {prefect && (
         <div className='map-play__chat'>
           <strong className='map-play__chat-title'>
             <FormattedMessage id='map.team_chat' defaultMessage='Team chat' />

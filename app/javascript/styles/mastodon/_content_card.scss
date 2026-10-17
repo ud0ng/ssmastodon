@@ -1605,3 +1605,29 @@
     }
   }
 }
+
+// 미로·도둑 지도: 지나온 길 (관전·끝난 판)
+.maze-play__trail {
+  fill: none;
+  opacity: 0.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4;
+  pointer-events: none;
+}
+
+.map-play__trail {
+  fill: none;
+  opacity: 0.8;
+  stroke: #c0392b;
+  stroke-dasharray: 2 9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 6;
+  pointer-events: none;
+}
+
+.chamber-head + .maze-play__head,
+.chamber-head + .maze-play__svg {
+  margin-top: 8px;
+}

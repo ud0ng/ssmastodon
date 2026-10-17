@@ -153,6 +153,19 @@ RSpec.describe Game::Web::MaraudersMap do
     expect(session.state['team_chat'].size).to eq 1
   end
 
+  it 'shows spectators the student, the targets and the route live' do
+    start!
+    plain_map!({ '0' => 0, '1' => 12, '2' => 13 }, 'targets' => [20, 21, 22], 'trail' => [0])
+
+    view = kind.view_for(nil)
+    expect(view).to include(role: 'spectator', revealed: true, spectator: true)
+    expect(view[:tokens].find { |token| token[:student] }[:room]).to eq 0
+    expect(view[:targets].map { |target| target[:room] }).to eq [20, 21, 22]
+    expect(view[:trail]).to eq [0]
+    expect(view[:team_chat]).to eq []
+    expect(described_class.spectatable?).to be true
+  end
+
   it 'reduces the targets and adds cloaks when there are many prefects' do
     extra = %w(a1 a2).map { |name| Fabricate(:account, username: name) }
     toot(harry, "@system @minerva @severus @#{extra.first.username} [도둑지도]")

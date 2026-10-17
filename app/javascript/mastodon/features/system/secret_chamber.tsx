@@ -9,6 +9,8 @@ import { apiRequestGet, apiRequestPost } from 'mastodon/api';
 import { GameIcon } from 'mastodon/components/game_icons';
 import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 
+import { BoardHeader } from './board_header';
+
 interface ChamberPlayer {
   seat: number;
   name: string;
@@ -149,38 +151,23 @@ export const ChamberPlay: React.FC<{ sessionId: string; onMoved?: () => void }> 
   return (
     <div className='chamber-play'>
       {/* 맨 위 고정 헤더: 지금 페이즈(낮/밤) · 시간 · 참가자 */}
-      <div className='chamber-head'>
-        <div className='chamber-head__phase'>
-          <span className={view.phase === 'night' ? 'chamber-head__icon chamber-head__icon--night' : 'chamber-head__icon'}>
-            <GameIcon name={view.phase === 'night' ? 'moon' : 'sun'} />
-          </span>
-          <div className='chamber-head__title'>
-            <strong>
-              {view.phase === 'day' && <FormattedMessage id='chamber.day' defaultMessage='Day {day}' values={{ day: view.day }} />}
-              {view.phase === 'night' && <FormattedMessage id='chamber.night' defaultMessage='Night {day}' values={{ day: view.day }} />}
-              {view.phase === 'recruit' && <FormattedMessage id='chamber.recruit' defaultMessage='Recruiting {count} / {min}-{max}' values={{ count: total, min: view.min_players, max: view.max_players }} />}
-              {view.phase === 'finished' && <FormattedMessage id='chamber.finished' defaultMessage='Finished' />}
-            </strong>
-            {playing && <small><FormattedMessage id='chamber.phase' defaultMessage='Phase {no} / {max}' values={{ no: view.phase_no, max: view.max_phases }} /></small>}
-          </div>
-        </div>
-        {playing && (
-          <div className='chamber-head__time'>
-            {view.deadline_at && <span><GameIcon name='hourglass' /> <RelativeTimestamp timestamp={view.deadline_at} futureDate /></span>}
-            {view.ends_at && <small><FormattedMessage id='chamber.ends' defaultMessage='Ends' /> <RelativeTimestamp timestamp={view.ends_at} futureDate /></small>}
-          </div>
+      <BoardHeader
+        icon={view.phase === 'night' ? 'moon' : 'sun'}
+        night={view.phase === 'night'}
+        title={(
+          <>
+            {view.phase === 'day' && <FormattedMessage id='chamber.day' defaultMessage='Day {day}' values={{ day: view.day }} />}
+            {view.phase === 'night' && <FormattedMessage id='chamber.night' defaultMessage='Night {day}' values={{ day: view.day }} />}
+            {view.phase === 'recruit' && <FormattedMessage id='chamber.recruit' defaultMessage='Recruiting {count} / {min}-{max}' values={{ count: total, min: view.min_players, max: view.max_players }} />}
+            {view.phase === 'finished' && <FormattedMessage id='chamber.finished' defaultMessage='Finished' />}
+          </>
         )}
-        <div className='chamber-head__people'>
-          <span className='chamber-head__avatars'>
-            {view.players.map((player) => (
-              <span key={player.seat} className={player.alive ? 'chamber-head__avatar' : 'chamber-head__avatar chamber-head__avatar--out'} title={player.name}>
-                {player.avatar && <img src={player.avatar} alt='' />}
-              </span>
-            ))}
-          </span>
-          <small><FormattedMessage id='chamber.alive_of' defaultMessage='{alive} / {total} alive' values={{ alive: alivePlayers.length, total }} /></small>
-        </div>
-      </div>
+        subtitle={playing ? <FormattedMessage id='chamber.phase' defaultMessage='Phase {no} / {max}' values={{ no: view.phase_no, max: view.max_phases }} /> : undefined}
+        deadline={playing ? view.deadline_at : null}
+        ends={playing && view.ends_at ? <><FormattedMessage id='chamber.ends' defaultMessage='Ends' /> <RelativeTimestamp timestamp={view.ends_at} futureDate /></> : undefined}
+        people={view.players.map((player) => ({ key: player.seat, name: player.name, avatar: player.avatar, out: !player.alive }))}
+        peopleNote={<FormattedMessage id='chamber.alive_of' defaultMessage='{alive} / {total} alive' values={{ alive: alivePlayers.length, total }} />}
+      />
 
       {/* 아바타 원탁 */}
       <div className={view.phase === 'night' ? 'chamber-play__table chamber-play__table--night' : 'chamber-play__table'}>

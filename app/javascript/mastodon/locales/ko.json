@@ -1395,5 +1395,11 @@
   "chamber.petrified": "석화",
   "chamber.expelled": "퇴학",
   "chamber.finished": "종료",
-  "chamber.alive_of": "{alive} / {total}명 생존"
+  "chamber.alive_of": "{alive} / {total}명 생존",
+  "maze.turns_max": "최대 {max}턴",
+  "maze.finished": "종료",
+  "maze.live": "실시간",
+  "maze.replay": "끝난 판입니다. 미로 전체와 모든 길이 보입니다.",
+  "maze.replay_map": "끝난 판입니다. 모든 위치와 도망 경로가 보입니다.",
+  "maze.watching": "관전 중입니다. 모든 위치가 실시간으로 보입니다."
 }
