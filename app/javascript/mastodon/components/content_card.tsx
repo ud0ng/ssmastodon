@@ -260,6 +260,7 @@ const RoomPlayer: React.FC<{ card: GameCard; player: CardPlayer; side: 'left' | 
           {team && <span className={`room-head__team room-head__team--${teamKey}`}>{team}</span>}
           {done && player.result && <RoomPlayerState card={card} player={player} />}
         </span>
+        {card.kind === 'flying' && <RoundDots card={card} player={player} />}
         {/* 2줄: 상태 · 점수, 끝난 판이면 받은 보상 */}
         {done ? (
           <>
@@ -351,35 +352,21 @@ const QuidditchBoard: React.FC<{ card: GameCard }> = ({ card }) => {
   );
 };
 
-// 비행 대결 방 게임판: 사람마다 한 줄 레인, 라운드마다 통과(체크)·충돌(엑스)·미선택(빼기), 지금 라운드는 고리
-const FlyingBoard: React.FC<{ card: GameCard }> = ({ card }) => {
-  const players = orderPlayers(card.players);
+// 비행 대결: 캐릭터 아래 라운드마다 작은 원 하나 (통과 초록 · 충돌 빨강 · 못 감 회색 · 지금 라운드 테두리)
+const RoundDots: React.FC<{ card: GameCard; player: CardPlayer }> = ({ card, player }) => {
   const history = (Array.isArray(card.data.history) ? card.data.history : []) as { round: number; results: Record<string, 'pass' | 'crash' | 'idle'> }[];
   const rounds = card.max_turns ?? num(card.data.rounds);
   if (rounds <= 0) return null;
 
   return (
-    <div className='room-board room-board--flying' aria-hidden>
-      {players.map((player) => (
-        <div key={player.seat} className='room-lane' style={{ '--house-color': player.house?.color || '#8a94a6' } as React.CSSProperties}>
-          {player.avatar && <img className='room-lane__avatar' src={player.avatar} alt='' />}
-          <div className='room-lane__cells'>
-            {Array.from({ length: rounds }, (_, index) => {
-              const round = index + 1;
-              const result = history.find((item) => item.round === round)?.results[String(player.seat)];
-              const now = card.phase === 'active' && round === card.turn;
-              return (
-                <span key={round} className={['room-lane__cell', result && `room-lane__cell--${result}`, now && 'room-lane__cell--now'].filter(Boolean).join(' ')}>
-                  {result === 'pass' && <GameIcon name='check' />}
-                  {result === 'crash' && <GameIcon name='x' />}
-                  {result === 'idle' && <GameIcon name='minus' />}
-                </span>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
+    <span className='room-dots' aria-hidden>
+      {Array.from({ length: rounds }, (_, index) => {
+        const round = index + 1;
+        const result = history.find((item) => item.round === round)?.results[String(player.seat)];
+        const now = card.phase === 'active' && round === card.turn;
+        return <span key={round} className={['room-dots__dot', result && `room-dots__dot--${result}`, now && 'room-dots__dot--now'].filter(Boolean).join(' ')} />;
+      })}
+    </span>
   );
 };
 
@@ -549,8 +536,8 @@ const Board: React.FC<{ card: GameCard; room?: boolean }> = ({ card, room = fals
     }
 
     case 'flying': {
-      // 비행 방 맨 위는 레인 그림 (경로 목록·고른 경로는 시스템 메시지와 버튼에 있다)
-      if (room) return <FlyingBoard card={card} />;
+      // 비행 방 맨 위는 캐릭터 아래 작은 원들만 (RoundDots). 경로 안내는 DM 으로 한 번
+      if (room) return null;
       const round = num(data.round);
       const rounds = num(data.rounds);
       const routes = Array.isArray(data.routes) ? (data.routes as string[]) : [];

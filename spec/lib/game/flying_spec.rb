@@ -36,6 +36,14 @@ RSpec.describe Game::Kinds::Flying do
     expect(described_class.new(session).card_actions.size).to eq 2
   end
 
+  it 'announces the routes of a round only by DM, once per player' do
+    start!
+
+    texts = Status.where(account: system).map { |status| [status.visibility, status.text] }
+    expect(texts.select { |visibility, text| visibility != 'direct' && text.include?('라운드 경로') }).to eq []
+    expect(texts.count { |visibility, text| visibility == 'direct' && text.include?('1라운드 경로') }).to eq 3
+  end
+
   it 'lets the only one on a free route win' do
     start!
 

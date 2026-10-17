@@ -17,9 +17,8 @@ module Game
         F.new(key: 'cmd_fly', type: :string, default: '비행', group: 'commands', label: '경로 고르기 명령어', hint: '[비행/번호] 또는 [비행/경로 이름]'),
         F.new(key: 'msg_players', type: :text, group: 'messages', label: '인원이 모자람', default: '%{game}은 신청자를 포함해 %{min}~%{max}명이 필요합니다. 상대를 더 태그해 주세요.'),
         F.new(key: 'msg_start', type: :text, group: 'messages', label: '시작', default: "%{game} 시작! %{rounds}라운드 동안 겹치지 않는 경로를 골라 비행합니다."),
-        F.new(key: 'msg_round', type: :text, group: 'messages', label: '라운드 시작',
-              default: "%{round}라운드 경로\n%{routes}\n\n시스템 계정에게 DM으로 [%{fly}/번호]를 보내 주세요.\n다른 사람과 경로가 겹치면 공중에서 충돌합니다."),
-        F.new(key: 'msg_ask', type: :text, group: 'messages', label: 'DM: 경로 고르기', default: "%{round}라운드 경로\n%{routes}\n\n[%{fly}/번호]로 답해 주세요."),
+        F.new(key: 'msg_ask', type: :text, group: 'messages', label: 'DM: 라운드 경로 안내 (라운드마다 한 번)',
+              default: "%{round}라운드 경로\n%{routes}\n\n[%{fly}/번호]로 답해 주세요.\n다른 사람과 경로가 겹치면 공중에서 충돌합니다."),
         F.new(key: 'msg_chosen', type: :text, group: 'messages', label: 'DM: 선택 확인', default: "%{route} 경로로 비행합니다."),
         F.new(key: 'msg_bad_route', type: :text, group: 'messages', label: 'DM: 없는 경로', default: '그런 경로는 없습니다. [%{fly}/번호]로 골라 주세요.'),
         F.new(key: 'msg_result', type: :text, group: 'messages', label: '라운드 결과', default: "%{round}라운드 결과\n\n%{lines}"),
@@ -126,7 +125,6 @@ module Game
         state['routes'] = all.sample([[players.size - 1, 2].max, all.size].min)
         state['choices'] = {}
         listed = state['routes'].each_with_index.map { |route, index| "#{index + 1}. #{route}" }.join("\n")
-        post(render(config['msg_round'], round: state['round'], routes: listed, fly: config['cmd_fly']))
         players.each { |player| dm(player, render(config['msg_ask'], round: state['round'], routes: listed, fly: config['cmd_fly'])) }
         wait_for_turn!
       end

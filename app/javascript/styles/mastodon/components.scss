@@ -19702,3 +19702,35 @@ body.app-body.layout-game-room.layout-single-column {
   color: inherit;
   font: inherit;
 }
+
+// 비행 대결: 캐릭터 아래 라운드 점
+.room-dots {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin-top: 3px;
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--ct-dim, #8a94a6) 35%, transparent);
+
+    &--pass {
+      background: #3f8f5a;
+    }
+
+    &--crash {
+      background: #c0392b;
+    }
+
+    &--idle {
+      background: #8a94a6;
+    }
+
+    &--now {
+      outline: 2px solid var(--ct-point, #e0603c);
+      outline-offset: 1px;
+    }
+  }
+}
