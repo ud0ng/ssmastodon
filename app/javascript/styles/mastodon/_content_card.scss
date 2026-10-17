@@ -1007,3 +1007,44 @@
   font-weight: 700;
   text-decoration: none;
 }
+
+// 도둑 지도 사감 팀 채팅 (marauders_map.tsx)
+.map-play__chat {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--ct-line, var(--background-border-color));
+  border-radius: 12px;
+  font-size: 13px;
+
+  &-title {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--ct-point, #{$ui-highlight-color});
+  }
+
+  &-log {
+    display: grid;
+    gap: 3px;
+    max-height: 120px;
+    margin: 0 0 8px;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+  }
+
+  &-form {
+    display: flex;
+    gap: 8px;
+
+    input {
+      flex: 1;
+      min-width: 0;
+      padding: 6px 12px;
+      border: 1px solid var(--ct-line, var(--background-border-color));
+      border-radius: 999px;
+      background: var(--ct-panel, var(--background-color));
+      color: inherit;
+      font: inherit;
+    }
+  }
+}

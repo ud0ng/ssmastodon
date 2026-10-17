@@ -24,7 +24,9 @@ module Game
 
       ZONES_X = %w(서쪽 가운데 동쪽).freeze
       ZONES_Y = %w(위층 가운데층 아래층).freeze
-      ACTIONS = %w(move hide cloak revelio).freeze
+      ACTIONS = %w(move hide cloak revelio team).freeze
+      TEAM_CHAT_KEEP = 30
+      TEAM_CHAT_LENGTH = 200
 
       FIELDS = (base_fields(name: '도둑 지도', command: '도둑지도', points_win: 10) + [
         F.new(key: 'width', type: :integer, default: 5, group: 'rules', label: '지도 가로 (방)', hint: '3~8, 가로×세로가 방 수 (기본 5×5 = 25개)'),
@@ -48,6 +50,7 @@ module Game
         F.new(key: 'cmd_hide', type: :string, default: '숨기', group: 'commands', label: '제자리 명령어'),
         F.new(key: 'cmd_cloak', type: :string, default: '투명망토', group: 'commands', label: '투명 망토 명령어 (학생)'),
         F.new(key: 'cmd_revelio', type: :string, default: '레벨리오', group: 'commands', label: '호메눔 레벨리오 명령어 (사감)'),
+        F.new(key: 'cmd_team', type: :string, default: '팀채팅', group: 'commands', label: '팀 채팅 명령어 (사감)', hint: '[팀채팅/내용] 으로 사감끼리만 몰래 상의합니다'),
         F.new(key: 'msg_start', type: :text, group: 'messages', label: '시작',
               default: "%{game} 시작! %{student}: %{player} / %{prefect}: %{players}\n지도는 이 컨텐츠 방에서 볼 수 있습니다. 턴마다 %{seconds}초 안에 움직일 방을 골라 주세요."),
         F.new(key: 'msg_ask_student', type: :text, group: 'messages', label: 'DM: 학생 이동 고르기',
@@ -57,6 +60,7 @@ module Game
         F.new(key: 'msg_role_student', type: :text, group: 'messages', label: 'DM: 학생 시작 안내', default: "당신은 %{student}입니다. 목표 장소: %{targets}\n모두 다녀오면 승리합니다. %{prefect}에게 붙잡히지 마세요."),
         F.new(key: 'msg_role_prefect', type: :text, group: 'messages', label: 'DM: 사감 시작 안내', default: "당신은 %{prefect}입니다. %{student}{을를} 같은 방에서 붙잡으면 승리합니다."),
         F.new(key: 'msg_chosen', type: :text, group: 'messages', label: 'DM: 선택 확인', default: '선택했습니다.'),
+        F.new(key: 'msg_team', type: :text, group: 'messages', label: 'DM: 팀 채팅 전달', default: '[팀 채팅] %{player}: %{text}'),
         F.new(key: 'msg_bad_move', type: :text, group: 'messages', label: 'DM: 갈 수 없는 방', default: '갈 수 없는 방입니다. 붙어 있는 방을 골라 주세요.'),
         F.new(key: 'msg_wrong_time', type: :text, group: 'messages', label: 'DM: 지금은 할 수 없음', default: '지금은 할 수 없는 선택입니다.'),
         F.new(key: 'msg_no_item', type: :text, group: 'messages', label: 'DM: 아이템 없음', default: '%{item}{이가} 없습니다.'),
@@ -131,6 +135,7 @@ module Game
         when 'move' then submit_room!(player, args.join('/'))
         when 'hide' then submit_room!(player, nil)
         when 'cloak' then use_cloak!(player)
+        when 'team' then team_chat!(player, args)
         else use_revelio!(player)
         end
         true
@@ -169,6 +174,7 @@ module Game
           end,
           targets: student ? state['targets'].map { |room| { room: room, visited: state['visited'].include?(room) } } : [],
           clues: state['clues'].map { |clue| clue.merge('room_name' => clue['room'] && name_of(clue['room'])) },
+          team_chat: student ? [] : Array(state['team_chat']),
           items: student ? { cloak: state['cloaks_left'].to_i } : { revelio: state['revelio_left'][seat].to_i },
           item_info: item_info,
           commands: ACTIONS.to_h { |key| [key, config["cmd_#{key}"]] },
@@ -393,6 +399,16 @@ module Game
         return unless waiting_on.empty?
 
         student ? ask_prefects! : resolve!
+      end
+
+      # 사감끼리만 하는 팀 채팅: 다른 사감에게 DM 으로 전달하고, 웹 지도 화면에도 남긴다 (학생에게는 보이지 않는다)
+      def team_chat!(player, args)
+        text = Array(args).join('/').strip[0, TEAM_CHAT_LENGTH]
+        return dm(player, render(config['msg_wrong_time'])) if student?(player) || text.blank?
+
+        state['team_chat'] = (Array(state['team_chat']) + [{ 'name' => player.name, 'text' => text }]).last(TEAM_CHAT_KEEP)
+        session.save!
+        players.drop(1).reject { |other| other.id == player.id }.each { |other| dm(other, render(config['msg_team'], player: player, text: text)) }
       end
 
       def use_cloak!(player)

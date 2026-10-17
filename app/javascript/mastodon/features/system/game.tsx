@@ -50,7 +50,7 @@ interface GameInfo {
   min_opponents?: number;
   team?: boolean;
   summary: string;
-  rules_text?: { icon: string; title: string; text: string }[];
+  rules_text?: { icon: string; title: string; text: string; visual?: string | null; nodes?: string[]; table?: { head: string[]; rows: string[][] } | null }[];
   roles?: { name: string | null; win: string; notes: string[] }[];
   items?: { name: string; effect: string; icon: string }[];
   steps: string[];
@@ -207,6 +207,44 @@ const RoomList: React.FC<{ rows: SessionRow[] }> = ({ rows }) => {
 
 type Tab = 'rules' | 'active' | 'recent';
 
+// 주문 상성 삼각형: 화살표가 가리키는 쪽을 이긴다 (0 → 1 → 2 → 0)
+const SpellTriangle: React.FC<{ nodes: string[] }> = ({ nodes }) => {
+  const radius = 31;
+  const points: [number, number][] = [[150, 36], [250, 158], [50, 158]];
+  return (
+    <svg className='spell-triangle' viewBox='0 0 300 196' role='img'>
+      <defs>
+        <marker id='spell-arrow' viewBox='0 0 10 10' refX='8' refY='5' markerWidth='7' markerHeight='7' orient='auto-start-reverse'>
+          <path d='M0 0 L10 5 L0 10 z' className='spell-triangle__head' />
+        </marker>
+      </defs>
+      {points.map(([x1, y1], index) => {
+        const [x2, y2] = points[(index + 1) % 3] as [number, number];
+        const length = Math.hypot(x2 - x1, y2 - y1);
+        const ux = (x2 - x1) / length;
+        const uy = (y2 - y1) / length;
+        return (
+          <line
+            key={index}
+            className='spell-triangle__arrow'
+            x1={x1 + (ux * (radius + 3))}
+            y1={y1 + (uy * (radius + 3))}
+            x2={x2 - (ux * (radius + 7))}
+            y2={y2 - (uy * (radius + 7))}
+            markerEnd='url(#spell-arrow)'
+          />
+        );
+      })}
+      {points.map(([x, y], index) => (
+        <g key={index} className='spell-triangle__node'>
+          <circle cx={x} cy={y} r={radius} />
+          <text x={x} y={y + 5} textAnchor='middle'>{nodes[index]}</text>
+        </g>
+      ))}
+    </svg>
+  );
+};
+
 const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
   const intl = useIntl();
   const { key } = useParams<{ key: string }>();
@@ -320,6 +358,21 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
                           <div className='system-rule__body'>
                             <strong className='system-rule__title'>{rule.title}</strong>
                             <p className='system-rule__text'><CommandText text={rule.text} noEmoji /></p>
+                            {rule.visual === 'triangle' && rule.nodes && rule.nodes.length === 3 && <SpellTriangle nodes={rule.nodes} />}
+                            {rule.table && (
+                              <table className='system-rule__table'>
+                                <thead>
+                                  <tr>{rule.table.head.map((cell) => <th key={cell}>{cell}</th>)}</tr>
+                                </thead>
+                                <tbody>
+                                  {rule.table.rows.map((row) => (
+                                    <tr key={row.join('|')}>
+                                      {row.map((cell, index) => (index === 0 ? <th key={cell} scope='row'>{cell}</th> : <td key={cell}>{cell}</td>))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            )}
                           </div>
                         </li>
                       ))}

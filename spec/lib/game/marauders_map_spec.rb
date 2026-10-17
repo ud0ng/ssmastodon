@@ -139,6 +139,20 @@ RSpec.describe Game::Web::MaraudersMap do
     expect(session.state['revelio_left']['1']).to eq 0
   end
 
+  it 'relays the prefect team chat only to the other prefects and never to the student' do
+    start!
+    plain_map!({ '0' => 0, '1' => 12, '2' => 13 })
+
+    dm(minerva, '[팀채팅/정문 쪽으로 몰자]')
+
+    expect(kind.view_for(session.players.to_a[2])[:team_chat]).to eq([{ 'name' => minerva.username, 'text' => '정문 쪽으로 몰자' }])
+    expect(kind.view_for(session.players.first)[:team_chat]).to eq []
+    relayed = Status.where(account: system, visibility: :direct).select { |status| status.text.include?('정문 쪽으로 몰자') }
+    expect(relayed.map { |status| status.mentions.map(&:account_id) }.flatten).to eq [severus.id]
+    dm(harry, '[팀채팅/난 학생]')
+    expect(session.state['team_chat'].size).to eq 1
+  end
+
   it 'reduces the targets and adds cloaks when there are many prefects' do
     extra = %w(a1 a2).map { |name| Fabricate(:account, username: name) }
     toot(harry, "@system @minerva @severus @#{extra.first.username} [도둑지도]")

@@ -1371,5 +1371,7 @@
   "system.game.role_win_label": "승리",
   "system.record_win": "승",
   "system.record_lose": "패",
-  "system.record_draw": "무"
+  "system.record_draw": "무",
+  "map.team_chat": "팀 채팅 (사감끼리만 보여요)",
+  "map.team_chat_send": "보내기"
 }

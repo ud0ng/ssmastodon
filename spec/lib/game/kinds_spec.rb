@@ -201,14 +201,18 @@ RSpec.describe 'Game kinds' do
     end
 
     it 'lets a beater cancel the other action' do
-      Game::Config.update!('quidditch', 'beat_rate' => '100', 'chase_rate' => '100', 'seek_start' => '0')
+      Game::Config.update!('quidditch', 'beat_rate' => '100', 'chase_rate' => '100')
+      # 판이 이미 시작됐으니 스니치 확률은 상태에서 0 으로 (수색이 우연히 성공하면 시험이 흔들린다)
+      session.update!(state: session.state.merge('seek' => session.state['seek'].transform_values { 0 }))
       toot(alice, '@system [몰이]', visibility: 'direct')
       toot(carol, '@system [수색]', visibility: 'direct')
       toot(bob, '@system [추격]', visibility: 'direct')
       toot(dave, '@system [수색]', visibility: 'direct')
 
-      expect(session.state['scores']).to eq('A' => 0, 'B' => 0)
-      expect(Status.find(session.last_status_id).text).to include('블러저가 드레이코를 덮쳤다')
+      # 몰이는 상대 팀 행동 하나를 막는다 (어느 쪽이 막힐지는 무작위): 우리 팀은 득점이 없고, 상대 팀 득점은 한 번 이하
+      expect(session.state['scores']['A']).to eq 0
+      expect(session.state['scores']['B']).to be <= 10
+      expect(Status.find(session.last_status_id).text).to include('블러저가').and include('덮쳤다')
     end
   end
 end

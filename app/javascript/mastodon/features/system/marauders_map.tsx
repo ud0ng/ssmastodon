@@ -27,6 +27,7 @@ interface MapView {
   tokens: Token[];
   targets: { room: number; visited: boolean }[];
   clues: Clue[];
+  team_chat: { name: string; text: string }[];
   items: { cloak?: number; revelio?: number };
   item_info: Record<string, string>;
   commands: Record<string, string>;
@@ -47,6 +48,7 @@ const PAD = 12;
 export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => void }> = ({ sessionId, onMoved }) => {
   const [view, setView] = useState<MapView | null>(null);
   const [busy, setBusy] = useState(false);
+  const [chat, setChat] = useState('');
 
   const load = useCallback(() => {
     apiRequestGet<{ view: MapView | null }>(`v1/system/sessions/${sessionId}/view`)
@@ -85,6 +87,14 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
     },
     [sessionId, load, onMoved],
   );
+
+  const handleChat = (event: React.FormEvent) => {
+    event.preventDefault();
+    const text = chat.trim();
+    if (!text || !view) return;
+    send(view.commands.team ?? '팀채팅', text);
+    setChat('');
+  };
 
   if (!view?.map) return null;
 
@@ -213,6 +223,26 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
           )}
         </div>
       </div>
+
+      {/* 사감 팀 채팅: 학생에게는 보이지 않는다 */}
+      {!student && (
+        <div className='map-play__chat'>
+          <strong className='map-play__chat-title'>
+            <FormattedMessage id='map.team_chat' defaultMessage='Team chat' />
+          </strong>
+          <ul className='map-play__chat-log'>
+            {view.team_chat.slice(-6).map((line, index) => (
+              <li key={`${index}${line.name}`}><b>{line.name}</b> {line.text}</li>
+            ))}
+          </ul>
+          <form className='map-play__chat-form' onSubmit={handleChat}>
+            <input value={chat} onChange={(event) => { setChat(event.target.value); }} maxLength={200} placeholder='…' />
+            <button type='submit' className='maze-play__item' disabled={busy || chat.trim() === ''}>
+              <FormattedMessage id='map.team_chat_send' defaultMessage='Send' />
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

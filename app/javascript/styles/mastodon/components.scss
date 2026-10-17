@@ -19599,3 +19599,76 @@ body.app-body.layout-game-room.layout-single-column {
     font-weight: 700;
   }
 }
+
+// 마법결투 룰: 주문 상성 삼각형 (화살표 = 이긴다)
+.spell-triangle {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin: 8px 0 2px;
+
+  &__arrow {
+    stroke: var(--ct-point, #{$ui-highlight-color});
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+
+  &__head {
+    fill: var(--ct-point, #{$ui-highlight-color});
+  }
+
+  &__node circle {
+    fill: var(--ct-panel, var(--background-color));
+    stroke: var(--ct-point, #{$ui-highlight-color});
+    stroke-width: 2.5;
+  }
+
+  &__node text {
+    fill: var(--ct-text, currentcolor);
+    font-size: 12px;
+    font-weight: 700;
+  }
+}
+
+// 룰 표 (미로: 다른 참가자·적대 결과)
+.system-game-page .system-rule__table {
+  width: 100%;
+  margin-top: 8px;
+  border: 1px solid var(--ct-line, var(--background-border-color));
+  border-collapse: separate;
+  border-radius: 10px;
+  border-spacing: 0;
+  overflow: hidden;
+  font-size: 13px;
+  text-align: center;
+
+  th,
+  td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--ct-line, var(--background-border-color));
+    border-inline-end: 1px solid var(--ct-line, var(--background-border-color));
+  }
+
+  tr > :last-child {
+    border-inline-end: 0;
+  }
+
+  tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+
+  thead th {
+    background: color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 14%, transparent);
+    color: var(--ct-point, #{$ui-highlight-color});
+    font-weight: 700;
+  }
+
+  tbody th {
+    background: color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 7%, transparent);
+    font-weight: 700;
+  }
+
+  td {
+    color: var(--ct-text, inherit);
+  }
+}

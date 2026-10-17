@@ -1234,5 +1234,7 @@
   "system.game.role_win_label": "Win",
   "system.record_win": "W",
   "system.record_lose": "L",
-  "system.record_draw": "D"
+  "system.record_draw": "D",
+  "map.team_chat": "Team chat (prefects only)",
+  "map.team_chat_send": "Send"
 }
