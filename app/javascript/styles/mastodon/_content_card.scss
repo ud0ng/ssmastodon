@@ -1887,3 +1887,10 @@
   stroke-width: 2;
   pointer-events: none;
 }
+
+// 도둑 지도: 갈 수 있는 방에 마우스를 올리면 테마색 대신 양피지에 어울리는 금빛 잉크색
+.map-play__room--reachable:hover rect {
+  fill: #e8c06a;
+  stroke: #9a6a1e;
+  filter: drop-shadow(0 0 6px #c9922e88);
+}
