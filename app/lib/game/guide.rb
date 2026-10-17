@@ -114,7 +114,7 @@ module Game
           { icon: 'hands', title: '인원과 시간', text: '%{min_players}~%{max_players}명이 참가합니다. 최대 %{total_minutes}분, %{max_phases}페이즈 안에 끝납니다. (낮 하나, 밤 하나가 각각 1페이즈)' },
           { icon: 'sun', title: '낮', text: '최대 %{day_minutes}분. 공개 툿으로 토론하고 [%{cmd_accuse}] @누구 로 투표합니다. 가장 많이 고발된 사람이 퇴학되고 진영이 공개됩니다.' },
           { icon: 'moon', title: '밤', text: '최대 %{night_minutes}분. 역할이 있는 사람이 시스템 DM 으로 능력을 씁니다. 모두 정하면(또는 시간이 되면) 아침에 결과가 공개됩니다.' },
-          { icon: 'sparkle', title: '예언', text: '%{role_seer}{은는} 밤마다 예언을 받습니다. 예언의 내용은 %{role_traitor}들이 상의해서 정해 전달하지만, 언제나 사실만 전할 수 있습니다. (진영·역할·둘 중 한 명 이상이 %{role_traitor}) 거짓 예언은 시스템이 막습니다.' },
+          { icon: 'sparkle', title: '예언', text: '%{role_seer}{은는} 밤마다 예언을 받습니다. 예언의 내용은 %{role_traitor}들이 상의해서 정해 전달하지만, 언제나 사실만 전할 수 있습니다.' },
           { icon: 'stun', title: '탈락', text: '석화되거나 퇴학된 사람은 진영이 공개되고 이후 관전만 합니다. 웹 화면에서 모든 역할을 볼 수 있습니다.' },
           { icon: 'compass', title: '웹 화면', text: '아바타가 원탁에 둘러앉고, 석화·퇴학 표시와 투표 현황, 내 역할 카드와 기록 노트가 보입니다. 아바타를 눌러 고발하거나 능력을 쓸 수 있습니다.' },
         ],
