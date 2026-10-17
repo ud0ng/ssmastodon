@@ -425,6 +425,28 @@ ko:
       lessons: 수업 공통
       lessons_hint: '마법 수업 공통 설정입니다. [자습/과목]은 혼자, [수업/과목]은 모집 뒤 반 전체가 함께합니다. 등급(O·E·A·P·D·T)은 성적표에 쌓이고 소속 점수가 됩니다.'
       messages_hint: '문구 아래 명령어를 누르면 커서 자리에 들어갑니다. {계정명}(웹에서는 이름 옆에 프로필 사진이 함께 보입니다) — 앞에 상대·승자·패자·다음 차례를 붙이면 그 사람입니다. {이가} {을를} {은는} 같은 조사는 앞 글자 받침에 맞춰 바뀝니다.'
+      running:
+        actions: 조작
+        active: 진행 중
+        advance: 단계 넘기기
+        cancel: 취소
+        confirm_advance: 지금 단계를 시간이 다 된 것처럼 넘길까요?
+        confirm_cancel: 이 판을 취소할까요? 점수와 보상은 없습니다.
+        confirm_decide: 고른 사람을 승자로 판을 끝낼까요? 점수와 보상이 지급됩니다.
+        confirm_draw: 이 판을 무승부로 끝낼까요? 점수와 보상은 없습니다.
+        decide: 승자 지정
+        done: 처리했습니다.
+        draw: 무승부 종료
+        failed: '처리하지 못했습니다: %{message}'
+        hint: 멈추거나 잘못된 판을 직접 다룹니다. 단계 넘기기는 시간이 다 된 것처럼 진행합니다.
+        no_player: 참가자를 고르지 못했습니다.
+        pending: 대기 중
+        players: 참가자
+        state: 상태
+        title: 진행 중인 컨텐츠
+        tournament: 토너먼트 경기는 토너먼트 화면에서 판정합니다.
+        turn: "%{turn}턴"
+        updated: 마지막 활동
       overview:
         command: 명령어
         count: '%{count}개'

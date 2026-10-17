@@ -19282,10 +19282,9 @@ body.app-body.layout-game-room.layout-single-column {
   }
 }
 
-// 웹 전용 컨텐츠 방(미로·도둑 지도): 메뉴·작성 패널을 숨기고 왼쪽 지도 | 오른쪽 메시지 두 칸 (session.tsx useRoomLayout)
-@media screen and (min-width: 900px) {
+// 웹 전용 컨텐츠 방(미로·도둑 지도·비밀의 방): 메뉴는 그대로 두고, 방(DM 화면 그대로)을 작성 패널 자리로 밀고 그 옆에 같은 너비의 컨텐츠 패널을 둔다 (session.tsx useRoomLayout)
+@media screen and (min-width: 1100px) {
   body.app-body.layout-game-room.layout-game-split {
-    .columns-area__panels__pane--navigational,
     .columns-area__panels__pane--compositional {
       display: none;
     }
@@ -19296,15 +19295,16 @@ body.app-body.layout-game-room.layout-single-column {
     }
 
     .columns-area__panels__main {
-      flex: 1 1 auto;
-      width: min(1240px, 100%);
+      flex: 0 1 1200px;
+      width: 1200px;
+      min-width: 0;
       max-width: none;
-      padding: 0 16px;
+      padding: 0;
     }
 
     .columns-area__panels__main .column {
       display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       grid-template-rows: auto minmax(0, 1fr) auto;
       width: 100%;
       max-width: none;

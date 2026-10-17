@@ -450,3 +450,27 @@ textarea.ui-input {
   font-size: 11px;
   text-align: center;
 }
+
+// 컨텐츠 목록: 진행 중인 판 조작 버튼 (작게, 한 줄로)
+.game-table .bot-sheet-table__actions {
+  .button {
+    padding: 6px 14px;
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  form {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    margin: 2px 4px 2px 0;
+  }
+
+  .game-running__select {
+    width: auto;
+    min-width: 90px;
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+}

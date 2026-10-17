@@ -11,6 +11,7 @@ module Admin
 
       @recent = GameSession.where(created_at: 7.days.ago..).group(:kind).count
       @open = GameSession.open.group(:kind).count
+      @running = GameSession.open.current_kinds.includes(players: :account).order(updated_at: :desc).limit(50)
     end
 
     def show

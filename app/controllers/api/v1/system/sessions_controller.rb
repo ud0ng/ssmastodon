@@ -42,7 +42,9 @@ class Api::V1::System::SessionsController < Api::BaseController
   def view
     player = my_player!
     kind = @session.kind_class.new(@session)
-    render json: { web: @session.kind_class.web?, status: @session.status, view: kind.respond_to?(:view_for) ? kind.view_for(player) : nil }
+    view = kind.respond_to?(:view_for) ? kind.view_for(player) : nil
+    add_avatars!(view)
+    render json: { web: @session.kind_class.web?, status: @session.status, view: view }
   end
 
   # 웹 전용 컨텐츠: 이번 턴 행동 (미로 이동 등)
@@ -58,6 +60,18 @@ class Api::V1::System::SessionsController < Api::BaseController
   end
 
   private
+
+  # 사람 목록(players)이 있는 화면에는 아바타·계정을 붙인다 (비밀의 방 원탁)
+  def add_avatars!(view)
+    return unless view.is_a?(Hash) && view[:players].is_a?(Array)
+
+    accounts = Account.where(id: view[:players].pluck(:account_id)).index_by(&:id)
+    view[:players].each do |entry|
+      account = accounts[entry[:account_id]]
+      entry[:avatar] = account && full_asset_url(account.avatar_static_url)
+      entry[:acct] = account&.acct
+    end
+  end
 
   # 컨텐츠 방(채팅) 메시지: 판 스레드의 툿 전부(신청·명령어·시스템 진행) + 내가 낀 판이면 그 사이 시스템과 주고받은 DM(비밀 선택).
   # 관전하는 사람은 스레드만 본다.

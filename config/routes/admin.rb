@@ -101,6 +101,14 @@ namespace :admin do
     patch :currency, on: :collection
   end
   resources :game_shop_items, path: 'games/shop_items', only: [:create, :update, :destroy]
+  resources :game_sessions, path: 'games/sessions', only: [] do
+    member do
+      post :advance
+      post :cancel
+      post :draw
+      post :decide
+    end
+  end
   resources :game_settings, path: 'games', only: [:index, :show, :update]
   resources :game_activities, path: 'characters/activity', only: [:index, :show] do
     post :give, on: :collection

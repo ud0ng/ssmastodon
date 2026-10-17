@@ -28,6 +28,7 @@ import { DateDivider } from 'mastodon/features/messages/components/date_divider'
 import { sendCommand } from './board';
 import { MaraudersMapPlay } from './marauders_map';
 import { MazePlay } from './maze';
+import { ChamberPlay } from './secret_chamber';
 
 const messages = defineMessages({
   title: { id: 'system.session.title', defaultMessage: 'Game' },
@@ -286,7 +287,7 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   const lastId = useRef<string | null>(null);
   const wasMyTurn = useRef(false);
 
-  useRoomLayout(data?.kind === 'maze' || data?.kind === 'marauders_map');
+  useRoomLayout(['maze', 'marauders_map', 'secret_chamber'].includes(data?.kind ?? ''));
 
   const load = useCallback(() => {
     apiRequestGet<RoomData>(`v1/system/sessions/${id}`)
@@ -421,9 +422,10 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
       />
 
       {/* 지금 상태 (맨 위 고정): 아바타 | 소속 | 이름 vs …, 가운데 진행 상황 */}
-      {data && (current || (data.player && data.status === 'active' && ['maze', 'marauders_map'].includes(data.kind))) && (
-        <div className={data.kind === 'maze' ? 'system-page game-room__status game-room__status--maze' : 'system-page game-room__status'}>
-          {current && <ContentCardView card={current} variant='room' />}
+      {data && (current || (data.player && data.status === 'active' && ['maze', 'marauders_map'].includes(data.kind)) || (data.player && data.kind === 'secret_chamber')) && (
+        <div className={['maze', 'secret_chamber'].includes(data.kind) ? 'system-page game-room__status game-room__status--maze' : 'system-page game-room__status'}>
+          {current && !(data.player && data.kind === 'secret_chamber') && <ContentCardView card={current} variant='room' />}
+          {data.player && data.kind === 'secret_chamber' && data.status !== 'cancelled' && <ChamberPlay sessionId={data.id} onMoved={load} />}
           {data.player && data.kind === 'maze' && data.status === 'active' && <MazePlay sessionId={data.id} onMoved={load} />}
           {data.player && data.kind === 'marauders_map' && data.status === 'active' && <MaraudersMapPlay sessionId={data.id} onMoved={load} />}
         </div>

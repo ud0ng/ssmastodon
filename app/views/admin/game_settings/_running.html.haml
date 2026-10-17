@@ -1,0 +1,39 @@
+-# 진행 중인 판 표 (sessions: GameSession 목록). 비어 있으면 아무것도 보이지 않는다
+- if sessions.any?
+  - title = capture do
+    = game_t('admin.games.running.title')
+    %span.game-table__count= game_t('admin.games.overview.count', count: sessions.size)
+  = render layout: 'admin/ui/section', locals: { title: title } do
+    %p.hint= game_t('admin.games.running.hint')
+    .bot-sheet-table.game-table
+      %table.table
+        %thead
+          %tr
+            %th= game_t('admin.games.overview.name')
+            %th= game_t('admin.games.running.players')
+            %th= game_t('admin.games.running.state')
+            %th= game_t('admin.games.running.updated')
+            %th.bot-sheet-table__actions= game_t('admin.games.running.actions')
+        %tbody
+          - sessions.each do |session|
+            - locked = Game::SessionControl.tournament?(session)
+            %tr
+              %td.bot-sheet-table__text
+                %span.game-table__icon{ 'aria-hidden': 'true' }= game_kind_icon(session.kind)
+                %strong= session.kind_class&.display_name || session.kind
+              %td.bot-sheet-table__text= session.players.map { |player| player.account.username }.join(', ')
+              %td.bot-sheet-table__text
+                %span.game-badge= session.status == 'pending' ? game_t('admin.games.running.pending') : game_t('admin.games.running.active')
+                = game_t('admin.games.running.turn', turn: session.turn)
+              %td.bot-sheet-table__text= l(session.updated_at, format: :short)
+              %td.bot-sheet-table__actions
+                = button_to game_t('admin.games.running.advance'), advance_admin_game_session_path(session), method: :post, class: 'button button--dangerous', data: { confirm: game_t('admin.games.running.confirm_advance') }
+                - if locked
+                  %span.hint= game_t('admin.games.running.tournament')
+                - else
+                  - if session.status == 'active' && !session.kind_class&.event?
+                    = form_with url: decide_admin_game_session_path(session), method: :post, class: 'inline-form' do |f|
+                      = select_tag :player_id, options_from_collection_for_select(session.players, :id, ->(player) { player.account.username }), class: 'game-running__select'
+                      = f.submit game_t('admin.games.running.decide'), class: 'button button--dangerous', data: { confirm: game_t('admin.games.running.confirm_decide') }
+                  = button_to game_t('admin.games.running.draw'), draw_admin_game_session_path(session), method: :post, class: 'button button--dangerous', data: { confirm: game_t('admin.games.running.confirm_draw') }
+                  = button_to game_t('admin.games.running.cancel'), cancel_admin_game_session_path(session), method: :post, class: 'button button--dangerous', data: { confirm: game_t('admin.games.running.confirm_cancel') }

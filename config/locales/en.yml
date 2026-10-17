@@ -427,6 +427,28 @@ en:
       lessons: Lessons
       lessons_hint: 'Shared lesson settings. [study/subject] is solo, [class/subject] gathers a class first. Grades go to the report card and become points.'
       messages_hint: 'Click a token under a message to insert it. {계정명} (the web shows the profile picture next to the name); prefix 상대/승자/패자 for other people. Particles like {이가} follow the previous letter.'
+      running:
+        actions: Actions
+        active: Active
+        advance: Advance
+        cancel: Cancel
+        confirm_advance: Advance the current step as if time ran out?
+        confirm_cancel: Cancel this game? No points or rewards.
+        confirm_decide: End the game with the chosen winner? Points and rewards are given.
+        confirm_draw: End this game as a draw? No points or rewards.
+        decide: Pick winner
+        done: Done.
+        draw: End as draw
+        failed: 'Could not do it: %{message}'
+        hint: Handle stuck or broken games. Advance moves on as if time ran out.
+        no_player: No player chosen.
+        pending: Waiting
+        players: Players
+        state: State
+        title: Running contents
+        tournament: Tournament matches are judged on the tournament screen.
+        turn: "Turn %{turn}"
+        updated: Last activity
       overview:
         command: Command
         count: "%{count}"
