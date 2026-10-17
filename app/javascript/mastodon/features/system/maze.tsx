@@ -354,6 +354,41 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
       <BoardTip tip={board.tip} />
       </div>
 
+      {/* 범례: 지도 위 그림이 무엇인지 */}
+      <ul className='map-legend'>
+        <li>
+          <svg className='map-legend__swatch' viewBox='0 0 40 16' width={40} height={16} aria-hidden><line x1={4} y1={8} x2={36} y2={8} className='maze-legend__wall' /></svg>
+          <FormattedMessage id='maze.legend.wall' defaultMessage='Wall' />
+        </li>
+        <li>
+          <svg className='map-legend__swatch' viewBox='0 0 20 16' width={20} height={16} aria-hidden>
+            <rect x={1} y={1} width={8} height={14} className='maze-play__floor maze-play__floor--lit' />
+            <rect x={11} y={1} width={8} height={14} className='maze-play__floor maze-play__floor--memory' />
+          </svg>
+          <FormattedMessage id='maze.legend.floor' defaultMessage='Lit / remembered path' />
+        </li>
+        <li>
+          <svg className='map-legend__swatch' viewBox='0 0 20 20' width={20} height={20} aria-hidden><GameIcon className='maze-play__cup' name='tournament' x={1} y={1} size={18} /></svg>
+          <FormattedMessage id='maze.legend.cup' defaultMessage='Triwizard Cup' />
+        </li>
+        <li>
+          <svg className='map-legend__swatch' viewBox='0 0 20 20' width={20} height={20} aria-hidden><GameIcon className='maze-play__trap' name='stun' x={1} y={1} size={18} /></svg>
+          <FormattedMessage id='maze.legend.trap' defaultMessage='Trap you found' />
+        </li>
+        <li>
+          <svg className='map-legend__swatch' viewBox='0 0 20 20' width={20} height={20} aria-hidden><GameIcon className='maze-play__creature' name='foot' x={1} y={1} size={18} /></svg>
+          <FormattedMessage id='maze.legend.creature' defaultMessage='Magical creature' />
+        </li>
+        {!view.revealed && (
+          <li>
+            <svg className='map-legend__swatch maze-legend__move' viewBox='0 0 20 20' width={20} height={20} aria-hidden>
+              <g className='maze-play__move'><rect x={2} y={2} width={16} height={16} rx={4} /><circle cx={10} cy={10} r={3} /></g>
+            </svg>
+            <FormattedMessage id='maze.legend.move' defaultMessage='Squares you can move to' />
+          </li>
+        )}
+      </ul>
+
       <div className='maze-play__foot'>
         <p className='maze-play__hint'>
           {view.revealed ? (

@@ -2140,3 +2140,9 @@
   color: #3a2814;
   font-family: Georgia, 'Noto Serif KR', 'Nanum Myeongjo', serif;
 }
+
+.maze-legend__wall {
+  stroke: #4a2f14;
+  stroke-linecap: round;
+  stroke-width: 4.5;
+}
