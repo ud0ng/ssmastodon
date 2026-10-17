@@ -19124,3 +19124,19 @@ body.app-body.layout-game-room.layout-single-column {
     cursor: default;
   }
 }
+
+// 퀴디치 팀 배지 (이름 옆)
+.room-head__team {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 14%, transparent);
+  color: var(--ct-point, #{$ui-highlight-color});
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+
+  &--B {
+    background: color-mix(in srgb, var(--ct-dim, #{$darker-text-color}) 18%, transparent);
+    color: var(--ct-dim, var(--color-dim, #{$darker-text-color}));
+  }
+}

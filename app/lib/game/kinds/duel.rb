@@ -91,7 +91,9 @@ module Game
 
       # 주문은 DM 으로 고른다. 필살기는 아직 안 쓴 사람만.
       def card_actions
-        seats = players.map(&:seat)
+        seats = pending_seats
+        return [] if seats.empty?
+
         spells = SPELLS.map { |key| Game::Card.action(config["cmd_#{key}"], seats: seats, dm: true) }
         fresh = seats.reject { |seat| state.dig('special_used', seat.to_s) }
         specials = fresh.empty? ? [] : SPELLS.map { |key| Game::Card.action("#{config["cmd_#{key}"]}/#{config['cmd_special']}", label: "#{config["cmd_#{key}"]}·#{config['cmd_special']}", seats: fresh, dm: true, style: 'secondary', row: 2) }

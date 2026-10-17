@@ -1,6 +1,6 @@
 -# 아이템 여러 개를 아이템마다 개수와 함께 고르기 (인벤토리 카드 모양). 규칙: docs/관리화면-컴포넌트.md
 -#   = render 'admin/ui/item_picker', name: 'items', options: [[이름, 그림 주소 또는 nil], ...]
--# 보내는 값: items[][name], items[][count]. [+] 카드를 누르면 아이템 목록(팝오버)이 뜨고, 고르면 카드가 붙는다 (admin.tsx)
+-# 보내는 값: items[][name], items[][count] (chance: true 면 items[][chance] 도). [+] 카드를 누르면 아이템 목록(팝오버, 위에 검색칸)이 뜨고, 고르면 카드가 붙는다 (admin.tsx)
 .ui-item-picker{ data: { item_picker: name } }
   .game-inventory.ui-item-picker__cards
     %details.ui-popover-anchor.ui-item-picker__add{ data: { popover: true } }
@@ -10,6 +10,9 @@
       .ui-popover
         - if options.empty?
           %p.hint= game_t('admin.games.activity.no_options')
+        - else
+          %input.ui-input.ui-popover__search{ type: 'search', placeholder: game_t('admin.games.activity.search_item'), 'aria-label': game_t('admin.games.activity.search_item'), data: { item_search: true } }
+          %p.hint.ui-popover__empty{ hidden: true }= game_t('admin.games.activity.no_match')
         - options.each do |item_name, image|
           %button.ui-popover__option{ type: 'button', data: { item_pick: item_name } }
             = render 'admin/game_characters/item_thumb', name: item_name, image: image
@@ -21,4 +24,9 @@
         %button.ui-item-picker__remove{ type: 'button', 'aria-label': t('generic.delete') }= material_symbol('close')
       %span.game-inventory__name
       %input{ type: 'hidden', name: "#{name}[][name]" }
+      - if local_assigns[:chance]
+        %span.ui-item-picker__caption= game_t('admin.games.reward_item.count')
       %input.ui-input.ui-item-picker__count{ type: 'number', name: "#{name}[][count]", min: 1, step: 1, value: 1, 'aria-label': game_t('admin.games.activity.item_count') }
+      - if local_assigns[:chance]
+        %span.ui-item-picker__caption= game_t('admin.games.reward_item.chance')
+        %input.ui-input.ui-item-picker__chance{ type: 'number', name: "#{name}[][chance]", min: 1, max: 100, step: 1, placeholder: game_t('admin.games.reward_item.chance_placeholder'), 'aria-label': game_t('admin.games.reward_item.chance') }

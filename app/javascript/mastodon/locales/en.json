@@ -1215,5 +1215,7 @@
   "content_card.round_of": "Round {turn} / {max}",
   "content_card.potion_size": "{size} ingredients",
   "content_card.answer_label": "Answer",
-  "system.room.waiting_accept": "Waiting for them to accept…"
+  "system.room.waiting_accept": "Waiting for them to accept…",
+  "content_card.room_chosen": "Chosen",
+  "content_card.room_choosing": "Choosing"
 }

@@ -24,7 +24,7 @@
 = form_tag admin_game_setting_path(params[:id]), method: :patch, id: 'edit_game_config', class: 'simple_form game-config',
   data: { game_config: true, samples: game_preview_samples(title).to_json,
           system_name: system&.display_name.presence || system&.username || 'system', system_avatar: system ? full_asset_url(system.avatar_static_url) : '',
-          changed_label: game_t('admin.games.changed'), reset_label: game_t('admin.games.reset_default'),
+          changed_label: game_t('admin.games.changed'), reset_label: game_t('admin.games.reset_default'), section_reset_label: game_t('admin.games.reset_section'),
           chips_placeholder: game_t('admin.games.chips_placeholder'), unknown_label: game_t('admin.games.unknown_tokens'),
           split_labels: [game_t('admin.games.split.perfect'), game_t('admin.games.split.half'), game_t('admin.games.split.fail'), game_t('admin.games.split.over')].to_json } do
   -# 프로필 설정 화면처럼 소제목(admin/ui/section) + 칸(admin/ui/field)

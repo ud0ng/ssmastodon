@@ -35,5 +35,13 @@ RSpec.describe Game::Config do
 
       expect(described_class.for('common')).to include('house_label' => '반', 'cmd_accept' => '좋아')
     end
+
+    it 'does not store a message that only differs from the default by form line endings' do
+      default = described_class.schema('jellybean').find { |field| field.key == 'msg_turn' }.default
+
+      described_class.update!('jellybean', 'msg_turn' => default.gsub("\n", "\r\n"))
+
+      expect(GameConfig.find_by(key: 'jellybean').data).not_to have_key('msg_turn')
+    end
   end
 end

@@ -28,9 +28,9 @@
         -# 도움말 줄: '명령어|설명' 표 (game_config_editor.ts setupStatsEditor, 보상 아이템 표와 같은 칸)
         = text_area_tag name, Array(value).join("\n"), id: field_id, rows: 3, class: 'ui-input ui-input--textarea', data: { stats_editor: { columns: field.columns, sep: '|' }.to_json }
       - elsif items_field
-        -# 보상 아이템: 상점 아이템을 골라 개수·확률을 적는 표 (game_config_editor.ts setupStatsEditor)
-        - editor = { columns: [game_t('admin.games.reward_item.name'), game_t('admin.games.reward_item.count'), game_t('admin.games.reward_item.chance')], sep: '|', choices: @shop_item_names, choice_placeholder: game_t('admin.games.reward_item.pick') }
-        = text_area_tag name, Array(value).join("\n"), id: field_id, rows: 3, class: 'ui-input ui-input--textarea', data: { stats_editor: editor.to_json }
+        -# 보상 아이템: 상점 아이템을 검색해서 골라 카드(개수·확률)로. 값은 숨은 글(아이템|개수|확률)로 보낸다 (game_config_editor.ts setupRewardPickers)
+        = text_area_tag name, Array(value).join("\n"), id: field_id, rows: 3, style: 'display: none', class: 'ui-input ui-input--textarea', data: { reward_items: true }
+        = render 'admin/ui/item_picker', name: "reward_picker_#{field.key}", options: @shop_items, chance: true
       - else
         = text_area_tag name, Array(value).join("\n"), id: field_id, rows: [Array(value).size + 1, 4].max, class: 'ui-input ui-input--textarea'
     - when :text

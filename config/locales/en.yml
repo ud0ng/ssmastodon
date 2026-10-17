@@ -60,9 +60,11 @@ en:
         item_count: Count
         item_kinds: Items
         money_amount: "Amount (%{currency})"
+        no_match: No matching item.
         no_options: Nothing to choose.
         pick_characters: Choose characters
         pick_items: Choose items
+        search_item: Search items
         post_chars: Post characters
         posts: Posts
         reason: Note
@@ -142,6 +144,7 @@ en:
         tournament: Match messages
       reward_item:
         chance: Chance %
+        chance_placeholder: Chance %
         count: Count
         hint: Leave the chance empty to always give it. Each row is drawn separately.
         name: Item
@@ -455,6 +458,7 @@ en:
         tournaments_hint: Build brackets and judge matches
       overview_hint: Pick a content to change its switch, commands, rules, chances and messages. Disabled ones are faded.
       reset_default: Default
+      reset_section: Reset this section
       split:
         fail: Fail
         half: So-so

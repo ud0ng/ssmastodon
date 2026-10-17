@@ -92,11 +92,12 @@ module Game
         resolve!
       end
 
-      # 카드: 사람마다 자기 팀 점수 (scores), 팀 구성 (teams, team_names)
+      # 최대 턴 (방 맨 위 '1턴 / 15턴')
       def max_turns
-        config['max_turns'].to_i
+        config['max_turns'].to_i.clamp(1, 50)
       end
 
+      # 카드: 사람마다 자기 팀 점수 (scores), 팀 구성 (teams, team_names)
       def card_data
         {
           'scores' => players.to_h { |player| [player.seat.to_s, team_score(player)] },
@@ -111,15 +112,13 @@ module Game
       end
 
       def card_actions
-        seats = players.map(&:seat)
+        seats = pending_seats
+        return [] if seats.empty?
+
         ACTIONS.map { |key| Game::Card.action(config["cmd_#{key}"], seats: seats, dm: true) }
       end
 
       private
-
-      def max_turns
-        config['max_turns'].to_i.clamp(1, 50)
-      end
 
       def commands
         ACTIONS.to_h { |key| [key.to_sym, config["cmd_#{key}"]] }

@@ -84,7 +84,9 @@ module Game
 
       # 버튼: 경로마다 DM 으로 [비행/번호]
       def card_actions
-        seats = players.map(&:seat)
+        seats = pending_seats
+        return [] if seats.empty?
+
         Array(state['routes']).each_with_index.map do |route, index|
           Game::Card.action("#{config['cmd_fly']}/#{index + 1}", seats: seats, label: route, dm: true)
         end

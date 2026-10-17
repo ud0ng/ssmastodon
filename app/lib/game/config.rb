@@ -109,6 +109,8 @@ module Game
         when :select then field.choices.to_h.key?(value.to_s) ? value.to_s : field.default
         when :account then value.to_s.strip.delete_prefix('@')
         when :accounts then Array(value).flat_map { |item| item.to_s.split(/[\s,]+/) }.map { |item| item.strip.delete_prefix('@') }.compact_blank.uniq
+        # 폼으로 오는 줄바꿈(\r\n)을 \n 으로 맞춘다 — 안 그러면 기본값과 같은 문구도 '바뀐 값'으로 저장돼 기본 문구를 고쳐도 반영되지 않는다
+        when :text then value.to_s.gsub("\r\n", "\n").tr("\r", "\n").strip
         else value.to_s.strip
         end
       end

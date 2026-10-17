@@ -19,6 +19,7 @@ module Admin
       @sections = Game::Config.sections(@key, @page)
       @values = Game::Config.for(@key)
       @shop_item_names = GameShopItem.pluck(:name)
+      @shop_items = GameShopItem.order(:name).map { |item| [item.name, item.image.present? ? item.image.url(:small) : nil] }
       @accounts = Account.local.without_instance_actor.without_suspended.order(:username).to_a if @key == 'common'
 
       kind = Game::Kinds.registry[@key]

@@ -5,6 +5,7 @@ import Rails from '@rails/ujs';
 import { setupCommunitySelect } from '../mastodon/admin/community_select';
 import { setupCommunityThemeEditor } from '../mastodon/admin/community_theme_editor';
 import { setupGameConfigEditor, setupStatsEditor } from '../mastodon/admin/game_config_editor';
+import { addItemCard, filterItemOptions } from '../mastodon/admin/item_picker';
 import ready from '../mastodon/ready';
 
 const setAnnouncementEndsAttributes = (target: HTMLInputElement) => {
@@ -616,35 +617,43 @@ Rails.delegate(document, '[data-item-pick]', 'click', ({ target }) => {
 
   const option = target.closest<HTMLElement>('[data-item-pick]');
   const picker = option?.closest<HTMLElement>('[data-item-picker]');
-  const template = picker?.querySelector('template');
   const add = picker?.querySelector<HTMLDetailsElement>('.ui-item-picker__add');
   const name = option?.dataset.itemPick;
-  if (!option || !picker || !template || !add || !name) return;
+  if (!option || !picker || !add || !name) return;
 
   add.open = false;
-  const existing = Array.from(picker.querySelectorAll<HTMLElement>('.ui-item-picker__card')).find(
-    (card) => card.querySelector<HTMLInputElement>('input[type="hidden"]')?.value === name,
-  );
-  if (existing) {
-    const count = existing.querySelector<HTMLInputElement>('.ui-item-picker__count');
-    if (count) count.value = String((parseInt(count.value, 10) || 0) + 1);
-    return;
-  }
-
-  const card = (template.content.firstElementChild as HTMLElement | null)?.cloneNode(true);
-  if (!(card instanceof HTMLElement)) return;
-  const thumb = option.querySelector('.game-item-thumb')?.cloneNode(true);
-  if (thumb) card.querySelector('.ui-item-picker__thumb')?.replaceWith(thumb);
-  const label = card.querySelector('.game-inventory__name');
-  if (label) label.textContent = name;
-  const hidden = card.querySelector<HTMLInputElement>('input[type="hidden"]');
-  if (hidden) hidden.value = name;
-  add.before(card);
-  card.querySelector<HTMLInputElement>('.ui-item-picker__count')?.select();
+  addItemCard(picker, name);
+  picker.querySelectorAll<HTMLElement>('.ui-item-picker__card').forEach((card) => {
+    if (card.querySelector<HTMLInputElement>('input[type="hidden"]')?.value === name) card.querySelector<HTMLInputElement>('.ui-item-picker__count')?.select();
+  });
+  picker.dispatchEvent(new Event('change', { bubbles: true }));
 });
 
+// 목록 위 검색칸: 이름에 들어 있는 글자로 거른다. 목록을 열면 검색칸에 바로 쓸 수 있게
+Rails.delegate(document, 'input[data-item-search]', 'input', ({ target }) => {
+  if (target instanceof HTMLInputElement) filterItemOptions(target);
+});
+
+document.addEventListener(
+  'toggle',
+  ({ target }) => {
+    if (!(target instanceof HTMLDetailsElement) || !target.matches('.ui-item-picker__add') || !target.open) return;
+
+    const search = target.querySelector<HTMLInputElement>('input[data-item-search]');
+    if (!search) return;
+    search.value = '';
+    filterItemOptions(search);
+    search.focus();
+  },
+  true,
+);
+
 Rails.delegate(document, '.ui-item-picker__remove', 'click', ({ target }) => {
-  if (target instanceof Element) target.closest('.ui-item-picker__card')?.remove();
+  if (!(target instanceof Element)) return;
+
+  const picker = target.closest<HTMLElement>('[data-item-picker]');
+  target.closest('.ui-item-picker__card')?.remove();
+  picker?.dispatchEvent(new Event('change', { bubbles: true }));
 });
 
 

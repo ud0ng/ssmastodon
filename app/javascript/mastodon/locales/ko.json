@@ -1352,5 +1352,7 @@
   "content_card.round_of": "{turn}라운드 / {max}라운드",
   "content_card.potion_size": "재료 {size}개",
   "content_card.answer_label": "정답",
-  "system.room.waiting_accept": "상대의 수락을 기다리는 중…"
+  "system.room.waiting_accept": "상대의 수락을 기다리는 중…",
+  "content_card.room_chosen": "선택 완료",
+  "content_card.room_choosing": "선택 중"
 }

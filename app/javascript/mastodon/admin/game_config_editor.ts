@@ -6,6 +6,8 @@
 //  - 줄마다 하나인 목록(젤리빈 맛 등)은 칩으로 추가·삭제
 //  - '(%)' 숫자 칸은 슬라이더도 같이
 
+import { addItemCard, clearItemCards, readItemCards } from './item_picker';
+
 type Segment =
   | { kind: 'text'; text: string }
   | { kind: 'value'; text: string }
@@ -330,6 +332,43 @@ const attachSplitBars = (form: HTMLFormElement, labels: string[]) => {
   });
 };
 
+// 컨텐츠 승리 아이템: 숨은 글(줄마다 '아이템|개수|확률') ↔ 상점 아이템 카드. 카드를 고치면 글이 바뀌고, 기본값으로 되돌리면 카드가 다시 그려진다.
+const setupRewardPickers = (form: HTMLFormElement) => {
+  form.querySelectorAll<HTMLTextAreaElement>('textarea[data-reward-items]').forEach((textarea) => {
+    const picker = textarea.closest('.game-field')?.querySelector<HTMLElement>('[data-item-picker]');
+    if (!picker) return;
+
+    let writing = false;
+
+    const render = () => {
+      clearItemCards(picker);
+      textarea.value
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .forEach((line) => {
+          const [name = '', count = '1', chance = ''] = line.split('|').map((part) => part.trim());
+          addItemCard(picker, name, Math.max(parseInt(count, 10) || 1, 1), chance.replace('%', ''), false);
+        });
+    };
+
+    const write = () => {
+      const lines = readItemCards(picker).map((item) => (item.chance ? `${item.name}|${item.count}|${item.chance}` : `${item.name}|${item.count}`));
+      writing = true;
+      textarea.value = lines.join('\n');
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      writing = false;
+    };
+
+    picker.addEventListener('input', write);
+    picker.addEventListener('change', write);
+    textarea.addEventListener('input', () => {
+      if (!writing) render();
+    });
+    render();
+  });
+};
+
 export const setupGameConfigEditor = () => {
   const form = document.querySelector<HTMLFormElement>('form[data-game-config]');
   if (!form) return;
@@ -394,15 +433,50 @@ export const setupGameConfigEditor = () => {
     }
   });
 
+  setupRewardPickers(form);
   attachSplitBars(form, JSON.parse(form.dataset.splitLabels ?? '[]') as string[]);
 
   const savebar = form.querySelector<HTMLElement>('.game-savebar');
   const savebarText = savebar?.querySelector<HTMLElement>('.game-savebar__text');
   let submitting = false;
 
+  // 소제목(묶음) 오른쪽 '이 묶음 기본값으로': 그 묶음에서 기본값과 다른 칸을 한 번에 기본값으로 (저장하기 전까지는 되돌리기 가능)
+  const sectionResets = new Map<HTMLElement, HTMLButtonElement>();
+  form.querySelectorAll<HTMLElement>('.ui-section').forEach((section) => {
+    if (!section.querySelector('.game-field')) return;
+
+    const head = section.querySelector<HTMLElement>('.ui-section__head');
+    if (!head) return;
+
+    let actions = head.querySelector<HTMLElement>('.ui-section__actions');
+    if (!actions) {
+      actions = document.createElement('div');
+      actions.className = 'ui-section__actions';
+      head.append(actions);
+    }
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'game-group__reset';
+    button.textContent = form.dataset.sectionResetLabel ?? 'Reset section';
+    button.hidden = true;
+    button.addEventListener('click', () => {
+      fields
+        .filter((field) => section.contains(field.element) && field.changedFromDefault)
+        .forEach((field) => {
+          field.set(field.defaultValue);
+        });
+    });
+    actions.append(button);
+    sectionResets.set(section, button);
+  });
+
   const refresh = () => {
     fields.forEach((field) => {
       field.refresh();
+    });
+    sectionResets.forEach((button, section) => {
+      button.hidden = section.querySelectorAll('.game-field--changed').length === 0;
     });
 
     // 묶음(admin/ui/_section)마다 바뀐 칸 수

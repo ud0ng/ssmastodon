@@ -58,9 +58,11 @@ ko:
         item_count: 아이템 수
         item_kinds: 아이템 종류
         money_amount: '재화 수 (%{currency})'
+        no_match: 맞는 아이템이 없습니다.
         no_options: 고를 것이 없습니다.
         pick_characters: 캐릭터 고르기
         pick_items: 아이템 고르기
+        search_item: 아이템 검색
         post_chars: 퍼블 글자 수
         posts: 퍼블 툿
         reason: 내용
@@ -140,6 +142,7 @@ ko:
         tournament: 매치 문구
       reward_item:
         chance: 확률 %
+        chance_placeholder: 확률 %
         count: 개수
         hint: 확률을 비우면 반드시 줍니다. 줄마다 따로 뽑습니다.
         name: 아이템
@@ -453,6 +456,7 @@ ko:
         tournaments_hint: 대진표를 짜고 경기 결과를 판정
       overview_hint: 컨텐츠를 눌러 켜기·명령어·규칙·확률·문구를 바꿉니다. 꺼진 컨텐츠는 흐리게 보입니다.
       reset_default: 기본값으로
+      reset_section: 이 묶음 기본값으로
       split:
         fail: 실패
         half: 어중간

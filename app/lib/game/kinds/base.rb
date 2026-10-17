@@ -103,6 +103,11 @@ module Game
         []
       end
 
+      # 동시에 고르는 컨텐츠(결투·퀴디치·비행)에서 아직 이번 턴 선택을 내지 않은 자리들 — 선택한 사람의 웹 버튼·'내 차례'를 거두는 데 쓴다
+      def pending_seats
+        players.map(&:seat).reject { |seat| (state['choices'] || {}).key?(seat.to_s) }
+      end
+
       # 최대 라운드(턴) 수: 방 맨 위에 '1라운드 / 10라운드' 로 보여 준다. 정해져 있지 않으면 nil
       def max_turns
         nil

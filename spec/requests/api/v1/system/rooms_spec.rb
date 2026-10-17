@@ -16,15 +16,19 @@ RSpec.describe 'API V1 System rooms' do
     status
   end
 
-  it 'counts challenges I have not accepted yet for the contents menu badge' do
+  it 'lists what waits for me (an invite, then my turn) for the contents menu badge and alerts' do
     toot(rival, "@system @#{user.account.username} [젤리빈]")
 
     get '/api/v1/system/wallet', headers: headers
     expect(response.parsed_body['invites']).to eq 1
+    expect(response.parsed_body['todo'].size).to eq 1
 
     toot(user.account, '@system [수락]')
+    session = GameSession.where(kind: 'jellybean').last
+    my_turn = session.state['seat'] == session.player_for(user.account).seat
+
     get '/api/v1/system/wallet', headers: headers
-    expect(response.parsed_body['invites']).to eq 0
+    expect(response.parsed_body['todo'].size).to eq(my_turn ? 1 : 0)
   end
 
   it 'shows the game thread as chat messages, system messages with their cards' do

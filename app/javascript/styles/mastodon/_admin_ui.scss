@@ -189,6 +189,8 @@ textarea.ui-input {
   border-radius: 10px;
   background: var(--background-color);
   box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
+  // 부모(카드 목록)에서 흰 글자가 상속되지 않게
+  color: var(--ct-text, #282c37);
 
   &__option {
     display: flex;
@@ -384,4 +386,67 @@ textarea.ui-input {
 // 수업 > 설정의 등급 표: 아이템 칸은 넓게
 .game-grades .game-grades__items {
   min-width: 280px;
+}
+
+// 소제목 오른쪽 '이 묶음 기본값으로' (컨텐츠 설정 편집기)
+.ui-section .game-group__reset {
+  padding: 2px 12px;
+  border: 1px solid $ui-highlight-color;
+  border-radius: 999px;
+  background: transparent;
+  color: $ui-highlight-color;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: color-mix(in srgb, $ui-highlight-color 12%, transparent);
+  }
+}
+
+// 아이템 고르기 목록 위 검색칸 + 승리 아이템 카드의 확률칸
+.ui-popover__search {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+.ui-item-picker .ui-item-picker__chance {
+  width: 100%;
+  min-height: 32px;
+  margin-top: 4px;
+  padding: 4px 8px;
+  text-align: center;
+}
+
+.ui-popover__empty {
+  padding: 8px;
+}
+
+// 검색으로 거른 목록 항목은 확실히 숨긴다 (flex 로 덮이지 않게)
+.ui-popover .ui-popover__option[hidden],
+.ui-popover .ui-popover__empty[hidden] {
+  display: none !important;
+}
+
+// 관리 화면의 다른 button 규칙이 글자색을 흰색으로 덮어서, 아래 두 곳은 글자색을 못 박는다
+.ui-popover .ui-popover__option {
+  color: var(--ct-text, #282c37) !important;
+}
+
+.simple_form .ui-section .game-group__reset,
+.ui-section .game-group__reset {
+  color: var(--ct-point, #{$ui-highlight-color}) !important;
+  border-color: var(--ct-point, #{$ui-highlight-color}) !important;
+}
+
+// 승리 아이템 카드의 개수·확률 이름표
+.ui-item-picker__caption {
+  display: block;
+  margin-top: 6px;
+  color: var(--ct-dim, #6b7280);
+  font-size: 11px;
+  text-align: center;
 }

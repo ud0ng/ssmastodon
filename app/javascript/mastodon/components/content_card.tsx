@@ -202,6 +202,20 @@ const RoomPlayerState: React.FC<{ card: GameCard; player: CardPlayer }> = ({ car
     );
   }
 
+  // 동시에 고르는 컨텐츠(결투·퀴디치·비행): 고른 사람은 '선택 완료', 아직이면 '선택 중' (무엇을 골랐는지는 알리지 않는다)
+  if (card.phase === 'active' && Array.isArray(card.data.chosen)) {
+    const done = (card.data.chosen as (string | number)[]).map(String).includes(String(player.seat));
+    return done ? (
+      <span className='room-head__state room-head__state--turn'>
+        <FormattedMessage id='content_card.room_chosen' defaultMessage='Chosen' />
+      </span>
+    ) : (
+      <span className='room-head__state room-head__state--wait'>
+        <FormattedMessage id='content_card.room_choosing' defaultMessage='Choosing' />
+      </span>
+    );
+  }
+
   if (card.phase !== 'active' || card.data.current_seat === undefined || card.data.current_seat === null) return null;
 
   return card.data.current_seat === player.seat ? (
@@ -218,6 +232,9 @@ const RoomPlayerState: React.FC<{ card: GameCard; player: CardPlayer }> = ({ car
 const RoomPlayer: React.FC<{ card: GameCard; player: CardPlayer; side: 'left' | 'right' }> = ({ card, player, side }) => {
   const isTurn = card.phase === 'active' && card.data.current_seat === player.seat;
   const done = card.phase === 'finished' || card.phase === 'cancelled';
+  // 퀴디치 팀전: 이름 옆 팀 배지
+  const teamKey = (card.data.teams as Record<string, string> | undefined)?.[String(player.seat)];
+  const team = teamKey ? (card.data.team_names as Record<string, string> | undefined)?.[teamKey] : undefined;
   return (
     <div
       className={[
@@ -238,6 +255,7 @@ const RoomPlayer: React.FC<{ card: GameCard; player: CardPlayer; side: 'left' | 
             </span>
           )}
           <span className='room-head__name'>{player.name}</span>
+          {team && <span className={`room-head__team room-head__team--${teamKey}`}>{team}</span>}
           {done && player.result && <RoomPlayerState card={card} player={player} />}
         </span>
         {/* 2줄: 상태 · 점수, 끝난 판이면 받은 보상 */}
@@ -447,6 +465,8 @@ const Board: React.FC<{ card: GameCard; room?: boolean }> = ({ card, room = fals
     }
 
     case 'flying': {
+      // 비행 방 맨 위는 통과 횟수(점수)와 라운드만 (경로 목록·고른 경로는 시스템 메시지와 버튼에 있다)
+      if (room) return null;
       const round = num(data.round);
       const rounds = num(data.rounds);
       const routes = Array.isArray(data.routes) ? (data.routes as string[]) : [];
@@ -480,8 +500,8 @@ const Board: React.FC<{ card: GameCard; room?: boolean }> = ({ card, room = fals
 
     case 'duel':
     case 'quidditch': {
-      // 결투 방 맨 위는 HP 하트만 (고른 주문·최대 턴 줄 없음)
-      if (room && card.kind === 'duel') return null;
+      // 결투·퀴디치 방 맨 위는 하트·점수와 라운드만 (고른 주문·스니치 확률·최대 턴 줄 없음)
+      if (room) return null;
       const last = data.last_round ? bySeat(data.last_round) : null;
       const choices = last ? bySeat(last.choices) : {};
       const winner = last?.winner_seat;
