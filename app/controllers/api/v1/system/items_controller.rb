@@ -8,8 +8,6 @@ class Api::V1::System::ItemsController < Api::BaseController
 
   class UseError < StandardError; end
 
-  MAX_HOWLER = 200
-
   # [사용]: 아이템의 사용 대상에 따라
   #   stat       스탯을 바꾼다 (스탯 유형 '스탯'은 일시, '상태 수치'는 영구). 스탯을 정하지 않았으면 소모만
   #   character  태그한 캐릭터(본인도 가능, 랜덤 1인 가능한 아이템도 있다)에게 쓴다: 스탯·착용이 적용되고 본인이 아니면 시스템 DM 으로 알린다
@@ -42,7 +40,7 @@ class Api::V1::System::ItemsController < Api::BaseController
     name = GameCharacter.for(receiver).display_name
     apply!([{ account: current_account, items: { @name => -@count } }, { account: receiver, items: { @name => @count } }],
            'transfer', "#{@name} #{@count}개 → #{name}")
-    notify_receiver(receiver)
+    announce!(['양도', "#{@name}: #{@count}", name], Game::Text.render(Game::Config.for('common')['msg_gift_item'], player: current_account, target: receiver, item: @name, count: @count), receivers: [receiver])
     render json: { message: "#{name}에게 #{@name} #{@count}개#{particle('개', '을를')} 선물했습니다." }
   rescue Game::Wallet::Error => e
     fail!(e.message)
@@ -98,7 +96,7 @@ class Api::V1::System::ItemsController < Api::BaseController
 
     target_character.reload
     effect = effect_text(field, delta, temporary, shop_item, before, target_character)
-    notify_target(target, effect, shop_item) if kind == 'character'
+    announce_use!(shop_item, kind, special, target, house, rumor, effect, result)
     use_message(kind, target, effect, result)
   end
 
@@ -128,7 +126,7 @@ class Api::V1::System::ItemsController < Api::BaseController
   end
 
   def pick_rumor!
-    text = params[:text].to_s.strip.delete('@＠')[0, MAX_HOWLER]
+    text = Game::ItemUse.clean_rumor(params[:text])
     raise UseError, '소문 내용을 적어 주세요.' if text.blank?
 
     text
@@ -179,7 +177,6 @@ class Api::V1::System::ItemsController < Api::BaseController
     when 'bomb' then use_bomb!(shop_item, house)
     when 'howler' then use_howler!(rumor)
     else
-      send_system_dm!('')
       '시스템 계정에 DM 으로 알렸습니다.'
     end
   end
@@ -191,24 +188,19 @@ class Api::V1::System::ItemsController < Api::BaseController
     count = character.reports_count + 1
     volunteer = count >= [shop_item.special_limit, 1].max
     character.update!(reports_count: volunteer ? 0 : count)
-    send_system_dm!("#{name} 신고 (누적 #{count}회#{volunteer ? ', 봉사활동 대상' : ''})")
-    notice = "교내 신고가 접수되었습니다. (누적 #{count}회)"
-    notice += ' 누적 한도를 넘어 교수님께서 봉사활동을 시키실 거예요.' if volunteer
-    Game::Gift.notify(notice, target)
+    @report_notice = "교내 신고가 접수되었습니다. (누적 #{count}회)"
+    @report_notice += ' 누적 한도를 넘어 교수님께서 봉사활동을 시키실 거예요.' if volunteer
     "#{name}#{particle(name, '을를')} 신고했습니다. (누적 #{count}회)#{volunteer ? ' 한도를 넘어 봉사활동 대상이 되었습니다.' : ''}"
   end
 
   def use_bomb!(shop_item, house)
     deduct!(house, shop_item.score_delta, "#{@name} → #{house.name}")
-    send_system_dm!("#{house.name} 점수 #{shop_item.score_delta}")
     "#{house.name}에 똥폭탄을 던졌습니다. (소속 점수 #{shop_item.score_delta})"
   end
 
   # 호울러: 내용을 모든 서버원에게 DM 으로 소문처럼 보낸다 (누가 보냈는지는 밝히지 않는다. 운영진 DM 에는 남는다)
   def use_howler!(text)
-    send_system_dm!(text)
-    everyone = GameCharacter.eligible_accounts.to_a
-    Game::Poster.post("호울러가 울려 퍼집니다!\n#{text}", mentions: everyone, thread: nil, visibility: 'direct') if everyone.any?
+    Game::ItemUse.broadcast_rumor!(text)
     '호울러가 호그와트 전체에 울려 퍼졌습니다.'
   end
 
@@ -218,17 +210,33 @@ class Api::V1::System::ItemsController < Api::BaseController
     GameHousePoint.create!(house: house, account: current_account, amount: amount, reason: reason.to_s.truncate(200))
   end
 
-  # 쓴 사람이 시스템 계정에 DM 을 보낸 것처럼 남긴다 (운영진 확인용)
-  def send_system_dm!(extra)
-    system = Game::System.account
-    raise UseError, '시스템 계정을 찾지 못했습니다. 운영진에게 문의해 주세요.' if system.nil?
-
-    PostStatusService.new.call(current_account, text: "@#{system.username} [사용/#{@name}] #{extra}".strip, visibility: 'direct')
+  # 쓴 사람이 직접 보내는 툿 (받는 사람·상점 봇 멘션 + 명령어 모양). Game::Gift.announce
+  def announce!(command, text, receivers: [], system: false, visibility: 'direct')
+    Game::Gift.announce(current_account, command: command, text: text, receivers: receivers, system: system, visibility: visibility)
   end
 
-  def notify_target(target, effect, shop_item)
+  # 사용했을 때 알리기:
+  #   캐릭터 아이템  받는 사람(본인이면 봇만) + 상점 봇에게 DM
+  #   스탯 아이템    상점 봇에게 DM
+  #   신고           신고받은 캐릭터 + 봇 + 시스템 계정에 DM
+  #   기숙사 점수    상점 봇을 멘션한 툿 (팔로워에게 보인다)
+  #   호울러·운영진 처리  시스템 계정과 상점 봇에게만 DM (아무도 모르게)
+  def announce_use!(shop_item, kind, special, target, house, rumor, effect, result)
+    name = GameCharacter.for(target).display_name
     note = shop_item&.effect.presence
-    Game::Gift.notify(Game::Config.for('common')['msg_item_use'], target, from: current_account, player: current_account, target: target, item: @name, effect: [effect, note].compact_blank.join("\n"))
+    case special
+    when 'report' then announce!(['사용', @name, name], @report_notice, receivers: [target], system: true)
+    when 'bomb' then announce!(['사용', @name, house.name], "#{house.name}에 #{@name}#{particle(@name, '이가')} 떨어졌습니다. (소속 점수 #{shop_item.score_delta})", visibility: 'private')
+    when 'howler' then announce!(['사용', @name, rumor], nil, system: true)
+    when 'staff' then announce!(['사용', @name], nil, system: true)
+    else
+      if kind == 'character'
+        text = Game::Text.render(Game::Config.for('common')['msg_item_use'], player: current_account, target: target, item: @name, effect: [effect, note].compact_blank.join("\n"))
+        announce!(['사용', @name, name], text, receivers: target.id == current_account.id ? [] : [target])
+      else
+        announce!(['사용', @name], "#{GameCharacter.for(current_account).display_name}#{particle(GameCharacter.for(current_account).display_name, '이가')} #{@name}#{particle(@name, '을를')} 사용했습니다.#{effect}")
+      end
+    end
   end
 
   # 인벤토리에 있는 이름 그대로 (공백·대소문자 무시)
@@ -239,10 +247,6 @@ class Api::V1::System::ItemsController < Api::BaseController
 
     @name = entry['name']
     @count = params[:count].to_i.clamp(1, [entry['count'].to_i, 1].max)
-  end
-
-  def notify_receiver(receiver)
-    Game::Gift.notify(Game::Config.for('common')['msg_gift_item'], receiver, from: current_account, player: current_account, target: receiver, item: @name, count: @count)
   end
 
   def apply!(changes, kind, detail)

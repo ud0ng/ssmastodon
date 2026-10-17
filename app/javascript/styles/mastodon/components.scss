@@ -19734,3 +19734,49 @@ body.app-body.layout-game-room.layout-single-column {
     }
   }
 }
+
+// 아이템 모달: 기숙사 고르기 (마스토돈 검색 목록처럼 줄 단위)
+.item-modal__houses {
+  display: grid;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--ct-panel-raised, var(--surface-background-color));
+}
+
+.item-modal__house {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 16px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+
+  &:hover,
+  &.selected {
+    background: color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 14%, transparent);
+  }
+
+  &.selected {
+    font-weight: 700;
+  }
+}
+
+.item-modal__house-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.item-modal__houses {
+  align-self: stretch;
+  width: 100%;
+}
+
+.item-modal__house {
+  width: 100%;
+}

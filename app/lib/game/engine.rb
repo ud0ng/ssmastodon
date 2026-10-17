@@ -51,6 +51,8 @@ module Game
       when common['cmd_record'] then reply(Game::Points.record(actor))
       # 시스템봇 [도움말]: 컨텐츠 명령어 (컨텐츠 설정 > 도움말 > 시스템봇)
       when Game::Help.system_command.presence then reply(Game::Help.system_text)
+      # 모바일에서 시스템 계정에 DM 으로 쓰는 특수 아이템: [사용/호울러/소문 내용] (그 밖의 [사용]은 상점 봇이 처리한다)
+      when use_command then item_command(args)
       else
         event = Game::Kinds.events.find { |each| each.enabled? && each.config['command'] == command }
         return open_event(event) if event
@@ -70,6 +72,21 @@ module Game
     end
 
     private
+
+    def use_command
+      Game::Config.for('currency')['cmd_use'].to_s.strip.presence || '사용'
+    end
+
+    def item_command(args)
+      return unless status.direct_visibility?
+
+      item = GameShopItem.all.find { |each| Game::Wallet.key(each.name) == Game::Wallet.key(args.first) }
+      return unless item&.use_target == 'special' && item.special_kind == 'howler'
+
+      reply(Game::ItemUse.howler!(actor, item, args.drop(1).join('/')))
+    rescue Game::ItemUse::Error, Game::Wallet::Error => e
+      reply(e.message)
+    end
 
     def common
       @common ||= Game::Config.for('common')

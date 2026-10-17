@@ -136,7 +136,8 @@ RSpec.describe 'API V1 System shop and items' do
       expect(count('초콜릿 개구리')).to eq 2
       dm = user.account.statuses.reorder(:id).last
       expect(dm).to have_attributes(visibility: 'direct')
-      expect(dm.text).to include("@system [사용/초콜릿 개구리]")
+      expect(dm.text).to include('@system', '［사용/초콜릿 개구리］')
+      expect(dm.text).to_not include('[사용')
     end
 
     context 'with special and wearable items' do
@@ -198,6 +199,9 @@ RSpec.describe 'API V1 System shop and items' do
         post '/api/v1/system/items/use', params: { name: '똥폭탄', house_id: house.id }, headers: headers
         expect(response).to have_http_status(200)
         expect(GameHousePoint.where(house: house).sum(:amount)).to eq(-10)
+        bomb = user.account.statuses.reorder(:id).last
+        expect(bomb).to have_attributes(visibility: 'private')
+        expect(bomb.text).to include('［사용/똥폭탄/그리핀도르］')
 
         post '/api/v1/system/items/use', params: { name: '호울러' }, headers: headers
         expect(response).to have_http_status(422)
@@ -208,6 +212,10 @@ RSpec.describe 'API V1 System shop and items' do
         expect(rumor.text).to include('용이 나타났다')
         expect(rumor.text).to_not include('@모두')
         expect(rumor.mentions.map(&:account_id)).to include(friend.account.id)
+        secret = user.account.statuses.reorder(:id).last
+        expect(secret).to have_attributes(visibility: 'direct')
+        expect(secret.mentions.map(&:account_id)).to eq [system.id]
+        expect(secret.text).to include('［사용/호울러/')
       end
     end
 
@@ -249,7 +257,8 @@ RSpec.describe 'API V1 System shop and items' do
 
       status = user.account.statuses.reorder(:id).last
       expect(status).to have_attributes(visibility: 'direct')
-      expect(status.text).to include("@#{friend.account.username}", '@ssbot', '초콜릿 개구리 1개를 선물했습니다')
+      expect(status.text).to include("@#{friend.account.username}", '@ssbot', '［양도/초콜릿 개구리: 1/', '초콜릿 개구리 1개를 선물했습니다')
+      expect(status.text).to_not include('[양도')
       expect(status.mentions.pluck(:account_id)).to contain_exactly(friend.account.id, bot.id)
     end
 

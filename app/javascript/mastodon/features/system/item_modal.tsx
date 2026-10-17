@@ -199,7 +199,7 @@ const ItemModal: React.FC<{ item: WalletItem; transferEnabled: boolean; onClose:
   const [count, setCount] = useState(1);
   const [receiver, setReceiver] = useState<Member | null>(null);
   const [houseId, setHouseId] = useState('');
-  const [houses, setHouses] = useState<{ id: string; name: string }[]>([]);
+  const [houses, setHouses] = useState<{ id: string; name: string; color?: string }[]>([]);
   const [rumor, setRumor] = useState('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -208,7 +208,7 @@ const ItemModal: React.FC<{ item: WalletItem; transferEnabled: boolean; onClose:
   // 똥폭탄: 점수를 깎을 기숙사 목록
   useEffect(() => {
     if (item.use_target !== 'special' || item.special_kind !== 'bomb') return;
-    apiRequestGet<{ houses: { id: string; name: string }[] }>('v1/system/wallet')
+    apiRequestGet<{ houses: { id: string; name: string; color?: string }[] }>('v1/system/wallet')
       .then((wallet) => {
         setHouses(wallet.houses);
         return wallet;
@@ -282,17 +282,29 @@ const ItemModal: React.FC<{ item: WalletItem; transferEnabled: boolean; onClose:
                   <>
                     <GiftPicker picked={receiver} onPick={setReceiver} />
                     {item.allow_random && (
-                      <button type='button' className={receiver?.acct === 'random' ? 'item-modal__random item-modal__random--on' : 'item-modal__random'} onClick={() => { setReceiver({ acct: 'random', name: '', avatar: '' }); }}>
+                      <button type='button' className={receiver?.acct === 'random' ? 'item-modal__random item-modal__random--on' : 'item-modal__random'} onClick={() => { setReceiver(receiver?.acct === 'random' ? null : { acct: 'random', name: '', avatar: '' }); }}
+                        aria-pressed={receiver?.acct === 'random'}>
                         <FormattedMessage id='item.random' defaultMessage='Pick someone at random' />
                       </button>
                     )}
                   </>
                 )}
                 {item.use_target === 'special' && item.special_kind === 'bomb' && (
-                  <select className='item-modal__select' value={houseId} onChange={(event) => { setHouseId(event.target.value); }}>
-                    <option value=''>{'…'}</option>
-                    {houses.map((house) => <option key={house.id} value={house.id}>{house.name}</option>)}
-                  </select>
+                  <div className='item-modal__houses' role='listbox'>
+                    {houses.map((house) => (
+                      <button
+                        key={house.id}
+                        type='button'
+                        role='option'
+                        aria-selected={houseId === house.id}
+                        className={classNames('item-modal__house', { selected: houseId === house.id })}
+                        onClick={() => { setHouseId(houseId === house.id ? '' : house.id); }}
+                      >
+                        {house.color && <span className='item-modal__house-dot' style={{ background: house.color }} />}
+                        <span>{house.name}</span>
+                      </button>
+                    ))}
+                  </div>
                 )}
                 {item.use_target === 'special' && item.special_kind === 'howler' && (
                   <textarea className='item-modal__textarea' rows={3} maxLength={200} value={rumor} onChange={(event) => { setRumor(event.target.value); }} />
