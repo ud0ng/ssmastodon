@@ -39,6 +39,8 @@ export interface CardAction {
   meta?: boolean;
   // 버튼 줄 (필살기처럼 일반 기술 다음 줄에 둘 때 2)
   row?: number;
+  // 마우스를 올리면 보이는 설명 (아이템 효과 등)
+  hint?: string;
 }
 
 type Data = Record<string, unknown>;
@@ -695,21 +697,22 @@ const Board: React.FC<{ card: GameCard; room?: boolean }> = ({ card, room = fals
     }
 
     case 'marauders_map': {
-      const targets = Array.isArray(data.targets) ? (data.targets as { room: string; visited: boolean }[]) : [];
+      const done = num(data.targets_done);
+      const total = num(data.targets_total);
       const log = Array.isArray(data.log) ? (data.log as string[]) : [];
       return (
         <div className='content-card__board'>
           <div className='content-card__chips'>
-            {targets.map((target) => (
-              <span key={target.room} className={target.visited ? 'content-card__chip content-card__chip--good' : 'content-card__chip'}><GameIcon name={target.visited ? 'check' : 'star'} /> {target.room}</span>
-            ))}
+            {total > 0 && (
+              <span className={done >= total ? 'content-card__chip content-card__chip--good' : 'content-card__chip'}><GameIcon name={done >= total ? 'check' : 'star'} /> {done}/{total}</span>
+            )}
           </div>
-          {log.length > 0 && (
+          {!room && log.length > 0 && (
             <ul className='content-card__log'>
               {log.map((line, index) => <li key={index}>{line}</li>)}
             </ul>
           )}
-          {card.live && card.session_id && (
+          {!room && card.live && card.session_id && (
             <Link className='content-card__action' to={`/system/sessions/${card.session_id}`}>
               <FormattedMessage id='content_card.play_web' defaultMessage='Play on the web' />
             </Link>
@@ -721,12 +724,13 @@ const Board: React.FC<{ card: GameCard; room?: boolean }> = ({ card, room = fals
     case 'maze': {
       const log = Array.isArray(data.log) ? (data.log as string[]) : [];
       const status = bySeat(data.status);
+      const hostile = Array.isArray(data.hostile) ? (data.hostile as string[]) : [];
       return (
         <div className='content-card__board'>
           <div className='content-card__chips'>
             {card.players.map((player) => {
               const flags = bySeat(status[String(player.seat)]);
-              const marks = [num(flags.stunned) > 0 && 'stun', flags.hostile && 'sword', flags.boost && 'hands', num(flags.lumos) > 0 && 'bulb'].filter(Boolean) as string[];
+              const marks = [num(flags.stunned) > 0 && 'stun', flags.boost && 'foot', num(flags.lumos) > 0 && 'bulb'].filter(Boolean) as string[];
               return marks.length > 0 ? (
                 <span key={player.seat} className='content-card__chip'>
                   {player.name} {marks.map((mark) => <GameIcon key={mark} name={mark} />)}
@@ -734,12 +738,21 @@ const Board: React.FC<{ card: GameCard; room?: boolean }> = ({ card, room = fals
               ) : null;
             })}
           </div>
-          {log.length > 0 && (
+          {hostile.length > 0 && (
+            <div className='content-card__chips'>
+              {hostile.map((pair) => {
+                const [first, second] = pair.split('-').map(Number);
+                const names = [first, second].map((seat) => card.players.find((player) => player.seat === seat)?.name ?? '');
+                return <span key={pair} className='content-card__chip content-card__chip--bad'><GameIcon name='sword' /> {names.join(' · ')}</span>;
+              })}
+            </div>
+          )}
+          {!room && log.length > 0 && (
             <ul className='content-card__log'>
               {log.map((line, index) => <li key={index}>{line}</li>)}
             </ul>
           )}
-          {card.live && card.session_id && (
+          {!room && card.live && card.session_id && (
             <Link className='content-card__action' to={`/system/sessions/${card.session_id}`}>
               <FormattedMessage id='content_card.play_web' defaultMessage='Play on the web' />
             </Link>
@@ -926,7 +939,7 @@ export const ContentCardView: React.FC<{
               type='button'
               className={action.style === 'primary' ? 'content-card__action' : 'content-card__action content-card__action--secondary'}
               onClick={() => { onAction?.(action); }}
-              title={action.dm ? `DM: [${action.command}]` : `[${action.command}]`}
+              title={action.hint ?? (action.dm ? `DM: [${action.command}]` : `[${action.command}]`)}
             >
               {action.label}
               {action.dm && <span className='content-card__action-dm'>DM</span>}

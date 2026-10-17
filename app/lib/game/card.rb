@@ -149,8 +149,9 @@ module Game
 
     # 웹 버튼 하나: 누르면 '@시스템 [command]' 툿을 쓰는 창이 열린다 (dm 이면 DM 으로)
     # row: 버튼 줄 (웹 방 입력창 위에서 줄 단위로 나눈다. 필살기처럼 다음 줄에 둘 때 2)
-    def action(command, seats:, label: nil, dm: false, style: 'primary', row: 1, meta: false)
-      { 'label' => label || command, 'command' => command, 'seats' => seats, 'dm' => dm, 'style' => style, 'row' => row, 'meta' => meta }
+    # hint: 마우스를 올리면 보이는 설명 (아이템 효과 등)
+    def action(command, seats:, label: nil, dm: false, style: 'primary', row: 1, meta: false, hint: nil)
+      { 'label' => label || command, 'command' => command, 'seats' => seats, 'dm' => dm, 'style' => style, 'row' => row, 'meta' => meta, 'hint' => hint }.compact
     end
 
     # 카드는 덤이라 계산하다 잘못돼도 툿 올리기를 막지 않는다

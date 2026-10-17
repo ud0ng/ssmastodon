@@ -14,6 +14,11 @@ module Game
     class Potion < Base
       KEY = 'potion'
       ITEMS = %w(shield retry).freeze
+      # 버튼에 마우스를 올리면 보이는 아이템 효과
+      ITEM_HINTS = {
+        'shield' => '방어권: 이번 라운드에 공개되는 내 결과 중 하나를 상대에게 가립니다.',
+        'retry' => '재시도권: 이번 라운드에 재료를 한 번 더 조합할 수 있습니다.',
+      }.freeze
 
       FIELDS = (base_fields(name: '마법약', command: '마법약', points_win: 10, points_draw: 3) + [
         F.new(key: 'cmd_brew', type: :string, default: '조합', group: 'commands', label: '조합 명령어', hint: '[조합] 재료 번호 … 예: [조합] 1 5 3 (0번은 첫 자리 불가)'),
@@ -102,7 +107,7 @@ module Game
         actions = waiting.empty? ? [] : [Game::Card.action(config['cmd_brew'], seats: waiting, dm: true)]
         ITEMS.each do |key|
           seats = waiting.select { |seat| item_usable?(seat.to_s, key) }
-          actions << Game::Card.action(config["cmd_#{key}"], seats: seats, dm: true, style: 'secondary', row: 2) if seats.any?
+          actions << Game::Card.action(config["cmd_#{key}"], seats: seats, dm: true, style: 'secondary', row: 2, hint: ITEM_HINTS[key]) if seats.any?
         end
         actions
       end

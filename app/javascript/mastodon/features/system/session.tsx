@@ -166,13 +166,24 @@ const RoomLog: React.FC<{ messages: RoomMessage[] }> = ({ messages: list }) => {
 // 방에 있는 동안 화면 높이를 고정한다 (DM 채팅처럼 위 상태·아래 입력창은 그대로, 가운데 메시지만 스크롤)
 const ROOM_BODY_CLASS = 'layout-game-room';
 
-const useRoomLayout = () => {
+// 웹 전용 컨텐츠(미로·도둑 지도)는 메뉴·작성 패널을 잠시 숨기고 지도 | 메시지 두 칸으로 쓴다
+const SPLIT_BODY_CLASS = 'layout-game-split';
+
+const useRoomLayout = (split: boolean) => {
   useEffect(() => {
     document.body.classList.add(ROOM_BODY_CLASS);
     return () => {
       document.body.classList.remove(ROOM_BODY_CLASS);
     };
   }, []);
+
+  useEffect(() => {
+    if (!split) return undefined;
+    document.body.classList.add(SPLIT_BODY_CLASS);
+    return () => {
+      document.body.classList.remove(SPLIT_BODY_CLASS);
+    };
+  }, [split]);
 };
 
 // 맨 아래 입력창 위: 내 차례면 할 일(버튼·안내), 아니면 누구를 기다리는지
@@ -198,7 +209,7 @@ const ActionRows: React.FC<{
             ].filter(Boolean).join(' ')}
             disabled={busy}
             onClick={() => { onAction(action); }}
-            title={action.dm ? `DM: [${action.command}]` : `[${action.command}]`}
+            title={action.hint ?? (action.dm ? `DM: [${action.command}]` : `[${action.command}]`)}
           >
             {action.label}
             {action.dm && <span className='game-room__action-dm'>DM</span>}
@@ -275,7 +286,7 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   const lastId = useRef<string | null>(null);
   const wasMyTurn = useRef(false);
 
-  useRoomLayout();
+  useRoomLayout(data?.kind === 'maze' || data?.kind === 'marauders_map');
 
   const load = useCallback(() => {
     apiRequestGet<RoomData>(`v1/system/sessions/${id}`)
@@ -411,7 +422,7 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
 
       {/* 지금 상태 (맨 위 고정): 아바타 | 소속 | 이름 vs …, 가운데 진행 상황 */}
       {data && (current || (data.player && data.status === 'active' && ['maze', 'marauders_map'].includes(data.kind))) && (
-        <div className='system-page game-room__status'>
+        <div className={data.kind === 'maze' ? 'system-page game-room__status game-room__status--maze' : 'system-page game-room__status'}>
           {current && <ContentCardView card={current} variant='room' />}
           {data.player && data.kind === 'maze' && data.status === 'active' && <MazePlay sessionId={data.id} onMoved={load} />}
           {data.player && data.kind === 'marauders_map' && data.status === 'active' && <MaraudersMapPlay sessionId={data.id} onMoved={load} />}

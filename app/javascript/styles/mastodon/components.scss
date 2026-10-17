@@ -18299,6 +18299,11 @@ body.app-body.layout-game-room.layout-single-column {
 .game-room__status {
   max-height: 45%;
 
+  // 미로: 그래픽 지도가 들어가니 더 높게 (지도는 높이에 맞춰 줄어든다)
+  &--maze {
+    max-height: 75%;
+  }
+
   .content-card {
     --sys-gold-soft: color-mix(in srgb, var(--sys-gold) 50%, transparent);
   }
@@ -19274,5 +19279,323 @@ body.app-body.layout-game-room.layout-single-column {
     &--now {
       box-shadow: 0 0 0 2px var(--ct-panel, var(--background-color)), 0 0 0 4px var(--ct-point, #{$ui-highlight-color});
     }
+  }
+}
+
+// 웹 전용 컨텐츠 방(미로·도둑 지도): 메뉴·작성 패널을 숨기고 왼쪽 지도 | 오른쪽 메시지 두 칸 (session.tsx useRoomLayout)
+@media screen and (min-width: 900px) {
+  body.app-body.layout-game-room.layout-game-split {
+    .columns-area__panels__pane--navigational,
+    .columns-area__panels__pane--compositional {
+      display: none;
+    }
+
+    .columns-area__panels {
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .columns-area__panels__main {
+      flex: 1 1 auto;
+      width: min(1240px, 100%);
+      max-width: none;
+      padding: 0 16px;
+    }
+
+    .columns-area__panels__main .column {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      width: 100%;
+      max-width: none;
+
+      > :first-child {
+        grid-column: 1 / -1;
+      }
+
+      .game-room__status {
+        grid-column: 1;
+        grid-row: 2 / 4;
+        max-height: none;
+        overflow-y: auto;
+        border-bottom: 0;
+        border-inline-end: 1px solid var(--ct-line, var(--background-border-color));
+      }
+
+      .dm-room__scroll {
+        grid-column: 2;
+        grid-row: 2;
+      }
+
+      .game-room__dock {
+        grid-column: 2;
+        grid-row: 3;
+      }
+    }
+
+    .maze-play__svg {
+      max-height: 66vh;
+    }
+  }
+}
+
+// 컨텐츠 화면 룰 탭: 소개 (역할마다 카드: 승리 · 아이템 · 참고)
+.system-game-page .system-roles {
+  display: grid;
+  gap: 12px;
+}
+
+.system-game-page .system-role {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--ct-line, var(--background-border-color));
+  border-radius: 14px;
+  background: var(--ct-panel-raised, var(--surface-background-color));
+
+  &__badge {
+    justify-self: start;
+    padding: 2px 12px;
+    border-radius: 999px;
+    background: var(--ct-point, #{$ui-highlight-color});
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 4px 12px;
+    align-items: start;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  &__label {
+    display: inline-flex;
+    gap: 5px;
+    align-items: center;
+    color: var(--ct-point, #{$ui-highlight-color});
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  &__row--win .system-role__text {
+    font-weight: 700;
+  }
+
+  &__notes {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__notes li {
+    position: relative;
+    padding-inline-start: 12px;
+    color: var(--ct-dim, var(--color-text-secondary));
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: 0;
+      top: 0.7em;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--ct-point, #{$ui-highlight-color});
+    }
+  }
+}
+
+@media screen and (max-width: 520px) {
+  .system-game-page .system-role__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// 아이템 안내: 아이콘 + 카드
+.system-game-page .system-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.system-game-page .system-item-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid var(--ct-line, var(--background-border-color));
+  border-radius: 14px;
+  background: var(--ct-panel-raised, var(--surface-background-color));
+
+  &__icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 16%, transparent);
+    color: var(--ct-point, #{$ui-highlight-color});
+    font-size: 22px;
+  }
+
+  &__body {
+    min-width: 0;
+  }
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  &__role {
+    padding: 0 8px;
+    border: 1px solid var(--ct-line, var(--background-border-color));
+    border-radius: 999px;
+    color: var(--ct-dim, var(--color-text-secondary));
+    font-size: 11px;
+  }
+
+  &__effect {
+    margin: 4px 0 0;
+    color: var(--ct-dim, var(--color-text-secondary));
+    font-size: 13px;
+    line-height: 1.6;
+  }
+}
+
+// 컨텐츠 화면 룰 탭: 룰 목록 (아이콘 + 제목 + 설명)
+.system-game-page .system-rules {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.system-game-page .system-rule {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 11px 2px;
+  border-bottom: 1px dashed var(--ct-line, var(--background-border-color));
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &__icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 14%, transparent);
+    color: var(--ct-point, #{$ui-highlight-color});
+    font-size: 19px;
+  }
+
+  &__body {
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: 14px;
+  }
+
+  &__text {
+    margin: 2px 0 0;
+    color: var(--ct-dim, var(--color-text-secondary));
+    font-size: 13px;
+    line-height: 1.65;
+  }
+}
+
+// 컨텐츠 화면 맨 위: 이름 · 소개 · 전적 · 시작/내 방으로 버튼
+.system-game-page .system-game-page__hero {
+  position: relative;
+  gap: 16px 20px;
+  padding: 20px 22px 20px 26px;
+  overflow: hidden;
+  border: 1px solid var(--ct-line, var(--background-border-color));
+  border-radius: 18px;
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 12%, transparent), transparent 62%),
+    var(--ct-panel-raised, var(--surface-background-color));
+  box-shadow: none;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 6px;
+    background: var(--ct-point, #{$ui-highlight-color});
+  }
+
+  h2 {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  p {
+    margin-top: 6px;
+    color: var(--ct-dim, var(--color-text-secondary));
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .system-game-page__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .system-game-page__stat {
+    display: inline-flex;
+    gap: 5px;
+    align-items: baseline;
+    padding: 3px 12px;
+    border: 1px solid var(--ct-line, var(--background-border-color));
+    border-radius: 999px;
+    background: var(--ct-panel, var(--background-color));
+    color: var(--ct-dim, var(--color-text-secondary));
+    font-size: 12px;
+    font-weight: 600;
+
+    strong {
+      color: var(--ct-text, inherit);
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    &--win strong {
+      color: var(--ct-point, #{$ui-highlight-color});
+    }
+  }
+
+  .button,
+  button {
+    flex: 0 0 auto;
+    padding-inline: 26px;
+    font-size: 15px;
+    font-weight: 700;
   }
 }

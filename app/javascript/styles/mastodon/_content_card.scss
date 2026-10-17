@@ -646,116 +646,185 @@
   text-align: center;
 }
 
-// 트라이위저드 미로 진행판 (features/system/maze.tsx)
+// 트라이위저드 미로 진행판 (features/system/maze.tsx): 그래픽 지도, 테마색(--ct-*)을 따른다
 .maze-play {
   --sys-gold: var(--ct-point, var(--color-accent, #{$ui-highlight-color}));
-  --maze-wall: color-mix(in srgb, var(--color-fg, #{$primary-text-color}) 70%, transparent);
+  --maze-hedge: color-mix(in srgb, var(--sys-gold) 55%, var(--ct-text, #{$primary-text-color}));
+  --maze-floor: var(--ct-panel-raised, var(--color-bg-secondary, #{$ui-base-color}));
 
   margin-bottom: 20px;
   padding: 12px;
   border: 1px solid color-mix(in srgb, var(--sys-gold) 45%, transparent);
-  border-radius: 6px;
+  border-radius: 8px;
 
   &__head {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 8px;
     align-items: center;
     margin-bottom: 10px;
     font-size: 13px;
   }
 
-  &__compass {
-    font-size: 16px;
-    font-weight: 800;
-  }
-
-  &__grid {
-    display: grid;
-    grid-template-columns: repeat(var(--maze-size), minmax(0, 1fr));
-    max-width: 480px;
-    margin: 0 auto;
-    aspect-ratio: 1;
-    border: 2px solid var(--maze-wall);
-  }
-
-  &__cell {
-    display: flex;
+  &__chip {
+    display: inline-flex;
+    gap: 4px;
     align-items: center;
-    justify-content: center;
-    min-width: 0;
-    padding: 0;
-    border: 0 solid var(--maze-wall);
-    background: color-mix(in srgb, #2f5d3a 22%, transparent);
-    color: inherit;
-    font-size: 12px;
-    line-height: 1;
-    cursor: pointer;
+    padding: 2px 10px;
+    border: 1px solid color-mix(in srgb, var(--sys-gold) 45%, transparent);
+    border-radius: 999px;
 
-    &--wall-n {
-      border-top-width: 2px;
-    }
-
-    &--wall-e {
-      border-right-width: 2px;
-    }
-
-    &--wall-s {
-      border-bottom-width: 2px;
-    }
-
-    &--wall-w {
-      border-left-width: 2px;
-    }
-
-    &--memory {
-      background: color-mix(in srgb, #2f5d3a 10%, transparent);
-      filter: grayscale(0.6);
-    }
-
-    &--fog {
-      border-color: transparent;
-      background: color-mix(in srgb, #000 55%, transparent);
-      cursor: default;
-    }
-
-    &--trail {
-      background: color-mix(in srgb, var(--sys-gold) 45%, transparent);
-    }
-  }
-
-  &__token {
-    color: #3f7fd0;
-    font-size: 14px;
-
-    &--me {
-      color: var(--sys-gold);
-      font-size: 16px;
-    }
-
-    &--hostile {
+    &--bad {
+      border-color: #c0392b;
       color: #c0392b;
     }
   }
 
-  &__controls {
+  &__arrow {
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  &__svg {
+    display: block;
+    width: 100%;
+    max-width: 520px;
+    max-height: 46vh;
+    margin: 0 auto;
+    border-radius: 8px;
+    user-select: none;
+  }
+
+  &__fog {
+    fill: #222a26;
+  }
+
+  &__floor {
+    &--lit {
+      fill: color-mix(in srgb, var(--sys-gold) 14%, var(--maze-floor));
+    }
+
+    &--memory {
+      fill: color-mix(in srgb, var(--sys-gold) 5%, var(--maze-floor));
+      opacity: 0.8;
+    }
+  }
+
+  &__walls line {
+    stroke: var(--maze-hedge);
+    stroke-linecap: round;
+    stroke-width: 4;
+  }
+
+  &__route {
+    fill: none;
+    stroke: var(--sys-gold);
+    stroke-dasharray: 2 7;
+    stroke-linecap: round;
+    stroke-width: 4;
+    pointer-events: none;
+  }
+
+  &__move {
+    cursor: pointer;
+    outline: none;
+
+    rect {
+      fill: color-mix(in srgb, var(--sys-gold) 22%, transparent);
+      stroke: var(--sys-gold);
+      stroke-dasharray: 4 3;
+      stroke-width: 1.5;
+    }
+
+    circle {
+      fill: var(--sys-gold);
+      opacity: 0.55;
+    }
+
+    &:hover rect,
+    &:focus rect,
+    &--planned rect {
+      fill: color-mix(in srgb, var(--sys-gold) 45%, transparent);
+      stroke-dasharray: none;
+      stroke-width: 2.5;
+    }
+  }
+
+  &__token {
+    pointer-events: none;
+
+    circle {
+      stroke: var(--maze-floor);
+      stroke-width: 2;
+    }
+
+    text {
+      fill: #fff;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    &--me circle {
+      fill: var(--sys-gold);
+    }
+
+    &--me .maze-play__me-ring {
+      fill: none;
+      stroke: var(--sys-gold);
+      stroke-width: 2.5;
+      opacity: 0.6;
+    }
+
+    &--hostile circle {
+      stroke: #c0392b;
+      stroke-width: 3;
+    }
+  }
+
+  &__cup {
+    color: var(--sys-gold);
+    filter: drop-shadow(0 0 4px var(--sys-gold));
+    pointer-events: none;
+  }
+
+  &__trap {
+    color: #c0392b;
+    pointer-events: none;
+  }
+
+  &__creature {
+    color: #8a58c9;
+    pointer-events: none;
+  }
+
+  &__hostile {
+    color: #c0392b;
+  }
+
+  &__foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+    justify-content: space-between;
     margin-top: 12px;
     font-size: 13px;
   }
 
   &__hint {
-    color: var(--color-dim, #{$darker-text-color});
+    margin: 0;
+    color: var(--ct-dim, var(--color-text-secondary, #{$darker-text-color}));
   }
 
-  &__stance,
-  &__actions {
+  &__items {
     display: flex;
-    flex-wrap: wrap;
     gap: 8px;
-    margin-top: 8px;
   }
 
-  &__toggle {
+  &__item {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
     padding: 5px 12px;
     border: 1px solid color-mix(in srgb, var(--sys-gold) 55%, transparent);
     border-radius: 999px;
@@ -764,15 +833,25 @@
     font: inherit;
     cursor: pointer;
 
-    &--on {
-      border-color: var(--sys-gold);
-      background: color-mix(in srgb, var(--sys-gold) 25%, transparent);
-      font-weight: 700;
+    &:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--sys-gold) 18%, transparent);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
     }
   }
 
-  .content-card__action {
-    --sys-gold: var(--ct-point, var(--color-accent, #{$ui-highlight-color}));
+  &__count {
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--sys-gold);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
   }
 }
 

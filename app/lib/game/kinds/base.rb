@@ -184,8 +184,8 @@ module Game
         Game::Engine.set_deadline_in!(session, Game::Config.turn_seconds.seconds)
       end
 
-      # 게임 끝: 결과 기록, 점수·보상 지급, 결과 툿. winners: 팀전처럼 이긴 사람이 여럿일 때
-      def finish!(winner: nil, winners: nil, message: nil, draw: false)
+      # 게임 끝: 결과 기록, 점수·보상 지급, 결과 툿. winners: 팀전처럼 이긴 사람이 여럿일 때, split_points: 공동 우승이면 승리 점수를 나눠 준다
+      def finish!(winner: nil, winners: nil, message: nil, draw: false, split_points: false)
         winners = draw ? [] : (winners || [winner]).compact
         players.each do |player|
           player.update!(result: draw ? 'draw' : (winners.include?(player) ? 'win' : 'lose'))
@@ -203,7 +203,10 @@ module Game
 
         point_lines = players.map do |player|
           outcome = player.result
-          Game::Points.award(session, player, config["points_#{outcome}"], outcome: outcome)
+          points = config["points_#{outcome}"]
+          # 공동 우승은 승리 점수를 나눈다
+          points = (points.to_f / winners.size).round if split_points && outcome == 'win' && winners.size > 1
+          Game::Points.award(session, player, points, outcome: outcome)
         end
         post([message, *point_lines.compact, *reward_lines].compact.join("\n\n"))
       end

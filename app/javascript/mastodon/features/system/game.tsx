@@ -50,6 +50,9 @@ interface GameInfo {
   min_opponents?: number;
   team?: boolean;
   summary: string;
+  rules_text?: { icon: string; title: string; text: string }[];
+  roles?: { name: string | null; win: string; notes: string[] }[];
+  items?: { name: string; effect: string; icon: string }[];
   steps: string[];
   rules: { label: string; points: number; money: number; items?: string[] }[];
   currency: string;
@@ -259,9 +262,17 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
               <div className='system-game-page__intro'>
                 <h2>{game.name}</h2>
                 <p>{game.summary}</p>
-                <span className='system-game-page__record'>
-                  <FormattedMessage id='system.record' defaultMessage='{win} W · {lose} L · {draw} D' values={game.record} />
-                </span>
+                <div className='system-game-page__stats'>
+                  <span className='system-game-page__stat system-game-page__stat--win'>
+                    <strong>{game.record.win}</strong> <FormattedMessage id='system.record_win' defaultMessage='W' />
+                  </span>
+                  <span className='system-game-page__stat system-game-page__stat--lose'>
+                    <strong>{game.record.lose}</strong> <FormattedMessage id='system.record_lose' defaultMessage='L' />
+                  </span>
+                  <span className='system-game-page__stat'>
+                    <strong>{game.record.draw}</strong> <FormattedMessage id='system.record_draw' defaultMessage='D' />
+                  </span>
+                </div>
               </div>
               <StartButton game={game} onSent={load} onBusy={showBusy} />
             </header>
@@ -296,10 +307,84 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
 
             {tab === 'rules' ? (
               <>
-                {/* 룰: 한 줄씩, [명령어]는 배지 */}
+                {/* 룰: 알아야 할 규칙 (아이콘 + 제목 + 설명) */}
+                {game.rules_text && game.rules_text.length > 0 && (
+                  <section className='system-section'>
+                    <h2 className='system-section__title'>
+                      <FormattedMessage id='system.game.rules' defaultMessage='Rules' />
+                    </h2>
+                    <ul className='system-rules'>
+                      {game.rules_text.map((rule) => (
+                        <li key={rule.title} className='system-rule'>
+                          <span className='system-rule__icon'><GameIcon name={rule.icon} /></span>
+                          <div className='system-rule__body'>
+                            <strong className='system-rule__title'>{rule.title}</strong>
+                            <p className='system-rule__text'><CommandText text={rule.text} noEmoji /></p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+
+                {/* 역할과 승리 조건: 역할마다 카드 하나 */}
+                {game.roles && game.roles.length > 0 && (
+                  <section className='system-section'>
+                    <h2 className='system-section__title'>
+                      {game.roles.length > 1 || game.roles[0]?.name ? (
+                        <FormattedMessage id='system.game.roles' defaultMessage='Roles and how to win' />
+                      ) : (
+                        <FormattedMessage id='system.game.role_win' defaultMessage='How to win' />
+                      )}
+                    </h2>
+                    <div className='system-roles'>
+                      {game.roles.map((role, index) => (
+                        <article key={role.name ?? index} className='system-role'>
+                          {role.name && <span className='system-role__badge'>{role.name}</span>}
+                          <div className='system-role__row system-role__row--win'>
+                            <span className='system-role__label'><GameIcon name='tournament' /> <FormattedMessage id='system.game.role_win_label' defaultMessage='Win' /></span>
+                            <span className='system-role__text'><CommandText text={role.win} noEmoji /></span>
+                          </div>
+                          {role.notes.length > 0 && (
+                            <div className='system-role__row'>
+                              <span className='system-role__label'><GameIcon name='star' /> <FormattedMessage id='system.game.role_notes' defaultMessage='Differences' /></span>
+                              <ul className='system-role__notes'>
+                                {role.notes.map((note) => <li key={note}><CommandText text={note} noEmoji /></li>)}
+                              </ul>
+                            </div>
+                          )}
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* 아이템: 아이콘 + 카드 */}
+                {game.items && game.items.length > 0 && (
+                  <section className='system-section'>
+                    <h2 className='system-section__title'>
+                      <FormattedMessage id='system.game.role_items' defaultMessage='Items' />
+                    </h2>
+                    <div className='system-items'>
+                      {game.items.map((item) => (
+                        <article key={item.name} className='system-item-card'>
+                          <span className='system-item-card__icon'><GameIcon name={item.icon} /></span>
+                          <div className='system-item-card__body'>
+                            <div className='system-item-card__head'>
+                              <CommandText text={`[${item.name}]`} noEmoji />
+                            </div>
+                            <p className='system-item-card__effect'>{item.effect}</p>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* 진행 방법: 한 줄씩, [명령어]는 배지 */}
                 <section className='system-section'>
                   <h2 className='system-section__title'>
-                    <FormattedMessage id='system.game.rules' defaultMessage='Rules' />
+                    <FormattedMessage id='system.game.how_to_play' defaultMessage='How to play' />
                   </h2>
                   <ol className='system-steps'>
                     {game.steps.map((step, index) => (
