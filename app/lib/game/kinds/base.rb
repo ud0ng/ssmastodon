@@ -65,6 +65,16 @@ module Game
           1
         end
 
+        # 신청할 때 태그해야 하는 최소 상대 수 (신청자 제외)
+        def min_opponents
+          1
+        end
+
+        # 팀 대결인가 (퀴디치): 웹 신청은 우리 팀을 먼저 고르고 상대 팀을 고른다
+        def team_game?
+          false
+        end
+
         # 인원이 규칙에 맞지 않으면 안내 문구 (total: 신청자 포함 인원)
         def invite_error(_total)
           nil

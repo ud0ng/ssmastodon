@@ -18,8 +18,10 @@ module Game
         F.new(key: 'cmd_chase', type: :string, default: '추격', group: 'commands', label: '추격 명령어'),
         F.new(key: 'cmd_beat', type: :string, default: '몰이', group: 'commands', label: '몰이 명령어'),
         F.new(key: 'cmd_seek', type: :string, default: '수색', group: 'commands', label: '수색 명령어'),
-        F.new(key: 'max_opponents', type: :integer, default: 5, group: 'rules', label: '함께 태그할 수 있는 사람 수',
-              hint: '1 = 1:1만, 3 = 2:2까지, 5 = 3:3까지. 팀전은 신청자를 포함해 짝수 명이어야 합니다.'),
+        F.new(key: 'min_players', type: :integer, default: 4, group: 'rules', label: '최소 인원',
+              hint: '신청자를 포함한 전체 인원. 팀 대결이라 1:1은 할 수 없고, 양 팀 인원이 같아야 하므로 짝수로 맞춰집니다 (최소 4명).'),
+        F.new(key: 'max_players', type: :integer, default: 6, group: 'rules', label: '최대 인원',
+              hint: '신청자를 포함한 전체 인원 (짝수로 맞춰집니다, 최대 12명).'),
         F.new(key: 'team_a_name', type: :string, default: '신청 팀', group: 'rules', label: '신청자 팀 이름'),
         F.new(key: 'team_b_name', type: :string, default: '상대 팀', group: 'rules', label: '상대 팀 이름'),
         F.new(key: 'max_turns', type: :integer, default: 15, group: 'rules', label: '최대 턴'),
@@ -32,7 +34,7 @@ module Game
         F.new(key: 'msg_start', type: :text, group: 'messages', label: '시작',
               default: "%{game} 시작! 최대 %{turns}턴.\n%{teams}\n\n매 턴 시스템 계정이 보내는 DM에 [%{chase}] [%{beat}] [%{seek}] 중 하나로 답해 주세요.\n모든 인원이 행동을 고르면 결과가 공개됩니다."),
         F.new(key: 'msg_uneven', type: :text, group: 'messages', label: '팀 인원이 맞지 않음',
-              default: '%{game} 팀전은 양 팀 인원이 같아야 합니다. 신청자를 포함해 2·4·6명이 되게 태그해 주세요.'),
+              default: '%{game}은 팀 대결입니다. 신청자를 포함해 %{min}~%{max}명, 양 팀 인원이 같도록 팀원과 상대 팀을 태그해 주세요.'),
         F.new(key: 'msg_ask', type: :text, group: 'messages', label: 'DM: 행동 고르기',
               default: "%{turn}턴 | 행동을 골라 주세요.\n[%{chase}] 쿼플 득점 · [%{beat}] 블러저로 방해 · [%{seek}] 스니치 찾기 (현재 확률 %{seek_rate}%)"),
         F.new(key: 'msg_chosen', type: :text, group: 'messages', label: 'DM: 선택 확인', default: "행동을 정했습니다. 다른 사람을 기다립니다."),
@@ -55,15 +57,33 @@ module Game
           true
         end
 
-        def max_opponents
-          config['max_opponents'].to_i.clamp(1, 5)
+        # 신청자를 포함한 인원 범위: 팀 대결이라 짝수, 1:1 불가 (최소 4명, 최대 12명)
+        def min_total
+          value = [config['min_players'].to_i, 4].max
+          value.odd? ? value + 1 : value
         end
 
-        # 팀전은 짝수 명만
-        def invite_error(total)
-          return if total.even?
+        def max_total
+          value = config['max_players'].to_i.clamp(min_total, 12)
+          value.odd? ? value - 1 : value
+        end
 
-          Game::Text.render(config['msg_uneven'], game: display_name)
+        def max_opponents
+          max_total - 1
+        end
+
+        def min_opponents
+          min_total - 1
+        end
+
+        def team_game?
+          true
+        end
+
+        def invite_error(total)
+          return if total.even? && total.between?(min_total, max_total)
+
+          Game::Text.render(config['msg_uneven'], game: display_name, min: min_total, max: max_total)
         end
       end
 

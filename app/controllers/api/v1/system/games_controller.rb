@@ -27,6 +27,8 @@ class Api::V1::System::GamesController < Api::BaseController
       system_acct: Game::System.username,
       command: @kind.config['command'],
       max_opponents: @kind.max_opponents,
+      min_opponents: @kind.min_opponents,
+      team: @kind.team_game?,
       summary: guide[:summary],
       steps: guide[:steps],
       rules: rules,

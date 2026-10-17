@@ -29,7 +29,16 @@ RSpec.describe Game::Kinds::Quidditch do
     toot(harry, '@system @ron @draco [퀴디치]')
 
     expect(GameSession.where(kind: 'quidditch')).to be_empty
-    expect(Status.where(account: system).last.text).to include('2·4·6명')
+    expect(Status.where(account: system).last.text).to include('4~6명')
+  end
+
+  it 'never allows a 1:1 match and follows the configured minimum' do
+    toot(harry, '@system @ron [퀴디치]')
+    expect(GameSession.where(kind: 'quidditch')).to be_empty
+
+    Game::Config.update!('quidditch', 'min_players' => '6')
+    toot(harry, '@system @ron @draco @goyle [퀴디치]')
+    expect(GameSession.where(kind: 'quidditch')).to be_empty
   end
 
   it 'splits two teams and announces them' do

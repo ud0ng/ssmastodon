@@ -178,13 +178,22 @@ RSpec.describe 'Game kinds' do
   end
 
   describe Game::Kinds::Quidditch do
-    before { start('퀴디치') }
+    let!(:carol) { Fabricate(:account, username: 'carol') }
+    let!(:dave) { Fabricate(:account, username: 'dave') }
+
+    # 팀전이라 1:1 은 안 된다 (신청자 + 팀원 1명 vs 상대 팀 2명)
+    before do
+      toot(alice, '@system @carol @bob @dave [퀴디치]')
+      [carol, bob, dave].each { |account| toot(account, '@system [수락]', thread: @replies.last) }
+    end
 
     it 'scores a guaranteed snitch catch and ends the match' do
       Game::Config.update!('quidditch', 'seek_start' => '100', 'chase_rate' => '100')
-      session.update!(state: session.state.merge('seek' => { '0' => 100, '1' => 0 }))
+      session.update!(state: session.state.merge('seek' => { '0' => 100, '1' => 100, '2' => 0, '3' => 0 }))
       toot(alice, '@system [수색]', visibility: 'direct')
+      toot(carol, '@system [수색]', visibility: 'direct')
       toot(bob, '@system [추격]', visibility: 'direct')
+      toot(dave, '@system [추격]', visibility: 'direct')
 
       expect(session.status).to eq 'finished'
       expect(session.player_for(alice).result).to eq 'win'
@@ -192,9 +201,11 @@ RSpec.describe 'Game kinds' do
     end
 
     it 'lets a beater cancel the other action' do
-      Game::Config.update!('quidditch', 'beat_rate' => '100', 'chase_rate' => '100')
+      Game::Config.update!('quidditch', 'beat_rate' => '100', 'chase_rate' => '100', 'seek_start' => '0')
       toot(alice, '@system [몰이]', visibility: 'direct')
+      toot(carol, '@system [몰이]', visibility: 'direct')
       toot(bob, '@system [추격]', visibility: 'direct')
+      toot(dave, '@system [추격]', visibility: 'direct')
 
       expect(session.state['scores']).to eq('A' => 0, 'B' => 0)
       expect(Status.find(session.last_status_id).text).to include('블러저가 드레이코를 덮쳤다')

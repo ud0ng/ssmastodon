@@ -26,14 +26,21 @@ interface Props {
   gameKey: string;
   name: string;
   maxOpponents: number;
+  // 신청자를 뺀 최소 상대 수 (퀴디치 같은 팀 대결은 최소 인원 - 1)
+  minOpponents?: number;
+  // 팀 대결(퀴디치): 우리 팀을 먼저 고르고 상대 팀을 고른다
+  team?: boolean;
   onClose: () => void;
 }
 
-const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, onClose }) => {
+const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOpponents = 1, team = false, onClose }) => {
   const intl = useIntl();
   const history = useHistory();
   const [members, setMembers] = useState<Member[]>([]);
   const [picked, setPicked] = useState<string[]>([]);
+  // 팀 대결: 1단계(우리 팀 = picked) → 2단계(상대 팀 = rivals)
+  const [rivals, setRivals] = useState<string[]>([]);
+  const [step, setStep] = useState<'mine' | 'rivals'>('mine');
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -52,24 +59,41 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, onClose 
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return q ? members.filter((member) => member.name.toLowerCase().includes(q) || member.acct.toLowerCase().includes(q)) : members;
-  }, [members, query]);
+    const pool = team && step === 'rivals' ? members.filter((member) => !picked.includes(member.acct)) : members;
+    return q ? pool.filter((member) => member.name.toLowerCase().includes(q) || member.acct.toLowerCase().includes(q)) : pool;
+  }, [members, query, team, step, picked]);
+
+  // 팀 대결 인원: 신청자를 포함한 전체가 짝수이고 양 팀이 같다. 우리 팀(나 포함) 크기 = 팀원 수 + 1
+  const maxTotal = maxOpponents + 1;
+  const minTotal = minOpponents + 1;
+  const minMates = Math.max(Math.ceil(minTotal / 2) - 1, 1);
+  const maxMates = Math.max(Math.floor(maxTotal / 2) - 1, minMates);
+  const teamSize = picked.length + 1;
 
   const toggle = useCallback(
     (acct: string) => {
+      if (team && step === 'rivals') {
+        setRivals((current) => {
+          if (current.includes(acct)) return current.filter((item) => item !== acct);
+          return current.length >= teamSize ? current : [...current, acct];
+        });
+        return;
+      }
+
       setPicked((current) => {
         if (current.includes(acct)) return current.filter((item) => item !== acct);
+        if (team) return current.length >= maxMates ? current : [...current, acct];
         if (maxOpponents === 1) return [acct];
         return current.length >= maxOpponents ? current : [...current, acct];
       });
     },
-    [maxOpponents],
+    [team, step, teamSize, maxMates, maxOpponents],
   );
 
   const send = useCallback(() => {
     setBusy(true);
     setFailed(false);
-    sendCommand({ kind: gameKey, opponents: picked })
+    sendCommand({ kind: gameKey, opponents: team ? [...picked, ...rivals] : picked })
       .then(() => waitForSession(gameKey))
       .then((sessionId) => {
         if (sessionId) {
@@ -86,7 +110,7 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, onClose 
       .finally(() => {
         setBusy(false);
       });
-  }, [gameKey, picked, onClose, history]);
+  }, [gameKey, picked, rivals, team, onClose, history]);
 
   return (
     <div className='modal-root__modal safety-action-modal challenge-modal'>
@@ -95,14 +119,31 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, onClose 
           <div className='safety-action-modal__confirmation'>
             <h1>{name}</h1>
             <p>
-              {maxOpponents > 1 ? (
-                <FormattedMessage id='system.game.pick_many' defaultMessage='Pick up to {max} people' values={{ max: maxOpponents }} />
+              {team ? (
+                step === 'mine' ? (
+                  <FormattedMessage id='system.game.pick_team_mine' defaultMessage='Pick your team (you plus {min}-{max} people)' values={{ min: minMates, max: maxMates }} />
+                ) : (
+                  <FormattedMessage id='system.game.pick_team_rival' defaultMessage='Pick {count} people for the other team' values={{ count: teamSize }} />
+                )
+              ) : maxOpponents > 1 ? (
+                <FormattedMessage id='system.game.pick_range' defaultMessage='Pick {min}-{max} people' values={{ min: minOpponents, max: maxOpponents }} />
               ) : (
                 <FormattedMessage id='system.game.pick_one' defaultMessage='Pick an opponent' />
               )}
             </p>
           </div>
         </div>
+
+        {team && !sent && (
+          <div className='challenge-modal__steps'>
+            <span className={step === 'mine' ? 'challenge-modal__step challenge-modal__step--on' : 'challenge-modal__step'}>
+              <FormattedMessage id='system.game.team_mine' defaultMessage='Your team' /> {picked.length + 1}
+            </span>
+            <span className={step === 'rivals' ? 'challenge-modal__step challenge-modal__step--on' : 'challenge-modal__step'}>
+              <FormattedMessage id='system.game.team_rival' defaultMessage='Other team' /> {rivals.length}/{teamSize}
+            </span>
+          </div>
+        )}
 
         {sent ? (
           <p className='challenge-modal__result'>
@@ -120,7 +161,8 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, onClose 
             />
             <div className='system-newgame__members challenge-modal__members'>
               {shown.map((member) => {
-                const index = picked.indexOf(member.acct);
+                const list = team && step === 'rivals' ? rivals : picked;
+                const index = list.indexOf(member.acct);
                 return (
                   <button
                     key={member.acct}
@@ -132,16 +174,11 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, onClose 
                     <img src={member.avatar} alt='' />
                     <span className='system-member__name'>{member.name}</span>
                     {member.house && <span className='system-member__house'>{member.house.name}</span>}
-                    {index >= 0 && maxOpponents > 1 && <span className='system-member__order'>{index + 1}</span>}
+                    {index >= 0 && (team || maxOpponents > 1) && <span className='system-member__order'>{index + 1}</span>}
                   </button>
                 );
               })}
             </div>
-            {gameKey === 'quidditch' && picked.length > 1 && (
-              <p className='hint'>
-                <FormattedMessage id='system.game.teams_hint' defaultMessage='You and the first {half} picked are one team.' values={{ half: Math.max(Math.floor((picked.length + 1) / 2) - 1, 0) }} />
-              </p>
-            )}
             {failed && (
               <p className='item-modal__error'>
                 <FormattedMessage id='item.failed' defaultMessage='Something went wrong. Please try again.' />
@@ -163,13 +200,25 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, onClose 
             </>
           ) : (
             <>
-              <button type='button' onClick={onClose} className='link-button'>
-                <FormattedMessage id='confirmation_modal.cancel' defaultMessage='Cancel' />
-              </button>
+              {team && step === 'rivals' ? (
+                <button type='button' onClick={() => { setStep('mine'); setRivals([]); }} className='link-button'>
+                  <FormattedMessage id='system.game.back' defaultMessage='Back' />
+                </button>
+              ) : (
+                <button type='button' onClick={onClose} className='link-button'>
+                  <FormattedMessage id='confirmation_modal.cancel' defaultMessage='Cancel' />
+                </button>
+              )}
               <div className='spacer' />
-              <Button disabled={busy || picked.length === 0} onClick={send}>
-                <FormattedMessage id='system.game.invite' defaultMessage='Challenge' />
-              </Button>
+              {team && step === 'mine' ? (
+                <Button disabled={picked.length < minMates} onClick={() => { setQuery(''); setStep('rivals'); }}>
+                  <FormattedMessage id='system.game.next' defaultMessage='Next' />
+                </Button>
+              ) : (
+                <Button disabled={busy || (team ? rivals.length !== teamSize : picked.length < minOpponents)} onClick={send}>
+                  <FormattedMessage id='system.game.invite' defaultMessage='Challenge' />
+                </Button>
+              )}
             </>
           )}
         </div>

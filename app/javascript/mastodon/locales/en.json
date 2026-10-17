@@ -1217,5 +1217,12 @@
   "content_card.answer_label": "Answer",
   "system.room.waiting_accept": "Waiting for them to accept…",
   "content_card.room_chosen": "Chosen",
-  "content_card.room_choosing": "Choosing"
+  "content_card.room_choosing": "Choosing",
+  "system.game.pick_team_mine": "Pick your team ({min}-{max} more besides you)",
+  "system.game.pick_team_rival": "Pick {count} people for the other team",
+  "system.game.pick_range": "Pick {min}-{max} opponents",
+  "system.game.team_mine": "Your team",
+  "system.game.team_rival": "Other team",
+  "system.game.next": "Next",
+  "system.game.back": "Back"
 }

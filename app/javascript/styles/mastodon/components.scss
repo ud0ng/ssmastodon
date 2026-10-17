@@ -16584,6 +16584,26 @@ body .search__popout__menu__item {
   --sys-gold-soft: var(--ct-line, var(--background-border-color));
   --sys-serif: #{$font-sans-serif}, sans-serif;
 
+  &__steps {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  &__step {
+    padding: 4px 12px;
+    font-size: 13px;
+    color: var(--ct-dim, var(--color-text-secondary));
+    border: 1px solid var(--sys-gold-soft);
+    border-radius: 999px;
+
+    &--on {
+      font-weight: 700;
+      color: var(--sys-gold);
+      border-color: var(--sys-gold);
+    }
+  }
+
   &__head {
     display: flex;
     gap: 12px;

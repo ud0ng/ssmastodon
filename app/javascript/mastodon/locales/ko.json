@@ -1354,5 +1354,12 @@
   "content_card.answer_label": "정답",
   "system.room.waiting_accept": "상대의 수락을 기다리는 중…",
   "content_card.room_chosen": "선택 완료",
-  "content_card.room_choosing": "선택 중"
+  "content_card.room_choosing": "선택 중",
+  "system.game.pick_team_mine": "우리 팀을 고르세요 (나 포함 팀원 {min}~{max}명 더)",
+  "system.game.pick_team_rival": "상대 팀 {count}명을 고르세요",
+  "system.game.pick_range": "함께할 상대를 {min}~{max}명 고르세요",
+  "system.game.team_mine": "우리 팀",
+  "system.game.team_rival": "상대 팀",
+  "system.game.next": "다음",
+  "system.game.back": "이전"
 }

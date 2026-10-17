@@ -25,11 +25,11 @@ module Game
         steps: ['[%{command}] @상대 로 신청', '라운드마다 DM 으로 [%{cmd_brew}] 재료 번호 (0번은 첫 자리 불가, 두 사람이 모두 보내면 결과 공개)', '[P] 재료·순서 맞음 · [T] 순서만 틀림. 아이템: [%{cmd_shield}] 결과 하나 가림 · [%{cmd_retry}] 두 번 조합, 정답을 먼저 맞히면 승리'],
       },
       'quidditch' => {
-        summary: '1:1 또는 팀전(2·4·6명) 미니 퀴디치',
-        steps: ['[%{command}] @상대 로 신청 (팀전은 @같은편 … @상대편 …)', '턴마다 DM 으로 [%{cmd_chase}] 득점 · [%{cmd_beat}] 방해 · [%{cmd_seek}] 스니치', '스니치를 잡거나 마지막 턴에 점수가 높은 팀 승리'],
+        summary: '두 팀이 겨루는 미니 퀴디치 (%{min_people}~%{max_people}명, 양 팀 인원 같게)',
+        steps: ['[%{command}] 로 신청: 우리 팀(@같은편 …) 먼저, 이어서 상대 팀(@상대편 …)', '턴마다 DM 으로 [%{cmd_chase}] 득점 · [%{cmd_beat}] 방해 · [%{cmd_seek}] 스니치', '스니치를 잡거나 마지막 턴에 점수가 높은 팀 승리'],
       },
       'flying' => {
-        summary: '겹치지 않는 경로로 날아 가장 많이 통과하는 사람이 이기는 비행 대결 (최대 %{max_people}명)',
+        summary: '겹치지 않는 경로로 날아 가장 많이 통과하는 사람이 이기는 비행 대결 (%{min_people}~%{max_people}명)',
         steps: ['[%{command}] @상대 … 로 신청', '라운드마다 DM 으로 [%{cmd_fly}/번호] 경로 고르기', '혼자 고른 경로는 통과, 겹치면 충돌 → 통과가 가장 많은 사람 승리'],
       },
       'maze' => {
@@ -55,7 +55,7 @@ module Game
     end
 
     def for(kind)
-      values = Game::Config.for('common').merge(kind.config).merge('name' => kind.display_name, 'max_people' => kind.max_opponents + 1)
+      values = Game::Config.for('common').merge(kind.config).merge('name' => kind.display_name, 'max_people' => kind.max_opponents + 1, 'min_people' => kind.min_opponents + 1)
       text = TEXT.fetch(kind.key, { summary: '', steps: [] })
       {
         # 관리 > 컨텐츠 설정의 설명을 쓰고, 비어 있으면 기본 소개

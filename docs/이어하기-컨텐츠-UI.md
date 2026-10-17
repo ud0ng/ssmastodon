@@ -157,3 +157,9 @@ docker compose -f dev/preview/docker-compose.yml exec -T web bin/rails runner /d
 - 값 찍어 보기: `PROBE=파일.js` (식 하나를 반환하는 IIFE).
 - owner 가 이미 진행 중인 판이 있으면 새 신청이 막힌다. 그때는 `GameSession.open.update_all(status: "cancelled")` 를 runner 로 실행한다.
 - Ruby 테스트 컨테이너 명령은 `CLAUDE.md` "로컬에서 확인하기" 참고. 돌린 뒤 `git checkout db/schema.rb Gemfile.lock`.
+
+## 팀전 인원 설정 + 팀 먼저 고르는 신청 (퀴디치·비행)
+
+- 퀴디치·비행 대결 설정(규칙)에 `min_players`/`max_players`(신청자 포함 전체 인원) 추가. 퀴디치는 팀전이라 짝수, 최소 4명(1:1 불가), 최대 12명. 비행은 개인전 2~10명. 조건이 안 맞으면 `Kinds::*.invite_error` 가 문구(`msg_uneven`/`msg_players`)로 거절.
+- `Kinds::Base` 에 `min_opponents`, `team_game?` 훅. `GET /system/games/:key` 가 `min_opponents`, `team` 도 내려준다.
+- 신청 모달(`challenge_modal.tsx`): 팀전이면 1단계 "우리 팀 고르기"(팀원) → 2단계 "상대 팀 고르기"(팀원 수+1명). `opponents[]` 는 고른 순서(팀원 → 상대 팀)로 보내고, `commands_controller#new_command` 가 그 순서를 지킨다. 서버는 앞쪽 절반(신청자 포함)을 신청 팀으로 나눈다.

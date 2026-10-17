@@ -39,7 +39,9 @@ class Api::V1::System::CommandsController < Api::BaseController
 
     return ["#{system_mention} [#{kind.config['command']}]", nil, 'private'] if kind.event?
 
-    opponents = Account.local.where(username: Array(params[:opponents]).map { |acct| clean(acct).delete_prefix('@') }).where.not(id: current_account.id)
+    usernames = Array(params[:opponents]).map { |acct| clean(acct).delete_prefix('@') }
+    # 고른 순서를 지킨다: 팀전은 앞에서부터 우리 팀(팀원 → 상대 팀)이다
+    opponents = Account.local.where(username: usernames).where.not(id: current_account.id).sort_by { |account| usernames.index(account.username) }
     return if opponents.empty?
 
     ["#{system_mention} #{opponents.map { |account| "@#{account.acct}" }.join(' ')} [#{kind.config['command']}]", nil, 'private']
