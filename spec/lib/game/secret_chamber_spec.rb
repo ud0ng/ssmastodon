@@ -111,21 +111,43 @@ RSpec.describe Game::Events::SecretChamber do
     expect(extra).to be_persisted
   end
 
-  it 'delivers the prophecy the traitor chose to the seer and keeps it in her notes, and shares secret chat only with traitors' do
-    Game::Config.update!('secret_chamber', 'traitor_percent' => '30')
+  it 'only lets the traitor pass on true prophecies and delivers them to the seer and her notes' do
     start_game!
     session.with_lock { kind.timeout! }
     traitor = player_with('traitor')
     seer = player_with('seer')
+    student = player_with('student')
 
-    toot(traitor.account, '@system [예언/학생 중에 방주가 있다]', visibility: 'direct')
-    expect(session.reload.state.dig('night', 'prophecy', 'text')).to eq '학생 중에 방주가 있다'
+    # 거짓 예언은 막힌다: 방주를 호그와트 진영이라고, 학생 둘을 '둘 중 한 명은 방주'라고
+    toot(traitor.account, "@system [예언/호그와트/#{traitor.account.username}]", visibility: 'direct')
+    expect(session.reload.state.dig('night', 'prophecy')).to be_nil
+    expect(Status.where(account: system, visibility: :direct).reorder(:id).last.text).to include('사실이 아닌 예언')
+    others = players_without('traitor').reject { |p| p.seat == seer.seat }.first(2)
+    toot(traitor.account, "@system [예언/둘중/#{others.map { |p| p.account.username }.join('/')}]", visibility: 'direct')
+    expect(session.reload.state.dig('night', 'prophecy')).to be_nil
+
+    # 사실인 예언: 이름(인자)으로 대상을 고르니 상대에게 DM 이 가지 않는다
+    toot(traitor.account, "@system [예언/둘중/#{student.account.username}/#{traitor.account.username}]", visibility: 'direct')
+    expect(session.reload.state.dig('night', 'prophecy', 'text')).to include('적어도 한 명은 방주')
+    expect(Status.where(account: system, visibility: :direct).reorder(:id).last.mentions.map(&:account_id)).to eq [traitor.account_id]
     session.with_lock { kind.timeout! }
 
-    expect(session.reload.state.dig('notes', seer.seat.to_s).last['text']).to include('학생 중에 방주가 있다')
+    expect(session.reload.state.dig('notes', seer.seat.to_s).last['text']).to include('적어도 한 명은 방주')
     expect(kind.view_for(seer)[:notes].size).to eq 1
     expect(kind.view_for(seer)[:dark_chat]).to eq []
     expect(kind.view_for(traitor)[:my_role][:name]).to eq '방주'
+    expect(kind.view_for(traitor)[:prophecy_kinds].size).to eq 4
+  end
+
+  it 'accepts night targets by name so the target never receives the DM' do
+    start_game!
+    session.with_lock { kind.timeout! }
+    traitor = player_with('traitor')
+    student = player_with('student')
+
+    toot(traitor.account, "@system [석화/#{student.account.username}]", visibility: 'direct')
+
+    expect(session.reload.state.dig('night', 'petrify', traitor.seat.to_s)).to eq student.seat
   end
 
   it 'reveals every role to eliminated players and hides them from the living' do

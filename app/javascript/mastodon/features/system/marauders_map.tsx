@@ -8,7 +8,7 @@ import { FormattedMessage } from 'react-intl';
 import { apiRequestGet, apiRequestPost } from 'mastodon/api';
 import { GameIcon } from 'mastodon/components/game_icons';
 
-import { BoardHeader } from './board_header';
+import { AvatarClip, AvatarPin, BoardHeader } from './board_header';
 
 interface Room { id: number; name: string; x: number; y: number }
 interface Token { seat: number; name: string; room: number; student: boolean; me: boolean }
@@ -156,6 +156,7 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
       )}
 
       <svg className='map-play__svg' viewBox={`0 0 ${svgWidth} ${svgHeight}`} role='img'>
+        <AvatarClip />
         {view.edges.map((edge) => {
           const a = byId.get(edge.a);
           const b = byId.get(edge.b);
@@ -197,10 +198,16 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
                 <GameIcon name={{ footprint: 'foot', target: 'sparkle', revelio: 'bulb' }[clue.kind] ?? 'sparkle'} x={x + (CELL - 30) - 8} y={y + 6} size={16} />
               )}
               {tokens.map((token, index) => (
-                <g key={token.seat}>
-                  <title>{token.name}</title>
-                  <circle cx={x + 18 + (index * 22)} cy={y + CELL - 38} r={9} className={token.student ? 'map-play__token map-play__token--student' : token.me ? 'map-play__token map-play__token--me' : 'map-play__token'} />
-                </g>
+                <AvatarPin
+                  key={token.seat}
+                  x={x + 22 + (index * 30)}
+                  y={y + CELL - 38}
+                  r={12}
+                  name={token.name}
+                  avatar={view.players.find((person) => person.seat === token.seat)?.avatar}
+                  color={token.student ? '#c0392b' : 'var(--ct-point, #3f7fd0)'}
+                  ring={token.student ? 'student' : token.me ? 'me' : null}
+                />
               ))}
             </g>
           );

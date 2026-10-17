@@ -44,6 +44,7 @@ interface ChamberView {
   notes: { day: number; text: string }[];
   dark_chat: { name: string; text: string }[];
   prophecy: string | null;
+  prophecy_kinds: { key: string; label: string; count: number }[];
   commands: Record<string, string>;
   min_players: number;
   max_players: number;
@@ -56,7 +57,8 @@ export const ChamberPlay: React.FC<{ sessionId: string; onMoved?: () => void }> 
   const [selected, setSelected] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [chat, setChat] = useState('');
-  const [prophecy, setProphecy] = useState('');
+  const [prophecyKind, setProphecyKind] = useState<string>('');
+  const [prophecyTargets, setProphecyTargets] = useState<string[]>(['', '']);
 
   const load = useCallback(() => {
     apiRequestGet<{ view: ChamberView | null }>(`v1/system/sessions/${sessionId}/view`)
@@ -124,12 +126,14 @@ export const ChamberPlay: React.FC<{ sessionId: string; onMoved?: () => void }> 
     setChat('');
   };
 
+  // 예언은 사실인 것만 전할 수 있다: 종류(진영·역할·둘 중 하나)와 대상을 골라 보낸다 (거짓이면 시스템이 막는다)
   const handleProphecy = (event: React.FormEvent) => {
     event.preventDefault();
-    const text = prophecy.trim();
-    if (!text) return;
-    send(cmd.prophecy ?? '예언', { args: text, dm: true });
-    setProphecy('');
+    const kind = view.prophecy_kinds.find((item) => item.key === prophecyKind) ?? view.prophecy_kinds[0];
+    if (!kind) return;
+    const names = prophecyTargets.slice(0, kind.count).filter(Boolean);
+    if (names.length < kind.count) return;
+    send(cmd.prophecy ?? '예언', { args: [kind.key, ...names].join('/'), dm: true });
   };
 
   // 지금 고를 수 있는 행동 (고른 아바타 기준)
@@ -281,7 +285,7 @@ export const ChamberPlay: React.FC<{ sessionId: string; onMoved?: () => void }> 
                 )}
               </p>
               {action && (
-                <button type='button' className='content-card__action' disabled={busy || action.done} onClick={() => { send(action.command, { target: target?.acct, dm: action.dm }); }}>
+                <button type='button' className='content-card__action' disabled={busy || action.done} onClick={() => { send(action.command, action.dm ? { args: target?.acct ?? undefined, dm: true } : { target: target?.acct, dm: false }); }}>
                   {action.label}
                 </button>
               )}
@@ -327,10 +331,18 @@ export const ChamberPlay: React.FC<{ sessionId: string; onMoved?: () => void }> 
             <input value={chat} onChange={(event) => { setChat(event.target.value); }} maxLength={200} placeholder='…' />
             <button type='submit' className='chamber-chat__send' disabled={busy || chat.trim() === ''}><FormattedMessage id='chamber.send' defaultMessage='Send' /></button>
           </form>
-          {view.phase === 'night' && (
+          {view.phase === 'night' && view.prophecy_kinds.length > 0 && (
             <form className='chamber-chat__form chamber-chat__form--prophecy' onSubmit={handleProphecy}>
-              <input value={prophecy} onChange={(event) => { setProphecy(event.target.value); }} maxLength={200} placeholder={view.prophecy ?? ''} />
-              <button type='submit' className='chamber-chat__send' disabled={busy || prophecy.trim() === ''}><GameIcon name='sparkle' /> <FormattedMessage id='chamber.send_prophecy' defaultMessage='Send prophecy' /></button>
+              <select value={prophecyKind || view.prophecy_kinds[0]?.key} onChange={(event) => { setProphecyKind(event.target.value); }}>
+                {view.prophecy_kinds.map((kind) => <option key={kind.key} value={kind.key}>{kind.label}</option>)}
+              </select>
+              {[0, 1].slice(0, (view.prophecy_kinds.find((kind) => kind.key === (prophecyKind || view.prophecy_kinds[0]?.key))?.count ?? 1)).map((index) => (
+                <select key={index} value={prophecyTargets[index]} onChange={(event) => { setProphecyTargets((current) => current.map((value, at) => (at === index ? event.target.value : value))); }}>
+                  <option value=''>…</option>
+                  {alivePlayers.map((player) => <option key={player.seat} value={player.acct ?? ''}>{player.name}</option>)}
+                </select>
+              ))}
+              <button type='submit' className='chamber-chat__send' disabled={busy}><GameIcon name='sparkle' /> <FormattedMessage id='chamber.send_prophecy' defaultMessage='Send prophecy' /></button>
             </form>
           )}
         </div>

@@ -59,10 +59,10 @@ class Api::V1::System::CommandsController < Api::BaseController
       return ["#{system_mention} #{body}", thread, 'direct']
     end
 
-    target = clean(params[:target]).delete_prefix('@')
-    others = target.present? ? [] : session.players.reject { |item| item.account_id == current_account.id }.map { |item| "@#{item.account.acct}" }
+    targets = [params[:target], *Array(params[:targets])].map { |acct| clean(acct).delete_prefix('@') }.compact_blank
+    others = targets.any? ? [] : session.players.reject { |item| item.account_id == current_account.id }.map { |item| "@#{item.account.acct}" }
     mentions = [system_mention, *others].join(' ')
-    text = "#{mentions} #{body}#{" @#{target}" if target.present?}"
+    text = "#{mentions} #{body}#{targets.map { |acct| " @#{acct}" }.join}"
     thread = Status.find_by(id: session.last_status_id || session.root_status_id)
     [text, thread, session.visibility == 'direct' ? 'direct' : 'private']
   end

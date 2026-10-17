@@ -1631,3 +1631,102 @@
 .chamber-head + .maze-play__svg {
   margin-top: 8px;
 }
+
+// 판 위 말(아바타)
+.avatar-pin {
+  pointer-events: all;
+
+  &__ring {
+    fill: none;
+    stroke-width: 3;
+  }
+
+  text {
+    fill: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    pointer-events: none;
+  }
+
+  &--stunned image,
+  &--stunned circle:not(.avatar-pin__ring) {
+    opacity: 0.55;
+  }
+
+  &--me &__ring {
+    stroke-width: 4;
+  }
+}
+
+// ── 비밀의 방 원탁: 미로·도둑 지도와 같은 분위기 (옅은 면, 그림자 없음) ──
+.chamber-play__table {
+  border-radius: 16px;
+  background: var(--board-tint);
+
+  &--night {
+    background: color-mix(in srgb, #232b4a 62%, var(--ct-panel, #fff));
+  }
+}
+
+.chamber-play__disc {
+  border: 0;
+  background: color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 13%, transparent);
+  box-shadow: none;
+}
+
+.chamber-play__table--night .chamber-play__disc {
+  background: #ffffff14;
+}
+
+.chamber-play__center {
+  color: var(--ct-point, #{$ui-highlight-color});
+  text-shadow: none;
+}
+
+.chamber-play__table--night .chamber-play__center {
+  color: #ffe9a0;
+}
+
+.chamber-seat__avatar {
+  border: 0;
+  box-shadow: none;
+  outline: 3px solid color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 40%, transparent);
+}
+
+.chamber-seat--me .chamber-seat__avatar {
+  outline: 4px solid var(--ct-point, #{$ui-highlight-color});
+  box-shadow: none;
+}
+
+.chamber-seat--selected .chamber-seat__avatar {
+  outline: 4px solid var(--ct-point, #{$ui-highlight-color});
+  box-shadow: none;
+}
+
+.chamber-seat--dark .chamber-seat__avatar {
+  outline-color: var(--chamber-dark);
+}
+
+.chamber-seat__name {
+  background: var(--board-tint-strong);
+  color: var(--ct-text, inherit);
+}
+
+.chamber-play__table--night .chamber-seat__name {
+  background: #ffffff22;
+  color: #fff;
+}
+
+.chamber-chat__form select {
+  max-width: 130px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ct-panel, var(--background-color));
+  color: inherit;
+  font: inherit;
+}
+
+.chamber-chat__form--prophecy {
+  flex-wrap: wrap;
+}

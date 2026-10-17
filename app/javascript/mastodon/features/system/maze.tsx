@@ -9,7 +9,7 @@ import { FormattedMessage } from 'react-intl';
 import { apiRequestGet, apiRequestPost } from 'mastodon/api';
 import { GameIcon } from 'mastodon/components/game_icons';
 
-import { BoardHeader } from './board_header';
+import { AvatarClip, AvatarPin, BoardHeader } from './board_header';
 
 type Dir = 'N' | 'E' | 'S' | 'W';
 
@@ -201,6 +201,7 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
       )}
 
       <svg className='maze-play__svg' viewBox={`0 0 ${(width * CELL) + (PAD * 2)} ${(height * CELL) + (PAD * 2)}`} role='img'>
+        <AvatarClip />
         <rect className='maze-play__fog' x={0} y={0} width={(width * CELL) + (PAD * 2)} height={(height * CELL) + (PAD * 2)} />
 
         {Object.keys(view.cells).map((key) => {
@@ -289,41 +290,45 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
           />
         ))}
 
-        {/* 사람 */}
+        {/* 사람: 아바타 (마우스를 올리면 이름) */}
         {view.revealed ? view.players.map((person) => {
           if (person.x === undefined || person.y === undefined) return null;
           const [cx, cy] = center(person.x, person.y);
-          const mine = person.seat === view.me;
           return (
-            <g key={person.seat} className='maze-play__token'>
-              <title>{person.name}</title>
-              {mine && <circle className='maze-play__me-ring' cx={cx} cy={cy} r={15} />}
-              <circle cx={cx + 3} cy={cy - 3} r={11} style={{ fill: OTHER_COLORS[person.seat % OTHER_COLORS.length] }} />
-              <text x={cx + 3} y={cy + 1} textAnchor='middle'>{[...person.name][0]}</text>
-              {person.stunned > 0 && <GameIcon className='maze-play__trap' name='stun' x={cx + 8} y={cy - 20} size={12} />}
-            </g>
+            <AvatarPin
+              key={person.seat}
+              x={cx}
+              y={cy}
+              r={12}
+              name={person.name}
+              avatar={person.avatar}
+              color={OTHER_COLORS[person.seat % OTHER_COLORS.length] ?? '#888'}
+              ring={person.seat === view.me ? 'me' : null}
+              stunned={person.stunned > 0}
+            />
           );
         }) : (
           <>
             {view.others.map((other) => {
               const [cx, cy] = center(other.x, other.y);
+              const person = view.players.find((item) => item.seat === other.seat);
               return (
-                <g key={other.seat} className={other.hostile ? 'maze-play__token maze-play__token--hostile' : 'maze-play__token'}>
-                  <title>{other.name}</title>
-                  <circle cx={cx + 5} cy={cy - 5} r={9} style={{ fill: OTHER_COLORS[other.seat % OTHER_COLORS.length] }} />
-                  <text x={cx + 5} y={cy - 1} textAnchor='middle'>{[...other.name][0]}</text>
-                  {other.hostile && <GameIcon className='maze-play__hostile' name='sword' x={cx + 8} y={cy - 18} size={12} />}
-                </g>
+                <AvatarPin
+                  key={other.seat}
+                  x={cx + 5}
+                  y={cy - 5}
+                  r={10}
+                  name={other.name}
+                  avatar={person?.avatar}
+                  color={other.hostile ? '#c0392b' : (OTHER_COLORS[other.seat % OTHER_COLORS.length] ?? '#888')}
+                  ring={other.hostile ? 'hostile' : null}
+                />
               );
             })}
             {view.position && (() => {
               const [cx, cy] = center(view.position[0], view.position[1]);
-              return (
-                <g className='maze-play__token maze-play__token--me'>
-                  <circle className='maze-play__me-ring' cx={cx} cy={cy} r={14} />
-                  <circle cx={cx} cy={cy} r={9} />
-                </g>
-              );
+              const mine = view.players.find((item) => item.seat === view.me);
+              return <AvatarPin x={cx} y={cy} r={12} name={mine?.name ?? ''} avatar={mine?.avatar} color='var(--ct-point, #e0603c)' ring='me' />;
             })()}
           </>
         )}

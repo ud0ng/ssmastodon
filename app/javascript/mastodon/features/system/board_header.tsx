@@ -1,4 +1,4 @@
-// 웹 전용 컨텐츠(미로·도둑 지도·비밀의 방) 판 맨 위 고정 헤더: 지금 단계(아이콘·제목) · 시간 · 참가자 아바타
+// 웹 전용 컨텐츠(미로·도둑 지도·비밀의 방) 판 맨 위 고정 헤더: 지금 단계(아이콘·제목) · 시간 · 참가자 아바타, 그리고 판 위 말(아바타)
 import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 import { GameIcon } from 'mastodon/components/game_icons';
 
@@ -47,4 +47,37 @@ export const BoardHeader: React.FC<{
       {peopleNote && <small>{peopleNote}</small>}
     </div>
   </div>
+);
+
+// SVG 판 위의 말: 아바타 (없으면 이름 첫 글자). 마우스를 올리면 이름이 뜬다. <AvatarClip /> 을 같은 svg 안 defs 에 한 번 둔다.
+export const AvatarClip: React.FC = () => (
+  <defs>
+    <clipPath id='board-avatar-clip' clipPathUnits='objectBoundingBox'>
+      <circle cx='0.5' cy='0.5' r='0.5' />
+    </clipPath>
+  </defs>
+);
+
+export const AvatarPin: React.FC<{
+  x: number;
+  y: number;
+  r: number;
+  name: string;
+  avatar?: string | null;
+  color: string;
+  ring?: 'me' | 'student' | 'hostile' | null;
+  stunned?: boolean;
+}> = ({ x, y, r, name, avatar, color, ring, stunned }) => (
+  <g className={['avatar-pin', ring && `avatar-pin--${ring}`, stunned && 'avatar-pin--stunned'].filter(Boolean).join(' ')}>
+    <title>{name}</title>
+    <circle className='avatar-pin__ring' cx={x} cy={y} r={r + 3} style={{ stroke: color }} />
+    {avatar ? (
+      <image href={avatar} x={x - r} y={y - r} width={r * 2} height={r * 2} clipPath='url(#board-avatar-clip)' preserveAspectRatio='xMidYMid slice' />
+    ) : (
+      <>
+        <circle cx={x} cy={y} r={r} style={{ fill: color }} />
+        <text x={x} y={y + 4} textAnchor='middle'>{[...name][0]}</text>
+      </>
+    )}
+  </g>
 );

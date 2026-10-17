@@ -199,3 +199,9 @@ docker compose -f dev/preview/docker-compose.yml exec -T web bin/rails runner /d
 - `Kinds::Base.spectatable?`(미로·도둑 지도만 true): 참가자가 아닌 사람도 `GET /system/sessions/:id/view` 로 판 전체를 본다 (`view_for(nil)` = `reveal_view`). 끝난 판은 참가자에게도 같은 전체 공개. DM 판(visibility direct)은 여전히 참가자만.
 - 미로 `state['trails']`·도둑 지도 `state['trail']`(학생이 지나간 방)에 지나온 길을 쌓아 관전·끝난 판에서 선으로 그린다. 관전 화면은 4초마다 새로 읽는다.
 - `features/system/board_header.tsx`: 비밀의 방·미로·도둑 지도 판 위 고정 헤더(단계 아이콘·제목, 시간, 참가자 아바타) 공통 컴포넌트. 판 목록에는 `players`(account_id)를 담고 컨트롤러가 아바타를 붙인다.
+
+## 비밀의 방 예언은 언제나 진실 + 판 위 말은 아바타
+
+- 방주가 전하는 예언은 사실만 가능: `[예언/호그와트 @누구]`(방주가 아닌 사람) · `[예언/어둠 @누구]`(방주) · `[예언/역할 @누구]` · `[예언/둘중 @A @B]`(적어도 한 명이 방주). 거짓이면 시스템이 DM 으로 거절 (`msg_prophecy_false`). 웹은 종류·대상을 고르는 선택 상자.
+- DM 밤 행동의 대상은 `@멘션` 대신 계정 아이디 인자(`[석화/아이디]`)로도 보낼 수 있다 (멘션하면 그 사람에게 DM 이 가므로 웹은 인자로 보낸다). `commands_controller` 는 `targets[]` 도 받는다.
+- 미로·도둑 지도 판 위 말은 아바타(`AvatarPin`)이고 마우스를 올리면 이름이 뜬다. 비밀의 방 원탁은 지도와 같은 옅은 면 스타일.
