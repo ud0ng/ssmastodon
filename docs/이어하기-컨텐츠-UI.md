@@ -224,3 +224,8 @@ docker compose -f dev/preview/docker-compose.yml exec -T web bin/rails runner /d
 - 웹에서 선물·아이템 사용을 하면 쓴 사람이 직접 보내는 툿(`Game::Gift.announce`)이 나간다: 받는 사람 + 상점 봇 멘션과 명령어 모양 `［양도/아이템: 개수/캐릭터］`·`［사용/아이템/캐릭터］`. **괄호는 전각(［ ］)** 이라 상점 봇·시스템이 다시 처리하지 않는다 (웹이 이미 처리했다). 혼자 하는 사용도 봇을 멘션, 기숙사 점수 차감(똥폭탄)은 봇을 멘션한 팔로워 공개 툿, 호울러·운영진 처리는 시스템 계정과 봇에게만 DM.
 - 모바일 호울러: 시스템 계정에 DM 으로 `[사용/호울러/소문 내용]` → `Engine#item_command` → `Game::ItemUse.howler!` (아이템 1개 소모, 모든 서버원에게 DM 소문, 보낸 사람 비공개). 그 밖의 `[사용/...]` 은 상점 봇이 처리한다.
 - 아이템 모달: 기숙사는 목록에서 고르고, '랜덤으로 1명 고르기'는 다시 누르면 해제된다.
+
+## 도둑 지도 양피지 지도·말풍선·즉시 반응
+
+- 지도는 양피지 + 잉크 선 (`marauders_map.tsx`, SVG 필터). 내 차례에 갈 수 있는 방만 테마색(`--ct-point`), 나머지는 바랜 색(`--dim`). 판 위 말풍선은 `board_header.tsx` 의 `useBoardTip`/`BoardTip` (SVG 기본 툴팁 대신 위쪽에 뜬다, 미로 말에도 쓴다).
+- 속도: 웹 버튼(`commands_controller`)은 Sidekiq 를 기다리지 않고 요청 안에서 `Game::Engine` 을 바로 돌리고, 같은 툿을 `Game::MentionWorker` 가 다시 처리하지 않게 `MentionWorker.claim?`(Rails.cache NX)로 한 번만 처리한다. 지도에서 방을 누르면 말이 서버 답을 기다리지 않고 바로 가고(`chosen`), 지도는 3초마다 새로 읽는다. 말은 방 가운데에 놓이고 여럿이면 가로로 나란히.

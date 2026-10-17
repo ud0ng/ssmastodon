@@ -9,7 +9,7 @@ import { FormattedMessage } from 'react-intl';
 import { apiRequestGet, apiRequestPost } from 'mastodon/api';
 import { GameIcon } from 'mastodon/components/game_icons';
 
-import { AvatarClip, AvatarPin, BoardHeader } from './board_header';
+import { AvatarClip, AvatarPin, BoardHeader, BoardTip, useBoardTip } from './board_header';
 
 type Dir = 'N' | 'E' | 'S' | 'W';
 
@@ -86,6 +86,7 @@ const OTHER_COLORS = ['#e0603c', '#3f7fd0', '#8a58c9', '#2f9e8f'];
 export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = ({ sessionId, onMoved }) => {
   const [view, setView] = useState<MazeView | null>(null);
   const [busy, setBusy] = useState(false);
+  const board = useBoardTip();
 
   const load = useCallback(() => {
     apiRequestGet<ViewResponse>(`v1/system/sessions/${sessionId}/view`)
@@ -200,6 +201,7 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
         </div>
       )}
 
+      <div className='board-wrap' ref={board.wrapRef}>
       <svg className='maze-play__svg' viewBox={`0 0 ${(width * CELL) + (PAD * 2)} ${(height * CELL) + (PAD * 2)}`} role='img'>
         <AvatarClip />
         <rect className='maze-play__fog' x={0} y={0} width={(width * CELL) + (PAD * 2)} height={(height * CELL) + (PAD * 2)} />
@@ -304,6 +306,7 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
               avatar={person.avatar}
               color={OTHER_COLORS[person.seat % OTHER_COLORS.length] ?? '#888'}
               ring={person.seat === view.me ? 'me' : null}
+              tip={board.api}
               stunned={person.stunned > 0}
             />
           );
@@ -322,6 +325,7 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
                   avatar={person?.avatar}
                   color={other.hostile ? '#c0392b' : (OTHER_COLORS[other.seat % OTHER_COLORS.length] ?? '#888')}
                   ring={other.hostile ? 'hostile' : null}
+                  tip={board.api}
                 />
               );
             })}
@@ -333,6 +337,8 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
           </>
         )}
       </svg>
+      <BoardTip tip={board.tip} />
+      </div>
 
       <div className='maze-play__foot'>
         <p className='maze-play__hint'>

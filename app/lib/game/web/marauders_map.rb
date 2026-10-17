@@ -185,6 +185,7 @@ module Game
           item_info: item_info,
           commands: ACTIONS.to_h { |key| [key, config["cmd_#{key}"]] },
           phase: state['phase'],
+          planned_room: state.dig('moves', seat, 'room'),
           my_turn: my_turn,
           cloak: state['cloak'].to_i,
           submitted: my_turn ? state['moves'].key?(seat) : true,

@@ -18,12 +18,22 @@ class Api::V1::System::CommandsController < Api::BaseController
     return render json: { error: 'invalid' }, status: 422 if text.nil?
 
     status = PostStatusService.new.call(current_account, text: text, thread: thread, visibility: visibility)
+    handle_now!(status)
     render json: { status_id: status.id.to_s }
   rescue ActiveRecord::RecordInvalid, Mastodon::ValidationError => e
     render json: { error: e.message }, status: 422
   end
 
   private
+
+  # 웹 버튼: 큐(Sidekiq)에서 기다리지 않고 지금 바로 처리해서 화면이 빨리 바뀌게 한다
+  def handle_now!(status)
+    return unless Game::System.command_toot?(status) && Game::MentionWorker.claim?(status.id)
+
+    Game::Engine.new(status).call
+  rescue => e
+    Rails.logger.error { "web command failed for status #{status.id}: #{e.class} #{e.message}" }
+  end
 
   def system_mention
     "@#{Game::System.username}"

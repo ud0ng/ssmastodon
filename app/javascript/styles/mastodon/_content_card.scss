@@ -1730,3 +1730,160 @@
 .chamber-chat__form--prophecy {
   flex-wrap: wrap;
 }
+
+// 판 위 말풍선 (미로·도둑 지도): 가리키는 것 위에 뜨는 잉크색 말풍선
+.map-play__board,
+.board-wrap {
+  position: relative;
+}
+
+.board-tip {
+  position: absolute;
+  z-index: 5;
+  display: grid;
+  gap: 2px;
+  max-width: 220px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: #2b2118;
+  box-shadow: 0 6px 18px #0006;
+  color: #f4e8c8;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 8px));
+  white-space: nowrap;
+
+  strong {
+    color: #fff3d6;
+    font-size: 13px;
+  }
+
+  span {
+    color: #d9c89d;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    border: 6px solid transparent;
+    border-top-color: #2b2118;
+    transform: translateX(-50%);
+  }
+}
+
+// 도둑 지도: 양피지에 잉크로 그린 호그와트 지도. 갈 수 있는 방만 테마색, 나머지는 바랜 색
+.map-play__svg {
+  max-width: none;
+  background: transparent;
+  filter: drop-shadow(0 6px 14px #0003);
+}
+
+.map-play__paper {
+  fill: #ead9ae;
+}
+
+.map-play__frame {
+  fill: none;
+  stroke: #6a4a22;
+  stroke-opacity: 0.55;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.map-play__edge {
+  stroke: #5a3e22;
+  stroke-linecap: round;
+  stroke-opacity: 0.7;
+  stroke-width: 5;
+
+  &--stairs {
+    stroke-dasharray: 2 9;
+    stroke-width: 6;
+  }
+
+  &--secret {
+    stroke: #6b3fa0;
+    stroke-dasharray: 3 8;
+    stroke-opacity: 0.85;
+    stroke-width: 4;
+  }
+}
+
+.map-play__room {
+  rect {
+    fill: #f3e6c3;
+    stroke: #5a3e22;
+    stroke-opacity: 0.45;
+    stroke-width: 1.5;
+    transition: fill 0.15s;
+  }
+
+  .map-play__name,
+  text {
+    fill: #3a2814;
+    font-family: Georgia, 'Noto Serif KR', 'Nanum Myeongjo', serif;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  &--target rect {
+    fill: #f1deaa;
+  }
+
+  // 내 차례인데 갈 수 없는 방: 바랜 색
+  &--dim {
+    rect {
+      fill: #cdbd96;
+      stroke-opacity: 0.2;
+    }
+
+    text {
+      fill: #7a6a4c;
+    }
+
+    .game-icon {
+      opacity: 0.5;
+    }
+  }
+
+  // 갈 수 있는 방: 테마색
+  &--reachable {
+    cursor: pointer;
+
+    rect {
+      fill: color-mix(in srgb, var(--ct-point, #e0603c) 38%, #f6ead0);
+      stroke: var(--ct-point, #e0603c);
+      stroke-opacity: 1;
+      stroke-width: 3;
+      filter: drop-shadow(0 0 6px color-mix(in srgb, var(--ct-point, #e0603c) 55%, transparent));
+    }
+
+    &:hover rect {
+      fill: color-mix(in srgb, var(--ct-point, #e0603c) 60%, #f6ead0);
+    }
+
+    text {
+      fill: #2a1a08;
+    }
+  }
+
+  &--selected rect {
+    stroke: var(--ct-point, #e0603c);
+    stroke-opacity: 0.9;
+    stroke-width: 3;
+  }
+}
+
+// 도둑 지도: 방금 떠난 방의 흐린 자리 표시
+.map-play__origin {
+  fill: none;
+  stroke: #5a3e22;
+  stroke-dasharray: 3 4;
+  stroke-opacity: 0.5;
+  stroke-width: 2;
+  pointer-events: none;
+}

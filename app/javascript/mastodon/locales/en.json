@@ -1273,5 +1273,7 @@
   "item.use_report": "Pick who to report.",
   "item.use_bomb": "Pick the house to bomb.",
   "item.use_howler": "Write the rumor everyone will hear.",
-  "wallet.wearing": "Wearing"
+  "wallet.wearing": "Wearing",
+  "map.sent": "Sent. Waiting for: {names}. Tap another room to change it.",
+  "map.wait_turn": "Waiting for: {names}"
 }

@@ -1410,5 +1410,7 @@
   "item.use_report": "신고할 캐릭터를 고르세요.",
   "item.use_bomb": "똥폭탄을 던질 기숙사를 고르세요.",
   "item.use_howler": "모두에게 울려 퍼질 소문 내용을 적으세요.",
-  "wallet.wearing": "착용 중"
+  "wallet.wearing": "착용 중",
+  "map.sent": "보냈습니다. 기다리는 중: {names} · 다른 방을 누르면 바꿀 수 있어요.",
+  "map.wait_turn": "기다리는 중: {names}"
 }

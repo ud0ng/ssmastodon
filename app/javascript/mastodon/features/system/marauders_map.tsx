@@ -8,7 +8,7 @@ import { FormattedMessage } from 'react-intl';
 import { apiRequestGet, apiRequestPost } from 'mastodon/api';
 import { GameIcon } from 'mastodon/components/game_icons';
 
-import { AvatarClip, AvatarPin, BoardHeader } from './board_header';
+import { AvatarClip, AvatarPin, BoardHeader, BoardTip, useBoardTip } from './board_header';
 
 interface Room { id: number; name: string; x: number; y: number }
 interface Token { seat: number; name: string; room: number; student: boolean; me: boolean }
@@ -30,6 +30,7 @@ interface MapView {
   spectator?: boolean;
   status: string;
   moves: number[];
+  planned_room?: number | null;
   tokens: Token[];
   targets: { room: number; visited: boolean }[];
   clues: Clue[];
@@ -47,7 +48,7 @@ interface MapView {
   deadline_at: string | null;
 }
 
-const REFRESH_MS = 10_000;
+const REFRESH_MS = 3_000;
 const CELL = 120;
 const PAD = 12;
 
@@ -55,6 +56,9 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
   const [view, setView] = useState<MapView | null>(null);
   const [busy, setBusy] = useState(false);
   const [chat, setChat] = useState('');
+  const board = useBoardTip();
+  // 방을 누르면 서버 답을 기다리지 않고 바로 말이 그 방으로 간다 (턴이 바뀌면 지운다)
+  const [chosen, setChosen] = useState<{ turn: number; room: number } | null>(null);
 
   const load = useCallback(() => {
     apiRequestGet<{ view: MapView | null }>(`v1/system/sessions/${sessionId}/view`)
@@ -85,7 +89,8 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
         .catch(() => undefined)
         .finally(() => {
           setBusy(false);
-          [1200, 3500].forEach((delay) => {
+          load();
+          [600, 2000].forEach((delay) => {
             window.setTimeout(() => {
               load();
               onMoved?.();
@@ -117,13 +122,15 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
   });
   const zoneClue = [...view.clues].reverse().find((clue) => clue.kind === 'zone');
   const cmd = view.commands;
-  const canPick = view.my_turn && !busy;
+  const canPick = view.my_turn;
+  const myRoom = (chosen && chosen.turn === view.turn ? chosen.room : null) ?? view.planned_room ?? view.position;
   const student = view.role === 'student';
   const prefect = view.role === 'prefect';
   const trailPoints = (view.trail ?? []).map((id) => byId.get(id)).filter((room): room is Room => Boolean(room)).map((room) => center(room).join(','));
 
   const handleRoom = (room: Room) => {
     if (!canPick) return;
+    setChosen({ turn: view.turn, room: room.id });
     send(cmd.move ?? '이동', room.name);
   };
 
@@ -134,7 +141,7 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
     if (view.submitted) {
       return <FormattedMessage id='map.sent' defaultMessage='Sent. Waiting for: {names}. Tap another room to change it.' values={{ names: view.waiting.join(', ') || '-' }} />;
     }
-    return <FormattedMessage id='map.pick' defaultMessage='Tap a highlighted room next to you to move, or stay hidden.' />;
+    return null;
   };
 
   return (
@@ -155,8 +162,23 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
         </div>
       )}
 
+      <div className='map-play__board' ref={board.wrapRef}>
       <svg className='map-play__svg' viewBox={`0 0 ${svgWidth} ${svgHeight}`} role='img'>
         <AvatarClip />
+        <defs>
+          <filter id='map-paper' x='0' y='0' width='100%' height='100%'>
+            <feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' seed='4' result='noise' />
+            <feColorMatrix in='noise' type='matrix' values='0 0 0 0 0.45  0 0 0 0 0.32  0 0 0 0 0.16  0 0 0 0.22 0' />
+          </filter>
+          <radialGradient id='map-vignette' cx='50%' cy='50%' r='75%'>
+            <stop offset='55%' stopColor='#6a4a22' stopOpacity='0' />
+            <stop offset='100%' stopColor='#6a4a22' stopOpacity='0.38' />
+          </radialGradient>
+        </defs>
+        <rect className='map-play__paper' x={0} y={0} width={svgWidth} height={svgHeight} rx={18} />
+        <rect x={0} y={0} width={svgWidth} height={svgHeight} rx={18} filter='url(#map-paper)' pointerEvents='none' />
+        <rect x={0} y={0} width={svgWidth} height={svgHeight} rx={18} fill='url(#map-vignette)' pointerEvents='none' />
+        <rect className='map-play__frame' x={PAD / 2} y={PAD / 2} width={svgWidth - PAD} height={svgHeight - PAD} rx={14} />
         {view.edges.map((edge) => {
           const a = byId.get(edge.a);
           const b = byId.get(edge.b);
@@ -183,36 +205,51 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
           const reachable = canPick && view.moves.includes(room.id);
           const here = room.id === view.position;
           const clue = lastClue.get(room.id);
-          const tokens = view.tokens.filter((token) => token.room === room.id);
+          // 내 말은 방금 고른 방에 바로 가 있다 (출발한 방에는 흐린 표시만)
+          const tokens = view.tokens.filter((token) => (token.me && view.position !== null ? myRoom === room.id : token.room === room.id));
+          const origin = view.position === room.id && myRoom !== room.id;
           return (
             <g
               key={room.id}
-              className={['map-play__room', reachable && 'map-play__room--reachable', here && 'map-play__room--selected', targets.has(room.id) && 'map-play__room--target'].filter(Boolean).join(' ')}
+              className={['map-play__room', reachable && 'map-play__room--reachable', canPick && !reachable && 'map-play__room--dim', here && 'map-play__room--selected', targets.has(room.id) && 'map-play__room--target'].filter(Boolean).join(' ')}
               onClick={() => { if (reachable) handleRoom(room); }}
+              onMouseEnter={(event) => {
+                const lines = [
+                  targets.has(room.id) ? (targets.get(room.id) ? '목표 장소 (다녀옴)' : '목표 장소') : null,
+                  tokens.length > 0 ? `${tokens.map((token) => token.name).join(', ')}` : null,
+                  reachable ? '눌러서 이동' : null,
+                ].filter((line): line is string => Boolean(line));
+                board.api.show(event.currentTarget, room.name, lines);
+              }}
+              onMouseLeave={board.api.hide}
             >
-              <title>{room.name}</title>
               <rect x={x} y={y} width={CELL - 16} height={CELL - 16} rx={8} />
               <text x={x + ((CELL - 16) / 2)} y={y + 22} textAnchor='middle' className='map-play__name'>{room.name}</text>
-              {targets.has(room.id) && <GameIcon name={targets.get(room.id) ? 'check' : 'star'} x={x + ((CELL - 16) / 2) - 9} y={y + 28} size={18} />}
+              {origin && <circle className='map-play__origin' cx={x + ((CELL - 16) / 2)} cy={y + ((CELL - 16) / 2)} r={14} />}
+              {targets.has(room.id) && <GameIcon name={targets.get(room.id) ? 'check' : 'star'} x={x + ((CELL - 16) / 2) - 9} y={y + CELL - 16 - 26} size={18} />}
               {clue && (
                 <GameIcon name={{ footprint: 'foot', target: 'sparkle', revelio: 'bulb' }[clue.kind] ?? 'sparkle'} x={x + (CELL - 30) - 8} y={y + 6} size={16} />
               )}
               {tokens.map((token, index) => (
                 <AvatarPin
                   key={token.seat}
-                  x={x + 22 + (index * 30)}
-                  y={y + CELL - 38}
+                  x={x + ((CELL - 16) / 2) + ((index - ((tokens.length - 1) / 2)) * 30)}
+                  y={y + ((CELL - 16) / 2)}
                   r={12}
                   name={token.name}
                   avatar={view.players.find((person) => person.seat === token.seat)?.avatar}
                   color={token.student ? '#c0392b' : 'var(--ct-point, #3f7fd0)'}
                   ring={token.student ? 'student' : token.me ? 'me' : null}
+                  tip={board.api}
+                  lines={[token.student ? view.role_name === '학생' ? '학생' : '도망자' : '추적자']}
                 />
               ))}
             </g>
           );
         })}
       </svg>
+      <BoardTip tip={board.tip} />
+      </div>
 
       <div className='maze-play__foot'>
         <p className='maze-play__hint'>
