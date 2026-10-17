@@ -117,7 +117,8 @@ RSpec.describe 'API V1 System shop and items' do
       expect(response).to have_http_status(200)
       expect(character(friend.account).stat_value(stat)).to eq stat.clamp(character(friend.account).raw_stat_value(stat) + 3)
       expect(count('초콜릿 개구리')).to eq 2
-      expect(system.statuses.last.mentions.map(&:account_id)).to eq [friend.account.id]
+      sent = user.account.statuses.reorder(:id).last
+      expect(sent.mentions.map(&:account_id)).to eq [friend.account.id]
 
       post '/api/v1/system/items/use', params: { name: '초콜릿 개구리', acct: user.account.username }, headers: headers
       expect(response).to have_http_status(200)
@@ -158,7 +159,7 @@ RSpec.describe 'API V1 System shop and items' do
         expect(response).to have_http_status(200)
         expect(response.parsed_body['message']).to include('동물 귀 착용 (24시간 동안)')
         expect(character(friend.account).wearing.pluck('label')).to eq ['동물 귀']
-        expect(system.statuses.last.text).to include('24시간 착용')
+        expect(user.account.statuses.reorder(:id).last.text).to include('24시간 착용')
 
         post '/api/v1/system/items/use', params: { name: '동물 귀', acct: user.account.username }, headers: headers
         expect(character.wearing.pluck('label')).to eq ['동물 귀']
@@ -240,16 +241,16 @@ RSpec.describe 'API V1 System shop and items' do
       expect(inventory.find { |item| item['name'] == '초콜릿 개구리' }).to include('giftable' => true, 'usable' => true)
     end
 
-    it 'mentions the receiver from the system account' do
-      system = Fabricate(:account, username: 'system')
-      allow(Game::System).to receive(:account).and_return(system)
+    it 'sends a DM from the giver that mentions the receiver and the shop bot' do
+      bot = Fabricate(:account, username: 'ssbot')
+      Game::Config.merge!('common', 'bot_usernames' => 'ssbot')
 
       post '/api/v1/system/items/gift', params: { name: '초콜릿 개구리', acct: friend.account.username }, headers: headers
 
-      status = system.statuses.last
+      status = user.account.statuses.reorder(:id).last
       expect(status).to have_attributes(visibility: 'direct')
-      expect(status.text).to include("@#{friend.account.username}", '초콜릿 개구리 1개를 선물했습니다')
-      expect(status.mentions.pluck(:account_id)).to eq [friend.account.id]
+      expect(status.text).to include("@#{friend.account.username}", '@ssbot', '초콜릿 개구리 1개를 선물했습니다')
+      expect(status.mentions.pluck(:account_id)).to contain_exactly(friend.account.id, bot.id)
     end
 
     it 'does not gift to yourself' do

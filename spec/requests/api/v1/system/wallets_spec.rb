@@ -69,7 +69,7 @@ RSpec.describe 'API V1 System wallet' do
     expect(response).to have_http_status(200)
     expect(GameCharacter.for(user.account).reload.money).to eq 18
     expect(GameCharacter.for(friend.account).reload.money).to eq 10
-    expect(system.statuses.last.text).to include("@#{friend.account.username}", '10갈레온을 선물했습니다')
+    expect(user.account.statuses.reorder(:id).last.text).to include("@#{friend.account.username}", '10갈레온을 선물했습니다')
 
     post '/api/v1/system/wallet/gift', params: { acct: friend.account.username, amount: 100 }, headers: headers
     expect(response).to have_http_status(422)

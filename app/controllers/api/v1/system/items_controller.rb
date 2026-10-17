@@ -98,7 +98,7 @@ class Api::V1::System::ItemsController < Api::BaseController
 
     target_character.reload
     effect = effect_text(field, delta, temporary, shop_item, before, target_character)
-    notify_target(target, effect, shop_item) if kind == 'character' && target.id != current_account.id
+    notify_target(target, effect, shop_item) if kind == 'character'
     use_message(kind, target, effect, result)
   end
 
@@ -228,7 +228,7 @@ class Api::V1::System::ItemsController < Api::BaseController
 
   def notify_target(target, effect, shop_item)
     note = shop_item&.effect.presence
-    Game::Gift.notify(Game::Config.for('common')['msg_item_use'], target, player: current_account, target: target, item: @name, effect: [effect, note].compact_blank.join("\n"))
+    Game::Gift.notify(Game::Config.for('common')['msg_item_use'], target, from: current_account, player: current_account, target: target, item: @name, effect: [effect, note].compact_blank.join("\n"))
   end
 
   # 인벤토리에 있는 이름 그대로 (공백·대소문자 무시)
@@ -242,7 +242,7 @@ class Api::V1::System::ItemsController < Api::BaseController
   end
 
   def notify_receiver(receiver)
-    Game::Gift.notify(Game::Config.for('common')['msg_gift_item'], receiver, player: current_account, target: receiver, item: @name, count: @count)
+    Game::Gift.notify(Game::Config.for('common')['msg_gift_item'], receiver, from: current_account, player: current_account, target: receiver, item: @name, count: @count)
   end
 
   def apply!(changes, kind, detail)

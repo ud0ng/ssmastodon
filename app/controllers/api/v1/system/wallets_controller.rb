@@ -64,7 +64,7 @@ class Api::V1::System::WalletsController < Api::BaseController
     name = GameCharacter.for(receiver).display_name
     character = Game::Wallet.apply!([{ account: current_account, money: -amount }, { account: receiver, money: amount }],
                                     kind: 'transfer', detail: "#{amount}#{currency} → #{name}", actor: 'web').first
-    Game::Gift.notify(Game::Config.for('common')['msg_gift_money'], receiver, player: current_account, target: receiver, money: amount, currency: currency)
+    Game::Gift.notify(Game::Config.for('common')['msg_gift_money'], receiver, from: current_account, player: current_account, target: receiver, money: amount, currency: currency)
     render json: { message: "#{name}에게 #{amount}#{currency}#{Game::Text.particle(currency.to_s.strip[-1], '을를')} 선물했습니다.", money: character.money }
   rescue Game::Wallet::Error => e
     fail!(e.message)
