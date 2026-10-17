@@ -164,7 +164,7 @@ class Api::V1::System::ItemsController < Api::BaseController
       name = target.id == current_account.id ? '자신' : GameCharacter.for(target).display_name
       "#{name}에게 #{@name}#{particle(@name, '을를')} 사용했습니다.#{effect}"
     when 'special'
-      "#{@name}#{particle(@name, '을를')} 사용했습니다. #{result}"
+      "#{@name}#{particle(@name, '을를')} 사용했습니다. #{result}#{@howler_sent ? " (#{@howler_sent}명에게 전달)" : ''}"
     else
       "#{@name}#{particle(@name, '을를')} 사용했습니다.#{effect}"
     end
@@ -199,8 +199,8 @@ class Api::V1::System::ItemsController < Api::BaseController
   end
 
   # 호울러: 내용을 모든 서버원에게 DM 으로 소문처럼 보낸다 (누가 보냈는지는 밝히지 않는다. 운영진 DM 에는 남는다)
-  def use_howler!(text)
-    Game::ItemUse.broadcast_rumor!(text)
+  # (실제 DM 은 트랜잭션이 끝난 뒤 announce_use! 에서 보낸다)
+  def use_howler!(_text)
     '호울러가 호그와트 전체에 울려 퍼졌습니다.'
   end
 
@@ -227,7 +227,7 @@ class Api::V1::System::ItemsController < Api::BaseController
     case special
     when 'report' then announce!(['사용', @name, name], @report_notice, receivers: [target], system: true)
     when 'bomb' then announce!(['사용', @name, house.name], "#{house.name}에 #{@name}#{particle(@name, '이가')} 떨어졌습니다. (소속 점수 #{shop_item.score_delta})", visibility: 'private')
-    when 'howler' then announce!(['사용', @name, rumor], nil, system: true)
+    when 'howler' then announce_howler!(rumor)
     when 'staff' then announce!(['사용', @name], nil, system: true)
     else
       if kind == 'character'
@@ -237,6 +237,12 @@ class Api::V1::System::ItemsController < Api::BaseController
         announce!(['사용', @name], "#{GameCharacter.for(current_account).display_name}#{particle(GameCharacter.for(current_account).display_name, '이가')} #{@name}#{particle(@name, '을를')} 사용했습니다.#{effect}")
       end
     end
+  end
+
+  # 호울러: 모든 캐릭터에게 한 사람씩 DM 소문, 시스템 계정·상점 봇에게는 명령어 기록 DM (보낸 사람은 아무도 모르게)
+  def announce_howler!(rumor)
+    @howler_sent = Game::ItemUse.broadcast_rumor!(rumor)
+    announce!(['사용', @name, rumor], nil, system: true)
   end
 
   # 인벤토리에 있는 이름 그대로 (공백·대소문자 무시)

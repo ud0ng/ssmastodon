@@ -208,10 +208,12 @@ RSpec.describe 'API V1 System shop and items' do
 
         post '/api/v1/system/items/use', params: { name: '호울러', text: '교장실 앞에 용이 나타났다 @모두' }, headers: headers
         expect(response).to have_http_status(200)
-        rumor = system.statuses.reorder(:id).last
-        expect(rumor.text).to include('용이 나타났다')
-        expect(rumor.text).to_not include('@모두')
-        expect(rumor.mentions.map(&:account_id)).to include(friend.account.id)
+        # 등록된 캐릭터마다 한 통씩 (그룹 DM 이 아니라 각자에게)
+        rumors = system.statuses.reorder(:id).select { |status| status.text.include?('용이 나타났다') && status.mentions.any? }
+        expect(rumors.flat_map { |status| status.mentions.map(&:account_id) }).to include(friend.account.id, user.account.id)
+        expect(rumors.map { |status| status.mentions.size }.uniq).to eq [1]
+        expect(rumors.map(&:text).join).to_not include('@모두')
+        expect(response.parsed_body['message']).to include('명에게 전달')
         secret = user.account.statuses.reorder(:id).last
         expect(secret).to have_attributes(visibility: 'direct')
         expect(secret.mentions.map(&:account_id)).to eq [system.id]
