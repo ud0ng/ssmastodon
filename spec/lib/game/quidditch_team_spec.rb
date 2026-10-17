@@ -63,6 +63,6 @@ RSpec.describe Game::Kinds::Quidditch do
     expect(current.status).to eq 'finished'
     expect(current.state['scores']['A']).to eq 20
     expect(current.players.map { |player| [player.account.username, player.result] }).to eq [%w(harry win), %w(ron win), %w(draco lose), %w(goyle lose)]
-    expect(GameReward.where(game_session_id: current.id, account: [harry, ron]).sum(:money)).to eq 20
+    expect(GameReward.where(game_session_id: current.id, account: [harry, ron]).sum(:money)).to eq 4
   end
 end

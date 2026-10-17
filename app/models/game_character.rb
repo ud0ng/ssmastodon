@@ -48,16 +48,39 @@ class GameCharacter < ApplicationRecord
     name.presence || account.display_name.presence || account.username
   end
 
-  # 스탯 값 (정수). 입력한 값이 없으면 최소치, 최소~최대 안으로 맞춘다
-  def stat_value(field)
+  # 저장된 스탯 값 (정수). 입력한 값이 없으면 최소치, 최소~최대 안으로 맞춘다. 일시 효과는 들어 있지 않다 (고치는 화면·변동 계산용)
+  def raw_stat_value(field)
     field.clamp(stats.fetch(field.name, field.min))
   end
 
-  # 상태 수치 계산: 수식에 이 캐릭터의 스탯을 넣는다 (수식이 틀리면 nil)
+  # 지금 쓰는 스탯 값: 저장된 값 + 아직 끝나지 않은 일시 효과
+  def stat_value(field)
+    field.clamp(raw_stat_value(field) + active_effects.sum { |effect| effect['stat'] == field.name ? effect['delta'].to_i : 0 })
+  end
+
+  # 상태 수치 계산: 수식에 이 캐릭터의 스탯(일시 효과 포함)을 넣고 영구 변동분을 더한다 (수식이 틀리면 nil)
   def status_value(field, base_fields = GameCharacterField.base_stats)
-    Game::Formula.evaluate(field.formula, base_fields.to_h { |base| [base.name, stat_value(base)] })
+    Game::Formula.evaluate(field.formula, base_fields.to_h { |base| [base.name, stat_value(base)] }) + stats[field.name].to_i
   rescue Game::Formula::Error
     nil
+  end
+
+  # 일시 효과 (아이템 [사용]으로 스탯이 잠깐 오르내림): [{ 'stat', 'delta', 'until' (ISO), 'item' }]
+  def active_effects
+    Array(effects).select { |effect| Time.zone.parse(effect['until'].to_s)&.future? }
+  end
+
+  # 착용 표시 (동물 귀 등): 일정 시간 동안 캐릭터에 붙는 표시
+  def add_wear!(label:, minutes:, item:)
+    update!(effects: active_effects + [{ 'kind' => 'wear', 'label' => label, 'until' => minutes.minutes.from_now.iso8601, 'item' => item }])
+  end
+
+  def wearing
+    active_effects.select { |effect| effect['kind'] == 'wear' }
+  end
+
+  def add_effect!(stat:, delta:, minutes:, item:)
+    update!(effects: active_effects + [{ 'stat' => stat, 'delta' => delta, 'until' => minutes.minutes.from_now.iso8601, 'item' => item }])
   end
 
   # 인벤토리: [{ name, count, note }] ↔ "이름|개수|메모" 줄

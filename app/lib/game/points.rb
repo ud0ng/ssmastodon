@@ -2,7 +2,7 @@
 
 module Game
   # 소속 점수 지급. 점수 방식(캐릭터 관리 > 소속 > 시즌):
-  #   점수제(points) 컨텐츠마다 정한 점수 (승리·무승부·패배)   판수제(games) 이긴 판마다 1점
+  #   점수제(points) 컨텐츠마다 정한 승리·무승부·패배 점수를 받고 그 총합으로 승부   판수제(games) 컨텐츠를 승리한 판 수로 승부
   module Points
     module_function
 

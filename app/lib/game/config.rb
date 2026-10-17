@@ -127,13 +127,13 @@ module Game
       # 재화 설정
       Field.new(key: 'currency_name', type: :string, default: '갈레온', group: 'currency',
                 label: '재화 이름', hint: '돈 단위 (예: 갈레온). 컨텐츠 보상·상점·활동이 같이 씁니다'),
-      Field.new(key: 'attendance_reward', type: :integer, default: 1, group: 'currency',
+      Field.new(key: 'attendance_reward', type: :integer, default: 5, group: 'currency',
                 label: '출석 보상', hint: '[출석] 명령어로 하루(00시 기준) 한 번 주는 재화 (0 = 출석 끔)'),
-      Field.new(key: 'toot_reward_basis', type: :select, default: 'toots', group: 'currency',
+      Field.new(key: 'toot_reward_basis', type: :select, default: 'chars', group: 'currency',
                 choices: [['toots', '툿 수'], ['chars', '글자 수']], label: '툿 보상 기준'),
       Field.new(key: 'toot_reward_public', type: :boolean, default: true, group: 'currency',
                 label: '퍼블 툿 포함', hint: '끄면 답글만 셉니다. DM 은 세지 않습니다'),
-      Field.new(key: 'toot_reward_every', type: :integer, default: 0, group: 'currency',
+      Field.new(key: 'toot_reward_every', type: :integer, default: 100, group: 'currency',
                 label: '툿 보상 단위', hint: '툿 수 또는 글자 수가 이만큼 쌓일 때마다 지급 (0 = 끔)'),
       Field.new(key: 'toot_reward_amount', type: :integer, default: 1, group: 'currency',
                 label: '툿 보상 재화', hint: '단위를 채울 때마다 자동으로 주는 재화'),
@@ -151,7 +151,7 @@ module Game
                 choices: [['house', '기숙사'], ['faction', '진영']], label: '점수 기준 소속'),
       Field.new(key: 'scoring_mode', type: :select, default: 'points', group: 'groups',
                 choices: [['points', '점수제'], ['games', '판수제']], label: '점수 방식',
-                hint: '점수제: 컨텐츠마다 정한 점수 / 판수제: 이긴 판마다 1점'),
+                hint: '점수제: 컨텐츠마다 정한 승·무·패 점수의 총합으로 승부 / 판수제: 컨텐츠를 승리한 판 수로 승부'),
       Field.new(key: 'house_label', type: :string, default: '기숙사', group: 'groups', label: '기숙사 부르는 이름'),
       Field.new(key: 'faction_label', type: :string, default: '진영', group: 'groups', label: '진영 부르는 이름'),
 
@@ -195,6 +195,8 @@ module Game
       # 웹에서 선물했을 때 받는 사람에게 가는 DM (시스템 계정)
       Field.new(key: 'msg_gift_item', type: :text, group: 'messages_gift', label: '아이템 선물',
                 default: "%{player}{이가} %{item} %{count}개{을를} 선물했습니다.\n인벤토리에서 확인해 보세요."),
+      Field.new(key: 'msg_item_use', type: :text, group: 'messages_gift', label: '아이템 사용 (다른 캐릭터에게)',
+                default: "%{player}{이가} %{target}에게 %{item}{을를} 사용했습니다.%{effect}"),
       Field.new(key: 'msg_gift_money', type: :text, group: 'messages_gift', label: '재화 선물',
                 default: "%{player}{이가} %{money}%{currency}{을를} 선물했습니다."),
 

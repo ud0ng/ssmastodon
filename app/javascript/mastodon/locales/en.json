@@ -1264,5 +1264,14 @@
   "maze.live": "Live",
   "maze.replay": "Finished game: the whole maze and every path are shown.",
   "maze.replay_map": "Finished game: every position and the escape route are shown.",
-  "maze.watching": "Spectating: every position is shown live."
+  "maze.watching": "Spectating: every position is shown live.",
+  "item.use_on_character": "Pick who to use {name} on (yourself too).",
+  "item.effect_temporary": "for {minutes} min",
+  "item.effect_permanent": "permanent",
+  "item.use_special": "Using it sends a DM to the system account. Staff will handle it.",
+  "item.random": "Pick someone at random",
+  "item.use_report": "Pick who to report.",
+  "item.use_bomb": "Pick the house to bomb.",
+  "item.use_howler": "Write the rumor everyone will hear.",
+  "wallet.wearing": "Wearing"
 }

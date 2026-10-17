@@ -26,6 +26,7 @@ export interface ShopItem {
   price: number;
   description: string;
   usable: boolean;
+  giftable?: boolean;
   image: string | null;
 }
 

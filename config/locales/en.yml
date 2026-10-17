@@ -97,9 +97,9 @@ en:
         posted: Results posted.
         result: Scores
         scoring: Scoring
-        scoring_games: Games won (1 point per win)
-        scoring_hint: Points use each content's win/draw/loss points; games won give 1 point per win.
-        scoring_points: Points (set per content)
+        scoring_games: Games won
+        scoring_hint: "Points: each content gives the win/draw/loss points you set, and the total decides. Games won: the number of games won decides."
+        scoring_points: Points
         starts_on: Start date
         status: Status
         statuses:
@@ -208,6 +208,34 @@ en:
         stat: Stat changed on use
         title: Shop
         unknown_stat: The stat '%{name}' does not exist. Create it in Characters > Stats first.
+        allow_random: Allow picking a random person when used
+        effect: Effect description
+        effect_hint: Text told to the target on use, or the note for RP items
+        giftable: Can be gifted
+        score_delta: Group score change
+        score_delta_hint: 'Value special items (report, bomb) change the group score by. e.g. -5'
+        special_kind: Special kind
+        special_kind_hint: Only used when the use target is Special
+        special_kinds:
+          bomb: Deduct group score (pick a group)
+          howler: Rumor (text → DM everyone)
+          report: Report a character (deduct and count)
+          staff: DM the system account (staff handles it)
+        special_limit: Report limit
+        special_limit_hint: Reaching this count means volunteer work (report item)
+        wear_label: Wearing label
+        wear_label_hint: 'Empty means none. e.g. Animal ears (stays on the character for the temporary effect time)'
+        minutes: Temporary effect length (minutes)
+        minutes_hint: Used only for stats of type 'stat'. Status values change permanently
+        stat_permanent: permanent
+        stat_temporary: temporary
+        use_target: Use target
+        use_target_hint: 'Stat: changes a stat · Character: pick a character (yourself too) when using · Special: DMs the system account (staff handles it)'
+        use_targets:
+          character: Character
+          special: Special
+          stat: Stat
+        ungiftable: Cannot be gifted
         unusable: Cannot be used
         usable: Can be used
         value: Amount
@@ -363,6 +391,7 @@ en:
           no_items: No items.
           no_records: No currency records yet.
           no_stats: There are no stats yet. Create them in the Stats tab.
+          effects: 'Temporary effects:'
           opponents: With
           profile: Groups
           range: "%{min} – %{max}"

@@ -31,7 +31,7 @@ module Game
       changes = Array(changes).map { |change| normalize_change(change) }
       raise Error.new('empty', '바꿀 캐릭터가 없습니다.') if changes.empty?
 
-      base_stats = GameCharacterField.base_stats.to_a
+      base_stats = GameCharacterField.stats.to_a # 스탯(저장된 값에 더함)과 상태 수치(영구 변동분을 쌓음)
       GameCharacter.transaction do
         characters = changes.map { |change| GameCharacter.for(change[:account]) }
         # 같은 순서로 잠가서 양도끼리 서로 기다리지 않게
@@ -98,9 +98,9 @@ module Game
       stats = character.stats.dup
       deltas.each do |name, delta|
         field = base_stats.find { |stat| key(stat.name) == key(name) }
-        raise Error.new('unknown_stat', "'#{name}' 스탯이 없습니다. (상태 수치는 스탯으로 계산하는 값이라 바꿀 수 없습니다)", stat: name) if field.nil?
+        raise Error.new('unknown_stat', "'#{name}' 스탯이 없습니다.", stat: name) if field.nil?
 
-        stats[field.name] = field.clamp(character.stat_value(field) + delta).to_s
+        stats[field.name] = field.status? ? (stats[field.name].to_i + delta).to_s : field.clamp(character.raw_stat_value(field) + delta).to_s
       end
       stats
     end

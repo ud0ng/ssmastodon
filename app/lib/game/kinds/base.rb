@@ -7,19 +7,21 @@ module Game
       F = Game::Config::Field
 
       # 모든 게임에 있는 설정 (켜기, 이름, 시작 명령어, 점수, 보상)
-      def self.base_fields(name:, command:, points_win:, points_draw: 0, points_lose: 0)
+      # 점수·보상 기본값은 모든 컨텐츠(1:1·단체) 같다: 승리 재화 2·점수 5, 무승부 재화 1·점수 1, 패배는 보상 없음 (1인당)
+      # points_win 등 인자는 예전 호출을 위해 받기만 한다
+      def self.base_fields(name:, command:, points_win: nil, points_draw: nil, points_lose: nil)
         [
           F.new(key: 'enabled', type: :boolean, default: true, group: 'basic', label: '켜기'),
           F.new(key: 'name', type: :string, default: name, group: 'basic', label: '컨텐츠 이름'),
           F.new(key: 'description', type: :string, default: '', group: 'basic', label: '설명', hint: '웹 컨텐츠 메뉴에 보이는 한 줄 소개. 비우면 기본 소개를 씁니다'),
           F.new(key: 'command', type: :string, default: command, group: 'basic', label: '시작 명령어', hint: '[명령어] 와 상대를 태그해 신청'),
-          F.new(key: 'points_win', type: :integer, default: points_win, group: 'points', label: '승리 점수'),
-          F.new(key: 'points_draw', type: :integer, default: points_draw, group: 'points', label: '무승부 점수'),
-          F.new(key: 'points_lose', type: :integer, default: points_lose, group: 'points', label: '패배 점수', hint: '판수제에서는 쓰지 않습니다'),
-          F.new(key: 'reward_money_win', type: :integer, default: 10, group: 'rewards', label: '승리 돈'),
-          F.new(key: 'reward_money_draw', type: :integer, default: 5, group: 'rewards', label: '무승부 돈'),
-          F.new(key: 'reward_money_lose', type: :integer, default: 2, group: 'rewards', label: '패배(참가) 돈'),
-          F.new(key: 'reward_items_win', type: :lines, default: ['초콜릿 개구리|1|30'], group: 'rewards', label: '승리 아이템', hint: Game::Rewards::ITEMS_HINT),
+          F.new(key: 'points_win', type: :integer, default: 5, group: 'points', label: '승리 점수'),
+          F.new(key: 'points_draw', type: :integer, default: 1, group: 'points', label: '무승부 점수'),
+          F.new(key: 'points_lose', type: :integer, default: 0, group: 'points', label: '패배 점수', hint: '판수제에서는 쓰지 않습니다'),
+          F.new(key: 'reward_money_win', type: :integer, default: 2, group: 'rewards', label: '승리 돈'),
+          F.new(key: 'reward_money_draw', type: :integer, default: 1, group: 'rewards', label: '무승부 돈'),
+          F.new(key: 'reward_money_lose', type: :integer, default: 0, group: 'rewards', label: '패배(참가) 돈'),
+          F.new(key: 'reward_items_win', type: :lines, default: [], group: 'rewards', label: '승리 아이템', hint: Game::Rewards::ITEMS_HINT),
         ]
       end
 

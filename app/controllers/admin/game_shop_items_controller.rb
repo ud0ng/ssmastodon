@@ -33,7 +33,7 @@ module Admin
 
     # 가격을 비우면 비매품, 스탯을 비우면 수치도 지운다
     def item_params
-      permitted = params.expect(game_shop_item: [:game_shop_id, :name, :price, :description, :usable, :stat_name, :stat_value, :position, :image, :remove_image])
+      permitted = params.expect(game_shop_item: [:game_shop_id, :name, :price, :description, :usable, :giftable, :use_target, :stat_minutes, :effect, :special_kind, :score_delta, :special_limit, :allow_random, :wear_label, :stat_name, :stat_value, :position, :image, :remove_image])
       permitted[:image] = nil if permitted.delete(:remove_image) == '1'
       permitted[:price] = permitted[:price].presence
       permitted[:stat_value] = '' if permitted[:stat_name].blank?

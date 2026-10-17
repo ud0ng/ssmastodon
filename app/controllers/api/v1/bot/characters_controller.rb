@@ -32,10 +32,51 @@ class Api::V1::Bot::CharactersController < Api::V1::Bot::BaseController
       { account: character.account, money: change[:money], items: change[:items].to_h, stats: change[:stats].to_h }
     end
 
+    ensure_item_rules!(kind, changes)
+    temporary = kind == 'use' ? split_temporary_stats!(changes) : []
     characters = Game::Wallet.apply!(changes, kind: kind, detail: params[:detail], actor: params[:actor].presence || current_account.username,
                                               once_per_day: ActiveModel::Type::Boolean.new.cast(params[:once_per_day]))
+    temporary.each { |effect| GameCharacter.for(effect[:account]).add_effect!(**effect.except(:account)) }
+    characters.each(&:reload)
     base_stats = GameCharacterField.base_stats.to_a
     statuses = GameCharacterField.statuses.to_a
     render json: { characters: characters.map { |character| character_json(character, base_stats, statuses) } }
+  end
+
+  private
+
+  # 자동봇 [사용]: 아이템으로 바뀌는 스탯이 능력치(스탯 유형 '스탯')면 영구 변동이 아니라 일시 효과로 (아이템의 stat_minutes). 상태 수치는 그대로 영구.
+  def split_temporary_stats!(changes)
+    shop_items = GameShopItem.all.to_a
+    fields = GameCharacterField.stats.to_a
+    effects = []
+    changes.each do |change|
+      used = change[:items].select { |_, count| count.to_i.negative? }.keys.filter_map { |name| shop_items.find { |item| Game::Wallet.key(item.name) == Game::Wallet.key(name) } }
+      change[:stats].to_h.each do |name, delta|
+        field = fields.find { |candidate| Game::Wallet.key(candidate.name) == Game::Wallet.key(name) }
+        item = used.find { |candidate| candidate.stat_field == field }
+        next unless field&.stat? && item
+
+        change[:stats].delete(name)
+        effects << { account: change[:account], stat: field.name, delta: delta.to_i, minutes: item.stat_minutes, item: item.name }
+      end
+    end
+    effects
+  end
+
+  # 아이템마다 정한 [사용]·[선물] 가능 여부를 서버에서도 지킨다 (자동봇이 모르는 옛 버전이어도)
+  def ensure_item_rules!(kind, changes)
+    return unless %w(use transfer).include?(kind)
+
+    rules = GameShopItem.all.index_by { |item| Game::Wallet.key(item.name) }
+    changes.each do |change|
+      change[:items].each do |name, count|
+        next unless count.to_i.negative?
+
+        item = rules[Game::Wallet.key(name)]
+        raise Game::Wallet::Error.new('not_usable', "#{name}은(는) 사용할 수 없는 아이템입니다.") if kind == 'use' && item && !item.usable
+        raise Game::Wallet::Error.new('not_giftable', "#{name}은(는) 선물할 수 없는 아이템입니다.") if kind == 'transfer' && item && !item.giftable
+      end
+    end
   end
 end

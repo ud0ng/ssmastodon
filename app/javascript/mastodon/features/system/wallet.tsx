@@ -231,6 +231,11 @@ const InventoryView: React.FC<{ wallet: Wallet }> = ({ wallet }) => {
       <h3 className='system-section__title'>
         <FormattedMessage id='wallet.inventory_title' defaultMessage='Belongings · {count}' values={{ count: wallet.item_count }} />
       </h3>
+      {wallet.wearing && wallet.wearing.length > 0 && (
+        <p className='wallet-page__wearing'>
+          <FormattedMessage id='wallet.wearing' defaultMessage='Wearing' />: {wallet.wearing.map((wear) => wear.label).join(', ')}
+        </p>
+      )}
       {wallet.inventory.length === 0 ? (
         <p className='system-page__empty'>
           <FormattedMessage id='wallet.no_items' defaultMessage='No items yet.' />

@@ -35,6 +35,7 @@ class Api::V1::System::WalletsController < Api::BaseController
       house_term: Game::Config.for('common')['house_term'],
       my_house_id: character.group_id&.to_s,
       houses: GameHouse.active.map { |house| { id: house.id.to_s, name: house.name, color: house.color, total: house.total } },
+      wearing: character.wearing.map { |effect| { label: effect['label'], until: effect['until'] } },
       inventory: Array(character.inventory).map { |item| inventory_json(item, shop_items[Game::Wallet.key(item['name'])]) },
     }
   end
@@ -105,6 +106,13 @@ class Api::V1::System::WalletsController < Api::BaseController
       note: item['note'].to_s,
       description: shop_item&.description.to_s,
       usable: shop_item.nil? || shop_item.usable,
+      giftable: shop_item.nil? || shop_item.giftable,
+      use_target: shop_item&.use_target || 'stat',
+      special_kind: shop_item&.special_kind || 'staff',
+      effect: shop_item&.effect.to_s,
+      allow_random: shop_item&.allow_random || false,
+      stat_temporary: shop_item&.temporary_stat? || false,
+      stat_minutes: shop_item&.stat_minutes.to_i,
       stat: shop_item&.stat_name.presence,
       stat_value: shop_item&.stat_name.present? ? shop_item.stat_value : nil,
       image: shop_item&.image.present? ? full_asset_url(shop_item.image.url(:small)) : nil,

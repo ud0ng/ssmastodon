@@ -136,7 +136,7 @@ RSpec.describe Game::Web::Maze do
     expect(session.status).to eq 'finished'
     expect([session.player_for(harry).result, session.player_for(cedric).result]).to eq %w(win win)
     expect(session.player_for(fleur).result).to eq 'lose'
-    expect(Game::Points).to have_received(:award).with(anything, anything, 5, outcome: 'win').twice
+    expect(Game::Points).to have_received(:award).with(anything, anything, 3, outcome: 'win').twice
   end
 
   it 'makes a trap stop a player for a turn and remembers it for that player only' do

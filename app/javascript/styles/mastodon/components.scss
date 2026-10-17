@@ -19672,3 +19672,33 @@ body.app-body.layout-game-room.layout-single-column {
     color: var(--ct-text, inherit);
   }
 }
+
+// 아이템 모달: 랜덤 고르기 · 기숙사 · 소문 입력
+.item-modal__random {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 5px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-point, #{$ui-highlight-color}) 14%, transparent);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &--on {
+    background: var(--ct-point, #{$ui-highlight-color});
+    color: #fff;
+  }
+}
+
+.item-modal__select,
+.item-modal__textarea {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ct-panel-raised, var(--surface-background-color));
+  color: inherit;
+  font: inherit;
+}

@@ -205,3 +205,16 @@ docker compose -f dev/preview/docker-compose.yml exec -T web bin/rails runner /d
 - 방주가 전하는 예언은 사실만 가능: `[예언/호그와트 @누구]`(방주가 아닌 사람) · `[예언/어둠 @누구]`(방주) · `[예언/역할 @누구]` · `[예언/둘중 @A @B]`(적어도 한 명이 방주). 거짓이면 시스템이 DM 으로 거절 (`msg_prophecy_false`). 웹은 종류·대상을 고르는 선택 상자.
 - DM 밤 행동의 대상은 `@멘션` 대신 계정 아이디 인자(`[석화/아이디]`)로도 보낼 수 있다 (멘션하면 그 사람에게 DM 이 가므로 웹은 인자로 보낸다). `commands_controller` 는 `targets[]` 도 받는다.
 - 미로·도둑 지도 판 위 말은 아바타(`AvatarPin`)이고 마우스를 올리면 이름이 뜬다. 비밀의 방 원탁은 지도와 같은 옅은 면 스타일.
+
+## 상점 아이템: 사용·선물 가능 여부
+
+- `game_shop_items.giftable`(기본 true) 추가. 관리 > 컨텐츠 설정 > 상점의 아이템 모달에 '[선물] 할 수 있음' 스위치, 목록에 '선물 불가' 배지.
+- 웹 인벤토리 모달: `usable` 이면 [사용], `giftable` 이면 [선물] 버튼 (`item_modal.tsx`). 서버도 `items/gift`·자동봇 `characters/apply`(kind transfer/use)에서 막는다. 자동봇 상점 목록 JSON 에도 `giftable` 이 실린다 (자동봇이 안내 문구를 직접 바꾸려면 ssbot 수정 필요).
+
+## 아이템 사용 대상(스탯·캐릭터·특수) + 기본 데이터
+
+- `game_shop_items.use_target`: **stat**(스탯 변동: 스탯 유형 '스탯'은 `stat_minutes` 동안 일시 → `GameCharacter#effects`, '상태 수치'는 영구 → `stats[이름]` 에 변동분 누적, 비우면 소모만) / **character**(웹 사용 시 캐릭터 고르기, 본인 가능, `allow_random` 이면 랜덤 1인, `wear_label` 이면 착용 표시, 본인이 아니면 시스템 DM 으로 알림) / **special**: `special_kind` staff(시스템 계정에 DM) · report(교내 신고: `score_delta` 소속 점수 차감, `reports_count` 누적, `special_limit` 도달 시 봉사활동 안내) · bomb(기숙사 고르기, 점수 차감) · howler(내용 입력 → 전체 DM, 보낸 사람 비공개). 특수는 모두 쓴 사람의 DM 으로 시스템 계정에도 남는다.
+- `GameCharacter#raw_stat_value`(저장값, 관리 화면에서 고칠 때) / `stat_value`(일시 효과 포함, 화면·자동봇). 자동봇 [사용]으로 능력치(스탯)가 오를 때도 `characters#apply` 가 일시 효과로 바꾼다.
+- 기본값: 출석 5재화, 툿 보상 글자수 100자당 1재화, 컨텐츠 승리 재화 2·소속 점수 5 / 무승부 1·1 / 패배 없음 (`Kinds::Base.base_fields`). 마이그레이션 `SeedGameDefaults` 가 기본 아이템 16개와(진행 중인 시즌이 없으면) 시즌 '1학년'(10/19~10/28)을 넣는다 (시험 DB 제외).
+- 점수제/판수제 문구 정리, 관리 화면 날짜 칸은 어디를 눌러도 달력이 뜬다 (`admin/date_picker.ts`).
+- 자동봇(모바일)은 대상을 고를 수 없어 캐릭터·특수 아이템의 대상 선택은 웹에서만 된다 (ssbot 수정 필요).

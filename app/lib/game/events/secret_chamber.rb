@@ -31,7 +31,7 @@ module Game
       MAX_ACCUSE_BUTTONS = 12
 
       FIELDS = (base_fields(name: '비밀의 방', command: '비밀의방', points_win: 15) + [
-        F.new(key: 'points_survive', type: :integer, default: 5, group: 'points', label: '살아남은 사람 추가 점수'),
+        F.new(key: 'points_survive', type: :integer, default: 0, group: 'points', label: '살아남은 사람 추가 점수'),
         F.new(key: 'openers', type: :lines, default: [], group: 'basic', label: '열 수 있는 사람 (아이디, 줄마다 하나)', hint: '비워 두면 누구나'),
         F.new(key: 'min_players', type: :integer, default: 7, group: 'rules', label: '최소 인원'),
         F.new(key: 'max_players', type: :integer, default: 20, group: 'rules', label: '최대 인원'),

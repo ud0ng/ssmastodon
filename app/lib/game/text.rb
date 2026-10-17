@@ -53,7 +53,7 @@ module Game
       mates: '동료 배신자', how: '할 일', accuse: '고발 명령어', petrify: '석화 명령어', investigate: '조사 명령어',
       protect: '보호 명령어', prophecy: '예언 명령어',
       room: '방', zone: '구역', targets: '목표 장소', student: '학생 이름', prefect: '사감 이름',
-      link: '링크', creature: '마법 생물', item: '아이템', steps: '이동 칸 수', direction: '방향', text: '내용', phases: '페이즈 수', total: '총 시간', light: '호그와트 진영 이름', dark: '어둠 진영 이름',
+      link: '링크', creature: '마법 생물', item: '아이템', steps: '이동 칸 수', direction: '방향', text: '내용', phases: '페이즈 수', total: '총 시간', effect: '효과', light: '호그와트 진영 이름', dark: '어둠 진영 이름',
       move: '이동 명령어', stay: '제자리 명령어', portkey: '포트키 명령어', lumos: '루모스 명령어', cooperate: '협력 명령어', hinder: '방해 명령어',
       teams: '팀 구성', rewards: '보상', money: '돈', currency: '돈 이름', items: '아이템 목록',
       range: '기간', season: '시즌', period: '시즌 기간', houses: '소속 점수', games: '판 수', winners: '최다 승리', toppers: '과목별 수석',

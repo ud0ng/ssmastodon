@@ -113,10 +113,18 @@ textarea.ui-input {
   resize: vertical;
 }
 
-// 날짜: 달력 아이콘이 테마 색을 따르게
+// 날짜: 달력 아이콘이 테마 색을 따르게, 어디를 눌러도 달력이 뜬다 (admin/date_picker.ts)
 .simple_form .ui-input--date,
 .ui-input--date {
+  width: 100%;
+  min-width: 150px;
   color-scheme: light dark;
+  cursor: pointer;
+
+  &::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 1;
+  }
 }
 
 // 색: 칸 안에 색 견본만 크게

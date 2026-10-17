@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import Rails from '@rails/ujs';
 
 import { setupCommunitySelect } from '../mastodon/admin/community_select';
+import { setupDateInputs } from '../mastodon/admin/date_picker';
 import { setupCommunityThemeEditor } from '../mastodon/admin/community_theme_editor';
 import { setupGameConfigEditor, setupStatsEditor } from '../mastodon/admin/game_config_editor';
 import { addItemCard, filterItemOptions } from '../mastodon/admin/item_picker';
@@ -691,6 +692,7 @@ ready(() => {
   setupGameConfigEditor();
   setupStatsEditor();
   setupCommunitySelect();
+  setupDateInputs();
 
   const domainBlockSeveritySelect = document.querySelector<HTMLSelectElement>(
     'select#domain_block_severity',

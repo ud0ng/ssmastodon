@@ -46,8 +46,12 @@
       - else
         = render layout: 'admin/ui/fields' do
           - @base_stats.each do |stat|
-            = render 'admin/ui/field', label: stat.name, name: "game_character[stat_values][#{stat.name}]", id: "stat_#{stat.id}", value: @character.stat_value(stat), type: :number,
+            = render 'admin/ui/field', label: stat.name, name: "game_character[stat_values][#{stat.name}]", id: "stat_#{stat.id}", value: @character.raw_stat_value(stat), type: :number,
                                        hint: game_t('admin.games.manage.detail.range', min: stat.min, max: stat.max), html: { min: stat.min, max: stat.max }
+        - if @character.active_effects.any?
+          %p.hint
+            = game_t('admin.games.manage.detail.effects')
+            = @character.active_effects.map { |effect| "#{effect['kind'] == 'wear' ? effect['label'] : "#{effect['stat']} #{format('%+d', effect['delta'].to_i)}"} (#{l(Time.zone.parse(effect['until']), format: :short)}까지, #{effect['item']})" }.join(', ')
         - if @statuses.any?
           .game-detail__status-list
             - @statuses.each do |status|

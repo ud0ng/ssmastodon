@@ -14,6 +14,13 @@ export interface WalletItem {
   description: string;
   image: string | null;
   usable: boolean;
+  giftable: boolean;
+  use_target: 'stat' | 'character' | 'special';
+  special_kind: 'staff' | 'report' | 'bomb' | 'howler';
+  effect: string;
+  allow_random: boolean;
+  stat_temporary: boolean;
+  stat_minutes: number;
   stat: string | null;
   stat_value: string | null;
 }
@@ -40,6 +47,7 @@ export interface Wallet {
   house_term: string;
   my_house_id: string | null;
   houses: { id: string; name: string; color: string; total: number }[];
+  wearing?: { label: string; until: string }[];
   invites: number;
   // 내가 행동해야 하는 판 (수락 대기·내 차례). 알림 소리·메뉴 배지의 기준
   todo?: { session_id: string; name: string }[];

@@ -36,8 +36,8 @@ ko:
       points_table:
         content: 컨텐츠
         draw: 무승부
-        hint_games: '지금은 판수제라서 이긴 판마다 1점이 쌓이고 아래 점수는 쓰지 않습니다. (점수 방식은 캐릭터 관리 > 소속 > 시즌)'
-        hint_points: '컨텐츠가 끝나면 결과에 따라 이 점수가 소속에 쌓입니다. 예: 승리 50, 패배 30.'
+        hint_games: '지금은 판수제라서 컨텐츠에서 승리한 판 수로 소속 순위를 정하고, 아래 점수는 쓰지 않습니다. (점수 방식은 캐릭터 관리 > 소속 > 시즌)'
+        hint_points: '컨텐츠가 끝나면 결과(승리·무승부·패배)에 따라 이 점수가 소속에 쌓이고, 그 총합으로 승부합니다. 예: 승리 5, 무승부 1.'
         lose: 패배
         title: 컨텐츠별 점수
         win: 승리
@@ -95,9 +95,9 @@ ko:
         posted: 결산 툿을 올렸습니다.
         result: 점수
         scoring: 점수 방식
-        scoring_games: 판수제 (이긴 판마다 1점)
-        scoring_hint: 점수제는 컨텐츠마다 정한 승리·무승부·패배 점수를, 판수제는 이긴 판마다 1점을 줍니다.
-        scoring_points: 점수제 (컨텐츠마다 정한 점수)
+        scoring_games: 판수제
+        scoring_hint: '점수제: 컨텐츠마다 정한 승리·무승부·패배 점수를 받고, 그 총합으로 승부합니다. 판수제: 컨텐츠에서 승리한 판 수로 승부합니다.'
+        scoring_points: 점수제
         starts_on: 시작일
         status: 상태
         statuses:
@@ -206,6 +206,34 @@ ko:
         stat: '[사용] 때 바뀌는 스탯'
         title: 상점
         unknown_stat: "'%{name}' 스탯이 없습니다. 캐릭터 관리 > 스탯에서 먼저 만드세요."
+        allow_random: '사용할 때 랜덤 1인을 고를 수 있음'
+        effect: 효과 설명
+        effect_hint: 사용했을 때 상대에게 알리는 글, RP용 아이템 안내
+        giftable: '[선물] 할 수 있음'
+        score_delta: 소속 점수 변동
+        score_delta_hint: '특수(신고·폭탄)가 소속 점수를 바꾸는 값. 예: -5'
+        special_kind: 특수 종류
+        special_kind_hint: 사용 대상이 '특수'일 때만 씁니다
+        special_kinds:
+          bomb: 기숙사 점수 차감 (기숙사 고르기)
+          howler: 소문 내기 (내용 입력 → 전체 DM)
+          report: 캐릭터 신고 (점수 차감·누적)
+          staff: 시스템 계정에 DM (운영진 처리)
+        special_limit: 신고 누적 한도
+        special_limit_hint: 이 횟수가 쌓이면 봉사활동 대상 (신고 아이템)
+        wear_label: 착용 표시
+        wear_label_hint: '비우면 착용 없음. 예: 동물 귀 (일시 효과 시간 동안 캐릭터에 붙음)'
+        minutes: 일시 효과 시간 (분)
+        minutes_hint: 스탯 유형이 '스탯'인 능력치를 바꿀 때만 씁니다. '상태 수치'는 영구 변동
+        stat_permanent: 영구
+        stat_temporary: 일시
+        use_target: 사용 대상
+        use_target_hint: '스탯: 등록된 스탯을 바꿈 · 캐릭터: 사용할 때 캐릭터(본인도 가능)를 골라 그 캐릭터에게 · 특수: 시스템 계정에 DM 으로 알림 (운영진이 처리)'
+        use_targets:
+          character: 캐릭터
+          special: 특수
+          stat: 스탯
+        ungiftable: 선물 불가
         unusable: 사용 불가
         usable: '[사용] 할 수 있음'
         value: 수치
@@ -361,6 +389,7 @@ ko:
           no_items: 아이템이 없습니다.
           no_records: 아직 재화 기록이 없습니다.
           no_stats: 스탯이 아직 없습니다. 스탯 탭에서 만들어 주세요.
+          effects: '일시 효과:'
           opponents: 함께한 사람
           profile: 소속
           range: '%{min} ~ %{max}'

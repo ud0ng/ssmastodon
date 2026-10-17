@@ -1401,5 +1401,14 @@
   "maze.live": "실시간",
   "maze.replay": "끝난 판입니다. 미로 전체와 모든 길이 보입니다.",
   "maze.replay_map": "끝난 판입니다. 모든 위치와 도망 경로가 보입니다.",
-  "maze.watching": "관전 중입니다. 모든 위치가 실시간으로 보입니다."
+  "maze.watching": "관전 중입니다. 모든 위치가 실시간으로 보입니다.",
+  "item.use_on_character": "사용할 캐릭터를 고르세요. (본인도 가능)",
+  "item.effect_temporary": "{minutes}분 동안",
+  "item.effect_permanent": "영구",
+  "item.use_special": "사용하면 시스템 계정에 DM 으로 알립니다. 운영진이 처리해요.",
+  "item.random": "랜덤으로 1명 고르기",
+  "item.use_report": "신고할 캐릭터를 고르세요.",
+  "item.use_bomb": "똥폭탄을 던질 기숙사를 고르세요.",
+  "item.use_howler": "모두에게 울려 퍼질 소문 내용을 적으세요.",
+  "wallet.wearing": "착용 중"
 }

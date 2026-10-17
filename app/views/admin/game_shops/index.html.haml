@@ -95,10 +95,13 @@
                 %td.bot-sheet-table__text
                   - if !item.usable
                     %span.game-badge= game_t('admin.games.shop.unusable')
-                  - elsif item.stat_name.present?
-                    = "#{item.stat_name} #{item.stat_value.start_with?('-', '+') ? item.stat_value : "+#{item.stat_value}"}"
                   - else
-                    = none
+                    %span.game-badge= game_t("admin.games.shop.use_targets.#{item.use_target}")
+                    - if item.stat_name.present?
+                      = "#{item.stat_name} #{item.stat_value.start_with?('-', '+') ? item.stat_value : "+#{item.stat_value}"}"
+                      = item.temporary_stat? ? "(#{item.stat_minutes}분)" : "(#{game_t('admin.games.shop.stat_permanent')})"
+                  - if !item.giftable
+                    %span.game-badge= game_t('admin.games.shop.ungiftable')
                 %td.bot-sheet-table__actions
                   = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: game_t('admin.games.shop.edit_item'), data: { modal_open: "item-#{item.id}" }
                   = button_to admin_game_shop_item_path(item), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.shop.delete_item'), data: { confirm: game_t('admin.games.shop.delete_item_confirm', name: item.name) } do

@@ -58,6 +58,42 @@ RSpec.describe 'API V1 Bot' do
     expect(GameReward.last).to have_attributes(account: harry, kind: 'purchase', money: -4, reason: '사과 2개', actor: 'ssbot')
   end
 
+  it 'keeps the per-item rules: no transfer of non-giftable items, no use of non-usable items' do
+    shop = GameShop.create!(name: '가게')
+    shop.items.create!(name: '초콜릿 개구리', price: 1, giftable: false)
+    shop.items.create!(name: '돌멩이', price: 1, usable: false)
+    GameCharacter.for(harry).update!(inventory: [{ 'name' => '초콜릿 개구리', 'count' => 2, 'note' => '' }, { 'name' => '돌멩이', 'count' => 1, 'note' => '' }])
+
+    post '/api/v1/bot/characters/apply', headers: headers, as: :json,
+                                         params: { kind: 'transfer', changes: [{ acct: 'harry', items: { '초콜릿 개구리' => -1 } }, { acct: 'ron', items: { '초콜릿 개구리' => 1 } }] }
+    expect(response).to have_http_status(422)
+    expect(response.parsed_body).to include('code' => 'not_giftable')
+
+    post '/api/v1/bot/characters/apply', headers: headers, as: :json,
+                                         params: { kind: 'use', changes: [{ acct: 'harry', items: { '돌멩이' => -1 } }] }
+    expect(response).to have_http_status(422)
+    expect(response.parsed_body).to include('code' => 'not_usable')
+
+    get '/api/v1/bot/shops', headers: headers
+    expect(response.parsed_body.to_s).to include('giftable')
+  end
+
+  it 'turns a bot item use of a stat into a temporary effect, but keeps status values permanent' do
+    shop = GameShop.create!(name: '가게')
+    shop.items.create!(name: '힘 물약', price: 1, stat_name: '힘', stat_value: '2', stat_minutes: 15)
+    GameCharacter.for(harry).update!(inventory: [{ 'name' => '힘 물약', 'count' => 1, 'note' => '' }])
+
+    post '/api/v1/bot/characters/apply', headers: headers, as: :json,
+                                         params: { kind: 'use', changes: [{ acct: 'harry', items: { '힘 물약' => -1 }, stats: { '힘' => 2 } }] }
+
+    expect(response).to have_http_status(200)
+    character = GameCharacter.for(harry).reload
+    field = GameCharacterField.base_stats.find_by(name: '힘')
+    expect(character.raw_stat_value(field)).to eq 5
+    expect(character.stat_value(field)).to eq 7
+    expect(response.parsed_body['characters'].first['stats'].find { |stat| stat['name'] == '힘' }['value']).to eq 7
+  end
+
   it 'transfers between characters atomically and refuses when short' do
     post '/api/v1/bot/characters/apply', headers: headers, as: :json,
                                          params: { kind: 'transfer', changes: [{ acct: 'ron', money: -5 }, { acct: 'harry', money: 5 }] }
@@ -85,13 +121,19 @@ RSpec.describe 'API V1 Bot' do
     expect(GameCharacter.for(harry).reload.money).to eq 11
   end
 
-  it 'changes base stats within their range but not computed statuses' do
+  it 'changes base stats within their range and stacks permanent changes on computed statuses' do
     post '/api/v1/bot/characters/apply', headers: headers, as: :json,
-                                         params: { kind: 'use', changes: [{ acct: 'harry', stats: { '힘' => 500 } }] }
+                                         params: { kind: 'admin', changes: [{ acct: 'harry', stats: { '힘' => 500 } }] }
     expect(GameCharacter.for(harry).reload.stats['힘']).to eq '100'
 
     post '/api/v1/bot/characters/apply', headers: headers, as: :json,
-                                         params: { kind: 'use', changes: [{ acct: 'harry', stats: { '체력' => 1 } }] }
+                                         params: { kind: 'admin', changes: [{ acct: 'harry', stats: { '체력' => 7 } }] }
+    expect(response).to have_http_status(200)
+    status = GameCharacterField.statuses.find_by(name: '체력')
+    expect(GameCharacter.for(harry).reload.status_value(status)).to eq 507
+
+    post '/api/v1/bot/characters/apply', headers: headers, as: :json,
+                                         params: { kind: 'admin', changes: [{ acct: 'harry', stats: { '없는스탯' => 1 } }] }
     expect(response.parsed_body['code']).to eq 'unknown_stat'
   end
 
@@ -107,7 +149,7 @@ RSpec.describe 'API V1 Bot' do
     )
 
     get '/api/v1/bot/config', headers: headers
-    expect(response.parsed_body).to include('currency' => '갈레온', 'transfer_enabled' => true, 'attendance_reward' => 1)
+    expect(response.parsed_body).to include('currency' => '갈레온', 'transfer_enabled' => true, 'attendance_reward' => 5)
     expect(response.parsed_body['help']).to include('[양도/n갈레온/캐릭터명] 재화를 캐릭터에게 양도합니다.')
   end
 

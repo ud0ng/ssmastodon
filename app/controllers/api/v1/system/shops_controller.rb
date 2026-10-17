@@ -59,6 +59,7 @@ class Api::V1::System::ShopsController < Api::BaseController
           price: item.price,
           description: item.description.to_s,
           usable: item.usable,
+          giftable: item.giftable,
           image: item.image.present? ? full_asset_url(item.image.url(:small)) : nil,
         }
       end,
