@@ -150,7 +150,6 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
   view.clues.forEach((clue) => {
     if (clue.room !== undefined && clue.kind !== 'zone') lastClue.set(clue.room, clue);
   });
-  const zoneClue = [...view.clues].reverse().find((clue) => clue.kind === 'zone');
   const cmd = view.commands;
   const canPick = view.my_turn;
   const myRoom = (chosen && chosen.turn === view.turn ? chosen.room : null) ?? view.planned_room ?? view.position;
@@ -223,10 +222,9 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
         peopleNote={view.status === 'finished' ? <FormattedMessage id='maze.finished' defaultMessage='Finished' /> : <FormattedMessage id='maze.live' defaultMessage='Live' />}
       />
 
-      {(view.cloak > 0 || zoneClue) && (
+      {view.cloak > 0 && (
         <div className='maze-play__head'>
-          {view.cloak > 0 && <span className='maze-play__chip'><GameIcon name='cloak' /> {view.cloak}</span>}
-          {zoneClue && <span className='maze-play__chip'><GameIcon name='scope' /> {zoneClue.zone} ({zoneClue.turn})</span>}
+          <span className='maze-play__chip'><GameIcon name='cloak' /> {view.cloak}</span>
         </div>
       )}
 
@@ -413,11 +411,6 @@ export const MaraudersMapPlay: React.FC<{ sessionId: string; onMoved?: () => voi
           <strong className='map-play__chat-title'>
             <FormattedMessage id='map.team_chat' defaultMessage='Team chat' />
           </strong>
-          <ul className='map-play__chat-log'>
-            {view.team_chat.slice(-6).map((line, index) => (
-              <li key={`${index}${line.name}`}><b>{line.name}</b> {line.text}</li>
-            ))}
-          </ul>
           <form className='map-play__chat-form' onSubmit={handleChat}>
             <input value={chat} onChange={(event) => { setChat(event.target.value); }} maxLength={200} placeholder='…' />
             <button type='submit' className='maze-play__item' disabled={busy || chat.trim() === ''}>

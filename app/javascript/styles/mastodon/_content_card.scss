@@ -1991,3 +1991,152 @@
     overflow: visible;
   }
 }
+
+// 맨 위 고정 헤더: 룰렛 같은 1:1 판처럼 배경색 그대로, 아래에 가는 선
+.chamber-head {
+  margin-bottom: 0;
+  padding: 10px 4px;
+  border-radius: 0;
+  border-bottom: 1px solid var(--ct-line, var(--background-border-color));
+  background: var(--ct-panel, var(--background-color));
+}
+
+// 도둑 지도 팀 채팅: 비밀의 방 채팅처럼 파란 느낌
+.map-play__chat {
+  --chat-blue: #2f6fa8;
+
+  background: color-mix(in srgb, var(--chat-blue) 10%, transparent);
+
+  &-title {
+    color: var(--chat-blue);
+  }
+
+  &-form input {
+    background: var(--ct-panel, var(--background-color));
+  }
+
+  .maze-play__item {
+    background: color-mix(in srgb, var(--chat-blue) 22%, transparent);
+
+    &:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--chat-blue) 38%, transparent);
+    }
+  }
+}
+
+// 미로: 도둑 지도처럼 양피지 위에 잉크로 그린 해리포터 풍
+.maze-play__svg {
+  filter: drop-shadow(0 6px 14px #0003);
+}
+
+.maze-play__fog {
+  fill: #4a3820;
+}
+
+.maze-play__floor {
+  &--lit {
+    fill: #f3e6c3;
+  }
+
+  &--memory {
+    fill: #d9c698;
+    opacity: 1;
+  }
+}
+
+.maze-play__walls line {
+  stroke: #4a2f14;
+  stroke-width: 4.5;
+}
+
+.maze-play__route {
+  stroke: #9a6a1e;
+}
+
+.maze-play__move {
+  rect {
+    fill: #f1d68a;
+    fill-opacity: 0.75;
+    stroke: #9a6a1e;
+  }
+
+  circle {
+    fill: #9a6a1e;
+  }
+
+  &:hover rect,
+  &:focus rect,
+  &--planned rect {
+    fill: #e8c06a;
+    fill-opacity: 0.95;
+  }
+}
+
+.maze-play__cup {
+  color: #b8860b;
+  filter: drop-shadow(0 0 4px #e8c06a);
+}
+
+.maze-play__trap {
+  color: #8e2a35;
+}
+
+.maze-play__creature {
+  color: #4a2f7a;
+}
+
+// 비밀의 방: 원탁도 양피지(낮) / 촛불 켜진 어두운 양피지(밤)
+.chamber-play__table {
+  border: 2px solid #6a4a2288;
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse at center, transparent 55%, #6a4a2255 100%),
+    #ead9ae;
+  box-shadow: 0 6px 14px #0003, inset 0 0 0 5px #ead9ae, inset 0 0 0 6px #6a4a2255;
+
+  &--night {
+    border-color: #c9a22788;
+    background:
+      radial-gradient(ellipse at center, #3a3f66 0%, transparent 70%),
+      #1c2240;
+    box-shadow: 0 6px 14px #0005, inset 0 0 0 5px #1c2240, inset 0 0 0 6px #c9a22766;
+  }
+}
+
+.chamber-play__disc {
+  border: 2px dashed #6a4a2266;
+  background: #f3e6c344;
+}
+
+.chamber-play__table--night .chamber-play__disc {
+  border-color: #c9a22766;
+  background: #ffffff0a;
+}
+
+.chamber-play__center {
+  color: #5a3e22;
+  font-family: Georgia, 'Noto Serif KR', 'Nanum Myeongjo', serif;
+}
+
+.chamber-play__table--night .chamber-play__center {
+  color: #ffe9a0;
+}
+
+.chamber-seat__avatar {
+  outline: 3px solid #6a4a22aa;
+}
+
+.chamber-seat--me .chamber-seat__avatar,
+.chamber-seat--selected .chamber-seat__avatar {
+  outline: 4px solid #b8860b;
+}
+
+.chamber-seat--dark .chamber-seat__avatar {
+  outline-color: #8e2a35;
+}
+
+.chamber-seat__name {
+  background: #f3e6c3;
+  color: #3a2814;
+  font-family: Georgia, 'Noto Serif KR', 'Nanum Myeongjo', serif;
+}

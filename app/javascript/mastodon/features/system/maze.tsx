@@ -204,7 +204,17 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
       <div className='board-wrap' ref={board.wrapRef}>
       <svg className='maze-play__svg' viewBox={`0 0 ${(width * CELL) + (PAD * 2)} ${(height * CELL) + (PAD * 2)}`} role='img'>
         <AvatarClip />
-        <rect className='maze-play__fog' x={0} y={0} width={(width * CELL) + (PAD * 2)} height={(height * CELL) + (PAD * 2)} />
+        <defs>
+          <filter id='maze-paper' x='0' y='0' width='100%' height='100%'>
+            <feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' seed='7' result='noise' />
+            <feColorMatrix in='noise' type='matrix' values='0 0 0 0 0.45  0 0 0 0 0.32  0 0 0 0 0.16  0 0 0 0.22 0' />
+          </filter>
+          <radialGradient id='maze-vignette' cx='50%' cy='50%' r='75%'>
+            <stop offset='55%' stopColor='#6a4a22' stopOpacity='0' />
+            <stop offset='100%' stopColor='#6a4a22' stopOpacity='0.4' />
+          </radialGradient>
+        </defs>
+        <rect className='maze-play__fog' x={0} y={0} width={(width * CELL) + (PAD * 2)} height={(height * CELL) + (PAD * 2)} rx={10} />
 
         {Object.keys(view.cells).map((key) => {
           const index = Number(key);
@@ -252,6 +262,10 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
             </g>
           );
         })}
+
+        {/* 양피지 결과 가장자리 그늘 */}
+        <rect x={0} y={0} width={(width * CELL) + (PAD * 2)} height={(height * CELL) + (PAD * 2)} rx={10} filter='url(#maze-paper)' pointerEvents='none' />
+        <rect x={0} y={0} width={(width * CELL) + (PAD * 2)} height={(height * CELL) + (PAD * 2)} rx={10} fill='url(#maze-vignette)' pointerEvents='none' />
 
         {/* 벽 */}
         <g className='maze-play__walls'>
@@ -332,7 +346,7 @@ export const MazePlay: React.FC<{ sessionId: string; onMoved?: () => void }> = (
             {view.position && (() => {
               const [cx, cy] = center(view.position[0], view.position[1]);
               const mine = view.players.find((item) => item.seat === view.me);
-              return <AvatarPin x={cx} y={cy} r={12} name={mine?.name ?? ''} avatar={mine?.avatar} color='var(--ct-point, #e0603c)' ring='me' />;
+              return <AvatarPin x={cx} y={cy} r={12} name={mine?.name ?? ''} avatar={mine?.avatar} color='#c0392b' ring='me' />;
             })()}
           </>
         )}
