@@ -4,7 +4,7 @@
 class Api::V1::Bot::ConfigsController < Api::V1::Bot::BaseController
   # 자동봇이 원래 이름으로 처리하는 명령어 (설정 키 → 자동봇 쪽 이름)
   COMMANDS = {
-    'cmd_bag' => 'bag', 'cmd_shop' => 'shop', 'cmd_buy' => 'buy', 'cmd_describe' => 'describe', 'cmd_consume' => 'consume',
+    'cmd_bag' => 'bag', 'cmd_shop' => 'shop', 'cmd_buy' => 'buy', 'cmd_describe' => 'describe', 'cmd_discard' => 'discard',
     'cmd_use' => 'use', 'cmd_status' => 'status', 'cmd_transfer' => 'transfer', 'cmd_attendance' => 'attendance',
     'cmd_money_add' => 'money_add', 'cmd_money_sub' => 'money_sub', 'cmd_item_add' => 'item_add', 'cmd_item_sub' => 'item_sub',
     'cmd_stat_change' => 'stat_change'

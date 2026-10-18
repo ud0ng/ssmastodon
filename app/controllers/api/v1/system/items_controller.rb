@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# 웹 인벤토리 아이템 모달: [사용] [선물] [버리기] (자동봇 [사용]·[양도]·[소모]와 같은 규칙)
+# 웹 인벤토리 아이템 모달: [사용] [선물] [버리기] (자동봇 [사용]·[양도]·[버리기]와 같은 규칙)
 class Api::V1::System::ItemsController < Api::BaseController
   before_action -> { doorkeeper_authorize! :write }
   before_action :require_user!
