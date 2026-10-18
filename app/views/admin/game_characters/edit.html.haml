@@ -4,38 +4,45 @@
 - content_for :heading do
   = render 'admin/game_characters/heading'
 
-- none = game_t('admin.games.manage.none')
 - account = @character.account
 - win, lose, draw = @record['win'].to_i, @record['lose'].to_i, @record['draw'].to_i
 
--# 머리: 아바타 | 이름 (아이디) | 소속 배지 — 한 줄. 오른쪽 전적 카드와 컨텐츠 기록 링크
-.game-detail__head
-  .game-detail__identity.game-detail__identity--inline
-    = image_tag full_asset_url(account.avatar_static_url), alt: '', class: 'game-detail__avatar'
-    %h3
-      = @character.display_name
-      = link_to "(@#{account.username})", admin_account_path(account.id), class: 'game-detail__acct'
-    - [@character.house, @character.faction].compact.each do |group|
-      %span.game-badge{ style: "--badge: #{group.color.presence || '#6b5b3e'}" }= group.name
-  .game-detail__record
-    %small= game_t('admin.games.manage.detail.record')
-    %strong= game_t('admin.games.manage.detail.record_summary', win: win, lose: lose, draw: draw)
-    = link_to game_t('admin.games.records.view_record'), admin_game_records_path(character: @character.account_id), class: 'game-detail__record-link'
+-# 구글 느낌의 심플한 상세 화면: 흰 카드·옅은 테두리·파란 포인트. 머리(아바타 | 이름 (아이디) | 소속 배지 한 줄 + 전적) → 기본 정보 → 스탯(정의된 경우만)
+.gd
+  .gd-hero
+    = image_tag full_asset_url(account.avatar_static_url), alt: '', class: 'gd-hero__avatar'
+    .gd-hero__main
+      .gd-hero__line
+        %h1.gd-hero__name= @character.display_name
+        = link_to "(@#{account.username})", admin_account_path(account.id), class: 'gd-hero__acct'
+        - [@character.house, @character.faction].compact.each do |group|
+          %span.gd-chip{ style: "--badge: #{group.color.presence || '#6b5b3e'}" }= group.name
+    .gd-hero__record
+      %span.gd-record
+        %strong.gd-record__win= win
+        %small= game_t('admin.games.manage.detail.results.win')
+      %span.gd-record
+        %strong.gd-record__lose= lose
+        %small= game_t('admin.games.manage.detail.results.lose')
+      %span.gd-record
+        %strong= draw
+        %small= game_t('admin.games.manage.detail.results.draw')
+      = link_to game_t('admin.games.records.view_record'), admin_game_records_path(character: @character.account_id), class: 'gd-link'
 
-= simple_form_for @character, url: admin_game_character_path(@character, filter_params), method: :patch, html: { class: 'game-detail' } do |f|
-  = render 'shared/error_messages', object: @character
+  = simple_form_for @character, url: admin_game_character_path(@character, filter_params), method: :patch, html: { class: 'gd-form' } do |f|
+    = render 'shared/error_messages', object: @character
 
-  -# 이름 | 스탯 (스탯이 하나도 없으면 스탯 칸은 보이지 않는다)
-  - stats_defined = @base_stats.any? || @statuses.any?
-  .game-detail__grid{ class: ('game-detail__grid--single' unless stats_defined) }
-    %section.game-card
-      %h4= game_t('admin.games.manage.detail.profile')
+    - stats_defined = @base_stats.any? || @statuses.any?
+
+    %section.gd-card
+      %h2.gd-card__title= game_t('admin.games.manage.detail.profile')
       = render 'admin/ui/field', label: game_t('admin.games.characters.name'), name: 'game_character[name]', id: 'game_character_name', value: @character.name, wide: true,
                                  placeholder: account.display_name.presence || account.username, hint: game_t('admin.games.characters.name_hint')
+      = render 'admin/ui/field', label: game_t('admin.games.manage.detail.memo'), name: 'game_character[note]', id: 'game_character_note', value: @character.note, wide: true, html: { maxlength: 2000 }
 
     - if stats_defined
-      %section.game-card
-        %h4= game_t('admin.games.manage.detail.stats')
+      %section.gd-card
+        %h2.gd-card__title= game_t('admin.games.manage.detail.stats')
         = render layout: 'admin/ui/fields' do
           - @base_stats.each do |stat|
             = render 'admin/ui/field', label: stat.name, name: "game_character[stat_values][#{stat.name}]", id: "stat_#{stat.id}", value: @character.raw_stat_value(stat), type: :number,
@@ -45,16 +52,12 @@
             = game_t('admin.games.manage.detail.effects')
             = @character.active_effects.map { |effect| "#{effect['kind'] == 'wear' ? effect['label'] : "#{effect['stat']} #{format('%+d', effect['delta'].to_i)}"} (#{l(Time.zone.parse(effect['until']), format: :short)}까지, #{effect['item']})" }.join(', ')
         - if @statuses.any?
-          .game-detail__status-list
+          .gd-status-list
             - @statuses.each do |status|
-              .game-detail__status
+              .gd-status
                 %span= status.name
                 %strong= @character.status_value(status, @base_stats) || '-'
                 %small= status.formula.gsub(/\{\{\s*([^{}]+?)\s*\}\}/, '\1')
 
-  -# 메모 (한 줄)
-  %section.game-card.game-detail__memo
-    = render 'admin/ui/field', label: game_t('admin.games.manage.detail.memo'), name: 'game_character[note]', id: 'game_character_note', value: @character.note, wide: true, html: { maxlength: 2000 }
-
-  .actions.game-detail__actions
-    = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+    .gd-actions
+      = button_tag t('generic.save_changes'), type: :submit, class: 'gd-button'
