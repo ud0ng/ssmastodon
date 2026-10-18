@@ -114,6 +114,7 @@ namespace :api, format: false do
     namespace :bot do
       resource :config, only: [:show]
       resources :shops, only: [:index]
+      post 'items/use', to: 'items#use'
       resources :characters, only: [:index, :show] do
         post :apply, on: :collection
       end

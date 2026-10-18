@@ -57,7 +57,7 @@ RSpec.describe Game::Activity do
       described_class.reward!(account)
       toot('여섯글자입니다', reply_to: parent)
       described_class.reward!(account)
-      expect(GameReward.where(account: account, kind: 'toot').last.reason).to match(/A툿 보상 (d+자)z/)
+      expect(GameReward.where(account: account, kind: 'toot').last.reason).to match(/\A툿 보상 \(\d+자\)\z/)
     end
 
     it 'is checked by a worker whenever a toot is saved' do

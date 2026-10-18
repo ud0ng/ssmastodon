@@ -195,6 +195,44 @@ RSpec.describe 'API V1 Bot' do
     expect(text).to_not include('곱스톤')
   end
 
+  describe 'POST /items/use (the bot [사용], same rules as the web inventory)' do
+    let(:shop) { GameShop.create!(name: '허니듀크') }
+
+    before do
+      shop.items.create!(name: '초콜릿 개구리', price: 5, use_target: 'character', stat_name: '힘', stat_value: '3')
+      shop.items.create!(name: '호울러', price: 1, use_target: 'special', special_kind: 'howler')
+    end
+
+    it 'asks for a character, then uses the item on the character given by name' do
+      post '/api/v1/bot/items/use', headers: headers, as: :json, params: { acct: 'harry', name: '초콜릿 개구리' }
+      expect(response).to have_http_status(422)
+      expect(response.parsed_body['error']).to include('캐릭터를 골라')
+
+      post '/api/v1/bot/items/use', headers: headers, as: :json, params: { acct: 'harry', name: '초콜릿 개구리', target: '론' }
+      expect(response).to have_http_status(200)
+      expect(response.parsed_body['message']).to include('론에게', '초콜릿 개구리를 사용했습니다')
+      expect(GameCharacter.for(harry).reload.inventory.pluck('name', 'count')).to eq [['초콜릿 개구리', 1]]
+      expect(GameReward.where(account: harry).order(:id).last).to have_attributes(kind: 'use', actor: 'bot')
+    end
+
+    it 'tells you to DM the system account for a howler instead of broadcasting' do
+      GameCharacter.for(harry).update!(inventory: [{ 'name' => '호울러', 'count' => 1, 'note' => '' }])
+
+      post '/api/v1/bot/items/use', headers: headers, as: :json, params: { acct: 'harry', name: '호울러', text: '소문' }
+
+      expect(response).to have_http_status(422)
+      expect(response.parsed_body['error']).to include('시스템 계정에 DM')
+      expect(GameCharacter.for(harry).reload.inventory.pluck('count')).to eq [1]
+    end
+
+    it 'refuses an item you do not have' do
+      post '/api/v1/bot/items/use', headers: headers, as: :json, params: { acct: 'ron', name: '초콜릿 개구리', target: 'harry' }
+
+      expect(response).to have_http_status(422)
+      expect(response.parsed_body['error']).to include('가지고 있지 않습니다')
+    end
+  end
+
   it 'uses the help set in the content settings' do
     Game::Config.merge!('help', 'cmd_shop_help' => '가게 안내', 'rows_shop' => "가방|가방 보기
 ▸ 사고팔기|
