@@ -50,7 +50,7 @@
   -# 설정 탭: 컨텐츠마다 승리·무승부·패배 점수를 한 표에서
   - if @points_kinds
     = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.points_table.title'), hint: game_t("admin.games.points_table.hint_#{@scoring_mode}") } do
-      .bot-sheet-table.game-table
+      .bot-sheet-table.game-table.game-table--centered
         %table.table
           %thead
             %tr
@@ -62,11 +62,14 @@
               - config = kind.config
               %tr
                 %td.bot-sheet-table__text
-                  %span{ 'aria-hidden': 'true' }= game_kind_icon(kind.key)
                   = kind.display_name
                 - %w(win draw lose).each do |outcome|
                   %td.game-table__number
                     = number_field_tag "points[#{kind.key}][#{outcome}]", config["points_#{outcome}"], step: 1, min: 0, class: 'ui-input ui-input--number game-points__input', 'aria-label': "#{kind.display_name} #{game_t("admin.games.points_table.#{outcome}")}"
+
+  -# 설정 탭: 컨텐츠마다 보상(재화·아이템)을 한곳에서
+  - if @points_kinds
+    = render 'admin/game_settings/rewards', kinds: @points_kinds
 
   -# 저장하지 않은 변경이 있으면 화면 아래에 붙는 저장 줄 (game_config_editor.ts)
   .game-savebar{ hidden: true }

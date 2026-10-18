@@ -482,3 +482,149 @@ textarea.ui-input {
     font-size: 12px;
   }
 }
+
+// 컨텐츠별 점수 표: 컬럼명(컨텐츠·승리·무승부·패배)과 칸을 모두 가운데 맞춤
+.game-table--centered {
+  th,
+  td,
+  .game-table__number {
+    text-align: center !important;
+  }
+
+  .game-points__input {
+    text-align: center;
+  }
+}
+
+// 설정 탭 > 컨텐츠별 보상: 컨텐츠마다 한 덩어리
+.game-reward-block {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--background-border-color, rgb(127 127 127 / 25%));
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &__title {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 0 0 10px;
+    font-size: 15px;
+  }
+}
+
+// 재화·아이템 기록: 캐릭터 칸 (아바타 + 이름 위, 계정 아래) / 기간 칸
+.game-who {
+  display: grid;
+  line-height: 1.25;
+}
+
+.game-table__filter {
+  input[type='date'] {
+    width: auto;
+    min-width: 150px;
+  }
+
+  .filter-subset {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}
+
+.game-table__name-cell:has(.game-who) {
+  min-width: 170px;
+}
+
+.game-who small {
+  white-space: nowrap;
+}
+
+// 설정 탭 > 컨텐츠별 보상 표: 아이템은 이미지만 보이는 작은 카드 (이름은 마우스를 올리면, 개수·확률은 카드 아래 작은 칸)
+.game-reward-table {
+  .game-reward-table__items {
+    min-width: 260px;
+    text-align: start !important;
+  }
+
+  .game-inventory {
+    grid-template-columns: repeat(auto-fill, 52px);
+    gap: 8px 6px;
+  }
+
+  .game-inventory__card {
+    gap: 2px;
+  }
+
+  .game-inventory__image {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    font-size: 11px;
+
+    img,
+    .game-item-thumb {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  .game-inventory__name,
+  .ui-item-picker__caption {
+    display: none;
+  }
+
+  .ui-item-picker .ui-item-picker__count,
+  .ui-item-picker .ui-item-picker__chance {
+    width: 44px;
+    min-height: 22px;
+    margin: 0;
+    padding: 1px 2px;
+    font-size: 11px;
+  }
+
+  .ui-item-picker__remove {
+    top: -4px;
+    inset-inline-end: -4px;
+    width: 16px;
+    height: 16px;
+
+    .icon {
+      width: 10px !important;
+      height: 10px !important;
+    }
+  }
+
+  .ui-item-picker__add > summary {
+    width: 40px;
+  }
+}
+
+// 재화·아이템 기록: 시간은 작게, 캐릭터 아이디는 작고 흐리게, 검색칸은 한 줄에
+.game-table__time {
+  color: var(--ct-dim, #6b7280);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.game-who small {
+  color: #8b95a7 !important;
+  font-size: 11px !important;
+}
+
+.game-table__search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+
+  .ui-input {
+    flex: 1 1 160px;
+    min-width: 0;
+  }
+
+  .button {
+    flex: 0 0 auto;
+  }
+}

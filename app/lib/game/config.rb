@@ -145,6 +145,10 @@ module Game
       Field.new(key: 'turn_seconds', type: :integer, default: 300, group: 'rules', label: '한 턴 대기 (초)', hint: '시간이 지나면 그 턴 패배 처리'),
       Field.new(key: 'one_game_per_person', type: :boolean, default: true, group: 'rules',
                 label: '컨텐츠 동시 진행 막기', hint: '켜면 한 사람이 진행 중인 컨텐츠는 1개까지'),
+      Field.new(key: 'daily_game_limit', type: :integer, default: 0, group: 'rules', label: '컨텐츠 하루 최대 횟수',
+                hint: '컨텐츠를 모두 합해 하루 동안 내가 보낼 수 있는 신청 수 (0 = 제한 없음). 운영진이 여는 이벤트는 세지 않습니다'),
+      Field.new(key: 'daily_opponent_limit', type: :integer, default: 0, group: 'rules', label: '같은 상대와 하루 최대 횟수',
+                hint: '컨텐츠를 모두 합해 하루 동안 같은 상대에게 보낼 수 있는 신청 수 (0 = 제한 없음)'),
 
       # 소속·점수 (캐릭터 관리 > 소속에서 고친다)
       Field.new(key: 'group_mode', type: :select, default: 'house', group: 'groups',
@@ -182,6 +186,8 @@ module Game
       Field.new(key: 'msg_many_opponents', type: :text, group: 'messages_invalid', label: '상대가 너무 많음', default: '%{game}에는 상대를 %{max}명까지 태그할 수 있습니다.'),
       Field.new(key: 'msg_no_opponent', type: :text, group: 'messages_invalid', label: '상대 없음', default: '%{game}{을를} 함께할 상대를 태그해 주세요.'),
       Field.new(key: 'msg_disabled', type: :text, group: 'messages_invalid', label: '꺼진 컨텐츠', default: '%{game}{은는} 지금 열려 있지 않습니다.'),
+      Field.new(key: 'msg_daily_limit', type: :text, group: 'messages_invalid', label: '하루 신청 횟수 초과', default: '오늘은 더 이상 컨텐츠를 신청할 수 없습니다. (하루 최대 %{limit}회)'),
+      Field.new(key: 'msg_opponent_limit', type: :text, group: 'messages_invalid', label: '같은 상대 하루 횟수 초과', default: '%{opponent}님과는 오늘 더 이상 컨텐츠를 할 수 없습니다. (같은 상대와 하루 최대 %{limit}회)'),
       Field.new(key: 'msg_event_not_opener', type: :text, group: 'messages_invalid', label: '이벤트를 열 수 없음', default: '%{game}{은는} 운영진만 열 수 있습니다.'),
       Field.new(key: 'msg_event_running', type: :text, group: 'messages_invalid', label: '이벤트 진행 중', default: '%{game}{이가} 이미 열려 있습니다.'),
 
@@ -293,7 +299,6 @@ module Game
         ['basic', %w(basic)],
         ['subject_rules', %w(rules time flavors spells roles)],
         ['event', %w(event)],
-        ['rewards', %w(rewards)],
         ['subject_commands', %w(commands)],
         ['subject_messages', %w(messages)],
       ],

@@ -15,7 +15,7 @@ class Api::V1::System::CommandsController < Api::BaseController
 
   def create
     text, thread, visibility = params[:session_id].present? ? session_command : new_command
-    return render json: { error: 'invalid' }, status: 422 if text.nil?
+    return render json: { error: @limit_error || 'invalid', limit: @limit_error.present? }, status: 422 if text.nil?
 
     status = PostStatusService.new.call(current_account, text: text, thread: thread, visibility: visibility)
     handle_now!(status)
@@ -54,6 +54,10 @@ class Api::V1::System::CommandsController < Api::BaseController
     # 고른 순서를 지킨다: 팀전은 앞에서부터 우리 팀(팀원 → 상대 팀)이다
     opponents = Account.local.where(username: usernames).where.not(id: current_account.id).sort_by { |account| usernames.index(account.username) }
     return if opponents.empty?
+
+    # 하루 신청 횟수를 넘었으면 신청하지 않고 안내를 보여 준다 (웹 신청 창)
+    @limit_error = Game::DailyLimits.check(current_account, opponents, kind: kind)
+    return if @limit_error
 
     command = kind.config['command']
     command = "#{command}/#{params[:team_size].to_i}" if kind.uneven_teams? && params[:team_size].to_i.positive?

@@ -13,9 +13,13 @@ module Admin::GameHelper
   }.freeze
 
   # 보상 사유 'game:jellybean' → 컨텐츠 이름
+  EMOJI = /[🀀-🫿←-⯿️‍]/
+
+  # 앞의 그림 문자는 붙이지 않는다 (예전에 남은 사유에 들어 있어도 지워서 보인다)
   def game_reward_reason(reason)
     key = reason.to_s.split(':').last
-    Game::Kinds.keys.include?(key) ? "#{game_kind_icon(key)} #{Game::Kinds.fetch(key).display_name}" : reason
+    text = Game::Kinds.keys.include?(key) ? Game::Kinds.fetch(key).display_name : reason.to_s
+    text.gsub(EMOJI, '').squeeze(' ').strip
   end
 
   def game_kind_icon(key)

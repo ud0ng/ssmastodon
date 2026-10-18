@@ -44,6 +44,7 @@ SimpleNavigation::Configuration.run do |navigation|
       s.item :settings, safe_join([material_symbol('tune'), t('admin.settings.title')]), admin_settings_path, highlights_on: %r{/admin/settings}, if: -> { current_user.can?(:manage_settings) }
       s.item :bot_sheets, safe_join([material_symbol('list_alt'), t('admin.bot_sheets.title')]), admin_bot_sheets_path, highlights_on: %r{/admin/sheets}, if: -> { current_user.can?(:manage_settings) }
       s.item :game_settings, safe_join([material_symbol('extension'), t('admin.games.title')]), admin_game_setting_path('common'), highlights_on: %r{/admin/games}, if: -> { current_user.can?(:manage_settings) }
+      s.item :game_shop, safe_join([material_symbol('inventory_2'), t('admin.games.shop.menu')]), admin_game_shop_settings_path, highlights_on: %r{/admin/shop}, if: -> { current_user.can?(:manage_settings) }
       s.item :game_characters, safe_join([material_symbol('badge'), t('admin.games.characters.title')]), admin_game_characters_path, highlights_on: %r{/admin/characters}, if: -> { current_user.can?(:manage_settings) }
     end
 

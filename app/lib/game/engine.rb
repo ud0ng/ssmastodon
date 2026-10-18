@@ -121,6 +121,10 @@ module Game
       error = kind.invite_error(opponents.size + 1, args)
       return reply(error) if error
 
+      # 하루 신청 횟수 (컨텐츠 설정 > 룰 설정): 넘으면 신청되지 않고 이 안내가 답멘으로 간다
+      limited = Game::DailyLimits.check(actor, opponents, kind: kind)
+      return reply(limited) if limited
+
       opponent = opponents.first
       if common['one_game_per_person']
         busy = [actor, *opponents].find { |account| open_player(account) }

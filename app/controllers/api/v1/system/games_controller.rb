@@ -25,6 +25,8 @@ class Api::V1::System::GamesController < Api::BaseController
       event: @kind.event?,
       can_open: @kind.event? && @kind.can_open?(current_account),
       staff: current_user.can?(:manage_settings),
+      # 하루 신청 횟수를 이미 넘었으면 [시작하기]를 누를 때 바로 보여 주는 안내 (같은 상대 제한은 상대를 고른 뒤 신청할 때)
+      daily_limit_message: Game::DailyLimits.check(current_account, [], kind: @kind),
       enabled: @kind.enabled?,
       system_acct: Game::System.username,
       command: @kind.config['command'],

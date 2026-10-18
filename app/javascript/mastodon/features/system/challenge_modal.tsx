@@ -47,6 +47,8 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [failed, setFailed] = useState(false);
+  // 하루 신청 횟수를 넘었을 때 서버가 돌려주는 안내 (신청되지 않는다)
+  const [limitMessage, setLimitMessage] = useState<string | null>(null);
 
   useEffect(() => {
     apiRequestGet<Member[]>('v1/system/members')
@@ -98,6 +100,7 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
   const send = useCallback(() => {
     setBusy(true);
     setFailed(false);
+    setLimitMessage(null);
     sendCommand({ kind: gameKey, opponents: team ? [...picked, ...rivals] : picked, ...(unevenTeams ? { team_size: picked.length + 1 } : {}) })
       .then(() => waitForSession(gameKey))
       .then((sessionId) => {
@@ -109,8 +112,10 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
         }
         return sessionId;
       })
-      .catch(() => {
-        setFailed(true);
+      .catch((error: { response?: { data?: { error?: string; limit?: boolean } } }) => {
+        const data = error.response?.data;
+        if (data?.limit && data.error) setLimitMessage(data.error);
+        else setFailed(true);
       })
       .finally(() => {
         setBusy(false);
@@ -186,6 +191,7 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
                 );
               })}
             </div>
+            {limitMessage && <p className='item-modal__error'>{limitMessage}</p>}
             {failed && (
               <p className='item-modal__error'>
                 <FormattedMessage id='item.failed' defaultMessage='Something went wrong. Please try again.' />

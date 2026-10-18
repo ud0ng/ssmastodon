@@ -1047,6 +1047,8 @@
   "system.game.no_ranking": "No wins yet.",
   "system.game.now": "Your game",
   "system.game.join_event": "Join the event ({count} joined)",
+  "system.game.limit_confirm": "OK",
+  "system.game.limit_title": "You cannot start this right now",
   "system.game.open_event": "Open the event",
   "system.game.pick_many": "Pick up to {max} people",
   "system.game.pick_one": "Pick an opponent",

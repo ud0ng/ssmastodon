@@ -33,6 +33,13 @@ ko:
         bonus_hint: "수업에서 등수가 높은 사람(A 이상)은 등급 점수에 보너스 %를 더하고, 아래 재화·아이템을 더 받습니다."
         opener_hint: "수업은 운영진이 시스템 계정(@%{system})으로 직접 [%{command}/과목] 툿을 쓰면 열립니다."
       pick_account: 회원 고르기
+      rewards_table:
+        hint: '컨텐츠가 끝났을 때 참가자에게 주는 돈과 아이템입니다. 돈은 결과(승리·무승부·패배)마다, 아이템은 이긴 사람에게 줍니다. 아이템의 확률을 비우면 반드시 줍니다.'
+        items_win: 승리 아이템
+        money_draw: 무승부 돈
+        money_lose: 패배 돈
+        money_win: 승리 돈
+        title: 컨텐츠별 보상
       points_table:
         content: 컨텐츠
         draw: 무승부
@@ -148,6 +155,28 @@ ko:
         name: 아이템
         pick: 아이템 고르기
       shop:
+        menu: 상점 설정
+        tabs:
+          commands: 명령어
+          item_records: 아이템 기록
+          list: 상점 목록
+          records: 재화 기록
+          settings: 설정
+        currency_settings_hint: '재화 이름·출석 보상·툿 보상은 컨텐츠 설정 > 설정 > 재화 설정에서 바꿉니다.'
+        records_ui:
+          character: 캐릭터
+          direction: 구분
+          from: 시작일
+          gain: 획득
+          house: 소속
+          item_hint: '아이템이 늘어난 기록은 획득, 줄어든 기록(사용·버리기·양도·판매)은 차감입니다. 사용은 차감입니다. 최근 기록 3,000건까지 봅니다.'
+          money_hint: '%{currency}이(가) 늘어난 기록은 획득, 줄어든 기록은 차감입니다.'
+          period: 기간
+          search: 검색
+          search_character: 캐릭터 이름·아이디 검색
+          search_item: 아이템 이름 검색
+          spend: 차감
+          to: 종료일
         commands: "명령어"
         open: "상점 해금"
         open_hint: "상점을 열지 닫을지 정합니다. 닫으면 사용자 화면의 상점 메뉴와 상점 화면이 사라집니다."

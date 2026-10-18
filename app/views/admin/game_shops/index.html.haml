@@ -2,56 +2,9 @@
   = game_t('admin.games.shop.title')
 
 - content_for :heading do
-  = render 'admin/game_settings/heading'
+  = render 'admin/game_shops/heading'
 
 - none = '—'
-
--# 명령어 · 운영진 명령어: 자동봇이 /api/v1/bot/config 로 읽어 그 이름으로 처리하고, 도움말도 이 이름으로 만든다
-- { 'shop_open' => 'open', 'shop_commands' => 'commands', 'admin_commands' => 'admin_commands' }.each do |group, key|
-  = render layout: 'admin/ui/section', locals: { title: game_t("admin.games.shop.#{key}"), hint: game_t("admin.games.shop.#{key}_hint") } do
-    = form_tag currency_admin_game_shops_path, method: :patch, class: 'simple_form' do
-      - fields = @sections.fetch(group, [])
-      - accounts = fields.select { |field| field.type == :accounts }
-      - accounts.each do |field|
-        = render layout: 'admin/ui/field', locals: { label: field.label, id: "currency_#{field.key}", type: :custom, hint: field.hint, wide: true } do
-          = render 'admin/ui/multi_select', name: "config[#{field.key}][]", placeholder: game_t('admin.games.shop.pick_admins'), selected: Array(@values[field.key]),
-                                            options: @accounts.map { |account| ["#{account.display_name.presence || account.username} (@#{account.username})", account.username] }
-      = render layout: 'admin/ui/fields' do
-        - (fields - accounts).each do |field|
-          - if field.type == :boolean
-            = render 'admin/ui/switch', label: field.label, name: "config[#{field.key}]", id: "currency_#{field.key}", checked: @values[field.key], hint: field.hint
-          - else
-            = render 'admin/ui/field', label: field.label, name: "config[#{field.key}]", id: "currency_#{field.key}", value: @values[field.key], hint: field.hint, required: true, html: { maxlength: 20 }
-      .actions
-        = button_tag t('generic.save_changes'), type: :submit, class: 'button'
-
--# 최근 재화 기록 (컨텐츠 보상·구매·양도·출석·운영진 등)
-= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.shop.records') } do
-  .bot-sheet-table.game-table
-    %table.table
-      %thead
-        %tr
-          %th= game_t('admin.games.houses.when')
-          %th= game_t('admin.games.shop.who')
-          %th= game_t('admin.games.shop.kind')
-          %th= game_t('admin.games.shop.change')
-          %th= game_t('admin.games.houses.reason')
-      %tbody
-        - @records.each do |record|
-          - parts = []
-          - parts << format('%+d %s', record.money, @currency) unless record.money.zero?
-          - Array(record.items).each { |item| parts << format('%s %+d', item['name'], item['count'].to_i) }
-          - record.stats.to_h.each { |stat, delta| parts << format('%s %+d', stat, delta.to_i) }
-          %tr
-            %td.bot-sheet-table__text= l(record.created_at.in_time_zone('Asia/Seoul'), format: :short)
-            %td.bot-sheet-table__text= @names[record.account_id] || "@#{record.account.username}"
-            %td.bot-sheet-table__text
-              %span.game-badge= game_t("admin.games.shop.kinds.#{record.kind}", default: record.kind)
-            %td.bot-sheet-table__text= parts.join(', ').presence || none
-            %td.bot-sheet-table__text= [(record.reason.present? ? game_reward_reason(record.reason) : nil), (record.actor.present? ? "@#{record.actor}" : nil)].compact.join(' · ').presence || none
-        - if @records.empty?
-          %tr
-            %td.bot-sheet-table__text{ colspan: 5 }= game_t('admin.games.shop.no_records')
 
 -# 상점 목록: [상점 추가] 아이템(그림·이름·설명·금액), [지급] 활동 탭과 같은 지급 모달. 분류(상점)는 오른쪽 작은 버튼으로
 - actions = capture do

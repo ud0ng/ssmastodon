@@ -11,18 +11,18 @@ RSpec.describe Game::Config do
       expect(settings.keys).to eq %w(bots currency rules)
       expect(settings['bots']).to eq %w(system_username bot_usernames)
       expect(settings['currency']).to include('currency_name', 'attendance_reward', 'toot_reward_basis', 'toot_reward_public', 'toot_reward_every', 'toot_reward_amount')
-      expect(settings['rules']).to eq %w(contents_open invite_minutes turn_seconds one_game_per_person)
+      expect(settings['rules']).to eq %w(contents_open invite_minutes turn_seconds one_game_per_person daily_game_limit daily_opponent_limit)
       expect(commands['commands']).to eq %w(cmd_accept cmd_decline cmd_cancel cmd_forfeit cmd_points cmd_record)
       expect((settings.values + commands.values).flatten).to_not include('house_label', 'scoring_mode', 'msg_season_final')
     end
 
-    it 'lays out a content as basic, rules, rewards, commands and messages (points live in the settings tab)' do
+    it 'lays out a content as basic, rules, commands and messages (points and rewards live in the settings tab)' do
       sections = described_class.sections('jellybean').to_h { |name, fields| [name, fields.map(&:key)] }
 
-      expect(sections.keys.first(5)).to eq %w(basic subject_rules rewards subject_commands subject_messages)
+      expect(sections.keys.first(4)).to eq %w(basic subject_rules subject_commands subject_messages)
       expect(sections['basic']).to eq %w(enabled name description command)
       expect(sections['subject_rules']).to include('beans', 'worst_flavor', 'flavors')
-      expect(sections.keys - %w(basic subject_rules rewards subject_commands subject_messages)).to eq %w(points)
+      expect(sections.keys - %w(basic subject_rules subject_commands subject_messages)).to match_array %w(points rewards)
     end
 
   end

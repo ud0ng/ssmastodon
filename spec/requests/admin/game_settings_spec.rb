@@ -17,6 +17,24 @@ RSpec.describe 'Admin content settings' do
     expect(Game::Config.for('common')['currency_name']).to eq '시클'
   end
 
+  it 'saves the per-content rewards from the settings tab and keeps other values' do
+    Game::Config.merge!('maze', 'steps' => 3)
+
+    patch admin_game_setting_path('common'), params: {
+      rewards: { maze: { reward_money_win: '7', reward_money_draw: '2', reward_money_lose: '1', reward_items_win: "사과|2|50
+배|1" }, chess: { reward_money_win: '99' } },
+    }
+
+    expect(response).to redirect_to(admin_game_setting_path('common'))
+    expect(Game::Config.for('maze')).to include('steps' => 3, 'reward_money_win' => 7, 'reward_money_draw' => 2, 'reward_money_lose' => 1, 'reward_items_win' => ['사과|2|50', '배|1'])
+  end
+
+  it 'keeps the old shop address working' do
+    get '/admin/games/shops'
+
+    expect(response).to redirect_to('/admin/shop/list')
+  end
+
   it 'keeps other content settings when the points change' do
     Game::Config.merge!('jellybean', 'beans' => 6)
 

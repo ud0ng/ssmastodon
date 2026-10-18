@@ -172,6 +172,19 @@ RSpec.describe 'Game kinds' do
       expect(session.state['tries']).to be_empty
     end
 
+    it 'hides one of the opponent result with a shield, not the one who used it' do
+      guess = answer_numbers.permutation.find { |order| order.first != 0 && order != answer_numbers }
+      toot(alice, '@system [방어권]', visibility: 'direct')
+      toot(alice, "@system [조합] #{guess.join(' ')}", visibility: 'direct')
+      toot(bob, "@system [조합] #{((1..9).to_a - answer_numbers).first(3).join(' ')}", visibility: 'direct')
+
+      result = @replies.find { |status| status.visibility == 'private' && status.text.include?('1라운드') }.text
+      bob_line = result.lines.find { |line| line.include?('드레이코') }
+      expect(bob_line).to include('?') # 방어권을 쓴 앨리스가 아니라 상대 드레이코의 결과가 가려진다
+      expect(result.count('?')).to eq 1
+      expect(result).to include('가려졌습니다')
+    end
+
     it 'lets a retry ticket brew twice in a round and a shield hide one result' do
       toot(alice, '@system [재시도권]', visibility: 'direct')
       expect(session.state['allowed']['0']).to eq 2

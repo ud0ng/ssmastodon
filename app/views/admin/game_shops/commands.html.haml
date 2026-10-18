@@ -1,0 +1,8 @@
+- content_for :page_title do
+  = game_t('admin.games.shop.menu')
+
+- content_for :heading do
+  = render 'admin/game_shops/heading'
+
+-# 명령어 · 운영진 명령어
+= render 'admin/game_shops/currency_sections', groups: { 'shop_commands' => 'commands', 'admin_commands' => 'admin_commands' }, return_to: admin_game_shop_commands_path

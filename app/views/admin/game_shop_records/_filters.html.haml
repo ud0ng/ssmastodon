@@ -1,0 +1,35 @@
+-# 검색: 소속 · 캐릭터 · 이름 · 획득/차감 · 종류 · 기간 (재화 기록과 아이템 기록이 같이 쓴다)
+-# local: url, item (true 면 아이템 이름 칸도)
+= form_tag url, method: :get, class: 'simple_form game-table__filter' do
+  .filters
+    .filter-subset.filter-subset--with-select
+      %strong= @house_label
+      .input.select.optional
+        = select_tag :house, options_for_select([[game_t('admin.games.manage.roster.all'), ''], [game_t('admin.games.manage.none'), 'none']] + @houses.map { |house| [house.name, house.id] }, params[:house])
+    .filter-subset.filter-subset--with-select
+      %strong= game_t('admin.games.shop.records_ui.direction')
+      .input.select.optional
+        = select_tag :direction, options_for_select([[game_t('admin.games.manage.roster.all'), ''], [game_t('admin.games.shop.records_ui.gain'), 'gain'], [game_t('admin.games.shop.records_ui.spend'), 'spend']], params[:direction])
+    .filter-subset.filter-subset--with-select
+      %strong= game_t('admin.games.shop.kind')
+      .input.select.optional
+        = select_tag :kind, options_for_select([[game_t('admin.games.manage.roster.all'), '']] + GameReward::KINDS.map { |kind| [game_t("admin.games.shop.kinds.#{kind}", default: kind), kind] }, params[:kind])
+  .filters
+    .filter-subset
+      %strong= game_t('admin.games.shop.records_ui.period')
+      = date_field_tag :from, params[:from], class: 'ui-input', 'aria-label': game_t('admin.games.shop.records_ui.from')
+      %span ~
+      = date_field_tag :to, params[:to], class: 'ui-input', 'aria-label': game_t('admin.games.shop.records_ui.to')
+  -# 캐릭터·아이템 검색칸: 누르면 목록이 드롭다운으로 뜨고, 글자를 쓰면 좁혀진다 (한 줄에 나란히)
+  .game-table__search
+    = text_field_tag :q, params[:q], class: 'ui-input', list: 'record-characters', autocomplete: 'off', placeholder: game_t('admin.games.shop.records_ui.search_character'), 'aria-label': game_t('admin.games.shop.records_ui.search_character')
+    %datalist#record-characters
+      - @characters.each do |character|
+        %option{ value: character.display_name, label: "@#{character.account.username}" }
+        %option{ value: character.account.username, label: character.display_name }
+    - if local_assigns[:item]
+      = text_field_tag :item, params[:item], class: 'ui-input', list: 'record-items', autocomplete: 'off', placeholder: game_t('admin.games.shop.records_ui.search_item'), 'aria-label': game_t('admin.games.shop.records_ui.search_item')
+      %datalist#record-items
+        - @item_names.each do |name|
+          %option{ value: name }
+    = button_tag game_t('admin.games.shop.records_ui.search'), type: :submit, class: 'button'

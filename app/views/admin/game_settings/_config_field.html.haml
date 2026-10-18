@@ -1,7 +1,10 @@
 -# Game::Config 항목 하나를 공통 컴포넌트(admin/ui)로. 감싸는 칸의 data-* 와 game-field 는 편집기(game_config_editor.ts)가 바뀜·되돌리기·미리보기에 쓴다.
-- name = "config[#{field.key}]"
-- field_id = "game_config_#{field.key}"
-- value = @values[field.key]
+-# local: prefix(칸 이름 접두어, 기본 config), values(값 모음, 기본 @values), id_prefix
+- prefix = local_assigns[:prefix] || 'config'
+- values = local_assigns[:values] || @values
+- name = "#{prefix}[#{field.key}]"
+- field_id = "#{local_assigns[:id_prefix] || 'game_config'}_#{field.key}"
+- value = values[field.key]
 - default = field.type == :lines ? Array(field.default).join("\n") : field.default
 - items_field = field.type == :lines && field.key.start_with?('reward_items')
 -# 표로 고치는 줄 (도움말: 명령어|설명)

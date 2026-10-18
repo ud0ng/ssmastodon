@@ -1,0 +1,8 @@
+-# 기록한 캐릭터: 아바타 + 이름 + 계정 (record: GameReward)
+- character = @characters_by_account[record.account_id]
+%td.bot-sheet-table__text.game-table__name-cell
+  .game-table__name
+    = image_tag full_asset_url(record.account.avatar_static_url), alt: '', class: 'game-table__avatar'
+    %span.game-who
+      %strong= character&.display_name || record.account.username
+      %small.hint= "@#{record.account.acct}"

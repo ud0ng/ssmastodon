@@ -1,0 +1,44 @@
+- content_for :page_title do
+  = game_t('admin.games.shop.tabs.item_records')
+
+- content_for :heading do
+  = render 'admin/game_shops/heading'
+
+= render 'admin/game_shop_records/filters', url: admin_game_shop_item_records_path, item: true
+
+= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.shop.tabs.item_records'), hint: game_t('admin.games.shop.records_ui.item_hint') } do
+  .bot-sheet-table.game-table
+    %table.table
+      %thead
+        %tr
+          %th= game_t('admin.games.houses.when')
+          %th= game_t('admin.games.shop.who')
+          %th= game_t('admin.games.shop.records_ui.direction')
+          %th= game_t('admin.games.shop.kind')
+          %th= game_t('admin.games.shop.item_name')
+          %th.game-table__number= game_t('admin.games.reward_item.count')
+          %th= game_t('admin.games.houses.reason')
+      %tbody
+        - @rows.each do |row|
+          - record = row.record
+          %tr
+            %td.bot-sheet-table__text.game-table__time= l(record.created_at.in_time_zone('Asia/Seoul'), format: '%m/%d %H:%M')
+            = render 'admin/game_shop_records/who', record: record
+            %td.bot-sheet-table__text
+              - if row.count.positive?
+                %span.game-badge.game-badge--win= game_t('admin.games.shop.records_ui.gain')
+              - else
+                %span.game-badge.game-badge--lose= game_t('admin.games.shop.records_ui.spend')
+            %td.bot-sheet-table__text
+              %span.game-badge= game_t("admin.games.shop.kinds.#{record.kind}", default: record.kind)
+            %td.bot-sheet-table__text
+              .game-shop__item-name
+                = render 'admin/game_characters/item_thumb', name: row.name, image: @item_images[Game::Wallet.key(row.name)]
+                %strong= row.name
+            %td.game-table__number= format('%+d', row.count)
+            %td.bot-sheet-table__text= [(record.reason.present? ? game_reward_reason(record.reason) : nil), (record.actor.present? ? "@#{record.actor}" : nil)].compact.join(' · ').presence || '—'
+        - if @rows.empty?
+          %tr
+            %td.bot-sheet-table__text{ colspan: 7 }= game_t('admin.games.shop.no_records')
+
+= paginate @rows

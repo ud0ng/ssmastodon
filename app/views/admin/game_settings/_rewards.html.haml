@@ -1,0 +1,28 @@
+-# 설정 탭 > 컨텐츠별 보상: 컨텐츠마다 승리·무승부·패배 돈, 승리 아이템 (예전에는 각 컨텐츠 화면의 '보상 설정')
+-# 점수 표처럼 한 표에 모으고, 아이템은 작은 카드(이미지만)로 칸 안에 넣는다
+-# local: kinds
+= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.rewards_table.title'), hint: game_t('admin.games.rewards_table.hint') } do
+  .bot-sheet-table.game-table.game-table--centered.game-reward-table
+    %table.table
+      %thead
+        %tr
+          %th= game_t('admin.games.points_table.content')
+          %th= game_t('admin.games.rewards_table.money_win')
+          %th= game_t('admin.games.rewards_table.money_draw')
+          %th= game_t('admin.games.rewards_table.money_lose')
+          %th= game_t('admin.games.rewards_table.items_win')
+      %tbody
+        - kinds.each do |kind|
+          - config = kind.config
+          - name = "rewards[#{kind.key}]"
+          %tr
+            %td.bot-sheet-table__text= kind.display_name
+            - %w(win draw lose).each do |outcome|
+              %td.game-table__number
+                = number_field_tag "#{name}[reward_money_#{outcome}]", config["reward_money_#{outcome}"], step: 1, min: 0, class: 'ui-input ui-input--number game-points__input',
+                                   'aria-label': "#{kind.display_name} #{game_t("admin.games.rewards_table.money_#{outcome}")}"
+            %td.game-reward-table__items
+              -# 숨은 글(줄마다 '아이템|개수|확률') ↔ 작은 카드 (game_config_editor.ts setupRewardPickers)
+              .game-field{ data: { game_field: 'items', default: '', field_label: "#{kind.display_name} #{game_t('admin.games.rewards_table.items_win')}" } }
+                = text_area_tag "#{name}[reward_items_win]", Array(config['reward_items_win']).join("\n"), id: "game_config_#{kind.key}_reward_items_win", rows: 2, style: 'display: none', class: 'ui-input ui-input--textarea', data: { reward_items: true }
+                = render 'admin/ui/item_picker', name: "reward_picker_#{kind.key}", options: @shop_items, chance: true, add_label: ''

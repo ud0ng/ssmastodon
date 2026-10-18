@@ -35,6 +35,13 @@ en:
         bonus_hint: "Top students in a class (A or better) get the bonus % on top of their grade points, plus these rewards."
         opener_hint: "Staff open a class by posting [%{command}/subject] from the system account (@%{system})."
       pick_account: Choose a member
+      rewards_table:
+        hint: 'Money and items given to players when a content ends. Money per result (win, draw, loss); items go to the winner. Leave the chance empty to always give it.'
+        items_win: Winner items
+        money_draw: Draw money
+        money_lose: Loss money
+        money_win: Win money
+        title: Rewards per content
       points_table:
         content: Content
         draw: Draw
@@ -150,6 +157,28 @@ en:
         name: Item
         pick: Choose an item
       shop:
+        menu: Shop settings
+        tabs:
+          commands: Commands
+          item_records: Item records
+          list: Shop list
+          records: Currency records
+          settings: Settings
+        currency_settings_hint: 'The currency name, attendance reward and post reward are in Content settings > Settings > Currency.'
+        records_ui:
+          character: Character
+          direction: Type
+          from: From
+          gain: Gained
+          house: House
+          item_hint: 'Records that add items are gains; records that remove them (use, discard, gift, sale) are spends. Using an item is a spend. Looks at the latest 3,000 records.'
+          money_hint: 'Records that add %{currency} are gains, records that remove it are spends.'
+          period: Period
+          search: Search
+          search_character: Search character name or account
+          search_item: Search item name
+          spend: Spent
+          to: To
         commands: "Commands"
         open: "Shop open"
         open_hint: "Open or close the shop. When closed, the shop menu and page disappear for users."

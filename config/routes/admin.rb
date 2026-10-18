@@ -97,7 +97,14 @@ namespace :admin do
     end
     patch :messages, on: :collection
   end
-  resources :game_shops, path: 'games/shops', only: [:index, :create, :update, :destroy] do
+  # 상점 설정 (관리 > 시스템 > 상점 설정): 설정 · 명령어 · 상점 목록 · 재화 기록 · 아이템 기록
+  get 'games/shops', to: redirect('/admin/shop/list')
+  get 'shop', to: redirect('/admin/shop/settings')
+  get 'shop/settings', to: 'game_shops#settings', as: :game_shop_settings
+  get 'shop/commands', to: 'game_shops#commands', as: :game_shop_commands
+  get 'shop/records', to: 'game_shop_records#money', as: :game_shop_money_records
+  get 'shop/item_records', to: 'game_shop_records#items', as: :game_shop_item_records
+  resources :game_shops, path: 'shop/list', only: [:index, :create, :update, :destroy] do
     patch :currency, on: :collection
   end
   resources :game_shop_items, path: 'games/shop_items', only: [:create, :update, :destroy]

@@ -33,6 +33,7 @@ export const addItemCard = (picker: HTMLElement, name: string, count = 1, chance
   if (thumb) card.querySelector('.ui-item-picker__thumb')?.replaceWith(thumb);
   const label = card.querySelector('.game-inventory__name');
   if (label) label.textContent = name;
+  card.title = name; // 이름은 마우스를 올리면 보인다 (표 안의 작은 카드는 이미지만 보인다)
   const hidden = card.querySelector<HTMLInputElement>('input[type="hidden"]');
   if (hidden) hidden.value = name;
   const countField = card.querySelector<HTMLInputElement>('.ui-item-picker__count');

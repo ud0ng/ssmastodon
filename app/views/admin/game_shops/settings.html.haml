@@ -1,0 +1,9 @@
+- content_for :page_title do
+  = game_t('admin.games.shop.menu')
+
+- content_for :heading do
+  = render 'admin/game_shops/heading'
+
+-# 설정: 상점 열기 (재화 이름·출석·툿 보상은 컨텐츠 설정 > 설정 > 재화 설정)
+= render 'admin/game_shops/currency_sections', groups: { 'shop_open' => 'open' }, return_to: admin_game_shop_settings_path
+%p.hint= game_t('admin.games.shop.currency_settings_hint')

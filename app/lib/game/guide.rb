@@ -46,7 +46,7 @@ module Game
         ],
         roles: [{ win: '정답 조합을 상대보다 먼저 맞히면 승리합니다. 아무도 못 맞히고 %{max_tries}라운드가 지나면 무승부입니다.' }],
         items: [
-          ['%{cmd_shield}', '이번 라운드에 공개되는 내 결과 중 하나를 상대에게 가립니다. (한 판에 %{shield_count}개)', 'shield'],
+          ['%{cmd_shield}', '이번 라운드에 공개되는 상대의 결과 중 하나를 가립니다. (한 판에 %{shield_count}개)', 'shield'],
           ['%{cmd_retry}', '이번 라운드에 재료를 한 번 더 조합할 수 있습니다. (한 판에 %{retry_count}개)', 'retry'],
         ],
         steps: ['[%{command}] @상대 로 신청', '라운드마다 DM 으로 [%{cmd_brew}] 재료 번호를 보냄', '아이템은 조합을 보내기 전에 [%{cmd_shield}] · [%{cmd_retry}] 로 사용'],

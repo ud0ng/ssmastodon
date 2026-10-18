@@ -1,4 +1,4 @@
--# 컨텐츠 설정 제목 + 탭 (설정 · 명령어 · 도움말 · 컨텐츠 · 상점). 컨텐츠별 화면은 컨텐츠 탭에서 들어간다.
+-# 컨텐츠 설정 제목 + 탭 (설정 · 명령어 · 도움말 · 컨텐츠). 상점은 상점 설정 메뉴로 옮겼다. 컨텐츠별 화면은 컨텐츠 탭에서 들어간다.
 -# save_form: 저장 버튼이 제출할 폼 id
 - content_keys = Game::Kinds.keys
 .content__heading__row
@@ -15,4 +15,3 @@
       primary.item :commands, safe_join([material_symbol('chat_bubble'), game_t('admin.games.tabs.commands')]), admin_game_setting_path('commands'), highlights_on: %r{/admin/games/commands}
       primary.item :help, safe_join([material_symbol('info'), game_t('admin.games.tabs.help')]), admin_game_setting_path('help'), highlights_on: %r{/admin/games/help}
       primary.item :overview, safe_join([material_symbol('list'), game_t('admin.games.tabs.contents')]), admin_game_settings_path, highlights_on: %r{/admin/games\z|/admin/games/(#{content_keys.join('|')})\z}
-      primary.item :shop, safe_join([material_symbol('inventory_2'), game_t('admin.games.shop.title')]), admin_game_shops_path, highlights_on: %r{/admin/games/shops}

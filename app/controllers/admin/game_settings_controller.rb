@@ -30,7 +30,7 @@ module Admin
         @scoring_mode = @values['scoring_mode']
       elsif kind
         # 컨텐츠 화면에서는 점수 칸을 빼고 설정 탭의 표에서만 고친다
-        @sections = @sections.reject { |section, _| section == 'points' }
+        @sections = @sections.reject { |section, _| %w(points rewards).include?(section) }
       end
     end
 
@@ -38,7 +38,10 @@ module Admin
       authorize :settings, :update?
 
       Game::Config.update!(@key, params.fetch(:config, {}).permit!.to_h)
-      update_points! if @page == 'settings'
+      if @page == 'settings'
+        update_points!
+        update_rewards!
+      end
       flash[:notice] = t('generic.changes_saved_msg')
       redirect_to admin_game_setting_path(params[:id])
     end
@@ -52,6 +55,16 @@ module Admin
         next if kind.nil?
 
         Game::Config.merge!(key, %w(win draw lose).to_h { |outcome| ["points_#{outcome}", [values[outcome].to_i, 0].max] })
+      end
+    end
+
+    # 설정 탭의 컨텐츠별 보상: rewards[컨텐츠][reward_money_win|draw|lose, reward_items_win]
+    def update_rewards!
+      params.fetch(:rewards, {}).permit!.to_h.each do |key, values|
+        kind = Game::Kinds.registry[key]
+        next if kind.nil?
+
+        Game::Config.update!(key, values.slice('reward_money_win', 'reward_money_draw', 'reward_money_lose', 'reward_items_win'))
       end
     end
 

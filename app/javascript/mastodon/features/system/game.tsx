@@ -25,6 +25,8 @@ const messages = defineMessages({
   win: { id: 'system.result.win', defaultMessage: 'Win' },
   draw: { id: 'system.result.draw', defaultMessage: 'Draw' },
   lose: { id: 'system.result.lose', defaultMessage: 'Loss' },
+  limitTitle: { id: 'system.game.limit_title', defaultMessage: 'You cannot start this right now' },
+  limitConfirm: { id: 'system.game.limit_confirm', defaultMessage: 'OK' },
   deleteRoom: { id: 'system.game.delete_room', defaultMessage: 'Delete this record' },
   deleteTitle: { id: 'system.game.delete_title', defaultMessage: 'Delete this game?' },
   deleteMessage: { id: 'system.game.delete_message', defaultMessage: 'The record and every related mention and message will be deleted. This cannot be undone.' },
@@ -50,6 +52,7 @@ interface GameInfo {
   can_open?: boolean;
   // 운영진: 끝난 판 기록을 지울 수 있다
   staff?: boolean;
+  daily_limit_message?: string | null;
   enabled: boolean;
   system_acct: string;
   command: string | null;
@@ -84,6 +87,7 @@ const RULE_LABELS: Record<string, React.ReactNode> = {
 // [시작하기]: 상대 고르기 모달. 서버 이벤트는 바로 열기, 내가 하는 방이 있으면 그 방으로.
 // 동시 진행을 막았는데 다른 컨텐츠를 하고 있으면 신청하지 않고 바로 안내 (onBusy)
 const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => void }> = ({ game, onSent, onBusy }) => {
+  const intl = useIntl();
   const dispatch = useAppDispatch();
   const history = useHistory();
   const [busy, setBusy] = useState(false);
@@ -94,8 +98,20 @@ const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => 
       onBusy();
       return;
     }
+    if (game.daily_limit_message) {
+      dispatch(openModal({
+        modalType: 'CONFIRM',
+        modalProps: {
+          title: intl.formatMessage(messages.limitTitle),
+          message: game.daily_limit_message,
+          confirm: intl.formatMessage(messages.limitConfirm),
+          onConfirm: () => undefined,
+        },
+      }));
+      return;
+    }
     dispatch(openModal({ modalType: 'CHALLENGE', modalProps: { gameKey: game.key, name: game.name, maxOpponents: game.max_opponents, minOpponents: game.min_opponents ?? 1, team: (game.team ?? false) || (game.uneven_teams ?? false), unevenTeams: game.uneven_teams ?? false } }));
-  }, [dispatch, game.key, game.name, game.max_opponents, game.min_opponents, game.team, game.uneven_teams, game.busy, onBusy]);
+  }, [dispatch, intl, game.key, game.name, game.max_opponents, game.min_opponents, game.team, game.uneven_teams, game.daily_limit_message, game.busy, onBusy]);
 
   const openEvent = useCallback((join = false) => {
     if (game.busy) {
