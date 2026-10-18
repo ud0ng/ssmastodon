@@ -33,10 +33,16 @@ class GameCharacterField < ApplicationRecord
   scope :base_stats, -> { stats.where(stat_type: 'stat') }
   scope :statuses, -> { stats.where(stat_type: 'status') }
 
-  def self.ensure_defaults!
-    return if stats.exists?
+  # 기본 스탯을 넣었다는 표시 (GameConfig 한 줄). 한 번 넣었으면 운영진이 다 지워도 다시 넣지 않는다.
+  SEEDED_KEY = 'stats_seeded'
 
-    DEFAULTS.each_with_index { |attributes, index| create!(attributes.merge(position: index)) }
+  def self.ensure_defaults!
+    return if GameConfig.exists?(key: SEEDED_KEY)
+
+    DEFAULTS.each_with_index { |attributes, index| create!(attributes.merge(position: index)) } unless stats.exists?
+    GameConfig.create!(key: SEEDED_KEY, data: { 'seeded' => true })
+  rescue ActiveRecord::RecordNotUnique
+    nil
   end
 
   def stat?

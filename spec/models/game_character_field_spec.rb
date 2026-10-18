@@ -11,6 +11,15 @@ RSpec.describe GameCharacterField do
     expect(described_class.statuses.pluck(:name)).to eq %w(체력)
   end
 
+  it 'does not bring the default stats back after the staff deleted them all' do
+    described_class.ensure_defaults!
+    described_class.unscoped.delete_all
+
+    described_class.ensure_defaults!
+
+    expect(described_class.count).to eq 0
+  end
+
   describe 'status values' do
     before { described_class.ensure_defaults! }
 
