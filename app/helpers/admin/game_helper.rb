@@ -22,6 +22,11 @@ module Admin::GameHelper
     text.gsub(EMOJI, '').squeeze(' ').strip
   end
 
+  # '툿 수 / 글자 수' 를 한 칸에
+  def game_pair(count, chars)
+    safe_join([number_with_delimiter(count), content_tag(:span, ' / ', class: 'game-pair__sep'), number_with_delimiter(chars)])
+  end
+
   # 눌러서 정렬하는 표 머리: 같은 칸을 다시 누르면 오름차순 ↔ 내림차순
   def game_sort_header(label, key, column, direction)
     active = column == key

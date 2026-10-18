@@ -43,9 +43,9 @@
           %td.bot-sheet-table__text{ colspan: column_count }= game_t('admin.games.manage.roster.empty')
       - @characters.each do |character|
         - stat_values = @base_stats.to_h { |stat| [stat.name, character.stat_value(stat)] }
-        %tr.game-table__row{ data: { href: edit_admin_game_character_path(character, filter_params) } }
+        %tr.game-table__row{ data: { href: admin_game_records_path(character: character.account_id) } }
           %td.bot-sheet-table__text.game-table__name-cell
-            = link_to edit_admin_game_character_path(character, filter_params), class: 'game-table__name' do
+            = link_to admin_game_records_path(character: character.account_id), class: 'game-table__name' do
               = image_tag full_asset_url(character.account.avatar_static_url), alt: '', class: 'game-table__avatar'
               %span.game-who
                 %strong= character.display_name

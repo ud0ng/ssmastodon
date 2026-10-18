@@ -4,7 +4,7 @@
 - content_for :heading do
   = render 'admin/game_characters/heading'
 
--# 전체 툿(퍼블+답, DM 제외)·글자 수 / DM 툿·글자 수 / 답 횟수 / 미디어 툿 수 / 재화. 머리를 누르면 정렬, 줄을 누르면 그 캐릭터의 컨텐츠 기록. 목록 위 [지급]
+-# 전체 툿 / DM 툿 / 퍼블 툿 / 답 툿 (툿 수 / 글자 수) · 답 횟수 · 미디어 · 재화. 머리를 누르면 정렬, 줄을 누르면 그 캐릭터의 활동 기록. 목록 위 [지급]
 - give = button_tag safe_join([material_symbol('celebration'), game_t('admin.games.activity.give')]), type: :button, class: 'button', data: { modal_open: 'activity-give' }
 = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.manage.tabs.activity'), hint: game_t('admin.games.activity.hint'), actions: give } do
   .bot-sheet-table.game-table.game-table--scroll
@@ -13,40 +13,33 @@
         %tr
           %th= game_sort_header(game_t('admin.games.manage.roster.name'), 'name', sort_column, sort_direction)
           %th.game-table__number= game_sort_header(game_t('admin.games.activity.all_posts'), 'posts', sort_column, sort_direction)
-          %th.game-table__number= game_sort_header(game_t('admin.games.activity.all_chars'), 'chars', sort_column, sort_direction)
           %th.game-table__number= game_sort_header(game_t('admin.games.activity.dm_posts'), 'dms', sort_column, sort_direction)
-          %th.game-table__number= game_sort_header(game_t('admin.games.activity.dm_chars'), 'dm_chars', sort_column, sort_direction)
+          %th.game-table__number= game_sort_header(game_t('admin.games.activity.posts'), 'public_posts', sort_column, sort_direction)
+          %th.game-table__number= game_sort_header(game_t('admin.games.activity.replies'), 'reply_posts', sort_column, sort_direction)
           %th.game-table__number= game_sort_header(game_t('admin.games.activity.reply_count'), 'replies', sort_column, sort_direction)
           %th.game-table__number= game_sort_header(game_t('admin.games.activity.media'), 'media', sort_column, sort_direction)
-          %th.game-table__number= game_sort_header(game_t('admin.games.activity.posts'), 'public_posts', sort_column, sort_direction)
-          %th.game-table__number= game_sort_header(game_t('admin.games.activity.post_chars'), 'public_chars', sort_column, sort_direction)
-          %th.game-table__number= game_sort_header(game_t('admin.games.activity.replies'), 'reply_posts', sort_column, sort_direction)
-          %th.game-table__number= game_sort_header(game_t('admin.games.activity.reply_chars'), 'reply_chars', sort_column, sort_direction)
           %th.game-table__number= game_sort_header(@currency, 'money', sort_column, sort_direction)
       %tbody
         - @characters.each do |character|
           - stats = @activity[character.account_id]
-          %tr.game-table__row{ data: { href: admin_game_records_path(character: character.account_id) } }
+          - old = @stats[character.account_id]
+          %tr.game-table__row{ data: { href: admin_game_activity_logs_path(character: character.account_id) } }
             %td.bot-sheet-table__text.game-table__name-cell
-              = link_to admin_game_records_path(character: character.account_id), class: 'game-table__name' do
+              = link_to admin_game_activity_logs_path(character: character.account_id), class: 'game-table__name' do
                 = image_tag full_asset_url(character.account.avatar_static_url), alt: '', class: 'game-table__avatar'
                 %span.game-who
                   %strong= character.display_name
                   %small.hint= "@#{character.account.username}"
-            %td.game-table__number= number_with_delimiter(stats.posts)
-            %td.game-table__number= number_with_delimiter(stats.chars)
-            %td.game-table__number= number_with_delimiter(stats.dms)
-            %td.game-table__number= number_with_delimiter(stats.dm_chars)
+            -# 툿 칸은 '툿 수 / 글자 수' 를 한 칸에
+            %td.game-table__number.game-table__pair= game_pair(stats.posts, stats.chars)
+            %td.game-table__number.game-table__pair= game_pair(stats.dms, stats.dm_chars)
+            %td.game-table__number.game-table__pair= game_pair(old.posts, old.post_chars)
+            %td.game-table__number.game-table__pair= game_pair(old.replies, old.reply_chars)
             %td.game-table__number= number_with_delimiter(stats.replies)
             %td.game-table__number= number_with_delimiter(stats.media)
-            - old = @stats[character.account_id]
-            %td.game-table__number= number_with_delimiter(old.posts)
-            %td.game-table__number= number_with_delimiter(old.post_chars)
-            %td.game-table__number= number_with_delimiter(old.replies)
-            %td.game-table__number= number_with_delimiter(old.reply_chars)
             %td.game-table__number= number_with_delimiter(character.money)
         - if @characters.empty?
           %tr
-            %td.bot-sheet-table__text{ colspan: 12 }= game_t('admin.games.manage.roster.empty')
+            %td.bot-sheet-table__text{ colspan: 8 }= game_t('admin.games.manage.roster.empty')
 
 = render 'admin/game_activities/give_modal', return_to: admin_game_activities_path

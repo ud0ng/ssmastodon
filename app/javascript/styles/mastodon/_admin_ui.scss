@@ -984,3 +984,29 @@ textarea.ui-input {
   max-width: 420px;
   word-break: break-word;
 }
+
+// 활동 표: '툿 수 / 글자 수' 한 칸
+.game-pair__sep {
+  color: var(--ct-dim, #9aa0a6);
+}
+
+.game-table__pair {
+  white-space: nowrap;
+}
+
+// 활동 기록 > 캐릭터 하나를 골랐을 때의 답 툿 요약 카드
+.game-summary {
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--background-border-color, rgb(127 127 127 / 30%));
+  border-radius: 12px;
+
+  &__title {
+    margin: 0 0 4px;
+    font-size: 15px;
+  }
+
+  &__row--zero td {
+    opacity: 0.45;
+  }
+}
