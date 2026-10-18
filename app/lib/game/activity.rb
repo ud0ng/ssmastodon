@@ -85,9 +85,14 @@ module Game
       end
       if paid.positive?
         Game::Wallet.apply!([{ account: account, money: paid }], kind: 'toot',
-                                                                  detail: I18n.t('admin.games.activity.toot_reward_detail', units: units * rule[:every], basis: I18n.t("admin.games.activity.basis.#{rule[:basis]}")))
+                                                                  detail: reward_detail(units * rule[:every], rule[:basis]))
       end
       paid
+    end
+
+    # 재화 내역에 남기는 말 (워커 언어와 상관없이 한글): 툿 보상 (100자) / 툿 보상 (100툿)
+    def reward_detail(amount, basis)
+      "툿 보상 (#{amount}#{basis == 'chars' ? '자' : '툿'})"
     end
   end
 end

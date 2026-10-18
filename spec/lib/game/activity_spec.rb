@@ -46,6 +46,20 @@ RSpec.describe Game::Activity do
       expect(GameReward.where(account: account, kind: 'toot').count).to eq 2
     end
 
+    it 'writes the reason in Korean with the unit of the reward basis' do
+      parent = Fabricate(:status, account: other)
+      described_class.reward!(account)
+      2.times { toot('답글', reply_to: parent) }
+      described_class.reward!(account)
+      expect(GameReward.where(account: account, kind: 'toot').last.reason).to eq '툿 보상 (2툿)'
+
+      Game::Config.merge!('common', 'toot_reward_basis' => 'chars', 'toot_reward_every' => '3')
+      described_class.reward!(account)
+      toot('여섯글자입니다', reply_to: parent)
+      described_class.reward!(account)
+      expect(GameReward.where(account: account, kind: 'toot').last.reason).to match(/A툿 보상 (d+자)z/)
+    end
+
     it 'is checked by a worker whenever a toot is saved' do
       expect { toot('하나') }.to change(Game::ActivityWorker.jobs, :size).by(1)
       expect { toot('비밀', visibility: :direct) }.to_not change(Game::ActivityWorker.jobs, :size)
