@@ -668,3 +668,38 @@ textarea.ui-input {
   font-size: 12px;
   white-space: nowrap;
 }
+
+// 캐릭터 상세 머리: 아바타 | 이름(아이디) | 소속 배지를 한 줄로, 전적 카드 아래 컨텐츠 기록 링크
+.game-detail__identity--inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+
+  h3 {
+    margin: 0;
+  }
+}
+
+.game-detail__record-link {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.game-detail__grid--single {
+  grid-template-columns: 1fr;
+}
+
+// 컨텐츠 기록: 상대 캐릭터(아바타 + 이름, 눌러서 상세 화면)
+.game-records__people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.game-records__person {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}

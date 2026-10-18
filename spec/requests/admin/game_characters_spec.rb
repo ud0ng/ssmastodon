@@ -112,16 +112,6 @@ RSpec.describe 'Admin character roster' do
     end
   end
 
-  it 'sets a faction for several characters at once and clears it again' do
-    other = GameCharacter.for(Fabricate(:account))
-
-    patch bulk_admin_game_characters_path, params: { ids: [character.id, other.id], target: "faction:#{eaters.id}" }
-    expect([character, other].map { |item| item.reload.faction }).to eq [eaters] * 2
-
-    patch bulk_admin_game_characters_path, params: { ids: [character.id], target: 'faction:none' }
-    expect(character.reload.faction).to be_nil
-  end
-
   it 'switches the scoring unit to factions without touching house points' do
     gryffindor = GameHouse.houses.first
     character.update!(house: gryffindor, faction: order)

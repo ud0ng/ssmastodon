@@ -5,7 +5,6 @@ module Admin
   # 캐릭터를 눌러 상세 화면(소속·스탯·메모·전적)에서 고친다. 재화·인벤토리는 활동 탭.
   class GameCharactersController < BaseController
     PER_PAGE = 100
-    RECENT_GAMES = 10
 
     helper_method :filter_params
 
@@ -38,24 +37,6 @@ module Admin
       head :unprocessable_entity
     end
 
-    # 고른 캐릭터들의 기숙사·진영을 한꺼번에 바꾼다
-    #   target: 'house:<id>' / 'house:none' / 'faction:<id>' / 'faction:none'
-    def bulk
-      authorize :settings, :update?
-
-      ids = Array(params[:ids]).compact_blank
-      kind, id = params[:target].to_s.split(':', 2)
-      characters = GameCharacter.where(id: ids)
-      if ids.any? && kind == 'house'
-        house = id == 'none' ? nil : GameHouse.houses.find(id)
-        characters.find_each { |character| character.update!(house: house) }
-      elsif ids.any? && kind == 'faction'
-        faction = id == 'none' ? nil : GameHouse.factions.find(id)
-        characters.find_each { |character| character.update!(faction: faction) }
-      end
-      redirect_to admin_game_characters_path(filter_params), notice: t('generic.changes_saved_msg')
-    end
-
     # 상세 화면
     def edit
       authorize :settings, :show?
@@ -71,7 +52,7 @@ module Admin
       @character = GameCharacter.find(params[:id])
       prepare_form
       @character.assign_attributes(character_params.slice(:name, :game_house_id, :game_faction_id, :note))
-      @character.stats = stat_values
+      @character.stats = stat_values if GameCharacterField.stats.exists? # 스탯이 하나도 없으면 화면에 칸이 없으니 저장된 값을 그대로 둔다
       if @character.save
         redirect_to edit_admin_game_character_path(@character, filter_params), notice: t('generic.changes_saved_msg')
       else
@@ -137,7 +118,6 @@ module Admin
       load_columns
       finished = GamePlayer.joins(:session).where(account_id: @character.account_id, game_sessions: { status: 'finished' })
       @record = finished.group(:result).count
-      @games = finished.includes(session: { players: :account }).order('game_sessions.finished_at DESC NULLS LAST, game_sessions.id DESC').limit(RECENT_GAMES)
     end
 
     def filter_params

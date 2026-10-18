@@ -33,6 +33,17 @@ ko:
         bonus_hint: "수업에서 등수가 높은 사람(A 이상)은 등급 점수에 보너스 %를 더하고, 아래 재화·아이템을 더 받습니다."
         opener_hint: "수업은 운영진이 시스템 계정(@%{system})으로 직접 [%{command}/과목] 툿을 쓰면 열립니다."
       pick_account: 회원 고르기
+      records:
+        character: 캐릭터
+        empty: 끝난 컨텐츠 기록이 없습니다.
+        hint: '끝난 컨텐츠를 캐릭터마다 한 줄씩 보여 줍니다. 상대 캐릭터를 누르면 그 캐릭터의 상세 화면으로 갑니다.'
+        kind: 종류
+        opponent: 상대 캐릭터
+        result: 결과
+        tab: 컨텐츠 기록
+        title: 컨텐츠 기록
+        title_for: '%{name}의 컨텐츠 기록'
+        view_record: 컨텐츠 기록 보기
       rewards_table:
         hint: '컨텐츠가 끝났을 때 참가자에게 주는 돈과 아이템입니다. 돈은 결과(승리·무승부·패배)마다, 아이템은 이긴 사람에게 줍니다. 아이템의 확률을 비우면 반드시 줍니다.'
         items_win: 승리 아이템
@@ -422,7 +433,7 @@ ko:
           no_stats: 스탯이 아직 없습니다. 스탯 탭에서 만들어 주세요.
           effects: '일시 효과:'
           opponents: 함께한 사람
-          profile: 소속
+          profile: 기본 정보
           range: '%{min} ~ %{max}'
           reason: 사유
           record: 전적

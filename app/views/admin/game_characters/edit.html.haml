@@ -7,43 +7,35 @@
 - none = game_t('admin.games.manage.none')
 - account = @character.account
 - win, lose, draw = @record['win'].to_i, @record['lose'].to_i, @record['draw'].to_i
-- seoul = ActiveSupport::TimeZone['Asia/Seoul']
 
--# 머리: 왼쪽 아바타 | 이름 (아이디) + 소속 배지, 오른쪽 전적 카드
+-# 머리: 아바타 | 이름 (아이디) | 소속 배지 — 한 줄. 오른쪽 전적 카드와 컨텐츠 기록 링크
 .game-detail__head
-  .game-detail__identity
+  .game-detail__identity.game-detail__identity--inline
     = image_tag full_asset_url(account.avatar_static_url), alt: '', class: 'game-detail__avatar'
-    .game-detail__who
-      %h3
-        = @character.display_name
-        = link_to "(@#{account.username})", admin_account_path(account.id), class: 'game-detail__acct'
-      .game-detail__badges
-        - [@character.house, @character.faction].compact.each do |group|
-          %span.game-badge{ style: "--badge: #{group.color.presence || '#6b5b3e'}" }= group.name
+    %h3
+      = @character.display_name
+      = link_to "(@#{account.username})", admin_account_path(account.id), class: 'game-detail__acct'
+    - [@character.house, @character.faction].compact.each do |group|
+      %span.game-badge{ style: "--badge: #{group.color.presence || '#6b5b3e'}" }= group.name
   .game-detail__record
     %small= game_t('admin.games.manage.detail.record')
     %strong= game_t('admin.games.manage.detail.record_summary', win: win, lose: lose, draw: draw)
+    = link_to game_t('admin.games.records.view_record'), admin_game_records_path(character: @character.account_id), class: 'game-detail__record-link'
 
 = simple_form_for @character, url: admin_game_character_path(@character, filter_params), method: :patch, html: { class: 'game-detail' } do |f|
   = render 'shared/error_messages', object: @character
 
-  -# 소속 | 스탯
-  .game-detail__grid
+  -# 이름 | 스탯 (스탯이 하나도 없으면 스탯 칸은 보이지 않는다)
+  - stats_defined = @base_stats.any? || @statuses.any?
+  .game-detail__grid{ class: ('game-detail__grid--single' unless stats_defined) }
     %section.game-card
       %h4= game_t('admin.games.manage.detail.profile')
       = render 'admin/ui/field', label: game_t('admin.games.characters.name'), name: 'game_character[name]', id: 'game_character_name', value: @character.name, wide: true,
                                  placeholder: account.display_name.presence || account.username, hint: game_t('admin.games.characters.name_hint')
-      = render layout: 'admin/ui/fields', locals: { columns: 2 } do
-        = render 'admin/ui/field', label: @labels['house_label'], name: 'game_character[game_house_id]', id: 'game_character_game_house_id', value: @character.game_house_id, type: :select,
-                                   options: @houses.map { |house| [house.name, house.id] }, include_blank: none
-        = render 'admin/ui/field', label: @labels['faction_label'], name: 'game_character[game_faction_id]', id: 'game_character_game_faction_id', value: @character.game_faction_id, type: :select,
-                                   options: @factions.map { |faction| [faction.name, faction.id] }, include_blank: none
 
-    %section.game-card
-      %h4= game_t('admin.games.manage.detail.stats')
-      - if @base_stats.empty? && @statuses.empty?
-        %p.hint= game_t('admin.games.manage.detail.no_stats')
-      - else
+    - if stats_defined
+      %section.game-card
+        %h4= game_t('admin.games.manage.detail.stats')
         = render layout: 'admin/ui/fields' do
           - @base_stats.each do |stat|
             = render 'admin/ui/field', label: stat.name, name: "game_character[stat_values][#{stat.name}]", id: "stat_#{stat.id}", value: @character.raw_stat_value(stat), type: :number,
@@ -63,22 +55,6 @@
   -# 메모 (한 줄)
   %section.game-card.game-detail__memo
     = render 'admin/ui/field', label: game_t('admin.games.manage.detail.memo'), name: 'game_character[note]', id: 'game_character_note', value: @character.note, wide: true, html: { maxlength: 2000 }
-
-  -# 전적 기록: 한 판에 한 줄
-  %section.game-card
-    %h4= game_t('admin.games.manage.detail.games')
-    - if @games.any?
-      %ul.game-detail__games
-        - @games.each do |player|
-          - session = player.session
-          - others = session.players.reject { |other| other.account_id == player.account_id }
-          %li
-            %span.game-detail__games-when= l((session.finished_at || session.updated_at).in_time_zone(seoul), format: :short)
-            %span.game-detail__games-what= game_reward_reason(session.kind)
-            %span.game-detail__games-with= others.any? ? game_t('admin.games.manage.detail.with', names: others.map(&:name).join(', ')) : ''
-            %span.game-badge{ class: "game-badge--#{player.result || 'none'}" }= game_t("admin.games.manage.detail.results.#{player.result || 'none'}")
-    - else
-      %p.hint= game_t('admin.games.manage.detail.no_games')
 
   .actions.game-detail__actions
     = button_tag t('generic.save_changes'), type: :submit, class: 'button'

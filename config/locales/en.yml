@@ -35,6 +35,17 @@ en:
         bonus_hint: "Top students in a class (A or better) get the bonus % on top of their grade points, plus these rewards."
         opener_hint: "Staff open a class by posting [%{command}/subject] from the system account (@%{system})."
       pick_account: Choose a member
+      records:
+        character: Character
+        empty: No finished games yet.
+        hint: 'Finished games, one line per character. Click an opponent to open their detail page.'
+        kind: Content
+        opponent: Opponent
+        result: Result
+        tab: Game records
+        title: Game records
+        title_for: 'Game records of %{name}'
+        view_record: View game records
       rewards_table:
         hint: 'Money and items given to players when a content ends. Money per result (win, draw, loss); items go to the winner. Leave the chance empty to always give it.'
         items_win: Winner items
@@ -424,7 +435,7 @@ en:
           no_stats: There are no stats yet. Create them in the Stats tab.
           effects: 'Temporary effects:'
           opponents: With
-          profile: Groups
+          profile: Basic info
           range: "%{min} – %{max}"
           reason: Reason
           record: Record

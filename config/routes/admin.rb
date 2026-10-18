@@ -123,8 +123,8 @@ namespace :admin do
     post :give, on: :collection
   end
   resources :game_character_stats, path: 'characters/stats', only: [:index, :create, :update, :destroy]
+  get 'characters/records', to: 'game_records#index', as: :game_records
   resources :game_characters, path: 'characters', only: [:index, :edit, :update] do
-    patch :bulk, on: :collection
     # 상세 > 인벤토리 카드: 아이템 더하기·고치기·지우기 (index = 인벤토리 안 순서)
     member do
       patch :group, action: :assign_group

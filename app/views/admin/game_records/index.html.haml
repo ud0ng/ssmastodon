@@ -1,0 +1,58 @@
+- content_for :page_title do
+  = game_t('admin.games.records.title')
+
+- content_for :heading do
+  = render 'admin/game_characters/heading'
+
+-# 검색: 캐릭터 · 종류 · 결과 (캐릭터 칸을 누르면 목록이 드롭다운으로 뜬다)
+= form_tag admin_game_records_path, method: :get, class: 'simple_form game-table__filter' do
+  .filters
+    .filter-subset.filter-subset--with-select
+      %strong= game_t('admin.games.records.kind')
+      .input.select.optional
+        = select_tag :kind, options_for_select([[game_t('admin.games.manage.roster.all'), '']] + @kinds.map { |kind| [kind.display_name, kind.key] }, params[:kind])
+    .filter-subset.filter-subset--with-select
+      %strong= game_t('admin.games.records.result')
+      .input.select.optional
+        = select_tag :result, options_for_select([[game_t('admin.games.manage.roster.all'), '']] + Admin::GameRecordsController::RESULTS.map { |result| [game_t("admin.games.manage.detail.results.#{result}"), result] }, params[:result])
+  .game-table__search
+    = text_field_tag :q, params[:q].presence || @single&.display_name, class: 'ui-input', list: 'record-characters', autocomplete: 'off', placeholder: game_t('admin.games.shop.records_ui.search_character'), 'aria-label': game_t('admin.games.shop.records_ui.search_character')
+    %datalist#record-characters
+      - @characters.each do |character|
+        %option{ value: character.display_name, label: "@#{character.account.username}" }
+    = button_tag game_t('admin.games.shop.records_ui.search'), type: :submit, class: 'button'
+
+- title = @single ? game_t('admin.games.records.title_for', name: @single.display_name) : game_t('admin.games.records.title')
+= render layout: 'admin/ui/section', locals: { title: title, hint: game_t('admin.games.records.hint') } do
+  .bot-sheet-table.game-table
+    %table.table
+      %thead
+        %tr
+          %th= game_t('admin.games.houses.when')
+          - unless @single
+            %th= game_t('admin.games.records.character')
+          %th= game_t('admin.games.records.opponent')
+          %th= game_t('admin.games.records.kind')
+          %th= game_t('admin.games.records.result')
+      %tbody
+        - @players.each do |player|
+          - session = player.session
+          - others = session.players.reject { |other| other.account_id == player.account_id }
+          %tr
+            %td.bot-sheet-table__text.game-table__time= l((session.finished_at || session.updated_at).in_time_zone('Asia/Seoul'), format: '%m/%d %H:%M')
+            - unless @single
+              %td.bot-sheet-table__text= render 'admin/game_records/person', account: player.account, character: @characters_by_account[player.account_id]
+            %td.bot-sheet-table__text
+              .game-records__people
+                - others.each do |other|
+                  = render 'admin/game_records/person', account: other.account, character: @characters_by_account[other.account_id]
+                - if others.empty?
+                  —
+            %td.bot-sheet-table__text= session.kind_class&.display_name || session.kind
+            %td.bot-sheet-table__text
+              %span.game-badge{ class: "game-badge--#{player.result || 'none'}" }= game_t("admin.games.manage.detail.results.#{player.result || 'none'}")
+        - if @players.empty?
+          %tr
+            %td.bot-sheet-table__text{ colspan: @single ? 4 : 5 }= game_t('admin.games.records.empty')
+
+= paginate @players
