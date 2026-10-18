@@ -153,6 +153,8 @@ module Game
       # 소속·점수 (캐릭터 관리 > 소속에서 고친다)
       Field.new(key: 'group_mode', type: :select, default: 'house', group: 'groups',
                 choices: [['house', '기숙사'], ['faction', '진영']], label: '점수 기준 소속'),
+      Field.new(key: 'rank_effects', type: :boolean, default: true, group: 'groups', label: '순위 효과',
+                hint: '글쓰기 패널 아래 소속 점수 카드에서 1등 소속은 반짝이고 꼴등 소속은 똥 효과가 나옵니다'),
       Field.new(key: 'scoring_mode', type: :select, default: 'points', group: 'groups',
                 choices: [['points', '점수제'], ['games', '판수제']], label: '점수 방식',
                 hint: '점수제: 컨텐츠마다 정한 승·무·패 점수의 총합으로 승부 / 판수제: 컨텐츠를 승리한 판 수로 승부'),

@@ -19780,3 +19780,342 @@ body.app-body.layout-game-room.layout-single-column {
 .item-modal__house {
   width: 100%;
 }
+
+// ── 소속 점수 카드의 1등(반짝반짝 블링블링)·꼴등(똥) 효과 (compose/components/house_points.tsx) ──
+.house-points__item {
+  position: relative;
+  isolation: isolate;
+}
+
+.house-points__name,
+.house-points__value {
+  position: relative;
+  z-index: 2;
+}
+
+.house-points__fx {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+// 1등: 금빛 바탕이 흐르듯 반짝이고, 테두리가 빛나고, 별빛이 깜빡이고, 빛줄기가 지나가고, 왕관이 통통 뛴다
+.compose-panel .house-points__item--first,
+.house-points__item--first {
+  background: linear-gradient(115deg, #fff3b8, #ffd84d 25%, #fffbe0 45%, #ffc933 65%, #fff1a0) 0 0 / 300% 100%;
+  box-shadow: inset 0 0 16px rgb(255 214 64 / 80%), 0 0 12px rgb(255 200 40 / 60%);
+  animation: hp-gold-flow 3.2s linear infinite, hp-gold-glow 1.4s ease-in-out infinite alternate;
+
+  .house-points__name {
+    color: #8a5a00 !important;
+    text-shadow: 0 0 6px rgb(255 255 255 / 90%);
+  }
+
+  .house-points__value strong {
+    background: linear-gradient(90deg, #6e4300, #b87d00, #8a5600, #d19a00, #6e4300) 0 0 / 250% 100%;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 3px rgb(255 214 64 / 90%));
+    animation: hp-text-shine 1.8s linear infinite;
+    -webkit-background-clip: text;
+  }
+}
+
+.house-points__fx--gold {
+  .fx-glint {
+    position: absolute;
+    inset: -20% 0;
+    background: linear-gradient(105deg, transparent 38%, rgb(255 255 255 / 85%) 50%, transparent 62%);
+    transform: translateX(-120%);
+    animation: hp-glint 2.6s ease-in-out infinite;
+  }
+
+  .fx-spark {
+    position: absolute;
+    top: var(--y);
+    left: var(--x);
+    color: #fff;
+    font-size: var(--s);
+    line-height: 1;
+    text-shadow: 0 0 6px #ffd740, 0 0 12px #ffb300;
+    opacity: 0;
+    animation: hp-twinkle var(--d) ease-in-out infinite;
+    animation-delay: var(--delay);
+  }
+
+  .fx-crown {
+    position: absolute;
+    top: -3px;
+    left: 50%;
+    font-size: 13px;
+    line-height: 1;
+    transform: translateX(-50%);
+    filter: drop-shadow(0 0 4px #ffc400);
+    animation: hp-crown 1.2s ease-in-out infinite;
+  }
+}
+
+// 꼴등: 갈색 바탕이 출렁이고, 똥이 떠오르고, 파리가 빙빙 돌고, 냄새가 피어오르고, 글자가 덜덜 떨린다
+.compose-panel .house-points__item--last,
+.house-points__item--last {
+  background: linear-gradient(180deg, rgb(120 78 34 / 28%), rgb(86 54 22 / 48%)) 0 0 / 100% 200%;
+  animation: hp-sludge 2.4s ease-in-out infinite alternate;
+
+  .house-points__name {
+    color: #7a4a1d !important;
+  }
+
+  .house-points__value strong {
+    color: #6b3f17;
+    animation: hp-tremble 0.35s linear infinite;
+  }
+
+  .house-points__value {
+    animation: hp-slump 2.2s ease-in-out infinite;
+  }
+}
+
+.house-points__fx--poop {
+  .fx-drip {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 14px;
+    background:
+      radial-gradient(circle at 12% 0, #6b3f17 5px, transparent 6px),
+      radial-gradient(circle at 38% 0, #5a3512 7px, transparent 8px),
+      radial-gradient(circle at 64% 0, #6b3f17 5px, transparent 6px),
+      radial-gradient(circle at 88% 0, #5a3512 6px, transparent 7px);
+    animation: hp-drip 2.8s ease-in-out infinite;
+  }
+
+  .fx-poop {
+    position: absolute;
+    bottom: -14px;
+    left: var(--x);
+    font-size: var(--s);
+    line-height: 1;
+    opacity: 0;
+    animation: hp-poop-rise var(--d) ease-in infinite;
+    animation-delay: var(--delay);
+  }
+
+  .fx-fly {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    font-size: var(--s);
+    line-height: 1;
+    animation: hp-fly var(--d) linear infinite;
+    animation-delay: var(--delay);
+  }
+
+  .fx-stink {
+    position: absolute;
+    bottom: 2px;
+    left: var(--x);
+    color: #7cb342;
+    font-size: var(--s);
+    line-height: 1;
+    opacity: 0;
+    animation: hp-stink var(--d) ease-out infinite;
+    animation-delay: var(--delay);
+  }
+
+  .fx-big-poop {
+    position: absolute;
+    right: 3px;
+    bottom: 1px;
+    font-size: 15px;
+    line-height: 1;
+    transform-origin: 50% 100%;
+    animation: hp-squish 0.9s ease-in-out infinite;
+  }
+}
+
+@keyframes hp-gold-flow {
+  to {
+    background-position: 300% 0;
+  }
+}
+
+@keyframes hp-gold-glow {
+  from {
+    box-shadow: inset 0 0 10px rgb(255 214 64 / 60%), 0 0 6px rgb(255 200 40 / 40%);
+  }
+
+  to {
+    box-shadow: inset 0 0 22px rgb(255 230 110 / 95%), 0 0 18px rgb(255 190 20 / 85%);
+  }
+}
+
+@keyframes hp-text-shine {
+  to {
+    background-position: 250% 0;
+  }
+}
+
+@keyframes hp-glint {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  55%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes hp-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.2) rotate(0deg);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.3) rotate(120deg);
+  }
+}
+
+@keyframes hp-crown {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0) rotate(-6deg);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(-3px) rotate(6deg);
+  }
+}
+
+@keyframes hp-sludge {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: 0 100%;
+  }
+}
+
+@keyframes hp-tremble {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  25% {
+    transform: translate(-1px, 1px) rotate(-2deg);
+  }
+
+  50% {
+    transform: translate(1px, -1px) rotate(2deg);
+  }
+
+  75% {
+    transform: translate(-1px, 0) rotate(-1deg);
+  }
+
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+
+@keyframes hp-slump {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(1.5px);
+  }
+}
+
+@keyframes hp-drip {
+  0%,
+  100% {
+    transform: translateY(-6px);
+  }
+
+  50% {
+    transform: translateY(2px);
+  }
+}
+
+@keyframes hp-poop-rise {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(0deg) scale(0.6);
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  50% {
+    transform: translate(6px, -26px) rotate(25deg) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-6px, -60px) rotate(-30deg) scale(1.1);
+  }
+}
+
+@keyframes hp-fly {
+  0% {
+    transform: rotate(0deg) translateX(26px) rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg) translateX(26px) rotate(-360deg);
+  }
+}
+
+@keyframes hp-stink {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scaleX(1);
+  }
+
+  25% {
+    opacity: 0.9;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(8px, -30px) scaleX(1.6);
+  }
+}
+
+@keyframes hp-squish {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+
+  50% {
+    transform: scale(1.18, 0.8);
+  }
+}
+
+// 움직임 줄이기 설정이면 효과는 멈춘 모습으로만 보인다
+@media (prefers-reduced-motion: reduce) {
+  .house-points__item--first,
+  .house-points__item--last,
+  .house-points__item--first *,
+  .house-points__item--last * {
+    animation: none !important;
+  }
+
+  .house-points__fx--gold .fx-spark {
+    opacity: 0.8;
+  }
+
+  .house-points__fx--poop .fx-poop {
+    opacity: 0.8;
+  }
+}

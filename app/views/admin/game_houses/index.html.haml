@@ -10,6 +10,13 @@
   = render 'admin/ui/segmented', url: mode_admin_game_houses_path, param: :mode, value: @mode, label: game_t('admin.games.houses.mode'),
                                  options: GameHouse::CATEGORIES.map { |category| [@labels[category], category] }
 
+-# 순위 효과: 소속 점수 카드에서 1등 반짝반짝, 꼴등 똥 효과 켜기/끄기
+= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.houses.effects'), hint: game_t('admin.games.houses.effects_hint') } do
+  = form_tag effects_admin_game_houses_path, method: :patch, class: 'simple_form' do
+    = render 'admin/ui/switch', label: game_t('admin.games.houses.effects_label'), name: 'rank_effects', id: 'rank_effects', checked: Game::Config.for('common')['rank_effects']
+    .actions
+      = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+
 = render layout: 'admin/ui/modal', locals: { id: 'house-labels', title: game_t('admin.games.houses.rename') } do
   = form_tag labels_admin_game_houses_path, method: :patch, class: 'simple_form' do
     = render layout: 'admin/ui/fields', locals: { columns: 2 } do

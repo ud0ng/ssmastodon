@@ -11,7 +11,9 @@ module Admin
     CONTENT_LENGTH = 120
     SummaryRow = Struct.new(:character, :replies, :chars, :media, :turns, keyword_init: true)
 
-    helper_method :status_kind, :status_counterparts
+    SUMMARY_SORTS = %w(name replies chars media turns).freeze
+
+    helper_method :status_kind, :status_counterparts, :summary_sort, :summary_direction
 
     def index
       authorize :settings, :show?
@@ -22,7 +24,7 @@ module Admin
       account_ids = @statuses.flat_map { |status| [status.account_id, status.in_reply_to_account_id, *status.mentions.map(&:account_id)] }.compact.uniq
       @characters_by_account = GameCharacter.where(account_id: account_ids).includes(:account).index_by(&:account_id)
       @accounts = Account.where(id: account_ids).index_by(&:id)
-      @reply_summary = reply_summary(@single) if @single
+      @reply_summary = sort_summary(reply_summary(@single)) if @single
     end
 
     private
@@ -41,7 +43,24 @@ module Admin
       others.map do |other|
         count, chars = counts.fetch(other.account_id, [0, 0])
         SummaryRow.new(character: other, replies: count, chars: chars, media: media.fetch(other.account_id, 0), turns: turns.fetch(other.account_id, 0))
-      end.sort_by { |row| [-row.replies, row.character.display_name.downcase] }
+      end
+    end
+
+    # 요약 카드의 정렬 (머리 칸을 누르면 오름차순 ↔ 내림차순). 기본은 답 툿이 많은 순
+    def summary_sort
+      SUMMARY_SORTS.include?(params[:ssort]) ? params[:ssort] : 'replies'
+    end
+
+    def summary_direction
+      params[:sdir].present? ? (params[:sdir] == 'asc' ? 'asc' : 'desc') : (summary_sort == 'name' ? 'asc' : 'desc')
+    end
+
+    def sort_summary(rows)
+      sorted = rows.sort_by do |row|
+        name = row.character.display_name.downcase
+        summary_sort == 'name' ? [name] : [row.public_send(summary_sort), name]
+      end
+      summary_direction == 'desc' ? sorted.reverse : sorted
     end
 
     def status_kind(status)

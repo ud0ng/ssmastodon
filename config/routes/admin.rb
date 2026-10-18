@@ -87,6 +87,7 @@ namespace :admin do
   resources :game_houses, path: 'characters/houses', only: [:index, :create, :update, :destroy] do
     post :adjust, on: :collection
     post :scoring, on: :collection
+    patch :effects, on: :collection
     post :mode, on: :collection
     patch :labels, on: :collection
   end

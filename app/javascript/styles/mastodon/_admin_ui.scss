@@ -1010,3 +1010,16 @@ textarea.ui-input {
     opacity: 0.45;
   }
 }
+
+// 답 툿 요약 카드: 활동 기록 표와 따로 떨어진 연한 바탕 카드
+.game-summary--card {
+  padding: 8px 12px 12px;
+  margin-bottom: 24px;
+  border: 0;
+  background: color-mix(in srgb, var(--ct-point, #6b7280) 7%, transparent);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 6%);
+
+  .game-table {
+    background: transparent;
+  }
+}

@@ -400,6 +400,9 @@ en:
         tournament: Tournament messages
         time: Time
       houses:
+        effects: Rank effects
+        effects_hint: 'The house points card under the compose panel shows a sparkle effect for first place and a poop effect for last place. Nothing shows when all points are equal.'
+        effects_label: Turn on rank effects
         label_faction: Name for factions
         label_house: Name for houses
         rename: Rename

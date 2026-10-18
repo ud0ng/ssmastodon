@@ -112,6 +112,17 @@ RSpec.describe 'Admin character roster' do
     end
   end
 
+  it 'turns the house rank effects off and on' do
+    expect(Game::Config.for('common')['rank_effects']).to be true
+
+    patch effects_admin_game_houses_path, params: { rank_effects: '0' }
+    expect(response).to redirect_to(admin_game_houses_path)
+    expect(Game::Config.for('common')['rank_effects']).to be false
+
+    patch effects_admin_game_houses_path, params: { rank_effects: '1' }
+    expect(Game::Config.for('common')['rank_effects']).to be true
+  end
+
   it 'switches the scoring unit to factions without touching house points' do
     gryffindor = GameHouse.houses.first
     character.update!(house: gryffindor, faction: order)

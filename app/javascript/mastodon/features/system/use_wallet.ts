@@ -46,6 +46,8 @@ export interface Wallet {
   record: { win: number; lose: number; draw: number };
   inventory: WalletItem[];
   house_term: string;
+  // 소속 점수 카드의 1등 반짝·꼴등 똥 효과 (관리 > 캐릭터 관리 > 소속)
+  rank_effects?: boolean;
   my_house_id: string | null;
   houses: { id: string; name: string; color: string; total: number }[];
   wearing?: { label: string; until: string }[];

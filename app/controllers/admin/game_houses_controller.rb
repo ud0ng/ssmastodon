@@ -75,6 +75,14 @@ module Admin
     end
 
     # 점수 방식 (점수제 / 판수제)
+    # 소속 점수 카드의 순위 효과(1등 반짝·꼴등 똥) 켜기/끄기
+    def effects
+      authorize :settings, :update?
+
+      Game::Config.merge!('common', 'rank_effects' => ActiveModel::Type::Boolean.new.cast(params[:rank_effects]) || false)
+      redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
+    end
+
     def scoring
       authorize :settings, :update?
 

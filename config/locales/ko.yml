@@ -402,6 +402,9 @@ ko:
         tournament: 토너먼트 문구
         time: 시간
       houses:
+        effects: 순위 효과
+        effects_hint: '글쓰기 패널 아래 소속 점수 카드에서 1등 소속은 반짝반짝 블링블링한 효과, 꼴등 소속은 똥 효과가 나옵니다. 점수가 모두 같으면 효과는 없습니다.'
+        effects_label: 순위 효과 켜기
         label_faction: 진영 부르는 이름
         label_house: 기숙사 부르는 이름
         rename: 부르는 이름 바꾸기
