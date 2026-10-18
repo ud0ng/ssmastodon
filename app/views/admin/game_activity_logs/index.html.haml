@@ -1,0 +1,58 @@
+- content_for :page_title do
+  = game_t('admin.games.activity_log.title')
+
+- content_for :heading do
+  = render 'admin/game_characters/heading'
+
+-# 검색: 캐릭터 · 상대 캐릭터 · 종류 (글자 칸을 누르면 목록이 드롭다운으로 뜬다)
+= form_tag admin_game_activity_logs_path, method: :get, class: 'simple_form game-table__filter' do
+  .filters
+    .filter-subset.filter-subset--with-select
+      %strong= game_t('admin.games.activity_log.kind')
+      .input.select.optional
+        = select_tag :kind, options_for_select([[game_t('admin.games.manage.roster.all'), '']] + Admin::GameActivityLogsController::KINDS.map { |kind| [game_t("admin.games.activity_log.kinds.#{kind}"), kind] }, params[:kind])
+  .game-table__search
+    = text_field_tag :q, params[:q].presence || @single&.display_name, class: 'ui-input', list: 'log-characters', autocomplete: 'off', placeholder: game_t('admin.games.shop.records_ui.search_character'), 'aria-label': game_t('admin.games.shop.records_ui.search_character')
+    = text_field_tag :opponent, params[:opponent], class: 'ui-input', list: 'log-characters', autocomplete: 'off', placeholder: game_t('admin.games.activity_log.search_opponent'), 'aria-label': game_t('admin.games.activity_log.search_opponent')
+    %datalist#log-characters
+      - @characters.each do |character|
+        %option{ value: character.display_name, label: "@#{character.account.username}" }
+    = button_tag game_t('admin.games.shop.records_ui.search'), type: :submit, class: 'button'
+
+- title = @single ? game_t('admin.games.activity_log.title_for', name: @single.display_name) : game_t('admin.games.activity_log.title')
+- count = capture do
+  %span.game-table__count= game_t('admin.games.activity_log.count', count: number_with_delimiter(@statuses.total_count))
+= render layout: 'admin/ui/section', locals: { title: safe_join([title, ' ', count]), hint: game_t('admin.games.activity_log.hint') } do
+  .bot-sheet-table.game-table
+    %table.table
+      %thead
+        %tr
+          %th= game_t('admin.games.houses.when')
+          - unless @single
+            %th= game_t('admin.games.records.character')
+          %th= game_t('admin.games.activity_log.kind')
+          %th= game_t('admin.games.records.opponent')
+          %th= game_t('admin.games.activity_log.content')
+      %tbody
+        - @statuses.each do |status|
+          - kind = status_kind(status)
+          %tr
+            %td.bot-sheet-table__text.game-table__time= l(status.created_at.in_time_zone('Asia/Seoul'), format: '%m/%d %H:%M')
+            - unless @single
+              %td.bot-sheet-table__text
+                = render 'admin/game_activity_logs/person', account: status.account, character: @characters_by_account[status.account_id], log: true
+            %td.bot-sheet-table__text
+              %span.game-badge{ class: "game-badge--log-#{kind}" }= game_t("admin.games.activity_log.kinds.#{kind}")
+            %td.bot-sheet-table__text
+              .game-records__people
+                - counterparts = status_counterparts(status)
+                - counterparts.each do |account|
+                  = render 'admin/game_activity_logs/person', account: account, character: @characters_by_account[account.id], log: true
+                - if counterparts.empty?
+                  —
+            %td.bot-sheet-table__text.game-log__content= truncate(status.text.to_s.gsub(/\s+/, ' ').strip, length: Admin::GameActivityLogsController::CONTENT_LENGTH).presence || '—'
+        - if @statuses.empty?
+          %tr
+            %td.bot-sheet-table__text{ colspan: @single ? 4 : 5 }= game_t('admin.games.activity_log.empty')
+
+= paginate @statuses

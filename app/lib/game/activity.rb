@@ -17,6 +17,38 @@ module Game
 
     module_function
 
+    # 캐릭터 관리 > 활동 표: 전체 툿(퍼블+답, DM·부스트 제외)·글자 수 / DM 툿·글자 수 / 답 횟수 / 미디어 툿 수
+    #   답 횟수: 다른 사람의 (답이 아닌) 툿에 답 툿을 단 것을, 같은 툿에는 몇 번을 달아도 1회로 센다. DM 은 뺀다.
+    #   미디어: 사진 등을 붙인 툿 수 (DM 제외)
+    Overview = Struct.new(:posts, :chars, :dms, :dm_chars, :replies, :media, keyword_init: true) do
+      def self.empty
+        new(posts: 0, chars: 0, dms: 0, dm_chars: 0, replies: 0, media: 0)
+      end
+    end
+
+    # account_id => Overview
+    def overview(account_ids)
+      result = Hash.new { |hash, key| hash[key] = Overview.empty }
+      direct = Status.visibilities[:direct]
+      base = Status.where(account_id: account_ids, reblog_of_id: nil).reorder(nil)
+      chars = Arel.sql('COALESCE(SUM(char_length(text)), 0)')
+
+      base.where.not(visibility: :direct).group(:account_id).pluck(:account_id, Arel.sql('COUNT(*)'), chars).each do |id, count, sum|
+        result[id].posts = count
+        result[id].chars = sum.to_i
+      end
+      base.where(visibility: :direct).group(:account_id).pluck(:account_id, Arel.sql('COUNT(*)'), chars).each do |id, count, sum|
+        result[id].dms = count
+        result[id].dm_chars = sum.to_i
+      end
+      base.where.not(visibility: :direct).where.not(in_reply_to_id: nil)
+          .joins('INNER JOIN statuses parents ON parents.id = statuses.in_reply_to_id')
+          .where('parents.account_id <> statuses.account_id AND parents.in_reply_to_id IS NULL AND parents.visibility <> ?', direct)
+          .group('statuses.account_id').pluck(Arel.sql('statuses.account_id'), Arel.sql('COUNT(DISTINCT statuses.in_reply_to_id)')).each { |id, count| result[id].replies = count }
+      base.where.not(visibility: :direct).where(id: MediaAttachment.where.not(status_id: nil).select(:status_id)).group(:account_id).count.each { |id, count| result[id].media = count }
+      result
+    end
+
     # account_id => Stats
     def stats(account_ids)
       result = Hash.new { |hash, key| hash[key] = Stats.empty }

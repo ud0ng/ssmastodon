@@ -15,7 +15,6 @@ module Admin
         'house' => GameCharacter.visible.group(:game_house_id).count,
         'faction' => GameCharacter.visible.group(:game_faction_id).count,
       }
-      @recent_points = GameHousePoint.includes(:house, :account).order(id: :desc).limit(30)
       @scoring_mode = common['scoring_mode']
       @seasons = GameSeason.order(id: :desc).to_a
       @season_fields = Game::Config.sections('common', 'season').flat_map(&:last)

@@ -1,0 +1,11 @@
+-# 점수를 얻거나 잃은 캐릭터: 아바타 + 이름 (누르면 그 캐릭터의 상세 화면)
+- name = character&.display_name || account.display_name.presence || account.username
+- avatar = image_tag(full_asset_url(account.avatar_static_url), alt: '', class: 'game-table__avatar')
+- if character
+  = link_to edit_admin_game_character_path(character), class: 'game-table__name game-records__person' do
+    = avatar
+    %strong= name
+- else
+  %span.game-table__name.game-records__person
+    = avatar
+    %strong= name

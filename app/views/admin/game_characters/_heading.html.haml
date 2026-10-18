@@ -6,7 +6,9 @@
   = render_navigation renderer: :links do |primary|
     :ruby
       primary.item :roster, safe_join([material_symbol('badge'), game_t('admin.games.manage.tabs.roster')]), admin_game_characters_path, highlights_on: %r{/admin/characters(/\d+/edit)?\z}
-      primary.item :activity, safe_join([material_symbol('trending_up'), game_t('admin.games.manage.tabs.activity')]), admin_game_activities_path, highlights_on: %r{/admin/characters/activity}
+      primary.item :activity, safe_join([material_symbol('trending_up'), game_t('admin.games.manage.tabs.activity')]), admin_game_activities_path, highlights_on: %r{/admin/characters/activity(?!_log)}
       primary.item :houses, safe_join([material_symbol('shield_question'), game_t('admin.games.manage.tabs.houses')]), admin_game_houses_path, highlights_on: %r{/admin/characters/houses}
       primary.item :stats, safe_join([material_symbol('bar_chart_4_bars'), game_t('admin.games.manage.tabs.stats')]), admin_game_character_stats_path, highlights_on: %r{/admin/characters/stats}
+      primary.item :activity_log, safe_join([material_symbol('chat'), game_t('admin.games.activity_log.tab')]), admin_game_activity_logs_path, highlights_on: %r{/admin/characters/activity_log}
+      primary.item :house_records, safe_join([material_symbol('shield_question'), game_t('admin.games.house_records.tab')]), admin_game_house_records_path, highlights_on: %r{/admin/characters/house_records}
       primary.item :records, safe_join([material_symbol('history'), game_t('admin.games.records.tab')]), admin_game_records_path, highlights_on: %r{/admin/characters/records}

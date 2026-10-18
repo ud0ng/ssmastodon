@@ -34,15 +34,23 @@ module Admin
                         .order(Arel.sql('game_sessions.finished_at DESC NULLS LAST, game_sessions.id DESC, game_players.seat'))
       scope = scope.where(game_sessions: { kind: params[:kind] }) if Game::Kinds.keys.include?(params[:kind].to_s)
       scope = scope.where(result: params[:result]) if RESULTS.include?(params[:result].to_s)
+      # 상대 캐릭터: 그 판에 그 사람이 함께 있던 기록
+      if params[:opponent].present?
+        sessions = GamePlayer.where(account_id: matching_account_ids(params[:opponent])).select(:game_session_id)
+        scope = scope.where('game_players.account_id NOT IN (?)', matching_account_ids(params[:opponent]).presence || [0]).where(game_session_id: sessions)
+      end
       if @single
         scope.where(account_id: @single.account_id)
       elsif params[:q].present?
-        like = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q].to_s.strip.downcase)}%"
-        ids = GameCharacter.joins(:account).where('lower(accounts.username) LIKE ? OR lower(game_characters.name) LIKE ?', like, like).pluck(:account_id)
-        scope.where(account_id: ids)
+        scope.where(account_id: matching_account_ids(params[:q]))
       else
         scope
       end
+    end
+
+    def matching_account_ids(query)
+      like = "%#{ActiveRecord::Base.sanitize_sql_like(query.to_s.strip.downcase)}%"
+      GameCharacter.joins(:account).where('lower(accounts.username) LIKE ? OR lower(game_characters.name) LIKE ?', like, like).pluck(:account_id)
     end
   end
 end

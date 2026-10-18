@@ -1,0 +1,51 @@
+- content_for :page_title do
+  = game_t('admin.games.house_records.title')
+
+- content_for :heading do
+  = render 'admin/game_characters/heading'
+
+-# 검색: 소속 · 캐릭터 (글자 칸을 누르면 목록이 드롭다운으로 뜬다)
+= form_tag admin_game_house_records_path, method: :get, class: 'simple_form game-table__filter' do
+  .filters
+    .filter-subset.filter-subset--with-select
+      %strong= game_t('admin.games.house_records.house')
+      .input.select.optional
+        = select_tag :house, options_for_select([[game_t('admin.games.manage.roster.all'), '']] + @houses.map { |house| [house.label, house.id] }, params[:house])
+  .game-table__search
+    = text_field_tag :q, params[:q], class: 'ui-input', list: 'house-record-characters', autocomplete: 'off', placeholder: game_t('admin.games.shop.records_ui.search_character'), 'aria-label': game_t('admin.games.shop.records_ui.search_character')
+    %datalist#house-record-characters
+      - @characters.each do |character|
+        %option{ value: character.display_name, label: "@#{character.account.username}" }
+    = button_tag game_t('admin.games.shop.records_ui.search'), type: :submit, class: 'button'
+
+- count = capture do
+  %span.game-table__count= game_t('admin.games.activity_log.count', count: number_with_delimiter(@points.total_count))
+= render layout: 'admin/ui/section', locals: { title: safe_join([game_t('admin.games.house_records.title'), ' ', count]), hint: game_t('admin.games.house_records.hint') } do
+  .bot-sheet-table.game-table
+    %table.table
+      %thead
+        %tr
+          %th= game_t('admin.games.houses.when')
+          %th= game_t('admin.games.house_records.house')
+          %th= game_t('admin.games.records.character')
+          %th.game-table__number= game_t('admin.games.house_records.points')
+          %th= game_t('admin.games.activity_log.content')
+      %tbody
+        - @points.each do |point|
+          %tr
+            %td.bot-sheet-table__text.game-table__time= l(point.created_at.in_time_zone('Asia/Seoul'), format: '%m/%d %H:%M')
+            %td.bot-sheet-table__text
+              %span.gd-chip{ style: "--badge: #{point.house.color.presence || '#6b5b3e'}" }= point.house.label
+            %td.bot-sheet-table__text
+              - if point.account
+                = render 'admin/game_house_records/person', account: point.account, character: @characters_by_account[point.account_id]
+              - else
+                —
+            %td.game-table__number
+              %span.game-badge{ class: point.amount.negative? ? 'game-badge--lose' : 'game-badge--win' }= format('%+d', point.amount)
+            %td.bot-sheet-table__text= point.reason.present? ? game_reward_reason(point.reason) : '—'
+        - if @points.empty?
+          %tr
+            %td.bot-sheet-table__text{ colspan: 5 }= game_t('admin.games.house_records.empty')
+
+= paginate @points

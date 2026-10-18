@@ -17,13 +17,16 @@
         = select_tag :result, options_for_select([[game_t('admin.games.manage.roster.all'), '']] + Admin::GameRecordsController::RESULTS.map { |result| [game_t("admin.games.manage.detail.results.#{result}"), result] }, params[:result])
   .game-table__search
     = text_field_tag :q, params[:q].presence || @single&.display_name, class: 'ui-input', list: 'record-characters', autocomplete: 'off', placeholder: game_t('admin.games.shop.records_ui.search_character'), 'aria-label': game_t('admin.games.shop.records_ui.search_character')
+    = text_field_tag :opponent, params[:opponent], class: 'ui-input', list: 'record-characters', autocomplete: 'off', placeholder: game_t('admin.games.activity_log.search_opponent'), 'aria-label': game_t('admin.games.activity_log.search_opponent')
     %datalist#record-characters
       - @characters.each do |character|
         %option{ value: character.display_name, label: "@#{character.account.username}" }
     = button_tag game_t('admin.games.shop.records_ui.search'), type: :submit, class: 'button'
 
 - title = @single ? game_t('admin.games.records.title_for', name: @single.display_name) : game_t('admin.games.records.title')
-= render layout: 'admin/ui/section', locals: { title: title, hint: game_t('admin.games.records.hint') } do
+- count = capture do
+  %span.game-table__count= game_t('admin.games.activity_log.count', count: number_with_delimiter(@players.total_count))
+= render layout: 'admin/ui/section', locals: { title: safe_join([title, ' ', count]), hint: game_t('admin.games.records.hint') } do
   .bot-sheet-table.game-table
     %table.table
       %thead

@@ -24,6 +24,25 @@ RSpec.describe Game::Activity do
     expect(stats.to_h).to eq(posts: 2, post_chars: 5 + "@#{other.username} 태그만 한 툿".size, replies: 1, reply_chars: 2)
   end
 
+  it 'builds the activity table: total toots, DMs, reply count (once per parent toot, not reply-to-reply) and media toots' do
+    parent = Fabricate(:status, account: other)
+    nested = Fabricate(:status, account: other, thread: parent)
+    mine = toot('내 툿')
+    toot('첫 답', reply_to: parent)
+    toot('또 답', reply_to: parent) # 같은 툿에는 1회
+    toot('다른 툿에 답', reply_to: Fabricate(:status, account: other))
+    toot('답에 단 답', reply_to: nested) # 답 툿에 단 답은 뺀다
+    toot('내 툿에 단 답', reply_to: mine) # 자기 툿에는 세지 않는다
+    toot('DM 하나', visibility: :direct)
+    with_media = toot('사진 툿')
+    Fabricate(:media_attachment, status: with_media, account: account)
+
+    overview = described_class.overview([account.id])[account.id]
+
+    expect(overview).to have_attributes(posts: 7, dms: 1, dm_chars: 'DM 하나'.size, replies: 2, media: 1)
+    expect(overview.chars).to eq(['내 툿', '첫 답', '또 답', '다른 툿에 답', '답에 단 답', '내 툿에 단 답', '사진 툿'].sum(&:size))
+  end
+
   describe 'toot reward' do
     before do
       character

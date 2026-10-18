@@ -1,12 +1,16 @@
 # frozen_string_literal: true
 
 module Admin
-  # 관리 > 시스템 > 캐릭터 관리 > 활동: 캐릭터마다 퍼블 툿·답 툿 수와 글자 수, 재화.
-  # 줄을 누르면 상세 (활동·재화 내역·인벤토리). 위의 [지급]으로 재화나 아이템을 여러 캐릭터에게 준다.
+  # 관리 > 시스템 > 캐릭터 관리 > 활동: 캐릭터마다 전체 툿·글자 수, DM 툿·글자 수, 답 횟수, 미디어 툿 수, 재화.
+  # 머리 칸을 누르면 그 칸으로 정렬(오름차순/내림차순). 줄을 누르면 그 캐릭터의 컨텐츠 기록. 위의 [지급]으로 재화나 아이템을 여러 캐릭터에게 준다.
   class GameActivitiesController < BaseController
     include Admin::GameGiveForm
 
     RECORDS = 30
+    SORTS = %w(name posts chars dms dm_chars replies media public_posts public_chars reply_posts reply_chars money).freeze
+    # 예전 칸(퍼블 툿·답 툿)의 값은 Game::Activity.stats 에서
+    STATS_SORTS = { 'public_posts' => :posts, 'public_chars' => :post_chars, 'reply_posts' => :replies, 'reply_chars' => :reply_chars }.freeze
+    helper_method :sort_column, :sort_direction
 
     def index
       authorize :settings, :show?
@@ -14,7 +18,11 @@ module Admin
       GameCharacter.sync!
       @characters = GameCharacter.visible.includes(:house, :faction, :account).joins(:account)
                                  .order(Arel.sql('accounts.username')).to_a
-      @stats = Game::Activity.stats(@characters.map(&:account_id))
+      ids = @characters.map(&:account_id)
+      @activity = Game::Activity.overview(ids)
+      @stats = Game::Activity.stats(ids)
+      sorted = @characters.sort_by { |character| sort_value(character) }
+      @characters = sort_direction == 'desc' ? sorted.reverse : sorted
       load_give_form
     end
 
@@ -48,6 +56,23 @@ module Admin
     end
 
     private
+
+    def sort_column
+      SORTS.include?(params[:sort]) ? params[:sort] : 'name'
+    end
+
+    def sort_direction
+      params[:dir] == 'desc' ? 'desc' : 'asc'
+    end
+
+    def sort_value(character)
+      return [character.display_name.downcase] if sort_column == 'name'
+      return [character.money.to_i, character.display_name.downcase] if sort_column == 'money'
+
+      return [@stats[character.account_id].public_send(STATS_SORTS[sort_column]).to_i, character.display_name.downcase] if STATS_SORTS.key?(sort_column)
+
+      [@activity[character.account_id].public_send(sort_column).to_i, character.display_name.downcase]
+    end
 
     # 아이템 고르기(admin/ui/_item_picker): items[][name], items[][count] → { 이름 => 개수 } (상점에 있는 아이템만, 같은 이름은 더한다)
     def picked_items

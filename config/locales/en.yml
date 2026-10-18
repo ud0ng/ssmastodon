@@ -35,6 +35,28 @@ en:
         bonus_hint: "Top students in a class (A or better) get the bonus % on top of their grade points, plus these rewards."
         opener_hint: "Staff open a class by posting [%{command}/subject] from the system account (@%{system})."
       pick_account: Choose a member
+      activity_log:
+        content: Content
+        count: '%{count}'
+        empty: No matching posts.
+        hint: 'Posts by the characters (deleted posts and boosts excluded). Each post gets one type: DM > reply > media > public. The counterpart is who was replied to or who received the DM.'
+        kind: Type
+        kinds:
+          dm: DM
+          media: Media
+          public: Public
+          reply: Reply
+        search_opponent: Search counterpart name or account
+        tab: Activity log
+        title: Activity log
+        title_for: 'Activity log of %{name}'
+      house_records:
+        empty: No house point records.
+        hint: 'House points gained or lost. The content is the reason.'
+        house: House
+        points: Points
+        tab: House records
+        title: House records
       records:
         character: Character
         empty: No finished games yet.
@@ -62,6 +84,12 @@ en:
         title: Points per content
         win: Win
       activity:
+        all_chars: Total characters
+        all_posts: Total posts
+        dm_chars: DM characters
+        dm_posts: DM posts
+        media: Media
+        reply_count: Replies
         add_item: Add item
         items_hint: 'Pick items with [+] and set how many under each card. Picking the same item again adds one.'
         all_characters: Select all

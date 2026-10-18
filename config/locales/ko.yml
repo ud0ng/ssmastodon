@@ -33,6 +33,28 @@ ko:
         bonus_hint: "수업에서 등수가 높은 사람(A 이상)은 등급 점수에 보너스 %를 더하고, 아래 재화·아이템을 더 받습니다."
         opener_hint: "수업은 운영진이 시스템 계정(@%{system})으로 직접 [%{command}/과목] 툿을 쓰면 열립니다."
       pick_account: 회원 고르기
+      activity_log:
+        content: 내용
+        count: '%{count}건'
+        empty: 해당하는 툿이 없습니다.
+        hint: '캐릭터들이 쓴 툿입니다(지운 툿·부스트 제외). 종류는 DM > 답 > 미디어 > 퍼블 순으로 하나만 붙고, 상대 캐릭터는 답한 상대나 DM 받는 사람입니다. 캐릭터 이름을 누르면 그 캐릭터의 활동 기록만 보입니다.'
+        kind: 종류
+        kinds:
+          dm: 디엠
+          media: 미디어
+          public: 퍼블
+          reply: 답
+        search_opponent: 상대 캐릭터 이름·아이디 검색
+        tab: 활동 기록
+        title: 활동 기록
+        title_for: '%{name}의 활동 기록'
+      house_records:
+        empty: 소속 점수 기록이 없습니다.
+        hint: '소속 점수를 얻거나 잃은 기록입니다. 내용은 사유(컨텐츠 이름 또는 운영진 조정 내용)입니다.'
+        house: 소속
+        points: 점수
+        tab: 소속 기록
+        title: 소속 기록
       records:
         character: 캐릭터
         empty: 끝난 컨텐츠 기록이 없습니다.
@@ -61,6 +83,12 @@ ko:
         win: 승리
       activity:
         add_item: 아이템 추가
+        all_chars: 전체 글자 수
+        all_posts: 전체 툿
+        dm_chars: DM 글자 수
+        dm_posts: DM 툿
+        media: 미디어
+        reply_count: 답 횟수
         items_hint: '[+]로 아이템을 고르고 카드 아래 칸에 줄 개수를 적습니다. 같은 아이템을 또 고르면 개수가 늘어납니다.'
         all_characters: 전체 선택
         basis:
@@ -72,7 +100,7 @@ ko:
         give_nothing: 받을 캐릭터와 재화 수나 아이템을 골라 주세요.
         give_to: 지급할 캐릭터
         given: '%{count}명에게 지급했습니다.'
-        hint: 퍼블 툿은 답글이 아닌 툿(태그가 있어도), 답 툿은 답글입니다. DM·부스트·지운 툿은 세지 않습니다. 줄을 누르면 상세 활동·재화 내역·인벤토리가 보입니다.
+        hint: '전체 툿은 퍼블 툿과 답 툿을 합친 수입니다(DM·부스트·지운 툿 제외). 답 횟수는 다른 사람의 툿에 답 툿을 단 것을 같은 툿에는 1회로 세고, 답 툿에 단 답과 DM은 뺍니다. 미디어는 사진 등을 붙인 툿 수입니다. 퍼블 툿은 답글이 아닌 툿(태그가 있어도), 답 툿은 답글이며 툿 보상 기준에 쓰입니다. 머리 칸을 누르면 정렬되고, 줄을 누르면 그 캐릭터의 컨텐츠 기록이 보입니다.'
         item_count: 아이템 수
         item_kinds: 아이템 종류
         money_amount: '재화 수 (%{currency})'

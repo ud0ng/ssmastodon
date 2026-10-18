@@ -943,3 +943,44 @@ textarea.ui-input {
     }
   }
 }
+
+// 활동 표 머리: 눌러서 정렬 (▲ 오름차순 / ▼ 내림차순)
+.game-sort {
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &--active {
+    font-weight: 700;
+  }
+
+  &__arrow {
+    margin-inline-start: 3px;
+    font-size: 9px;
+  }
+}
+
+// 활동 기록: 종류 배지 / 내용
+.game-badge--log-dm {
+  background: rgb(112 83 178 / 15%);
+  color: #6b4fb3;
+}
+
+.game-badge--log-reply {
+  background: rgb(26 115 232 / 14%);
+  color: #1a73e8;
+}
+
+.game-badge--log-media {
+  background: rgb(232 168 26 / 18%);
+  color: #a86b00;
+}
+
+.game-log__content {
+  max-width: 420px;
+  word-break: break-word;
+}

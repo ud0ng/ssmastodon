@@ -22,6 +22,16 @@ module Admin::GameHelper
     text.gsub(EMOJI, '').squeeze(' ').strip
   end
 
+  # 눌러서 정렬하는 표 머리: 같은 칸을 다시 누르면 오름차순 ↔ 내림차순
+  def game_sort_header(label, key, column, direction)
+    active = column == key
+    next_direction = active && direction == 'asc' ? 'desc' : 'asc'
+    arrow = active ? (direction == 'asc' ? '▲' : '▼') : ''
+    link_to url_for(request.query_parameters.merge(sort: key, dir: next_direction)), class: ['game-sort', ('game-sort--active' if active)] do
+      safe_join([label, content_tag(:span, arrow, class: 'game-sort__arrow')])
+    end
+  end
+
   def game_kind_icon(key)
     GAME_ICONS.fetch(key, '📜')
   end

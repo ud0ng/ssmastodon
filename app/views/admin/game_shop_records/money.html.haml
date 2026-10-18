@@ -6,7 +6,9 @@
 
 = render 'admin/game_shop_records/filters', url: admin_game_shop_money_records_path
 
-= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.shop.tabs.records'), hint: game_t('admin.games.shop.records_ui.money_hint', currency: @currency) } do
+- count = capture do
+  %span.game-table__count= game_t('admin.games.activity_log.count', count: number_with_delimiter(@records.total_count))
+= render layout: 'admin/ui/section', locals: { title: safe_join([game_t('admin.games.shop.tabs.records'), ' ', count]), hint: game_t('admin.games.shop.records_ui.money_hint', currency: @currency) } do
   .bot-sheet-table.game-table
     %table.table
       %thead

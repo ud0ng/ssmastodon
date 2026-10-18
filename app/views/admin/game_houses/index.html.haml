@@ -77,24 +77,3 @@
       = render 'admin/ui/field', label: game_t('admin.games.houses.amount'), name: 'amount', id: 'adjust_amount', type: :number, required: true
     = render 'admin/ui/field', label: game_t('admin.games.houses.reason'), name: 'reason', id: 'adjust_reason', wide: true
     = render 'admin/ui/modal_actions', submit: game_t('admin.games.houses.adjust')
-
-- if @recent_points.any?
-  = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.houses.recent') } do
-    .bot-sheet-table.game-table
-      %table.table
-        %thead
-          %tr
-            %th= game_t('admin.games.houses.when')
-            %th= game_t('admin.games.houses.name')
-            %th= game_t('admin.games.houses.amount')
-            %th= game_t('admin.games.houses.reason')
-        %tbody
-          - @recent_points.each do |point|
-            %tr
-              %td.bot-sheet-table__text= l(point.created_at.in_time_zone('Asia/Seoul'), format: :short)
-              %td.bot-sheet-table__text= point.house.label
-              %td.bot-sheet-table__text= format('%+d', point.amount)
-              %td.bot-sheet-table__text
-                = point.reason
-                - if point.account
-                  = "· @#{point.account.username}"
