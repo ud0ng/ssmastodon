@@ -2146,3 +2146,38 @@
   stroke-linecap: round;
   stroke-width: 4.5;
 }
+
+// 운영진: 끝난 판 목록에서 마우스를 올리면 나타나는 삭제 버튼
+.system-room-list__item {
+  position: relative;
+}
+
+.system-room-list__delete {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #c0392b;
+  color: #fff;
+  opacity: 0;
+  transform: translateY(-50%);
+  cursor: pointer;
+  transition: opacity 0.12s;
+
+  .game-icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.system-room-list__item--deletable:hover .system-room-list__delete,
+.system-room-list__delete:focus-visible {
+  opacity: 1;
+}

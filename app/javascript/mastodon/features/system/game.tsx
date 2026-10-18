@@ -8,7 +8,7 @@ import { Link, useHistory, useParams } from 'react-router-dom';
 
 import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
 import { openModal } from 'mastodon/actions/modal';
-import { apiRequestGet } from 'mastodon/api';
+import { apiRequestDelete, apiRequestGet } from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
 import { CommandText } from 'mastodon/components/command_text';
@@ -25,6 +25,10 @@ const messages = defineMessages({
   win: { id: 'system.result.win', defaultMessage: 'Win' },
   draw: { id: 'system.result.draw', defaultMessage: 'Draw' },
   lose: { id: 'system.result.lose', defaultMessage: 'Loss' },
+  deleteRoom: { id: 'system.game.delete_room', defaultMessage: 'Delete this record' },
+  deleteTitle: { id: 'system.game.delete_title', defaultMessage: 'Delete this game?' },
+  deleteMessage: { id: 'system.game.delete_message', defaultMessage: 'The record and every related mention and message will be deleted. This cannot be undone.' },
+  deleteConfirm: { id: 'system.game.delete_confirm', defaultMessage: 'Delete' },
 });
 
 const REFRESH_MS = 15_000;
@@ -44,6 +48,8 @@ interface GameInfo {
   group: 'duel' | 'group';
   event: boolean;
   can_open?: boolean;
+  // 운영진: 끝난 판 기록을 지울 수 있다
+  staff?: boolean;
   enabled: boolean;
   system_acct: string;
   command: string | null;
@@ -170,7 +176,7 @@ const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => 
 
 // 방 목록 카드: 참가자 아바타 · 이름 (VS) · 상태(턴·남은 시간 / 끝난 때). 내 방은 테마색 바탕.
 // 끝난 판은 승리자 아바타에 금빛 테두리 + 왕관, 이름은 테마색. 패배자는 흐리게, 무승부는 '무' 표시
-const RoomList: React.FC<{ rows: SessionRow[] }> = ({ rows }) => {
+const RoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRow) => void }> = ({ rows, onDelete }) => {
   const intl = useIntl();
   return (
     <ul className='system-room-list'>
@@ -178,7 +184,7 @@ const RoomList: React.FC<{ rows: SessionRow[] }> = ({ rows }) => {
         const mine = row.players.some((player) => player.me);
         const versus = row.players.length === 2;
         return (
-          <li key={row.id}>
+          <li key={row.id} className={onDelete ? 'system-room-list__item system-room-list__item--deletable' : undefined}>
             <Link
               to={`/system/sessions/${row.id}`}
               className={`system-room-card system-room-card--${row.status}${mine ? ' system-room-card--mine' : ''}${versus ? '' : ' system-room-card--many'}`}
@@ -222,6 +228,17 @@ const RoomList: React.FC<{ rows: SessionRow[] }> = ({ rows }) => {
                 {row.status !== 'finished' && row.deadline_at && <Countdown until={row.deadline_at} className='system-room-card__time' />}
               </span>
             </Link>
+            {onDelete && (
+              <button
+                type='button'
+                className='system-room-list__delete'
+                title={intl.formatMessage(messages.deleteRoom)}
+                aria-label={intl.formatMessage(messages.deleteRoom)}
+                onClick={() => { onDelete(row); }}
+              >
+                <GameIcon name='x' />
+              </button>
+            )}
           </li>
         );
       })}
@@ -271,6 +288,7 @@ const SpellTriangle: React.FC<{ nodes: string[] }> = ({ nodes }) => {
 
 const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
   const intl = useIntl();
+  const dispatch = useAppDispatch();
   const { key } = useParams<{ key: string }>();
   const [game, setGame] = useState<GameInfo | null>(null);
   const [failed, setFailed] = useState(false);
@@ -300,6 +318,24 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
   const showBusy = useCallback(() => {
     setBusyShown(true);
   }, []);
+
+  // 운영진: 끝난 판의 기록과 관련 멘션을 모두 지운다 (되돌릴 수 없어 확인을 거친다)
+  const handleDelete = useCallback((row: SessionRow) => {
+    dispatch(openModal({
+      modalType: 'CONFIRM',
+      modalProps: {
+        title: intl.formatMessage(messages.deleteTitle),
+        message: intl.formatMessage(messages.deleteMessage),
+        confirm: intl.formatMessage(messages.deleteConfirm),
+        dangerous: true,
+        onConfirm: () => {
+          apiRequestDelete(`v1/system/sessions/${row.id}`)
+            .then(() => { load(); return undefined; })
+            .catch(() => undefined);
+        },
+      },
+    }));
+  }, [dispatch, intl, load]);
 
   const title = game?.name ?? intl.formatMessage(messages.title);
   const rooms = game && tab !== 'rules' ? game[tab] : [];
@@ -514,7 +550,7 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
                 </section>
               </>
             ) : rooms.length > 0 ? (
-              <RoomList rows={rooms} />
+              <RoomList rows={rooms} onDelete={game.staff && tab === 'recent' ? handleDelete : undefined} />
             ) : (
               <p className='system-page__empty'>
                 {tab === 'active' ? (

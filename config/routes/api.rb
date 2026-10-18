@@ -102,7 +102,7 @@ namespace :api, format: false do
           post :discard
         end
       end
-      resources :sessions, only: [:show] do
+      resources :sessions, only: [:show, :destroy] do
         member do
           get :view
           post :move

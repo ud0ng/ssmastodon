@@ -9,7 +9,7 @@ class Api::V1::System::SessionsController < Api::BaseController
   MESSAGE_LIMIT = 200
 
   before_action -> { doorkeeper_authorize! :read }, only: [:show, :view]
-  before_action -> { doorkeeper_authorize! :write }, only: [:move]
+  before_action -> { doorkeeper_authorize! :write }, only: [:move, :destroy]
   before_action :require_user!
   before_action :require_contents_open!
   before_action :set_session
@@ -49,6 +49,16 @@ class Api::V1::System::SessionsController < Api::BaseController
     view = kind.respond_to?(:view_for) && !recruiting ? kind.view_for(player) : nil
     add_avatars!(view)
     render json: { web: @session.kind_class.web?, status: @session.status, view: view }
+  end
+
+  # 운영진만: 끝난 판의 기록과 그 툿(멘션·DM)을 모두 지운다. 진행 중인 판은 관리 화면에서 먼저 중지해야 한다.
+  def destroy
+    return render json: { error: 'forbidden' }, status: 403 unless current_user.can?(:manage_settings)
+
+    count = Game::SessionPurge.call(@session)
+    render json: { deleted: true, statuses: count }
+  rescue Game::SessionPurge::Error => e
+    render json: { error: e.message }, status: 422
   end
 
   # 웹 전용 컨텐츠: 이번 턴 행동 (미로 이동 등)
