@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 
 import Rails from '@rails/ujs';
 
+import { setupCommunityCombobox } from '../mastodon/admin/community_combobox';
 import { setupCommunitySelect } from '../mastodon/admin/community_select';
 import { setupDateInputs } from '../mastodon/admin/date_picker';
 import { setupCommunityThemeEditor } from '../mastodon/admin/community_theme_editor';
@@ -692,6 +693,7 @@ ready(() => {
   setupGameConfigEditor();
   setupStatsEditor();
   setupCommunitySelect();
+  setupCommunityCombobox();
   setupDateInputs();
 
   const domainBlockSeveritySelect = document.querySelector<HTMLSelectElement>(

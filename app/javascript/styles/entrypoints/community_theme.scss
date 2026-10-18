@@ -499,6 +499,13 @@ body.community-theme.admin {
         font-weight: 700;
       }
 
+      // 글자 칸 드롭다운(community_combobox.ts)의 오른쪽 보조 글자 (아이디 등)
+      .ct-select-popout__sub {
+        margin-inline-start: 6px;
+        color: var(--ct-dim);
+        font-size: 12px;
+      }
+
       &[aria-disabled='true'] {
         color: var(--ct-dim);
         cursor: default;

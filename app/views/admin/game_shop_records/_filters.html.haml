@@ -26,7 +26,6 @@
     %datalist#record-characters
       - @characters.each do |character|
         %option{ value: character.display_name, label: "@#{character.account.username}" }
-        %option{ value: character.account.username, label: character.display_name }
     - if local_assigns[:item]
       = text_field_tag :item, params[:item], class: 'ui-input', list: 'record-items', autocomplete: 'off', placeholder: game_t('admin.games.shop.records_ui.search_item'), 'aria-label': game_t('admin.games.shop.records_ui.search_item')
       %datalist#record-items
