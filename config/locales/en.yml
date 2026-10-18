@@ -212,6 +212,7 @@ en:
         effect: Effect description
         effect_hint: Text told to the target on use, or the note for RP items
         giftable: Can be gifted
+        permanent: Permanent (not used up when used; off = one is used up)
         score_delta: Group score change
         score_delta_hint: 'Value special items (report, bomb) change the group score by. e.g. -5'
         special_kind: Special kind

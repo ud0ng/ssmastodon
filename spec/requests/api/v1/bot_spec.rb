@@ -215,6 +215,15 @@ RSpec.describe 'API V1 Bot' do
       expect(GameReward.where(account: harry).order(:id).last).to have_attributes(kind: 'use', actor: 'bot')
     end
 
+    it 'does not use up a permanent item' do
+      shop.items.find_by(name: '초콜릿 개구리').update!(permanent: true)
+
+      post '/api/v1/bot/items/use', headers: headers, as: :json, params: { acct: 'harry', name: '초콜릿 개구리', target: 'ron' }
+
+      expect(response).to have_http_status(200)
+      expect(GameCharacter.for(harry).reload.inventory.pluck('count')).to eq [2]
+    end
+
     it 'tells you to DM the system account for a howler instead of broadcasting' do
       GameCharacter.for(harry).update!(inventory: [{ 'name' => '호울러', 'count' => 1, 'note' => '' }])
 

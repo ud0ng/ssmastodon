@@ -24,6 +24,7 @@
     - else
       = hidden_field_tag 'game_shop_item[game_shop_id]', item.game_shop_id || shops.first&.last, id: nil
   = render 'admin/ui/switch', label: game_t('admin.games.shop.usable'), name: 'game_shop_item[usable]', id: "#{prefix}_usable", checked: item.usable
+  = render 'admin/ui/switch', label: game_t('admin.games.shop.permanent'), name: 'game_shop_item[permanent]', id: "#{prefix}_permanent", checked: item.permanent
   = render 'admin/ui/switch', label: game_t('admin.games.shop.giftable'), name: 'game_shop_item[giftable]', id: "#{prefix}_giftable", checked: item.giftable
   = render 'admin/ui/field', label: game_t('admin.games.shop.effect'), name: 'game_shop_item[effect]', id: "#{prefix}_effect", value: item.effect, type: :textarea, hint: game_t('admin.games.shop.effect_hint'), html: { rows: 2, maxlength: 1000 }
   = render 'admin/ui/field', label: game_t('admin.games.shop.use_target'), name: 'game_shop_item[use_target]', id: "#{prefix}_use_target", value: item.use_target, type: :select, options: targets,

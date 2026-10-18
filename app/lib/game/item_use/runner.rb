@@ -25,6 +25,7 @@ module Game
 
       def call
         shop_item = shop_item_for(@name)
+        raise Error, "'#{@name}'#{particle(@name, '을를')} 가지고 있지 않습니다." unless owns?
         raise Error, "#{@name}#{particle(@name, '은는')} 사용할 수 없는 아이템입니다." if shop_item && !shop_item.usable
 
         field = shop_item&.stat_field
@@ -41,6 +42,12 @@ module Game
       end
 
       private
+
+      # 영구 아이템은 소모되지 않아 지갑이 부족을 막아 주지 못하니 직접 확인한다
+      def owns?
+        entry = Array(GameCharacter.for(@account).inventory).find { |item| Game::Wallet.key(item['name']) == Game::Wallet.key(@name) }
+        entry.present? && entry['count'].to_i.positive?
+      end
 
       def shop_item_for(name)
         GameShopItem.all.find { |item| Game::Wallet.key(item.name) == Game::Wallet.key(name) }
@@ -64,7 +71,8 @@ module Game
         target_character = GameCharacter.for(target)
         before = field && delta ? (temporary ? target_character.stat_value(field) : target_character.status_value(field)) : nil
 
-        changes = [{ account: @account, items: { @name => -1 } }]
+        # [영구] 아이템은 사용해도 사라지지 않고, 아니면 1개 없어진다
+        changes = [{ account: @account, items: shop_item&.permanent ? {} : { @name => -1 } }]
         if delta && !temporary
           # 상태 수치는 영구 변동: 본인이면 한 번에 합친다
           if target.id == @account.id

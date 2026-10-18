@@ -36,7 +36,7 @@ RSpec.describe Game::ItemUse do
 
     dm('[사용/호울러/첫 소문]')
     dm('[사용/호울러/또 소문]')
-    expect(system.statuses.reorder(:id).last.text).to include('부족')
+    expect(system.statuses.reorder(:id).last.text).to include('가지고 있지 않습니다')
   end
 
   it 'leaves other items to the shop bot' do

@@ -32,7 +32,9 @@ module Game
       rumor = clean_rumor(text)
       raise Error, '소문 내용을 적어 주세요. 예: [사용/호울러/소문 내용]' if rumor.blank?
 
-      Game::Wallet.apply!([{ account: account, items: { item.name => -1 } }], kind: 'use', detail: "#{item.name} (소문)", actor: 'system')
+      raise Error, "'#{item.name}'#{Game::Text.particle(item.name.to_s.strip[-1], '을를')} 가지고 있지 않습니다." unless Array(GameCharacter.for(account).inventory).any? { |entry| Game::Wallet.key(entry['name']) == Game::Wallet.key(item.name) && entry['count'].to_i.positive? }
+
+      Game::Wallet.apply!([{ account: account, items: item.permanent ? {} : { item.name => -1 } }], kind: 'use', detail: "#{item.name} (소문)", actor: 'system')
       sent = broadcast_rumor!(rumor)
       Game::Gift.announce(account, command: ['사용', item.name, rumor], system: true)
       "호울러가 호그와트 전체에 울려 퍼졌습니다. (#{sent}명에게 전달)"

@@ -3,6 +3,7 @@
 # 상점 아이템. price 가 없으면 비매품 (보상·조사로만 얻는다).
 #   use_target: stat(스탯 변동, 스탯 유형 '스탯'은 stat_minutes 동안 일시, '상태 수치'는 영구) / character(고른 캐릭터에게, 본인도 가능) / special(시스템 계정에 DM)
 #   usable false → [사용] 불가, giftable false → [선물]·[양도] 불가.
+#   permanent true → [영구] 아이템: [사용] 해도 사라지지 않는다 (false 면 사용할 때 1개 없어진다).
 #   stat_name/stat_value → [사용] 할 때 그 스탯이 stat_value 만큼 (정수나 주사위 1d10, -(1d6+3))
 #   image → 아이템 그림 (상점 목록, 캐릭터 상세의 인벤토리 카드). 정사각형으로 잘라 쓴다
 class GameShopItem < ApplicationRecord

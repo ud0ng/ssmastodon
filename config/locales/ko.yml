@@ -210,6 +210,7 @@ ko:
         effect: 효과 설명
         effect_hint: 사용했을 때 상대에게 알리는 글, RP용 아이템 안내
         giftable: '[선물] 할 수 있음'
+        permanent: '[영구] 사용해도 사라지지 않음 (끄면 사용할 때 1개 사라짐)'
         score_delta: 소속 점수 변동
         score_delta_hint: '특수(신고·폭탄)가 소속 점수를 바꾸는 값. 예: -5'
         special_kind: 특수 종류

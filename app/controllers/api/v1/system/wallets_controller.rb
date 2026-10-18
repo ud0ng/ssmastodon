@@ -108,6 +108,7 @@ class Api::V1::System::WalletsController < Api::BaseController
       description: shop_item&.description.to_s,
       usable: shop_item.nil? || shop_item.usable,
       giftable: shop_item.nil? || shop_item.giftable,
+      permanent: shop_item&.permanent || false,
       use_target: shop_item&.use_target || 'stat',
       special_kind: shop_item&.special_kind || 'staff',
       effect: shop_item&.effect.to_s,

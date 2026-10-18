@@ -8,7 +8,7 @@ class Api::V1::Bot::ShopsController < Api::V1::Bot::BaseController
         name: shop.name,
         description: shop.description,
         items: shop.items.map do |item|
-          { name: item.name, price: item.price, description: item.description, usable: item.usable, giftable: item.giftable, use_target: item.use_target, stat_minutes: item.stat_minutes, stat_temporary: item.temporary_stat?, stat: item.stat_name, value: item.stat_value }
+          { name: item.name, price: item.price, description: item.description, usable: item.usable, permanent: item.permanent, giftable: item.giftable, use_target: item.use_target, stat_minutes: item.stat_minutes, stat_temporary: item.temporary_stat?, stat: item.stat_name, value: item.stat_value }
         end,
       }
     }

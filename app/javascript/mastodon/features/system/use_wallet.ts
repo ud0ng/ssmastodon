@@ -15,6 +15,7 @@ export interface WalletItem {
   image: string | null;
   usable: boolean;
   giftable: boolean;
+  permanent?: boolean;
   use_target: 'stat' | 'character' | 'special';
   special_kind: 'staff' | 'report' | 'bomb' | 'howler';
   effect: string;

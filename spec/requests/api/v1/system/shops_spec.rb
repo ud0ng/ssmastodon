@@ -66,6 +66,19 @@ RSpec.describe 'API V1 System shop and items' do
       expect(GameReward.where(account: user.account).order(:id).last.kind).to eq 'use'
     end
 
+    it 'keeps a permanent item after using it, and a normal one loses one' do
+      frog.update!(permanent: true)
+
+      post '/api/v1/system/items/use', params: { name: '초콜릿 개구리' }, headers: headers
+
+      expect(response).to have_http_status(200)
+      expect(count('초콜릿 개구리')).to eq 3
+
+      frog.update!(permanent: false)
+      post '/api/v1/system/items/use', params: { name: '초콜릿 개구리' }, headers: headers
+      expect(count('초콜릿 개구리')).to eq 2
+    end
+
     it 'refuses an item whose stat is gone, like the bot' do
       frog.update_column(:stat_name, '없는 스탯')
 
