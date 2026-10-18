@@ -444,7 +444,9 @@ en:
         roster:
           acct: Username
           all: All
-          apply: Filter
+          record: Record
+          record_format: '%{win}W %{lose}L %{draw}D'
+          apply: Search
           count: '%{count}'
           empty: No matching characters.
           money: 'Money (%{currency})'
@@ -487,6 +489,9 @@ en:
       lessons: Lessons
       lessons_hint: 'Shared lesson settings. [study/subject] is solo, [class/subject] gathers a class first. Grades go to the report card and become points.'
       messages_hint: 'Click a token under a message to insert it. {계정명} (the web shows the profile picture next to the name); prefix 상대/승자/패자 for other people. Particles like {이가} follow the previous letter.'
+      staff:
+        hint: 'Pick the staff accounts such as notice, story and system. They are not characters (no house, money, inventory or record), so they leave the roster, rewards and mentions, and can use the staff bot commands. This list replaces the staff row of the bot sheet settings.'
+        title: Staff accounts
       events:
         confirm: 'Open %{name} as an event? The system account mentions everyone and a badge shows on the Contents menu while people join.'
         hint: 'The system account posts a recruiting toot mentioning every registered character. People join by replying [join] or with the join button on the contents page; it starts when recruiting ends. Maps and the secret chamber deal roles at random. Recruiting text, time and size are on each content settings page (Event).'

@@ -243,8 +243,9 @@ module Game
       Field.new(key: 'transfer_enabled', type: :boolean, default: true, group: 'shop_commands', label: '양도 켜기', hint: '끄면 [양도]를 받지 않습니다'),
 
       # 운영진 명령어 (운영진 계정만)
-      Field.new(key: 'admin_usernames', type: :accounts, default: [], group: 'admin_commands', label: '운영진 계정',
-                hint: '아래 명령어를 쓸 수 있는 계정. 자동봇 설정(ADMIN_IDS·시트)의 운영진도 그대로 쓸 수 있습니다'),
+      # 운영진 계정 (서버 설정 > 운영 에서 고친다): 캐릭터가 아니고, 아래 명령어를 쓸 수 있다
+      Field.new(key: 'admin_usernames', type: :accounts, default: [], group: 'staff', label: '운영진 계정',
+                hint: '공지·스토리·시스템 같은 운영진 계정. 캐릭터 명단에서 빠지고 운영진 명령어를 쓸 수 있습니다'),
       Field.new(key: 'cmd_money_add', type: :string, default: '소지금 추가', group: 'admin_commands', label: '소지금 추가', hint: '[소지금 추가/10/캐릭터명]'),
       Field.new(key: 'cmd_money_sub', type: :string, default: '소지금 차감', group: 'admin_commands', label: '소지금 차감', hint: '[소지금 차감/10/전원]'),
       Field.new(key: 'cmd_item_add', type: :string, default: '아이템 추가', group: 'admin_commands', label: '아이템 추가', hint: '[아이템 추가/사과: 2/캐릭터명]'),

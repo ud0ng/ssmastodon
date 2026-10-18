@@ -13,7 +13,7 @@ module GameRoster
 
   # 회원(User)은 생기거나 지워지거나 승인·메일 확인될 때, 계정은 정지·정지 해제될 때
   def game_roster_changed?
-    watched = is_a?(User) ? %w(approved confirmed_at) : %w(suspended_at)
+    watched = is_a?(User) ? %w(approved confirmed_at) : %w(suspended_at anonymized_at)
     return is_a?(User) if destroyed? || previously_new_record?
 
     previous_changes.keys.intersect?(watched)

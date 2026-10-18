@@ -19,6 +19,23 @@ module Admin
       @characters = filtered.includes(:house, :faction, account: :user)
                             .order(Arel.sql('game_houses.position NULLS LAST, game_houses.id NULLS LAST, accounts.username'))
                             .page(params[:page]).per(PER_PAGE)
+      load_records(@characters.map(&:account_id))
+    end
+
+    # 명단에서 소속·진영을 눌러 바로 바꾼다 (kind: house|faction, value: 소속 번호, 비우면 없음)
+    def assign_group
+      authorize :settings, :update?
+
+      character = GameCharacter.find(params[:id])
+      value = params[:value].presence
+      case params[:kind]
+      when 'house' then character.update!(house: value && GameHouse.houses.find(value))
+      when 'faction' then character.update!(faction: value && GameHouse.factions.find(value))
+      else return head :unprocessable_entity
+      end
+      head :no_content
+    rescue ActiveRecord::RecordNotFound, ActiveRecord::RecordInvalid
+      head :unprocessable_entity
     end
 
     # 고른 캐릭터들의 기숙사·진영을 한꺼번에 바꾼다
@@ -106,6 +123,13 @@ module Admin
       @base_stats = GameCharacterField.base_stats.to_a
       @statuses = GameCharacterField.statuses.to_a
       @currency = Game::Config.for('common')['currency_name']
+    end
+
+    # 명단의 전적: 계정마다 { 'win' => n, 'lose' => n, 'draw' => n } (끝난 판만)
+    def load_records(account_ids)
+      counts = GamePlayer.joins(:session).merge(GameSession.current_kinds).where(account_id: account_ids, game_sessions: { status: 'finished' }).group(:account_id, :result).count
+      @records = Hash.new { |hash, key| hash[key] = {} }
+      counts.each { |(account_id, result), count| @records[account_id][result] = count }
     end
 
     # 상세 화면: 전적(승·패·무)과 최근 판

@@ -117,6 +117,7 @@ namespace :admin do
     end
   end
   resource :game_event, path: 'games/event', only: [:create]
+  resource :game_staff, path: 'settings/staff', only: [:update], controller: 'game_staff'
   resources :game_settings, path: 'games', only: [:index, :show, :update]
   resources :game_activities, path: 'characters/activity', only: [:index, :show] do
     post :give, on: :collection
@@ -126,6 +127,7 @@ namespace :admin do
     patch :bulk, on: :collection
     # 상세 > 인벤토리 카드: 아이템 더하기·고치기·지우기 (index = 인벤토리 안 순서)
     member do
+      patch :group, action: :assign_group
       post :items, action: :add_item
       patch 'items/:index', action: :update_item, as: :item
       delete 'items/:index', action: :remove_item

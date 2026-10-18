@@ -628,3 +628,43 @@ textarea.ui-input {
     flex: 0 0 auto;
   }
 }
+
+// 캐릭터 명단: 이름 아래 아이디(작고 흐리게), 소속·진영은 눌러서 바로 바꾸는 드롭다운, 전적
+.game-table .game-who small,
+.game-table__name .game-who small {
+  color: #8b95a7;
+  font-size: 11px;
+}
+
+.game-inline-select {
+  min-width: 110px;
+  max-width: 180px;
+  padding: 5px 24px 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background-color: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--ct-line, rgb(127 127 127 / 35%));
+    background-color: var(--ct-soft, rgb(127 127 127 / 8%));
+  }
+
+  &--saved {
+    border-color: #2f9e6f;
+  }
+
+  &--failed {
+    border-color: #c0392b;
+  }
+}
+
+.game-table__record {
+  color: var(--ct-dim, #6b7280);
+  font-size: 12px;
+  white-space: nowrap;
+}

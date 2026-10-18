@@ -13,6 +13,57 @@ RSpec.describe 'Admin character roster' do
   let(:eaters) { GameHouse.factions.find_by(name: '죽음을 먹는 자들') }
   let(:character) { GameCharacter.for(Fabricate(:account)) }
 
+  it 'changes the house and faction right from the roster table' do
+    house = GameHouse.houses.first
+
+    patch group_admin_game_character_path(character), params: { kind: 'house', value: house.id }
+    expect(response).to have_http_status(204)
+    expect(character.reload.house).to eq house
+
+    patch group_admin_game_character_path(character), params: { kind: 'faction', value: order.id }
+    expect(character.reload.faction).to eq order
+
+    patch group_admin_game_character_path(character), params: { kind: 'house', value: '' }
+    expect(character.reload.house).to be_nil
+
+    patch group_admin_game_character_path(character), params: { kind: 'faction', value: '999999' }
+    expect(response).to have_http_status(422)
+    expect(character.reload.faction).to eq order
+  end
+
+  it 'takes staff accounts out of the roster and gives them back when removed from the list' do
+    notice = Fabricate(:user, account: Fabricate(:account, username: 'notice')).account
+    member = Fabricate(:user, account: Fabricate(:account, username: 'harry')).account
+    notice_character = GameCharacter.for(notice).tap { |each| each.update!(money: 50) }
+    GameCharacter.for(member)
+
+    patch admin_game_staff_path, params: { usernames: ['', '@notice'] }
+
+    expect(response).to redirect_to(admin_settings_registrations_path)
+    expect(Game::Config.for('currency')['admin_usernames']).to eq %w(notice)
+    expect(GameCharacter.exists?(notice_character.id)).to be false
+    expect(GameCharacter.visible.map(&:account_id)).to include(member.id)
+    expect(GameCharacter.eligible_accounts).not_to include(notice)
+
+    patch admin_game_staff_path, params: { usernames: [''] }
+    expect(GameCharacter.eligible_accounts).to include(notice)
+    expect(GameCharacter.visible.map(&:account_id)).to include(notice.id)
+  end
+
+  it 'drops the character of a withdrawn (anonymized) member from the roster' do
+    user = Fabricate(:user)
+    kept = GameCharacter.for(user.account)
+    gone_user = Fabricate(:user)
+    gone = GameCharacter.for(gone_user.account)
+    gone_user.account.update!(anonymized_at: Time.now.utc, display_name: '탈퇴한 사용자')
+
+    GameCharacter.sync!
+
+    expect(GameCharacter.exists?(kept.id)).to be true
+    expect(GameCharacter.exists?(gone.id)).to be false
+    expect(GameCharacter.visible).not_to include(gone)
+  end
+
   it 'saves name, faction and stats from the detail page without touching money or the inventory' do
     character.update!(inventory: [{ 'name' => '사과', 'count' => 1, 'note' => '' }])
 

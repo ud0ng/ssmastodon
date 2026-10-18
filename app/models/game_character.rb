@@ -12,9 +12,16 @@ class GameCharacter < ApplicationRecord
   validates :money, numericality: { only_integer: true }
 
   # 게임에 낄 수 있는 서버원 (시스템 계정·정지된 계정 제외)
+  # 운영진 계정(서버 설정 > 운영)은 캐릭터가 아니다 — 소속·재화·인벤토리·전적이 없다
+  def self.staff_usernames
+    Array(Game::Config.for('currency')['admin_usernames']).map { |name| name.to_s.delete_prefix('@').downcase }.compact_blank
+  end
+
   def self.eligible_accounts
-    Account.local.without_instance_actor.without_suspended.joins(:user).merge(User.approved.confirmed)
-           .where.not(id: Game::System.account&.id)
+    scope = Account.local.without_instance_actor.without_suspended.where(anonymized_at: nil).joins(:user).merge(User.approved.confirmed)
+                   .where.not(id: Game::System.account&.id)
+    staff = staff_usernames
+    staff.any? ? scope.where.not('lower(accounts.username) IN (?)', staff) : scope
   end
 
   def self.for(account)
@@ -30,9 +37,12 @@ class GameCharacter < ApplicationRecord
   # 정지된 회원은 지우지 않고 visible 에서 빠진다 (정지를 풀면 돈·인벤토리·스탯 그대로 돌아온다).
   # (회원이 바뀔 때마다 Game::RosterSyncWorker 가 부르고, 명단 화면을 열 때도 한 번 확인한다)
   def self.sync!
-    where.not(account_id: Account.local.joins(:user).select(:id)).destroy_all
+    # 탈퇴(계정이 '탈퇴한 사용자'로 바뀐 것)한 회원과 로그인 계정이 없어진 회원의 캐릭터는 지운다
+    where.not(account_id: Account.local.where(anonymized_at: nil).joins(:user).select(:id)).destroy_all
+    # 운영진 계정의 캐릭터도 지운다 (소속·재화·인벤토리·전적이 없는 계정)
+    where(account_id: Account.where('lower(accounts.username) IN (?)', staff_usernames.presence || ['']).select(:id)).destroy_all
     existing = pluck(:account_id)
-    eligible_accounts.where.not(id: existing).find_each { |account| create!(account: account) }
+    eligible_accounts.where.not(id: existing).find_each { |account| find_or_create_by!(account: account) }
   end
 
   # 점수를 모으는 소속 (공통 설정의 점수 단위에 따라 기숙사 또는 진영)

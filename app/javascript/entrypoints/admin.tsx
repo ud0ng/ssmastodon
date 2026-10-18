@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import Rails from '@rails/ujs';
 
 import { setupCommunityCombobox } from '../mastodon/admin/community_combobox';
+import { setupInlineSelects } from '../mastodon/admin/inline_select';
 import { setupCommunitySelect } from '../mastodon/admin/community_select';
 import { setupDateInputs } from '../mastodon/admin/date_picker';
 import { setupCommunityThemeEditor } from '../mastodon/admin/community_theme_editor';
@@ -533,7 +534,7 @@ document.addEventListener('click', ({ target }) => {
 
 // 캐릭터 명단: 줄 아무 곳이나 누르면 상세 화면 (링크·버튼·체크박스를 누른 건 그대로)
 Rails.delegate(document, 'tr[data-href]', 'click', ({ target }) => {
-  if (!(target instanceof Element) || target.closest('a, button, input, label'))
+  if (!(target instanceof Element) || target.closest('a, button, input, label, select, .ct-select-popout'))
     return;
 
   const href = target.closest<HTMLElement>('tr[data-href]')?.dataset.href;
@@ -694,6 +695,7 @@ ready(() => {
   setupStatsEditor();
   setupCommunitySelect();
   setupCommunityCombobox();
+  setupInlineSelects();
   setupDateInputs();
 
   const domainBlockSeveritySelect = document.querySelector<HTMLSelectElement>(
