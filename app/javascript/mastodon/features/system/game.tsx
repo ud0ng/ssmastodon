@@ -43,6 +43,7 @@ interface GameInfo {
   name: string;
   group: 'duel' | 'group';
   event: boolean;
+  can_open?: boolean;
   enabled: boolean;
   system_acct: string;
   command: string | null;
@@ -137,6 +138,14 @@ const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => 
       <button type='button' className='system-start' disabled={busy} onClick={() => { openEvent(true); }}>
         <FormattedMessage id='system.game.join_event' defaultMessage='Join the event ({count} joined)' values={{ count: game.recruiting.count }} />
       </button>
+    );
+  }
+
+  if (game.event && !game.can_open) {
+    return (
+      <span className='system-start system-start--off'>
+        <FormattedMessage id='system.game.staff_opens' defaultMessage='Staff open this event. Watch for the announcement.' />
+      </span>
     );
   }
 

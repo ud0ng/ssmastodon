@@ -32,7 +32,7 @@ module Game
 
       FIELDS = (base_fields(name: '비밀의 방', command: '비밀의방', points_win: 15) + [
         F.new(key: 'points_survive', type: :integer, default: 0, group: 'points', label: '살아남은 사람 추가 점수'),
-        F.new(key: 'openers', type: :lines, default: [], group: 'basic', label: '열 수 있는 사람 (아이디, 줄마다 하나)', hint: '비워 두면 누구나'),
+        F.new(key: 'openers', type: :lines, default: [], group: 'basic', label: '열 수 있는 사람 (아이디, 줄마다 하나)', hint: '운영진은 항상 열 수 있습니다. 여기에는 운영진이 아닌데 열 수 있게 할 사람만 적습니다 (비우면 운영진만)'),
         F.new(key: 'min_players', type: :integer, default: 7, group: 'rules', label: '최소 인원'),
         F.new(key: 'max_players', type: :integer, default: 20, group: 'rules', label: '최대 인원'),
         F.new(key: 'traitor_percent', type: :integer, default: 25, group: 'rules', label: '방주 비율 (%)', hint: '최소 1명'),
@@ -114,9 +114,10 @@ module Game
           true
         end
 
+        # 운영진(서버 설정 권한)과 '열 수 있는 사람'에 적은 계정만 연다. 일반 참가자는 참가만 한다.
         def can_open?(account)
-          openers = Array(config['openers']).map { |name| name.delete_prefix('@').strip }.compact_blank
-          openers.empty? || openers.include?(account.username)
+          openers = Array(config['openers']).map { |name| name.delete_prefix('@').strip.downcase }.compact_blank
+          account.user&.can?(:manage_settings) || openers.include?(account.username.downcase)
         end
       end
 

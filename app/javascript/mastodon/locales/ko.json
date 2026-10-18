@@ -1236,6 +1236,7 @@
   "system.game.ranking": "최다 승리",
   "system.game.recent": "최근 결과",
   "system.game.search": "서버원 찾기",
+  "system.game.staff_opens": "이 이벤트는 운영진이 엽니다. 모집 알림을 기다려 주세요.",
   "system.game.sent": "보냈어요. 시스템이 곧 답합니다.",
   "system.game.teams_hint": "나와 먼저 고른 {half}명이 한 팀",
   "system.game.title": "컨텐츠",

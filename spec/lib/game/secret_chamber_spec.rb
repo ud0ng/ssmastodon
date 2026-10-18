@@ -10,6 +10,7 @@ RSpec.describe Game::Events::SecretChamber do
 
   before do
     accounts.each { |account| GameCharacter.for(account).update!(house: house) }
+    Game::Config.merge!('secret_chamber', 'openers' => ['harry']) # 운영진이 아니어도 열 수 있는 사람
   end
 
   def toot(account, text, visibility: 'private')
@@ -100,6 +101,15 @@ RSpec.describe Game::Events::SecretChamber do
 
     toot(student.account, "@system [석화] @#{traitor.account.username}", visibility: 'direct')
     expect(session.reload.state.dig('night', 'petrify')).to be_empty
+  end
+
+  it 'lets only staff or listed openers open the event, not a normal participant' do
+    toot(accounts.second, '@system [비밀의방]')
+    expect(GameSession.where(kind: 'secret_chamber').count).to eq 0
+
+    staff = Fabricate(:user, role: UserRole.find_by(name: 'Admin') || Fabricate(:user_role, name: 'Boss', permissions: UserRole::FLAGS[:administrator])).account
+    toot(staff, '@system [비밀의방]')
+    expect(GameSession.where(kind: 'secret_chamber').count).to eq 1
   end
 
   it 'refuses more players than the maximum' do

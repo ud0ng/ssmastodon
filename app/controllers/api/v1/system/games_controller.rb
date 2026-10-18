@@ -23,6 +23,7 @@ class Api::V1::System::GamesController < Api::BaseController
       name: @kind.display_name,
       group: Game::Guide.group_of(@kind),
       event: @kind.event?,
+      can_open: @kind.event? && @kind.can_open?(current_account),
       enabled: @kind.enabled?,
       system_acct: Game::System.username,
       command: @kind.config['command'],

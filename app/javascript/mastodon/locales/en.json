@@ -1050,6 +1050,7 @@
   "system.game.ranking": "Most wins",
   "system.game.recent": "Recent results",
   "system.game.search": "Find a member",
+  "system.game.staff_opens": "Staff open this event. Watch for the announcement.",
   "system.game.sent": "Sent. The system will answer in a moment.",
   "system.game.teams_hint": "You and the first {half} picked are one team.",
   "system.game.title": "Game",
