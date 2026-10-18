@@ -75,15 +75,26 @@ class Api::V1::System::WalletsController < Api::BaseController
 
   # 내 자리에 버튼(행동)이 열려 있는 판: 수락 대기 신청, 내가 고를 차례 (웹 방의 '내 차례예요' 와 같은 기준, Game::Card)
   def todo_sessions
-    @todo_sessions ||= GamePlayer.joins(:session).merge(GameSession.current_kinds)
-                                 .where(account: current_account, game_sessions: { status: %w(pending active) })
-                                 .includes(:session).filter_map do |player|
+    @todo_sessions ||= recruiting_events + my_todo_sessions
+  end
+
+  def my_todo_sessions
+    GamePlayer.joins(:session).merge(GameSession.current_kinds)
+              .where(account: current_account, game_sessions: { status: %w(pending active) })
+              .includes(:session).filter_map do |player|
       session = player.session
       next if session.state['mode'] == 'event' && session.status == 'pending'
 
       actions = Game::Card.safe { Game::Card.actions_for(session, session.kind_class&.new(session)) } || []
       next unless actions.any? { |action| !action['meta'] && action['seats'].is_a?(Array) && action['seats'].include?(player.seat) }
 
+      { session_id: session.id.to_s, name: session.kind_class&.display_name || session.kind }
+    end
+  end
+
+  # 내가 아직 참가하지 않은 모집 중인 이벤트: 컨텐츠 메뉴에 알림 배지가 뜬다
+  def recruiting_events
+    GameSession.current_kinds.where(status: 'pending').where("state->>'mode' = 'event'").reject { |session| session.players.any? { |player| player.account_id == current_account.id } }.map do |session|
       { session_id: session.id.to_s, name: session.kind_class&.display_name || session.kind }
     end
   end

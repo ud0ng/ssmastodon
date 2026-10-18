@@ -292,6 +292,7 @@ module Game
       content_subject: [
         ['basic', %w(basic)],
         ['subject_rules', %w(rules time flavors spells roles)],
+        ['event', %w(event)],
         ['rewards', %w(rewards)],
         ['subject_commands', %w(commands)],
         ['subject_messages', %w(messages)],

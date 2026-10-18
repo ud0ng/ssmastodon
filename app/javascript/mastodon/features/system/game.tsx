@@ -50,6 +50,8 @@ interface GameInfo {
   min_opponents?: number;
   team?: boolean;
   uneven_teams?: boolean;
+  // 운영진이 연 이벤트 모집 중이고 내가 아직 참가하지 않았다
+  recruiting?: { session_id: string; ends_at: string | null; count: number } | null;
   summary: string;
   rules_text?: { icon: string; title: string; text: string; visual?: string | null; nodes?: string[]; table?: { head: string[]; rows: string[][] } | null }[];
   roles?: { name: string | null; win: string; notes: string[] }[];
@@ -88,13 +90,13 @@ const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => 
     dispatch(openModal({ modalType: 'CHALLENGE', modalProps: { gameKey: game.key, name: game.name, maxOpponents: game.max_opponents, minOpponents: game.min_opponents ?? 1, team: (game.team ?? false) || (game.uneven_teams ?? false), unevenTeams: game.uneven_teams ?? false } }));
   }, [dispatch, game.key, game.name, game.max_opponents, game.min_opponents, game.team, game.uneven_teams, game.busy, onBusy]);
 
-  const openEvent = useCallback(() => {
+  const openEvent = useCallback((join = false) => {
     if (game.busy) {
       onBusy();
       return;
     }
     setBusy(true);
-    sendCommand({ kind: game.key })
+    sendCommand(join ? { kind: game.key, join: true } : { kind: game.key })
       .then(() => waitForSession(game.key, (info) => info.active[0]?.id ?? null))
       .then((sessionId) => {
         if (sessionId) {
@@ -126,13 +128,25 @@ const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => 
     );
   }
 
+  if (game.recruiting) {
+    return sent ? (
+      <span className='system-start system-start--off'>
+        <FormattedMessage id='system.game.sent' defaultMessage='Sent. The system will answer in a moment.' />
+      </span>
+    ) : (
+      <button type='button' className='system-start' disabled={busy} onClick={() => { openEvent(true); }}>
+        <FormattedMessage id='system.game.join_event' defaultMessage='Join the event ({count} joined)' values={{ count: game.recruiting.count }} />
+      </button>
+    );
+  }
+
   if (game.event) {
     return sent ? (
       <span className='system-start system-start--off'>
         <FormattedMessage id='system.game.sent' defaultMessage='Sent. The system will answer in a moment.' />
       </span>
     ) : (
-      <button type='button' className='system-start' disabled={busy} onClick={openEvent}>
+      <button type='button' className='system-start' disabled={busy} onClick={() => { openEvent(); }}>
         <FormattedMessage id='system.game.open_event' defaultMessage='Open the event' />
       </button>
     );

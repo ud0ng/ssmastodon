@@ -57,8 +57,8 @@ module Game
         event = Game::Kinds.events.find { |each| each.enabled? && each.config['command'] == command }
         return open_event(event) if event
 
-        join_event = Game::Kinds.events.find { |each| each.config['cmd_join'] == command }
-        return join if join_event && pending_event
+        pending = pending_event
+        return join if pending && pending.kind_class&.config&.dig('cmd_join') == command
 
         kind = Game::Kinds.by_command(command)
         if kind
@@ -215,6 +215,10 @@ module Game
       end
     end
 
+    def bot_account?(account)
+      common['bot_usernames'].to_s.split(/[,s]+/).map { |name| name.delete_prefix('@').downcase }.include?(account.username.downcase)
+    end
+
     # 모집 중인 서버 이벤트 (비밀의방 등)
     def pending_event
       GameSession.where(status: 'pending').where("state->>'mode' = 'event'").order(id: :desc).first
@@ -234,6 +238,7 @@ module Game
     def join
       event = pending_event
       return if event.nil? || event.players.exists?(account_id: actor.id)
+      return if bot_account?(actor) # 상점 봇이 모집 툿의 [참가]를 따라 읽어도 참가자로 넣지 않는다
       return reply(Game::Text.render(common['msg_busy'], player: actor)) if common['one_game_per_person'] && open_player(actor)
 
       event.with_lock { event.kind_class.new(event).join!(actor, status) if event.status == 'pending' }

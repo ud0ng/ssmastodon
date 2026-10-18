@@ -8,6 +8,8 @@ module Game
     class Flying < Base
       KEY = 'flying'
 
+      include Game::Events::Recruiting
+
       FIELDS = (base_fields(name: '비행 대결', command: '비행대결', points_win: 15, points_draw: 5) + [
         F.new(key: 'min_players', type: :integer, default: 2, group: 'rules', label: '최소 인원', hint: '신청자를 포함한 전체 인원 (2~10명)'),
         F.new(key: 'max_players', type: :integer, default: 6, group: 'rules', label: '최대 인원', hint: '신청자를 포함한 전체 인원 (최대 10명)'),
@@ -27,7 +29,7 @@ module Game
         F.new(key: 'msg_idle', type: :text, group: 'messages', label: '시간 초과', default: "%{players}: 경로를 고르지 않아 출발하지 못했습니다."),
         F.new(key: 'msg_winner', type: :text, group: 'messages', label: '승리', default: "%{winner}의 승리!"),
         F.new(key: 'msg_draw', type: :text, group: 'messages', label: '무승부', default: '모두 같은 횟수로 무승부입니다.'),
-      ]).freeze
+      ] + Game::Events::Recruiting.fields(min: 2, max: 10)).freeze
 
       class << self
         def continues_on_timeout?

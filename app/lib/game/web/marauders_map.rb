@@ -16,6 +16,8 @@ module Game
     class MaraudersMap < Game::Kinds::Base
       KEY = 'marauders_map'
 
+      include Game::Events::Recruiting
+
       ROOMS = %w(
         천문탑 그리핀도르\ 휴게실 부엉이장 래번클로\ 탑 점술\ 교실
         도서관 금지된\ 구역 대계단 트로피실 필요의\ 방
@@ -82,7 +84,7 @@ module Game
         F.new(key: 'msg_caught', type: :text, group: 'messages', label: '체포', default: "%{player}{이가} %{room}에서 %{target}{을를} 붙잡았습니다.\n%{prefect}의 승리!"),
         F.new(key: 'msg_escaped', type: :text, group: 'messages', label: '학생 승리', default: "%{player}{이가} 목표 장소를 모두 다녀왔습니다.\n%{student}의 승리!"),
         F.new(key: 'msg_limit', type: :text, group: 'messages', label: '시간 초과', default: "%{turns}턴이 지났습니다. %{student}{은는} 목표를 채우지 못했습니다.\n%{prefect}의 승리!"),
-      ]).freeze
+      ] + Game::Events::Recruiting.fields(min: 2, max: 8)).freeze
 
       class << self
         def web?
@@ -126,6 +128,25 @@ module Game
         def continues_on_timeout?
           true
         end
+      end
+
+      # 이벤트로 열었을 때: 참가한 사람들의 역할(학생 팀·사감 팀)을 무작위로 나눈다. 학생 팀은 1명부터 사감 팀 인원 이하까지.
+      # 이벤트 최대 인원: 학생 팀은 사감 팀 인원 이하, 사감 팀은 최대 인원까지
+      def event_max_players
+        [super, self.class.prefect_limit * 2].min
+      end
+
+      def prepare_event_players!
+        list = session.players.to_a.shuffle
+        total = list.size
+        low = [total - self.class.prefect_limit, 1].max
+        high = [total / 2, low].max
+        # 자리를 한 번에 바꾸면 겹치니 임시 번호를 거친다
+        list.each_with_index { |player, index| player.update!(seat: 100 + index) }
+        list.each_with_index { |player, index| player.update!(seat: index) }
+        state['student_count'] = rand(low..high)
+        session.save!
+        session.players.reset
       end
 
       def start!

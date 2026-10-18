@@ -15,6 +15,8 @@ module Game
     class Maze < Game::Kinds::Base
       KEY = 'maze'
 
+      include Game::Events::Recruiting
+
       DIRS = { 'N' => [0, -1, 1, 4], 'E' => [1, 0, 2, 8], 'S' => [0, 1, 4, 1], 'W' => [-1, 0, 8, 2] }.freeze
       DIR_NAMES = { '북' => 'N', '동' => 'E', '남' => 'S', '서' => 'W' }.freeze
       SPELLS = %w(attack disarm defend).freeze
@@ -78,7 +80,7 @@ module Game
         F.new(key: 'msg_win', type: :text, group: 'messages', label: '우승', default: '%{winner}{이가} 우승컵을 손에 넣었습니다. %{turn}턴 만의 승리!'),
         F.new(key: 'msg_tie', type: :text, group: 'messages', label: '동시 도착', default: '%{players}{이가} 동시에 우승컵에 닿았습니다. 공동 우승이며 점수는 나눕니다.'),
         F.new(key: 'msg_limit', type: :text, group: 'messages', label: '최대 턴', default: '%{turns}턴이 지나도록 아무도 우승컵에 닿지 못했습니다. 무승부입니다.'),
-      ]).freeze
+      ] + Game::Events::Recruiting.fields(min: 2, max: 4)).freeze
 
       class << self
         def web?

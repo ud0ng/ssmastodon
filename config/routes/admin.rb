@@ -109,6 +109,7 @@ namespace :admin do
       post :decide
     end
   end
+  resource :game_event, path: 'games/event', only: [:create]
   resources :game_settings, path: 'games', only: [:index, :show, :update]
   resources :game_activities, path: 'characters/activity', only: [:index, :show] do
     post :give, on: :collection

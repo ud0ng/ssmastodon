@@ -59,7 +59,7 @@ module Game
         F.new(key: 'cmd_prophecy', type: :string, default: '예언', group: 'commands', label: '예언 전하기 (방주, 밤)', hint: '[예언/호그와트] @누구 처럼 사실인 예언만 전할 수 있다'),
         F.new(key: 'cmd_chat', type: :string, default: '밀담', group: 'commands', label: '방주 비밀 단톡 (방주)', hint: '[밀담/내용] 으로 방주끼리만 이야기한다'),
         F.new(key: 'msg_recruit', type: :text, group: 'messages', label: '모집',
-              default: "%{game}의 문이 열렸습니다.\n%{minutes}분 동안 [%{join}]으로 참가해 주세요. (%{min}~%{max}명)\n\n참가자 중 누군가는 어둠의 편입니다."),
+              default: "%{game}의 문이 열렸습니다.\n%{minutes}분 동안 [%{join}] 명령어로 참가해 주세요. (%{min}~%{max}명)\n\n참가자 중 누군가는 어둠의 편입니다."),
         F.new(key: 'msg_joined', type: :text, group: 'messages', label: '참가 확인', default: '%{player}{이가} 참가했습니다. (지금 %{count}명)'),
         F.new(key: 'msg_full', type: :text, group: 'messages', label: '정원 초과', default: '%{game}은 %{max}명까지 참가할 수 있어 더 참가할 수 없습니다.'),
         F.new(key: 'msg_cancel', type: :text, group: 'messages', label: '인원 부족', default: '참가자가 %{min}명이 되지 않아 %{game}{이가} 닫혔습니다.'),

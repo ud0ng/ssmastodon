@@ -52,6 +52,11 @@ module Game
           false
         end
 
+        # 운영진이 모집형 이벤트로 열 수 있는 컨텐츠인가 (Game::Events::Recruiting, 비밀의 방은 event? 로 따로)
+        def event_capable?
+          false
+        end
+
         # 여러 날 진행하는 서버 이벤트인가 (Game::Events)
         def event?
           false

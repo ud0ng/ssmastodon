@@ -1228,6 +1228,7 @@
   "system.game.new": "새 판",
   "system.game.no_ranking": "아직 승리 기록이 없습니다.",
   "system.game.now": "내 판",
+  "system.game.join_event": "이벤트 참가하기 (지금 {count}명)",
   "system.game.open_event": "이벤트 열기",
   "system.game.pick_many": "함께할 사람을 {max}명까지 고르세요",
   "system.game.pick_one": "상대를 고르세요",

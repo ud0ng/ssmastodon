@@ -1042,6 +1042,7 @@
   "system.game.new": "New game",
   "system.game.no_ranking": "No wins yet.",
   "system.game.now": "Your game",
+  "system.game.join_event": "Join the event ({count} joined)",
   "system.game.open_event": "Open the event",
   "system.game.pick_many": "Pick up to {max} people",
   "system.game.pick_one": "Pick an opponent",

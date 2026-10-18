@@ -47,6 +47,7 @@ class Api::V1::System::CommandsController < Api::BaseController
     kind = Game::Kinds.registry[params[:kind].to_s]
     return if kind.nil? || !kind.enabled?
 
+    return ["#{system_mention} [#{kind.config['cmd_join']}]", nil, 'private'] if ActiveModel::Type::Boolean.new.cast(params[:join]) && kind.config['cmd_join'].present?
     return ["#{system_mention} [#{kind.config['command']}]", nil, 'private'] if kind.event?
 
     usernames = Array(params[:opponents]).map { |acct| clean(acct).delete_prefix('@') }

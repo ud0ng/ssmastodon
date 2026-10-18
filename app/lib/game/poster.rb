@@ -51,12 +51,20 @@ module Game
     # 게임 판의 스레드에 이어서 올린다 (참가자 모두 멘션). kind: 지금 진행 중인 Kinds 객체 (카드용, 없으면 새로 만든다)
     def to_session(session, text, mentions: nil, kind: nil)
       thread = Status.find_by(id: session.last_status_id || session.root_status_id)
-      status = post(text, mentions: mentions || session.players.map(&:account), thread: thread, visibility: session.visibility)
+      status = post(text, mentions: mentions || default_mentions(session), thread: thread, visibility: session.visibility)
       return if status.nil?
 
       session.update!(last_status_id: status.id)
       record_card(session, status, kind)
       status
+    end
+
+    # 보통은 참가자 모두. 운영진이 연 모집(아직 아무 툿도 없는 이벤트)은 등록된 모든 캐릭터에게 멘션이 가게 한다.
+    def default_mentions(session)
+      return session.players.map(&:account) unless session.root_status_id.nil? && session.status == 'pending' && session.state['mode'] == 'event'
+
+      bots = Game::Config.for('common')['bot_usernames'].to_s.split(/[,s]+/).map { |name| name.delete_prefix('@').downcase }
+      GameCharacter.eligible_accounts.to_a.reject { |account| bots.include?(account.username.downcase) }
     end
 
     # PC 웹 카드용으로 그 순간의 상태를 남긴다 (Game::Card)

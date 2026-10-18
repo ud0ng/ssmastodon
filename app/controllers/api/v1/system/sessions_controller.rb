@@ -44,7 +44,9 @@ class Api::V1::System::SessionsController < Api::BaseController
     raise ActiveRecord::RecordNotFound if player.nil? && !@session.kind_class.spectatable?
 
     kind = @session.kind_class.new(@session)
-    view = kind.respond_to?(:view_for) ? kind.view_for(player) : nil
+    # 모집 중인 이벤트(비밀의 방 제외)는 아직 판이 없다
+    recruiting = @session.status == 'pending' && !@session.kind_class.event?
+    view = kind.respond_to?(:view_for) && !recruiting ? kind.view_for(player) : nil
     add_avatars!(view)
     render json: { web: @session.kind_class.web?, status: @session.status, view: view }
   end

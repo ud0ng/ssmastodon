@@ -39,6 +39,7 @@ class Api::V1::System::GamesController < Api::BaseController
       currency: common['currency_name'],
       record: record,
       my_session_id: my_session&.id&.to_s,
+      recruiting: recruiting,
       busy: busy(common),
       active: visible_sessions.where(status: %w(pending active)).order(updated_at: :desc).limit(LIST_LIMIT).map { |session| session_json(session) },
       recent: visible_sessions.where(status: 'finished').order(finished_at: :desc).limit(LIST_LIMIT).map { |session| session_json(session) },
@@ -69,6 +70,14 @@ class Api::V1::System::GamesController < Api::BaseController
   end
 
   # 내가 지금 하고 있는 (또는 신청받은) 이 컨텐츠 판 → 게임 화면에 바로 띄운다
+  # 모집 중인 이벤트 (참가 버튼): 이 컨텐츠를 운영진이 열었고 내가 아직 참가하지 않았다
+  def recruiting
+    session = GameSession.current_kinds.where(kind: @kind.key, status: 'pending').where("state->>'mode' = 'event'").order(id: :desc).first
+    return if session.nil? || session.players.any? { |player| player.account_id == current_account.id }
+
+    { session_id: session.id.to_s, ends_at: session.deadline_at&.iso8601, count: session.players.size }
+  end
+
   def my_session
     GameSession.current_kinds.joins(:players).where(kind: @kind.key, status: %w(pending active), game_players: { account_id: current_account.id })
                .order(updated_at: :desc).first
