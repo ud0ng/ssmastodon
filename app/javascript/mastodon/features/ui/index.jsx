@@ -67,6 +67,7 @@ import {
   SystemShop,
   SystemSession,
   SystemGame,
+  SystemHouse,
   SystemRecord,
   FollowedTags,
   LinkTimeline,
@@ -247,6 +248,7 @@ class SwitchingColumnsArea extends PureComponent {
             {contentsEnabled ? <WrappedRoute path='/system/games/:key' component={SystemGame} content={children} /> : <Redirect from='/system/games/:key' to='/home' />}
             <WrappedRoute path='/system/:section(wallet|inventory)' component={SystemWallet} content={children} />
             <WrappedRoute path='/system/record' component={SystemRecord} content={children} />
+            {contentsEnabled ? <WrappedRoute path='/system/houses/:id' component={SystemHouse} content={children} /> : <Redirect from='/system/houses/:id' to='/home' />}
             <Redirect from='/system/me' to='/system/record' exact />
             <Redirect from='/system/houses' to='/system' exact />
             {contentsEnabled ? <WrappedRoute path='/system' component={SystemPage} content={children} exact /> : <Redirect from='/system' to='/home' exact />}

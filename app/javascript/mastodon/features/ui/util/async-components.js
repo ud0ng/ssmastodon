@@ -166,6 +166,10 @@ export function SystemGame() {
   return import('../../system/game');
 }
 
+export function SystemHouse() {
+  return import('../../system/house');
+}
+
 export function SystemRecord() {
   return import('../../system/record');
 }

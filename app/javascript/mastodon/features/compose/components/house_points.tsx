@@ -3,6 +3,8 @@
 // 아이템으로 소속에 효과(상점 설정 > 효과 목록)가 붙어 있으면 그 칸에 효과를 그린다. 블링블링·똥은 예전 1등·꼴등 모양(house_fx), 나머지는 components/game_fx.
 import { useIntl } from 'react-intl';
 
+import { Link } from 'react-router-dom';
+
 import { GameFx } from 'mastodon/components/game_fx';
 import { Crest } from 'mastodon/features/system/crest';
 import { useWallet } from 'mastodon/features/system/use_wallet';
@@ -27,7 +29,7 @@ export const HousePoints: React.FC = () => {
           house.fx && (HOUSE_FX_CLASS[house.fx] ?? `game-fx-host game-fx-host--card game-fx-host--${house.fx}`),
         ].filter(Boolean).join(' ');
         return (
-          <span key={house.id} className={classes}>
+          <Link key={house.id} to={`/system/houses/${house.id}`} className={classes}>
             {house.fx === 'gold' && <GoldFx />}
             {house.fx === 'poop' && <PoopFx />}
             {house.fx && !HOUSE_FX_CLASS[house.fx] && <GameFx slot='card' preset={house.fx} />}
@@ -36,7 +38,7 @@ export const HousePoints: React.FC = () => {
               <Crest house={{ ...house, emoji: '' }} />
               <strong>{house.total.toLocaleString()}</strong>
             </span>
-          </span>
+          </Link>
         );
       })}
     </div>
