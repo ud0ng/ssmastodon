@@ -201,6 +201,9 @@ module Game
       # 웹에서 선물했을 때 받는 사람에게 가는 DM (시스템 계정)
       Field.new(key: 'msg_gift_item', type: :text, group: 'messages_gift', label: '아이템 선물',
                 default: "%{player}{이가} %{item} %{count}개{을를} 선물했습니다.\n인벤토리에서 확인해 보세요."),
+      # 운영진이 관리 화면에서 재화·아이템을 지급했을 때 받는 사람에게 가는 DM (시스템 계정, 한 명씩)
+      Field.new(key: 'msg_admin_give', type: :text, group: 'messages_gift', label: '운영진 지급 알림',
+                default: "%{rewards}{이가} 지급되었습니다. 인벤토리를 확인해보세요!"),
       Field.new(key: 'msg_item_use', type: :text, group: 'messages_gift', label: '아이템 사용 (다른 캐릭터에게)',
                 default: "%{player}{이가} %{target}에게 %{item}{을를} 사용했습니다.%{effect}"),
       Field.new(key: 'msg_gift_money', type: :text, group: 'messages_gift', label: '재화 선물',

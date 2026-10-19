@@ -52,10 +52,24 @@ module Admin
 
       changes = accounts.map { |account| { account: account, money: money, items: items } }
       Game::Wallet.apply!(changes, kind: 'admin', detail: params[:reason].to_s.strip.presence || t('admin.games.activity.give'), actor: current_account.username)
+      notify_given(accounts, money, items)
       redirect_to give_return_path, notice: t('admin.games.activity.given', count: accounts.size)
     end
 
     private
+
+    # 받은 캐릭터마다 시스템 계정이 DM 으로 알린다 (여러 명이면 한 명씩 따로). 하나가 실패해도 나머지는 보낸다.
+    # 지급은 이미 끝난 뒤라(트랜잭션 밖) 멘션 알림이 바로 간다.
+    def notify_given(accounts, money, items)
+      common = Game::Config.for('common')
+      rewards = Game::Rewards.describe(money, items.map { |name, count| { 'name' => name, 'count' => count } }, common['currency_name'])
+      text = Game::Text.render(common['msg_admin_give'], rewards: rewards)
+      accounts.each do |account|
+        Game::Poster.post(text, mentions: [account], thread: nil, visibility: 'direct')
+      rescue StandardError => e
+        Rails.logger.warn { "admin give notice to #{account.username} failed: #{e.class} #{e.message}" }
+      end
+    end
 
     def sort_column
       SORTS.include?(params[:sort]) ? params[:sort] : 'name'

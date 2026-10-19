@@ -22,6 +22,22 @@ RSpec.describe 'Admin character activity' do
     expect(GameReward.where(kind: 'admin', reason: '생일').count).to eq 2
   end
 
+  it 'tells each receiver by its own DM from the system account what was given' do
+    system = Fabricate(:account, username: 'system')
+    allow(Game::System).to receive(:account).and_return(system)
+    items = [{ name: '초콜릿 개구리', count: '2' }]
+
+    post give_admin_game_activities_path, params: { give_kind: 'money', character_ids: [harry.id, ron.id], money: '10' }
+    post give_admin_game_activities_path, params: { give_kind: 'items', character_ids: [ron.id], items: items }
+
+    dms = Status.where(account: system, visibility: :direct).reorder(:id).to_a
+    expect(dms.size).to eq 3
+    expect(dms.first(2).map { |status| status.mentions.map(&:account_id) }).to match_array([[harry.account_id], [ron.account_id]]) # 한 명씩 따로
+    expect(dms[2].mentions.map(&:account_id)).to eq [ron.account_id]
+    expect(dms[0].text).to include('10', '지급되었습니다. 인벤토리를 확인해보세요!')
+    expect(dms[2].text).to include('초콜릿 개구리 ×2')
+  end
+
   it 'gives several shop items at once, each with its own count' do
     items = [{ name: '초콜릿 개구리', count: '2' }, { name: '버티 보트 젤리빈', count: '5' }, { name: '없는 아이템', count: '1' }, { name: '초콜릿 개구리', count: '1' }]
     post give_admin_game_activities_path, params: { give_kind: 'items', character_ids: [ron.id], items: items, money: '99' }
