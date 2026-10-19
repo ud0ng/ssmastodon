@@ -32,4 +32,17 @@ RSpec.describe Game::Fx do
     expect(described_class.change_entry(list, 1, effect.id + 1, later)).to eq list
     expect(described_class.change_entry(list, 0, effect.id, nil)).to eq [list[1]]
   end
+  it 'lists what a character is wearing per slot (last one wins, ended ones are left out)' do
+    title = GameEffect.create!(kind: 'character', slot: 'title', preset: 'gold', name: '금빛 칭호')
+    deco = GameEffect.create!(kind: 'character', slot: 'deco', preset: 'gold', name: '금빛 데코')
+    character = GameCharacter.for(Fabricate(:account))
+    ended = described_class.entry(deco, 60).merge('until' => 1.minute.ago.iso8601)
+    character.update!(effects: [described_class.entry(title, 60), ended, described_class.entry(effect, 10, permanent: true)].map { |entry| entry.merge('kind' => 'fx') })
+
+    wearing = described_class.wearing(character)
+
+    expect(wearing.pluck(:slot)).to eq %w(title skin)
+    expect(wearing.first).to include(preset: 'gold', name: '금빛 칭호', permanent: false)
+    expect(wearing.last[:permanent]).to be true
+  end
 end

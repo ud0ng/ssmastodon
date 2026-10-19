@@ -15,13 +15,16 @@ class Api::V1::System::WalletsController < Api::BaseController
 
   def show
     character = GameCharacter.for(current_account)
-    shop_items = GameShopItem.all.index_by { |item| Game::Wallet.key(item.name) }
+    shop_items = GameShopItem.includes(:shop).index_by { |item| Game::Wallet.key(item.name) }
     results = GamePlayer.joins(:session).where(account: current_account, game_sessions: { status: 'finished' }).group(:result).count
     rewards = GameReward.where(account: current_account)
 
     render json: {
       currency: currency,
       money: character.money,
+      # 인벤토리 화면 위 착용 슬롯 (칭호·데코·스킨 미리보기에 쓰는 내 아바타·이름)
+      me: { name: character.display_name, avatar: full_asset_url(current_account.avatar_static_url) },
+      wearing: Game::Fx.wearing(character),
       transfer_enabled: transfer_enabled?,
       gained: rewards.gained.sum(:money),
       spent: rewards.spent.sum(:money),
@@ -35,7 +38,7 @@ class Api::V1::System::WalletsController < Api::BaseController
       house_term: Game::Config.for('common')['house_term'],
       my_house_id: character.group_id&.to_s,
       # fx: 아이템으로 붙은 소속 카드 효과 모양 (Game::Fx, 효과가 꺼져 있으면 nil)
-      houses: GameHouse.active.map { |house| { id: house.id.to_s, name: house.name, color: house.color, total: house.total, fx: Game::Fx.house_preset(house) } },
+      houses: GameHouse.active.map { |house| { id: house.id.to_s, name: house.name, color: house.color, total: house.total, fx: Game::Fx.house_preset(house), fx_until: Game::Fx.house_until(house) } },
       inventory: Array(character.inventory).map { |item| inventory_json(item, shop_items[Game::Wallet.key(item['name'])]) },
     }
   end
@@ -114,6 +117,7 @@ class Api::V1::System::WalletsController < Api::BaseController
   def inventory_json(item, shop_item)
     {
       name: item['name'],
+      shop: shop_item&.shop&.name,
       count: item['count'].to_i,
       note: item['note'].to_s,
       description: shop_item&.description.to_s,

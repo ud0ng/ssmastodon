@@ -7,10 +7,14 @@ import { Link } from 'react-router-dom';
 import DiamondIcon from '@/material-icons/400-24px/diamond.svg?react';
 import InventoryIcon from '@/material-icons/400-24px/inventory_2.svg?react';
 import { Icon } from 'mastodon/components/icon';
+import { ChangeBadge } from 'mastodon/features/system/change_badge';
 import { useWallet } from 'mastodon/features/system/use_wallet';
+import { useChanged } from 'mastodon/features/system/wallet_changes';
 
 export const WalletBar: React.FC = () => {
   const wallet = useWallet();
+  const moneyChanged = useChanged('money', wallet);
+  const inventoryChanged = useChanged('inventory', wallet);
 
   if (!wallet) return null;
 
@@ -21,6 +25,7 @@ export const WalletBar: React.FC = () => {
       <Link to='/system/wallet' className='wallet-bar__item'>
         <span className='wallet-bar__label'>
           {wallet.currency}
+          <ChangeBadge show={moneyChanged} />
         </span>
         <span className='wallet-bar__value'>
           <Icon id='diamond' icon={DiamondIcon} />
@@ -31,6 +36,7 @@ export const WalletBar: React.FC = () => {
       <Link to='/system/inventory' className='wallet-bar__item'>
         <span className='wallet-bar__label'>
           <FormattedMessage id='wallet.inventory' defaultMessage='Inventory' />
+          <ChangeBadge show={inventoryChanged} />
         </span>
         <span className='wallet-bar__value'>
           <Icon id='inventory' icon={InventoryIcon} />

@@ -1,7 +1,7 @@
 // 웹 재화·인벤토리 화면 (글쓰기창 아래 버튼에서 들어온다)
 //   /system/wallet     보유 재화 카드(선물) + 재화 기록 (전체/획득/사용/아이템 탭, 날짜별, 더 보기)
 //   /system/inventory  가진 아이템 양피지 카드 (상점 화면과 같은 해리포터 스타일). 누르면 아이템 모달 (item_modal)
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { defineMessages, FormattedDate, FormattedMessage, FormattedTime, useIntl } from 'react-intl';
 
@@ -23,6 +23,8 @@ import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
 import { openModal } from 'mastodon/actions/modal';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
+import { Remaining } from 'mastodon/components/countdown';
+import { GameFx } from 'mastodon/components/game_fx';
 import { Icon } from 'mastodon/components/icon';
 import type { IconProp } from 'mastodon/components/icon';
 import { LoadMore } from 'mastodon/components/load_more';
@@ -33,6 +35,7 @@ import { ItemImage } from './item_modal';
 
 import type { RecordFilter, Wallet, WalletItem, WalletRecord } from './use_wallet';
 import { useWallet, useWalletRecords } from './use_wallet';
+import { markSeen } from './wallet_changes';
 
 const messages = defineMessages({
   wallet: { id: 'wallet.money', defaultMessage: 'Currency' },
@@ -218,8 +221,63 @@ const MoneyView: React.FC<{ wallet: Wallet }> = ({ wallet }) => {
   );
 };
 
+// 착용 슬롯: 데코 / 칭호 / 스킨 — 지금 입고 있는 효과를 내 아바타·이름으로 미리 보고, 남은 시간이 흐른다
+const SLOT_TITLES: Record<'deco' | 'title' | 'skin', React.ReactNode> = {
+  deco: <FormattedMessage id='wearing.deco' defaultMessage='Decoration' />,
+  title: <FormattedMessage id='wearing.title' defaultMessage='Title' />,
+  skin: <FormattedMessage id='wearing.skin' defaultMessage='Skin' />,
+};
+
+const WearingSlot: React.FC<{ wallet: Wallet; slot: 'deco' | 'title' | 'skin' }> = ({ wallet, slot }) => {
+  const worn = wallet.wearing.find((entry) => entry.slot === slot);
+  const avatar = <span className='account__avatar wearing-slot__avatar'><img src={wallet.me.avatar} alt='' /></span>;
+
+  return (
+    <div className={worn ? 'wearing-slot wearing-slot--on' : 'wearing-slot'}>
+      <span className='wearing-slot__label'>{SLOT_TITLES[slot]}</span>
+      {worn ? (
+        <>
+          <span className={`wearing-slot__preview wearing-slot__preview--${slot}`}>
+            {slot === 'deco' && (
+              <span className={`game-fx-deco game-fx-deco--${worn.preset} game-fx-deco-wrap`}>
+                {avatar}
+                <GameFx slot='deco' preset={worn.preset} />
+              </span>
+            )}
+            {slot === 'title' && (
+              <span className={`game-fx-title game-fx-title--${worn.preset}`}>
+                <span className='game-fx-name wearing-slot__name'>{wallet.me.name}</span>
+                <GameFx slot='title' preset={worn.preset} />
+              </span>
+            )}
+            {slot === 'skin' && (
+              <span className='wearing-slot__skin'>
+                <span className={`game-fx-skin game-fx-skin--${worn.preset}`} aria-hidden>
+                  <GameFx slot='skin' preset={worn.preset} />
+                </span>
+                {avatar}
+                <span className='wearing-slot__name'>{wallet.me.name}</span>
+              </span>
+            )}
+          </span>
+          <span className='wearing-slot__effect'>{worn.name}</span>
+          <Remaining until={worn.until} className='wearing-slot__time' />
+        </>
+      ) : (
+        <span className='wearing-slot__empty'><FormattedMessage id='wearing.none' defaultMessage='None' /></span>
+      )}
+    </div>
+  );
+};
+
 const InventoryView: React.FC<{ wallet: Wallet }> = ({ wallet }) => {
   const dispatch = useAppDispatch();
+  // 소지품 탭: 전체 + 아이템을 파는 상점별 (상점에 없는 것은 기타, 키는 'etc')
+  const [tab, setTab] = useState('all');
+  const keyOf = (item: WalletItem) => item.shop ?? 'etc';
+  const shops = [...new Set(wallet.inventory.map(keyOf))].sort((x, y) => (x === 'etc' ? 1 : y === 'etc' ? -1 : 0));
+  const current = shops.includes(tab) ? tab : 'all';
+  const shown = current === 'all' ? wallet.inventory : wallet.inventory.filter((item) => keyOf(item) === current);
 
   const open = (item: WalletItem) => {
     dispatch(openModal({ modalType: 'INVENTORY_ITEM', modalProps: { item, transferEnabled: wallet.transfer_enabled } }));
@@ -227,17 +285,39 @@ const InventoryView: React.FC<{ wallet: Wallet }> = ({ wallet }) => {
 
   // 상점과 같은 해리포터 분위기: 금빛 선 제목 + 양피지 카드 (개수는 금빛 배지, 메모는 이름 아래)
   return (
+    <>
+      <section className='system-section'>
+        <h3 className='system-section__title'>
+          <FormattedMessage id='wearing.title_all' defaultMessage='Wearing' />
+        </h3>
+        <div className='wearing-slots'>
+          {(['deco', 'title', 'skin'] as const).map((slot) => <WearingSlot key={slot} wallet={wallet} slot={slot} />)}
+        </div>
+      </section>
+
     <section className='system-section'>
       <h3 className='system-section__title'>
         <FormattedMessage id='wallet.inventory_title' defaultMessage='Belongings · {count}' values={{ count: wallet.item_count }} />
       </h3>
+      {shops.length > 1 && (
+        <div className='notification__filter-bar shop-page__tabs'>
+          <button type='button' className={current === 'all' ? 'active' : undefined} onClick={() => { setTab('all'); }}>
+            <FormattedMessage id='wallet.filter.all' defaultMessage='All' />
+          </button>
+          {shops.map((shop) => (
+            <button key={shop} type='button' className={current === shop ? 'active' : undefined} onClick={() => { setTab(shop); }}>
+              {shop === 'etc' ? <FormattedMessage id='wallet.inventory.etc' defaultMessage='Other' /> : shop}
+            </button>
+          ))}
+        </div>
+      )}
       {wallet.inventory.length === 0 ? (
         <p className='system-page__empty'>
           <FormattedMessage id='wallet.no_items' defaultMessage='No items yet.' />
         </p>
       ) : (
         <ul className='shop-page__items'>
-          {wallet.inventory.map((item) => (
+          {shown.map((item) => (
             <li key={item.name}>
               <button type='button' className='shop-card' onClick={() => { open(item); }}>
                 <ItemImage item={item} count={item.count} />
@@ -249,6 +329,7 @@ const InventoryView: React.FC<{ wallet: Wallet }> = ({ wallet }) => {
         </ul>
       )}
     </section>
+    </>
   );
 };
 
@@ -258,6 +339,11 @@ const WalletPage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
   const wallet = useWallet();
   const inventory = section === 'inventory';
   const title = intl.formatMessage(inventory ? messages.inventory : messages.wallet);
+
+  // 이 화면을 보고 있으면 변경 알림(배지)은 본 것으로
+  useEffect(() => {
+    if (wallet) markSeen(inventory ? 'inventory' : 'money', wallet);
+  }, [wallet, inventory]);
 
   return (
     <Column bindToDocument={!multiColumn} label={title}>

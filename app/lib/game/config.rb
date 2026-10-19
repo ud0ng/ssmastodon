@@ -153,6 +153,9 @@ module Game
       # 소속·점수 (캐릭터 관리 > 소속에서 고친다)
       Field.new(key: 'group_mode', type: :select, default: 'house', group: 'groups',
                 choices: [['house', '기숙사'], ['faction', '진영']], label: '점수 기준 소속'),
+      # 캐릭터 관리 > 활동의 경고 기준 (활동 화면 맨 위에서 고친다)
+      Field.new(key: 'activity_hours', type: :integer, default: 24, group: 'activity', label: '활동 기준 시간 (1~24시간)'),
+      Field.new(key: 'activity_min_partners', type: :integer, default: 5, group: 'activity', label: '최소 교류 캐릭터 수'),
       Field.new(key: 'scoring_mode', type: :select, default: 'points', group: 'groups',
                 choices: [['points', '점수제'], ['games', '판수제']], label: '점수 방식',
                 hint: '점수제: 컨텐츠마다 정한 승·무·패 점수의 총합으로 승부 / 판수제: 컨텐츠를 승리한 판 수로 승부'),

@@ -28,3 +28,28 @@ export const Countdown: React.FC<{ until: string; className?: string }> = ({ unt
     </time>
   );
 };
+
+// 효과 남은 시간 (시:분:초, 한 시간이 안 남으면 분:초). 아주 먼 날이면(영구) '영구'
+const PERMANENT_MS = 50 * 365 * 86_400_000;
+
+export const Remaining: React.FC<{ until: string; className?: string }> = ({ until, className }) => {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const left = new Date(until).getTime() - now;
+  if (left > PERMANENT_MS) return <span className={className}>영구</span>;
+
+  const seconds = Math.max(0, Math.floor(left / 1000));
+  const hours = Math.floor(seconds / 3600);
+  const text = hours > 0 ? `${hours}:${pad(Math.floor((seconds % 3600) / 60))}:${pad(seconds % 60)}` : formatRemaining(until, now);
+
+  return <time dateTime={until} className={[className, 'countdown', left < 60_000 && 'countdown--urgent'].filter(Boolean).join(' ')}>{text}</time>;
+};

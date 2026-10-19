@@ -6,9 +6,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { apiRequestGet } from 'mastodon/api';
 
 import { syncTodo } from './game_todo';
+import { trackWalletChanges } from './wallet_changes';
 
 export interface WalletItem {
   name: string;
+  // 파는 상점 이름 (인벤토리 탭), 상점에 없는 아이템은 null
+  shop?: string | null;
   count: number;
   note: string;
   description: string;
@@ -35,6 +38,9 @@ export interface WalletRecord {
 export interface Wallet {
   currency: string;
   money: number;
+  // 인벤토리 화면 위 착용 슬롯: 내 아바타·이름과 지금 입고 있는 칭호·데코·스킨 (permanent 면 영구)
+  me: { name: string; avatar: string };
+  wearing: { slot: 'title' | 'deco' | 'skin'; preset: string; name: string; until: string; permanent: boolean }[];
   transfer_enabled: boolean;
   gained: number;
   spent: number;
@@ -44,7 +50,7 @@ export interface Wallet {
   house_term: string;
   my_house_id: string | null;
   // fx: 아이템으로 붙은 소속 카드 효과 모양 (상점 설정 > 효과 목록, 꺼져 있으면 null)
-  houses: { id: string; name: string; color: string; total: number; fx?: string | null }[];
+  houses: { id: string; name: string; color: string; total: number; fx?: string | null; fx_until?: string | null }[];
   invites: number;
   // 내가 행동해야 하는 판 (수락 대기·내 차례). 알림 소리·메뉴 배지의 기준
   todo?: { session_id: string; name: string }[];
@@ -73,6 +79,7 @@ export const useWallet = () => {
     apiRequestGet<Wallet>('v1/system/wallet')
       .then((next) => {
         syncTodo((next.todo ?? []).map((item) => item.session_id));
+        trackWalletChanges(next);
         setWallet(next);
         return next;
       })

@@ -1366,3 +1366,9 @@ textarea.ui-input {
     margin-top: 10px;
   }
 }
+
+// 활동 표 경고 칸: 기준에 못 미치면 붉게
+.game-alert {
+  color: #d93025 !important;
+  font-weight: 700;
+}

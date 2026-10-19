@@ -31,6 +31,7 @@ class Api::V1::SystemController < Api::BaseController
         currency: common['currency_name'],
         inventory: Array(character.inventory).map { |item| item.slice('name', 'count', 'note') },
       },
+      daily: daily_json(common),
       record: record,
       active: my_players(%w(pending active)).map { |player| game_json(player) },
       recent: my_players(%w(finished)).limit(RECENT_LIMIT).map { |player| game_json(player) },
@@ -41,6 +42,15 @@ class Api::V1::SystemController < Api::BaseController
   end
 
   private
+
+  # 컨텐츠 하루 최대 횟수 (컨텐츠 설정 > 설정 > 룰). 0 이면 제한이 없어 보여 주지 않는다.
+  def daily_json(common)
+    max = common['daily_game_limit'].to_i
+    return unless max.positive?
+
+    used = Game::DailyLimits.sent_today(current_account).count
+    { used: used, max: max, left: [max - used, 0].max }
+  end
 
   # 스탯 값과 상태 수치(수식 계산): [{ name, value }]
   def character_stats(character)

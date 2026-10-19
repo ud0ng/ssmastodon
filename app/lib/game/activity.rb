@@ -26,6 +26,27 @@ module Game
       end
     end
 
+    # 캐릭터 관리 > 활동의 경고 칸: 마지막 답 툿 시간과, 기준 시간 안에 답 툿으로 오간 서로 다른 캐릭터 수.
+    #   답 툿: 다른 사람에게 단 퍼블 답 (DM·부스트·자기 툿에 단 답 제외). 교류 캐릭터 수는 운영진 계정을 빼고 중복 없이 센다.
+    Alert = Struct.new(:last_reply_at, :partners, keyword_init: true)
+
+    # 설정 (컨텐츠 설정이 아니라 활동 화면 맨 위): 기준 시간(1~24), 최소 교류 캐릭터 수
+    def criteria
+      common = Game::Config.for('common')
+      { hours: common['activity_hours'].to_i.clamp(1, 24), min_partners: [common['activity_min_partners'].to_i, 0].max }
+    end
+
+    # account_id => Alert
+    def alerts(account_ids, hours:, staff_ids: [])
+      replies = Status.where(account_id: account_ids, reblog_of_id: nil).where.not(visibility: :direct).where.not(in_reply_to_account_id: nil)
+                      .where('statuses.in_reply_to_account_id <> statuses.account_id').reorder(nil)
+      last = replies.group(:account_id).maximum(:created_at)
+      window = replies.where(created_at: hours.hours.ago..)
+      window = window.where.not(in_reply_to_account_id: staff_ids) if staff_ids.any?
+      partners = window.group(:account_id).distinct.count(:in_reply_to_account_id)
+      account_ids.to_h { |id| [id, Alert.new(last_reply_at: last[id], partners: partners.fetch(id, 0))] }
+    end
+
     # account_id => Overview
     def overview(account_ids)
       result = Hash.new { |hash, key| hash[key] = Overview.empty }

@@ -5,6 +5,16 @@
   = render 'admin/game_characters/heading'
 
 -# 전체 툿 / DM 툿 / 퍼블 툿 / 답 툿 (툿 수 / 글자 수) · 답 횟수 · 미디어 · 재화. 머리를 누르면 정렬, 줄을 누르면 그 캐릭터의 활동 기록. 목록 위 [지급]
+-# 맨 위: 경고 기준 (활동 기준 시간 1~24시간, 최소 교류 캐릭터 수)
+= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.activity.criteria_title'), hint: game_t('admin.games.activity.criteria_hint') } do
+  = form_tag criteria_admin_game_activities_path, method: :patch, class: 'simple_form' do
+    = render layout: 'admin/ui/fields' do
+      = render 'admin/ui/field', label: game_t('admin.games.activity.criteria_hours'), name: 'activity_hours', id: 'activity_hours', value: @criteria[:hours], type: :number,
+                                 hint: game_t('admin.games.activity.hours_hint'), html: { min: 1, max: 24 }
+      = render 'admin/ui/field', label: game_t('admin.games.activity.criteria_partners'), name: 'activity_min_partners', id: 'activity_min_partners', value: @criteria[:min_partners], type: :number, html: { min: 0 }
+    .actions
+      = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+
 - give = button_tag safe_join([material_symbol('celebration'), game_t('admin.games.activity.give')]), type: :button, class: 'button', data: { modal_open: 'activity-give' }
 = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.manage.tabs.activity'), hint: game_t('admin.games.activity.hint'), actions: give } do
   .bot-sheet-table.game-table.game-table--scroll
@@ -18,6 +28,8 @@
           %th.game-table__number= game_sort_header(game_t('admin.games.activity.replies'), 'reply_posts', sort_column, sort_direction)
           %th.game-table__number= game_sort_header(game_t('admin.games.activity.reply_count'), 'replies', sort_column, sort_direction)
           %th.game-table__number= game_sort_header(game_t('admin.games.activity.media'), 'media', sort_column, sort_direction)
+          %th.game-table__number= game_sort_header(game_t('admin.games.activity.last_reply'), 'last_reply', sort_column, sort_direction)
+          %th.game-table__number= game_sort_header(game_t('admin.games.activity.partners'), 'partners', sort_column, sort_direction)
           %th.game-table__number= game_sort_header(@currency, 'money', sort_column, sort_direction)
       %tbody
         - @characters.each do |character|
@@ -32,9 +44,14 @@
             %td.game-table__number.game-table__pair= game_pair(old.replies, old.reply_chars)
             %td.game-table__number= number_with_delimiter(stats.replies)
             %td.game-table__number= number_with_delimiter(stats.media)
+            -# 경고: 마지막 답 툿이 기준 시간보다 오래됐거나, 기준 시간 안에 교류한 캐릭터가 모자라면 붉게
+            - alert = @alerts[character.account_id]
+            - late = alert.last_reply_at.nil? || alert.last_reply_at < @criteria[:hours].hours.ago
+            %td.game-table__number{ class: ('game-alert' if late) }= game_ago(alert.last_reply_at)
+            %td.game-table__number{ class: ('game-alert' if alert.partners < @criteria[:min_partners]) }= game_t('admin.games.activity.partners_value', count: alert.partners, min: @criteria[:min_partners])
             %td.game-table__number= number_with_delimiter(character.money)
         - if @characters.empty?
           %tr
-            %td.bot-sheet-table__text{ colspan: 8 }= game_t('admin.games.manage.roster.empty')
+            %td.bot-sheet-table__text{ colspan: 10 }= game_t('admin.games.manage.roster.empty')
 
 = render 'admin/game_activities/give_modal', return_to: admin_game_activities_path

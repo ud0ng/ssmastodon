@@ -131,6 +131,7 @@ namespace :admin do
   resources :game_settings, path: 'games', only: [:index, :show, :update]
   resources :game_activities, path: 'characters/activity', only: [:index, :show] do
     post :give, on: :collection
+    patch :criteria, on: :collection
   end
   resources :game_character_stats, path: 'characters/stats', only: [:index, :create, :update, :destroy]
   get 'characters/activity_log', to: 'game_activity_logs#index', as: :game_activity_logs

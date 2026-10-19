@@ -81,6 +81,7 @@ export interface Overview {
     currency: string;
     inventory: { name: string; count: number; note: string }[];
   };
+  daily: { used: number; max: number; left: number } | null;
   record: { win: number; lose: number; draw: number };
   active: Game[];
   recent: Game[];
@@ -158,7 +159,7 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
         {data && (
           <>
             {/* 맨 위: 내 캐릭터만 크게 (소속 | 이름 / 전적). 소속 점수는 글쓰기 패널 맨 아래 */}
-            <CharacterHeader name={data.character.name} house={myHouse} houseTerm={data.house_term} record={data.record} />
+            <CharacterHeader name={data.character.name} house={myHouse} houseTerm={data.house_term} record={data.record} daily={data.daily} />
 
             {data.active.length > 0 && (
               <section className='system-section'>

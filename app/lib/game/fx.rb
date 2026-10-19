@@ -127,6 +127,27 @@ module Game
       active(house.effects).last&.dig('preset')
     end
 
+    # 소속 카드에 붙은 효과의 끝나는 때 (house_preset 과 같은 것, 없으면 nil)
+    def house_until(house)
+      return unless enabled?
+
+      active(house.effects).last&.dig('until')
+    end
+
+    # 그 캐릭터가 지금 입고 있는 칭호·데코·스킨 [{ slot, preset, name, until, permanent }] (자리마다 마지막에 붙은 것, 효과가 꺼져 있으면 [])
+    def wearing(character)
+      return [] unless enabled?
+
+      entries = active(Array(character.effects).select { |item| item['kind'] == 'fx' }).select { |item| SLOTS['character'].include?(item['slot']) }
+      names = GameEffect.unscoped.where(id: entries.pluck('effect_id')).pluck(:id, :name).to_h
+      SLOTS['character'].filter_map do |slot|
+        entry = entries.reverse.find { |item| item['slot'] == slot }
+        next if entry.nil?
+
+        { slot: slot, preset: entry['preset'], name: names[entry['effect_id'].to_i].presence || preset_label(slot, entry['preset']), until: entry['until'], permanent: permanent?(entry) }
+      end
+    end
+
     # 계정에 보일 캐릭터 효과 { 'title' => preset, 'deco' => preset } (자리마다 마지막에 붙은 것)
     def for_account_id(account_id)
       return {} unless enabled?

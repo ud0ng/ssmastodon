@@ -12,10 +12,15 @@ import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
 import { apiRequestGet } from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
+import { Remaining } from 'mastodon/components/countdown';
+import { GameFx } from 'mastodon/components/game_fx';
 import { LoadMore } from 'mastodon/components/load_more';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
+import { GoldFx, HOUSE_FX_CLASS, PoopFx } from 'mastodon/features/compose/components/house_fx';
 
 import { Crest } from './crest';
+import { useWallet } from './use_wallet';
+import { markSeen } from './wallet_changes';
 
 interface Person { name: string; acct: string; avatar: string; points: number }
 
@@ -118,6 +123,15 @@ const HousePage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
   const [next, setNext] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  // 이 소속 카드에 붙은 효과(테마)와 남은 시간은 재화 정보(글쓰기 패널 소속 점수 카드와 같은 것)에서
+  const wallet = useWallet();
+  const mine = wallet?.houses.find((house) => house.id === id);
+  const fx = mine?.fx ?? null;
+
+  // 이 화면을 보고 있으면 이 소속의 변경 알림(배지)은 본 것으로
+  useEffect(() => {
+    if (wallet && id) markSeen('house', wallet, id);
+  }, [wallet, id]);
 
   const fetchPage = useCallback(
     (maxId: string | null) => {
@@ -175,13 +189,22 @@ const HousePage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
         {data && (
           <>
             <div className='wallet-page__padded'>
-              <div className='wallet-card house-page__total'>
+              <div className={['wallet-card house-page__total', fx && `house-page__total--${fx}`, fx && (HOUSE_FX_CLASS[fx] ?? `game-fx-host game-fx-host--card game-fx-host--${fx}`)].filter(Boolean).join(' ')}>
+                {fx === 'gold' && <GoldFx />}
+                {fx === 'poop' && <PoopFx />}
+                {fx && !HOUSE_FX_CLASS[fx] && <GameFx slot='card' preset={fx} />}
                 <span className='wallet-card__top'>
                   <span className='wallet-card__label'>
                     <FormattedMessage id='house.current' defaultMessage='Current {term} points' values={{ term: data.house.term }} />
                   </span>
                   <span className='wallet-card__gift house-page__name'>{data.house.name}</span>
                 </span>
+                {fx && mine?.fx_until && (
+                  <span className='house-page__fx-time'>
+                    <FormattedMessage id='house.fx_left' defaultMessage='Effect left' />
+                    <Remaining until={mine.fx_until} />
+                  </span>
+                )}
                 <span className='wallet-card__balance'>
                   <Crest house={{ ...data.house, emoji: '' }} large />
                   <strong>{data.house.total.toLocaleString()}</strong>

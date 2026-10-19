@@ -7,7 +7,7 @@ module Admin
     include Admin::GameGiveForm
 
     RECORDS = 30
-    SORTS = %w(name posts chars dms dm_chars replies media public_posts public_chars reply_posts reply_chars money).freeze
+    SORTS = %w(name posts chars dms dm_chars replies media last_reply partners public_posts public_chars reply_posts reply_chars money).freeze
     # 예전 칸(퍼블 툿·답 툿)의 값은 Game::Activity.stats 에서
     STATS_SORTS = { 'public_posts' => :posts, 'public_chars' => :post_chars, 'reply_posts' => :replies, 'reply_chars' => :reply_chars }.freeze
     helper_method :sort_column, :sort_direction
@@ -21,6 +21,9 @@ module Admin
       ids = @characters.map(&:account_id)
       @activity = Game::Activity.overview(ids)
       @stats = Game::Activity.stats(ids)
+      @criteria = Game::Activity.criteria
+      staff_ids = Account.where('lower(username) IN (?)', GameCharacter.staff_usernames.presence || ['']).pluck(:id)
+      @alerts = Game::Activity.alerts(ids, hours: @criteria[:hours], staff_ids: staff_ids)
       sorted = @characters.sort_by { |character| sort_value(character) }
       @characters = sort_direction == 'desc' ? sorted.reverse : sorted
       load_give_form
@@ -36,6 +39,14 @@ module Admin
       @shop_item_names = GameShopItem.pluck(:name)
       @currency = Game::Config.for('common')['currency_name']
       @rule = Game::Activity.reward_rule
+    end
+
+    # 활동 화면 맨 위: 활동 기준 시간(1~24시간)과 최소 교류 캐릭터 수
+    def criteria
+      authorize :settings, :update?
+
+      Game::Config.merge!('common', 'activity_hours' => params[:activity_hours].to_i.clamp(1, 24), 'activity_min_partners' => [params[:activity_min_partners].to_i, 0].max)
+      redirect_to admin_game_activities_path, notice: t('generic.changes_saved_msg')
     end
 
     # 지급: 재화(kind money) 또는 아이템(kind items)을 고른 캐릭터들에게
@@ -82,6 +93,8 @@ module Admin
     def sort_value(character)
       return [character.display_name.downcase] if sort_column == 'name'
       return [character.money.to_i, character.display_name.downcase] if sort_column == 'money'
+      return [@alerts[character.account_id].last_reply_at&.to_i.to_i, character.display_name.downcase] if sort_column == 'last_reply'
+      return [@alerts[character.account_id].partners, character.display_name.downcase] if sort_column == 'partners'
 
       return [@stats[character.account_id].public_send(STATS_SORTS[sort_column]).to_i, character.display_name.downcase] if STATS_SORTS.key?(sort_column)
 

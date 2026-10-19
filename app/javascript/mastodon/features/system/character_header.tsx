@@ -11,7 +11,8 @@ export const CharacterHeader: React.FC<{
   house?: House;
   houseTerm: string;
   record: { win: number; lose: number; draw: number };
-}> = ({ name, house, houseTerm, record }) => (
+  daily?: { used: number; max: number; left: number } | null;
+}> = ({ name, house, houseTerm, record, daily }) => (
   <div className='system-hero' style={{ '--house-color': house?.color || '#6b5b3e' } as React.CSSProperties}>
     <div className='system-hero__house'>
       <Crest house={house} large />
@@ -25,5 +26,11 @@ export const CharacterHeader: React.FC<{
         <FormattedMessage id='system.record' defaultMessage='{win} W · {lose} L · {draw} D' values={record} />
       </span>
     </div>
+    {daily && (
+      <div className='system-hero__daily'>
+        <span><FormattedMessage id='system.daily' defaultMessage='Contents left today' /></span>
+        <strong>{daily.left} / {daily.max}</strong>
+      </div>
+    )}
   </div>
 );

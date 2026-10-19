@@ -7,9 +7,30 @@ import { Link } from 'react-router-dom';
 
 import { GameFx } from 'mastodon/components/game_fx';
 import { Crest } from 'mastodon/features/system/crest';
+import { ChangeBadge } from 'mastodon/features/system/change_badge';
+import type { Wallet } from 'mastodon/features/system/use_wallet';
 import { useWallet } from 'mastodon/features/system/use_wallet';
+import { useChanged } from 'mastodon/features/system/wallet_changes';
 
 import { GoldFx, HOUSE_FX_CLASS, PoopFx } from './house_fx';
+
+const HouseCard: React.FC<{ house: Wallet['houses'][number]; wallet: Wallet; classes: string }> = ({ house, wallet, classes }) => {
+  const changed = useChanged('house', wallet, house.id);
+
+  return (
+    <Link to={`/system/houses/${house.id}`} className={classes}>
+      <ChangeBadge show={changed} />
+      {house.fx === 'gold' && <GoldFx />}
+      {house.fx === 'poop' && <PoopFx />}
+      {house.fx && !HOUSE_FX_CLASS[house.fx] && <GameFx slot='card' preset={house.fx} />}
+      <span className='house-points__name'>{house.name}</span>
+      <span className='house-points__value'>
+        <Crest house={{ ...house, emoji: '' }} />
+        <strong>{house.total.toLocaleString()}</strong>
+      </span>
+    </Link>
+  );
+};
 
 export const HousePoints: React.FC = () => {
   const intl = useIntl();
@@ -28,18 +49,7 @@ export const HousePoints: React.FC = () => {
           house.id === wallet.my_house_id && 'house-points__item--mine',
           house.fx && (HOUSE_FX_CLASS[house.fx] ?? `game-fx-host game-fx-host--card game-fx-host--${house.fx}`),
         ].filter(Boolean).join(' ');
-        return (
-          <Link key={house.id} to={`/system/houses/${house.id}`} className={classes}>
-            {house.fx === 'gold' && <GoldFx />}
-            {house.fx === 'poop' && <PoopFx />}
-            {house.fx && !HOUSE_FX_CLASS[house.fx] && <GameFx slot='card' preset={house.fx} />}
-            <span className='house-points__name'>{house.name}</span>
-            <span className='house-points__value'>
-              <Crest house={{ ...house, emoji: '' }} />
-              <strong>{house.total.toLocaleString()}</strong>
-            </span>
-          </Link>
-        );
+        return <HouseCard key={house.id} house={house} wallet={wallet} classes={classes} />;
       })}
     </div>
   );

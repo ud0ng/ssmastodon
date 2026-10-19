@@ -77,6 +77,11 @@ module Admin::GameHelper
     items.empty? ? '—' : safe_join(items, ' ')
   end
 
+  # 상대 시간 (n분 전). 없으면 —
+  def game_ago(time)
+    time ? "#{time_ago_in_words(time)} 전" : '—'
+  end
+
   # '툿 수 / 글자 수' 를 한 칸에
   def game_pair(count, chars)
     safe_join([number_with_delimiter(count), content_tag(:span, ' / ', class: 'game-pair__sep'), number_with_delimiter(chars)])

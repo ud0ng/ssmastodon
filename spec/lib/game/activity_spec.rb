@@ -84,4 +84,21 @@ RSpec.describe Game::Activity do
       expect { toot('비밀', visibility: :direct) }.to_not change(Game::ActivityWorker.jobs, :size)
     end
   end
+  describe '.alerts' do
+    it 'finds the last reply and counts distinct non-staff partners inside the window' do
+      staff = Fabricate(:account, username: 'professor')
+      allow(GameCharacter).to receive(:staff_usernames).and_return(['professor'])
+      first = Fabricate(:account)
+      toot('a', reply_to: Fabricate(:status, account: first))
+      toot('b', reply_to: Fabricate(:status, account: first)) # 같은 상대는 한 번만
+      toot('c', reply_to: Fabricate(:status, account: staff)) # 운영진은 뺀다
+      toot('d', reply_to: Fabricate(:status, account: other), visibility: :direct) # DM 은 뺀다
+      old = toot('e', reply_to: Fabricate(:status, account: Fabricate(:account)))
+      old.update_columns(created_at: 3.days.ago)
+
+      alert = described_class.alerts([account.id], hours: 24, staff_ids: [staff.id])[account.id]
+      expect(alert.partners).to eq(1)
+      expect(alert.last_reply_at).to be > 1.minute.ago
+    end
+  end
 end

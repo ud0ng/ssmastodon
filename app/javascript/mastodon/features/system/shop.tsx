@@ -47,6 +47,7 @@ const ShopPage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
   const intl = useIntl();
   const dispatch = useAppDispatch();
   const [data, setData] = useState<ShopData | null>(null);
+  const [tab, setTab] = useState<string | null>(null);
   const title = intl.formatMessage(messages.title);
 
   const load = useCallback(() => {
@@ -74,6 +75,9 @@ const ShopPage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
     [dispatch, data],
   );
 
+  // 상점이 여럿이면 탭으로 나눠 한 상점씩 보여 준다
+  const current = data?.shops.find((shop) => shop.id === tab) ?? data?.shops[0];
+
   return (
     <Column bindToDocument={!multiColumn} label={title}>
       <ColumnHeader icon='shop' iconComponent={ShopIcon} title={title} multiColumn={multiColumn} />
@@ -90,9 +94,19 @@ const ShopPage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
               </p>
             )}
 
-            {data.shops.map((shop) => (
+            {data.shops.length > 1 && (
+              <div className='notification__filter-bar shop-page__tabs'>
+                {data.shops.map((shop) => (
+                  <button key={shop.id} type='button' className={shop.id === current?.id ? 'active' : undefined} onClick={() => { setTab(shop.id); }}>
+                    {shop.name}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {current && [current].map((shop) => (
               <section key={shop.id} className='system-section'>
-                <h3 className='system-section__title'>{shop.name}</h3>
+                {data.shops.length === 1 && <h3 className='system-section__title'>{shop.name}</h3>}
                 {shop.description && <p className='shop-page__description'>{shop.description}</p>}
                 <ul className='shop-page__items'>
                   {shop.items.map((item) => (
