@@ -1345,3 +1345,24 @@ textarea.ui-input {
     flex: 0 1 96px;
   }
 }
+
+.fx-add-wrap {
+  margin-top: 16px;
+
+  &__button {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
+
+  .fx-add,
+  .hint {
+    margin-top: 10px;
+  }
+}

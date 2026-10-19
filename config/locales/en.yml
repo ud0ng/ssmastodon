@@ -234,6 +234,7 @@ en:
         bad_time: "Could not read the end date."
         entries_title: "Active effects"
         add: "Add effect"
+        add_save: "Attach"
         pick: "Pick an effect"
         bad_effect: "That effect cannot be added."
         none_to_add: "No effects in the list yet. Create one in Shop settings > Effects first."

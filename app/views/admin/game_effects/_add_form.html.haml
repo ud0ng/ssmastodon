@@ -1,14 +1,15 @@
--# 효과 직접 붙이기: 효과 고르기 + 지속시간(숫자 + 단위, 영구)
+-# 효과 직접 붙이기: [효과 추가] 버튼만 보이고, 누르면 한 개를 고르는 줄이 열린다 (효과 + 지속시간 숫자·단위 / 영구). 저장하면 한 개씩 붙는다
 -# local: url, kind ('character' 이면 칭호·데코·스킨, 'house' 면 소속 카드), id (칸 이름표용)
 - effects = GameEffect.unscoped.where(kind: kind).order(:slot, :position, :id).to_a
 - units = [[game_t('admin.games.item_fx.minute'), 'minute'], [game_t('admin.games.item_fx.hour'), 'hour'], [game_t('admin.games.item_fx.day'), 'day'], [game_t('admin.games.fx.forever'), 'forever']]
 - options = effects.group_by(&:slot).map { |slot, list| [t("admin.games.fx.slots.#{slot}"), list.map { |effect| [effect.name, effect.id] }] }
-%h3.fx-add__title= game_t('admin.games.fx.add')
-- if effects.empty?
-  %p.hint= game_t('admin.games.fx.none_to_add')
-- else
-  = form_tag url, method: :post, class: 'fx-add' do
-    = select_tag :effect_id, grouped_options_for_select(options), id: "#{id}_effect", class: 'ui-input ui-input--select', 'aria-label': game_t('admin.games.fx.pick')
-    = number_field_tag :minutes, 1, min: 1, id: "#{id}_minutes", class: 'ui-input ui-input--number fx-add__number', 'aria-label': game_t('admin.games.item_fx.duration')
-    = select_tag :unit, options_for_select(units, 'day'), id: "#{id}_unit", class: 'ui-input ui-input--select fx-add__unit', 'aria-label': game_t('admin.games.item_fx.unit')
-    = button_tag safe_join([material_symbol('add'), game_t('admin.games.fx.add')]), type: :submit, class: 'button'
+%details.fx-add-wrap
+  %summary.button.button-secondary.fx-add-wrap__button= safe_join([material_symbol('add'), game_t('admin.games.fx.add')])
+  - if effects.empty?
+    %p.hint= game_t('admin.games.fx.none_to_add')
+  - else
+    = form_tag url, method: :post, class: 'fx-add' do
+      = select_tag :effect_id, grouped_options_for_select(options), id: "#{id}_effect", class: 'ui-input ui-input--select', 'aria-label': game_t('admin.games.fx.pick')
+      = number_field_tag :minutes, 1, min: 1, id: "#{id}_minutes", class: 'ui-input ui-input--number fx-add__number', 'aria-label': game_t('admin.games.item_fx.duration')
+      = select_tag :unit, options_for_select(units, 'day'), id: "#{id}_unit", class: 'ui-input ui-input--select fx-add__unit', 'aria-label': game_t('admin.games.item_fx.unit')
+      = button_tag game_t('admin.games.fx.add_save'), type: :submit, class: 'button'

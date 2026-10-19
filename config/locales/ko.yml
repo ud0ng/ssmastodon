@@ -237,6 +237,7 @@ ko:
         bad_time: "끝나는 날짜를 읽을 수 없습니다."
         entries_title: "붙은 효과"
         add: "효과 추가"
+        add_save: "붙이기"
         pick: "효과 고르기"
         bad_effect: "붙일 수 없는 효과입니다."
         none_to_add: "효과 목록에 붙일 효과가 없습니다. 상점 설정 > 효과 목록에서 먼저 만들어 주세요."
