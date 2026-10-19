@@ -64,6 +64,18 @@ module Admin
       redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
     end
 
+    # 소속 카드 효과를 직접 붙인다
+    def add_effect
+      authorize :settings, :update?
+
+      house = GameHouse.find(params[:id])
+      effect = GameEffect.find_by(id: params[:effect_id], kind: 'house')
+      return redirect_to(admin_game_houses_path, alert: t('admin.games.fx.bad_effect')) if effect.nil?
+
+      house.update!(effects: Game::Fx.active(house.effects) + [Admin::GameFxTime.entry(effect, params)])
+      redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
+    end
+
     # 소속 카드 효과: 끝나는 때 고치기 (permanent=1 이면 영구)·지우기
     def update_effect
       authorize :settings, :update?

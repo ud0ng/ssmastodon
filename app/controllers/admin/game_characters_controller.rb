@@ -61,6 +61,20 @@ module Admin
       end
     end
 
+    # 상세 > 효과 카드: 칭호·데코·스킨을 직접 붙인다
+    def add_effect
+      authorize :settings, :update?
+
+      character = GameCharacter.find(params[:id])
+      effect = GameEffect.find_by(id: params[:effect_id], kind: 'character')
+      return redirect_to(edit_admin_game_character_path(character, filter_params), alert: t('admin.games.fx.bad_effect')) if effect.nil?
+
+      entry = Admin::GameFxTime.entry(effect, params).merge('kind' => 'fx', 'item' => t('admin.games.fx.by_admin'))
+      character.update!(effects: character.active_effects + [entry])
+      Game::Fx.expire!(character.account_id)
+      redirect_to edit_admin_game_character_path(character, filter_params), notice: t('generic.changes_saved_msg')
+    end
+
     # 상세 > 효과 카드: 끝나는 때 고치기 (permanent=1 이면 영구)·지우기
     def update_effect
       authorize :settings, :update?

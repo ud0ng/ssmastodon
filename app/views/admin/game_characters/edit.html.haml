@@ -83,3 +83,4 @@
     - entries.each do |index, entry|
       = render 'admin/game_effects/entry', effect: effects_by_id[entry['effect_id'].to_i], entry: entry, id: "character_fx_#{index}",
                                            update_url: effect_admin_game_character_path(@character, index, filter_params), delete_url: effect_admin_game_character_path(@character, index, filter_params)
+    = render 'admin/game_effects/add_form', url: add_effect_admin_game_character_path(@character, filter_params), kind: 'character', id: 'character_fx'

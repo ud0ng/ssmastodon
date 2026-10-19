@@ -1318,3 +1318,30 @@ textarea.ui-input {
 .gd-record--counter strong {
   letter-spacing: 0.02em;
 }
+
+// 효과 직접 붙이기 (admin/game_effects/_add_form)
+.fx-add__title {
+  margin: 16px 0 8px;
+  font-size: 14px;
+}
+
+.fx-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+
+  .ui-input {
+    flex: 1 1 160px;
+    width: auto;
+    min-width: 0;
+  }
+
+  .fx-add__number {
+    flex: 0 1 80px;
+  }
+
+  .fx-add__unit {
+    flex: 0 1 96px;
+  }
+}

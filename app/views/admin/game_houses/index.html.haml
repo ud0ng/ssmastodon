@@ -55,8 +55,7 @@
               %td.bot-sheet-table__text= house.total
               %td.bot-sheet-table__text= game_fx_badges(house, 'card')
               %td.bot-sheet-table__actions
-                - if house.fx_entries.any?
-                  = button_tag material_symbol('celebration'), type: :button, class: 'icon-button', title: game_t('admin.games.fx.card_effects'), data: { modal_open: "house-fx-#{house.id}" }
+                = button_tag material_symbol('celebration'), type: :button, class: 'icon-button', title: game_t('admin.games.fx.card_effects'), data: { modal_open: "house-fx-#{house.id}" }
                 = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: game_t('admin.games.houses.edit'), data: { modal_open: "house-#{house.id}" }
                 = button_to admin_game_house_path(house), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.houses.delete_named', name: label),
                             data: { confirm: game_t('admin.games.houses.delete_confirm_named', name: house.name, term: label) } do
@@ -70,11 +69,14 @@
 
   -# 붙은 카드 효과: 미리보기·이름·남은 시간(고치기)·지우기
   - effects_by_id = GameEffect.unscoped.index_by(&:id)
-  - @lists[category].select { |house| house.fx_entries.any? }.each do |house|
+  - @lists[category].each do |house|
     = render layout: 'admin/ui/modal', locals: { id: "house-fx-#{house.id}", title: "#{house.name} #{game_t('admin.games.fx.card_effects')}" } do
       - house.fx_entries.each do |index, entry|
         = render 'admin/game_effects/entry', effect: effects_by_id[entry['effect_id'].to_i], entry: entry, id: "house_#{house.id}_fx_#{index}",
                                              update_url: effect_admin_game_house_path(house, index), delete_url: effect_admin_game_house_path(house, index)
+      - if house.fx_entries.empty?
+        %p.hint= game_t('admin.games.fx.no_entries')
+      = render 'admin/game_effects/add_form', url: add_effect_admin_game_house_path(house), kind: 'house', id: "house_#{house.id}_fx"
 
   - @lists[category].each do |house|
     = render layout: 'admin/ui/modal', locals: { id: "house-#{house.id}", title: game_t('admin.games.houses.edit') } do

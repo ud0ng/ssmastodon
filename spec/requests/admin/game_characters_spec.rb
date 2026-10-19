@@ -217,6 +217,27 @@ RSpec.describe 'Admin character roster' do
     expect(house.reload.effects).to eq []
   end
 
+  it 'adds title, deco and skin effects to a character and a card effect to a house' do
+    title = GameEffect.create!(kind: 'character', slot: 'title', preset: 'angel', name: '엔젤 칭호')
+    skin = GameEffect.create!(kind: 'character', slot: 'skin', preset: 'debut', name: '데뷔탕트 스킨')
+    card = GameEffect.create!(kind: 'house', slot: 'card', preset: 'gold', name: '블링블링')
+    house = GameHouse.houses.first
+
+    post add_effect_admin_game_character_path(character), params: { effect_id: title.id, minutes: 2, unit: 'hour' }
+    post add_effect_admin_game_character_path(character), params: { effect_id: skin.id, unit: 'forever' }
+    effects = character.reload.fx_entries.map(&:last)
+    expect(effects.pluck('slot')).to eq %w(title skin)
+    expect(Game::Fx.permanent?(effects.first)).to be false
+    expect(Game::Fx.permanent?(effects.last)).to be true
+
+    post add_effect_admin_game_character_path(character), params: { effect_id: card.id, minutes: 1, unit: 'day' }
+    expect(character.reload.fx_entries.size).to eq 2
+
+    post add_effect_admin_game_house_path(house), params: { effect_id: card.id, minutes: 1, unit: 'day' }
+    post add_effect_admin_game_house_path(house), params: { effect_id: title.id, minutes: 1, unit: 'day' }
+    expect(house.reload.fx_entries.size).to eq 1
+  end
+
   it 'redirects the old houses address' do
     get '/admin/games/houses'
 

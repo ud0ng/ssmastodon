@@ -5,6 +5,12 @@ module Admin
   module GameFxTime
     module_function
 
+    # 효과 붙이기 폼: 효과 + 지속시간(숫자 + 단위 minute/hour/day, 단위 forever 면 영구) → 효과 한 개
+    def entry(effect, params)
+      permanent = params[:unit] == 'forever'
+      Game::Fx.entry(effect, Game::ItemEffects.minutes(params[:minutes], params[:unit]), permanent: permanent)
+    end
+
     def parse(params)
       return GameCounterRule::PERMANENT_YEARS.years.from_now if params[:permanent] == '1'
 
