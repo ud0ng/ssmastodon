@@ -198,7 +198,7 @@ RSpec.describe 'Admin character roster' do
     house = GameHouse.houses.first
     house.update!(effects: [Game::Fx.entry(card, 60)])
 
-    patch effect_admin_game_character_path(character, 0), params: { effect_id: title.id, until: 2.days.from_now.in_time_zone('Asia/Seoul').strftime('%Y-%m-%dT%H:%M') }
+    patch effect_admin_game_character_path(character, 0), params: { effect_id: title.id, until: 2.days.from_now.utc.strftime('%Y-%m-%dT%H:%M') }
     expect(Time.zone.parse(character.reload.effects.first['until'])).to be_within(2.minutes).of(2.days.from_now)
 
     patch effect_admin_game_character_path(character, 0), params: { effect_id: title.id, permanent: '1' }

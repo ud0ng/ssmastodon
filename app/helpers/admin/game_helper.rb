@@ -35,9 +35,11 @@ module Admin::GameHelper
     "#{parts.join(' ').presence || '1분 미만'} #{t('admin.games.fx.left')}"
   end
 
-  # datetime-local 칸 값 (한국 시각)
+  # datetime-local 칸 값 (UTC). 마스토돈 관리 화면 스크립트가 datetime-local 칸을 UTC 값으로 보고
+  # 열 때 브라우저 시각으로 바꿔 보여 주고, 저장할 때 다시 UTC 로 바꿔 보내므로 여기서는 UTC 로 주고받는다.
+  # (한국 시각을 그대로 주면 저장할 때마다 9시간씩 앞당겨져 효과가 사라진다)
   def game_fx_input_value(entry)
-    Time.zone.parse(entry['until'].to_s).in_time_zone('Asia/Seoul').strftime('%Y-%m-%dT%H:%M')
+    Time.zone.parse(entry['until'].to_s).utc.strftime('%Y-%m-%dT%H:%M')
   end
 
   # 캐릭터에 지금 붙은 칭호·데코·스킨 { 'title' => 모양, ... } (효과를 끄면 비어 있다)
