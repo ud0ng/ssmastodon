@@ -80,7 +80,7 @@ RSpec.describe 'API V1 Bot' do
 
   it 'turns a bot item use of a stat into a temporary effect, but keeps status values permanent' do
     shop = GameShop.create!(name: '가게')
-    shop.items.create!(name: '힘 물약', price: 1, stat_name: '힘', stat_value: '2', stat_minutes: 15)
+    shop.items.create!(name: '힘 물약', price: 1, item_effects: [{ type: 'stat', stat: '힘', value: '2', minutes: 15 }])
     GameCharacter.for(harry).update!(inventory: [{ 'name' => '힘 물약', 'count' => 1, 'note' => '' }])
 
     post '/api/v1/bot/characters/apply', headers: headers, as: :json,
@@ -139,12 +139,12 @@ RSpec.describe 'API V1 Bot' do
 
   it 'shows the shop and the currency settings' do
     shop = GameShop.create!(name: '허니듀크')
-    shop.items.create!(name: '사과', price: 2, description: '아삭', stat_name: '힘', stat_value: '1d6')
+    shop.items.create!(name: '사과', price: 2, description: '아삭', item_effects: [{ type: 'stat', stat: '힘', value: '1d6' }])
     shop.items.create!(name: '아몬드', price: nil, usable: false)
 
     get '/api/v1/bot/shops', headers: headers
     expect(response.parsed_body.first['items']).to contain_exactly(
-      a_hash_including('name' => '사과', 'price' => 2, 'stat' => '힘', 'value' => '1d6', 'usable' => true),
+      a_hash_including('name' => '사과', 'price' => 2, 'effects' => ['힘 +1d6 (1시간)'], 'usable' => true, 'needs' => include('character' => true)),
       a_hash_including('name' => '아몬드', 'price' => nil, 'usable' => false)
     )
 
@@ -199,8 +199,8 @@ RSpec.describe 'API V1 Bot' do
     let(:shop) { GameShop.create!(name: '허니듀크') }
 
     before do
-      shop.items.create!(name: '초콜릿 개구리', price: 5, use_target: 'character', stat_name: '힘', stat_value: '3')
-      shop.items.create!(name: '호울러', price: 1, use_target: 'special', special_kind: 'howler')
+      shop.items.create!(name: '초콜릿 개구리', price: 5, item_effects: [{ type: 'character', kind: 'rp' }, { type: 'stat', stat: '힘', value: '3' }])
+      shop.items.create!(name: '호울러', price: 1, item_effects: [{ type: 'special', kind: 'rumor', text: '소문 문구' }])
     end
 
     it 'asks for a character, then uses the item on the character given by name' do
@@ -215,6 +215,14 @@ RSpec.describe 'API V1 Bot' do
       expect(GameReward.where(account: harry).order(:id).last).to have_attributes(kind: 'use', actor: 'bot')
     end
 
+    it 'takes the target from the words after the item and tells the bot whom to mention' do
+      post '/api/v1/bot/items/use', headers: headers, as: :json, params: { acct: 'harry', name: '초콜릿 개구리', args: ['@ron'] }
+
+      expect(response).to have_http_status(200)
+      expect(response.parsed_body).to include('notify' => ['ron'])
+      expect(response.parsed_body['message']).to include('론에게', '힘 +3')
+    end
+
     it 'does not use up a permanent item' do
       shop.items.find_by(name: '초콜릿 개구리').update!(permanent: true)
 
@@ -224,7 +232,7 @@ RSpec.describe 'API V1 Bot' do
       expect(GameCharacter.for(harry).reload.inventory.pluck('count')).to eq [2]
     end
 
-    it 'tells you to DM the system account for a howler instead of broadcasting' do
+    it 'tells you to DM the system account for a rumor instead of broadcasting' do
       GameCharacter.for(harry).update!(inventory: [{ 'name' => '호울러', 'count' => 1, 'note' => '' }])
 
       post '/api/v1/bot/items/use', headers: headers, as: :json, params: { acct: 'harry', name: '호울러', text: '소문' }

@@ -1,0 +1,19 @@
+-# 소속 카드 블링블링(gold)·똥(poop) 미리보기: 웹 compose/components/house_fx.tsx 의 GoldFx·PoopFx 와 같은 마크업
+- particle = ->(glyph, x, y, size, duration, delay, klass) { content_tag(:span, glyph, class: klass, style: "--x: #{x}; #{"--y: #{y}; " if y}--s: #{size}; --d: #{duration}; --delay: #{delay}") }
+- list = Game::Fx::HOUSE_PARTICLES
+- if preset == 'gold'
+  %span.house-points__fx.house-points__fx--gold{ 'aria-hidden': 'true' }
+    %span.fx-glint
+    - list[:sparks].each do |item|
+      = particle.call(*item, 'fx-spark')
+    %span.fx-crown 👑
+- else
+  %span.house-points__fx.house-points__fx--poop{ 'aria-hidden': 'true' }
+    %span.fx-drip
+    - list[:stinks].each do |item|
+      = particle.call(*item, 'fx-stink')
+    - list[:poops].each do |item|
+      = particle.call(*item, 'fx-poop')
+    - list[:flies].each do |item|
+      = particle.call(*item, 'fx-fly')
+    %span.fx-big-poop 💩

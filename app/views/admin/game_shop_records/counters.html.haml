@@ -1,0 +1,60 @@
+- content_for :page_title do
+  = game_t('admin.games.shop.tabs.counter_records')
+
+- content_for :heading do
+  = render 'admin/game_shops/heading'
+
+-# 검색: 소속 · 수치 종류 · 기간 · 캐릭터 (재화 기록과 같은 모양)
+= form_tag admin_game_shop_counter_records_path, method: :get, class: 'simple_form game-table__filter' do
+  .filters
+    .filter-subset.filter-subset--with-select
+      %strong= @house_label
+      .input.select.optional
+        = select_tag :house, options_for_select([[game_t('admin.games.manage.roster.all'), ''], [game_t('admin.games.manage.none'), 'none']] + @houses.map { |house| [house.name, house.id] }, params[:house])
+    .filter-subset.filter-subset--with-select
+      %strong= game_t('admin.games.shop.counter_records_ui.counter')
+      .input.select.optional
+        = select_tag :counter, options_for_select([[game_t('admin.games.manage.roster.all'), '']] + @counter_list.map { |counter| [counter.name, counter.id] }, params[:counter])
+  .filters
+    .filter-subset
+      %strong= game_t('admin.games.shop.records_ui.period')
+      = date_field_tag :from, params[:from], class: 'ui-input', 'aria-label': game_t('admin.games.shop.records_ui.from')
+      %span ~
+      = date_field_tag :to, params[:to], class: 'ui-input', 'aria-label': game_t('admin.games.shop.records_ui.to')
+  .game-table__search
+    = text_field_tag :q, params[:q], class: 'ui-input', list: 'record-characters', autocomplete: 'off', placeholder: game_t('admin.games.shop.records_ui.search_character'), 'aria-label': game_t('admin.games.shop.records_ui.search_character')
+    %datalist#record-characters
+      - @characters.each do |character|
+        %option{ value: character.display_name, label: "@#{character.account.username}" }
+    = button_tag game_t('admin.games.shop.records_ui.search'), type: :submit, class: 'button'
+
+- count = capture do
+  %span.game-table__count= game_t('admin.games.activity_log.count', count: number_with_delimiter(@records.total_count))
+= render layout: 'admin/ui/section', locals: { title: safe_join([game_t('admin.games.shop.tabs.counter_records'), ' ', count]), hint: game_t('admin.games.shop.counter_records_ui.hint') } do
+  .bot-sheet-table.game-table
+    %table.table
+      %thead
+        %tr
+          %th= game_t('admin.games.houses.when')
+          %th= game_t('admin.games.shop.who')
+          %th= game_t('admin.games.shop.kind')
+          %th.game-table__number= game_t('admin.games.shop.counter_records_ui.delta')
+          %th.game-table__number= game_t('admin.games.shop.counter_records_ui.net')
+          %th.game-table__number= game_t('admin.games.shop.counter_records_ui.raw')
+          %th= game_t('admin.games.houses.reason')
+      %tbody
+        - @records.each do |record|
+          %tr
+            %td.bot-sheet-table__text.game-table__time= l(record.created_at.in_time_zone('Asia/Seoul'), format: '%m/%d %H:%M')
+            = render 'admin/game_shop_records/who', record: record
+            %td.bot-sheet-table__text
+              %span.game-badge= record.counter.name
+            %td.game-table__number= format('%+d', record.delta)
+            %td.game-table__number= record.net
+            %td.game-table__number= record.raw
+            %td.bot-sheet-table__text= [record.reason.presence, (record.actor.present? ? "@#{record.actor}" : nil)].compact.join(' · ').presence || '—'
+        - if @records.empty?
+          %tr
+            %td.bot-sheet-table__text{ colspan: 7 }= game_t('admin.games.shop.counter_records_ui.empty')
+
+= paginate @records

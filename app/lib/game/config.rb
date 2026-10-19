@@ -153,8 +153,6 @@ module Game
       # 소속·점수 (캐릭터 관리 > 소속에서 고친다)
       Field.new(key: 'group_mode', type: :select, default: 'house', group: 'groups',
                 choices: [['house', '기숙사'], ['faction', '진영']], label: '점수 기준 소속'),
-      Field.new(key: 'rank_effects', type: :boolean, default: true, group: 'groups', label: '순위 효과',
-                hint: '글쓰기 패널 아래 소속 점수 카드에서 1등 소속은 반짝이고 꼴등 소속은 똥 효과가 나옵니다'),
       Field.new(key: 'scoring_mode', type: :select, default: 'points', group: 'groups',
                 choices: [['points', '점수제'], ['games', '판수제']], label: '점수 방식',
                 hint: '점수제: 컨텐츠마다 정한 승·무·패 점수의 총합으로 승부 / 판수제: 컨텐츠를 승리한 판 수로 승부'),
@@ -231,6 +229,8 @@ module Game
     CURRENCY = [
       # 상점 해금: 끄면 웹 상점 메뉴·화면이 사라지고 웹·자동봇 구매를 받지 않는다 (인벤토리·사용·양도는 그대로)
       Field.new(key: 'shop_open', type: :boolean, default: true, group: 'shop_open', label: '상점 해금', hint: '끄면 사용자 화면에서 상점 메뉴가 사라지고 [상점]·[구매]를 받지 않습니다 (운영진은 웹에서 항상 보입니다)'),
+      # 효과 on/off (상점 설정 > 효과 목록): 끄면 아이템으로 붙은 효과도 소속 카드·툿 어디에도 안 보인다
+      Field.new(key: 'effects_enabled', type: :boolean, default: true, group: 'effects', label: '효과 켜기', hint: '끄면 아이템으로 붙은 효과도 보이지 않습니다'),
 
       # 상점 명령어 (자동봇이 처리). 이름만 바꾸면 자동봇 도움말도 같이 바뀐다
       Field.new(key: 'cmd_bag', type: :string, default: '가방', group: 'shop_commands', label: '가방', hint: '소지금과 소지품'),

@@ -25,6 +25,7 @@ const messages = defineMessages({
   less: { id: 'item.less', defaultMessage: 'One less' },
   more: { id: 'item.more', defaultMessage: 'One more' },
   failed: { id: 'item.failed', defaultMessage: 'Something went wrong. Please try again.' },
+  rumor: { id: 'item.rumor_placeholder', defaultMessage: 'Rumor everyone will hear' },
 });
 
 export interface Member {
@@ -205,9 +206,11 @@ const ItemModal: React.FC<{ item: WalletItem; transferEnabled: boolean; onClose:
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 똥폭탄: 점수를 깎을 기숙사 목록
+  const needs = item.needs;
+
+  // 소속을 고르는 효과(소속 점수·소속 효과): 소속 목록
   useEffect(() => {
-    if (item.use_target !== 'special' || item.special_kind !== 'bomb') return;
+    if (!needs.house) return;
     apiRequestGet<{ houses: { id: string; name: string; color?: string }[] }>('v1/system/wallet')
       .then((wallet) => {
         setHouses(wallet.houses);
@@ -216,7 +219,7 @@ const ItemModal: React.FC<{ item: WalletItem; transferEnabled: boolean; onClose:
       .catch(() => {
         setHouses([]);
       });
-  }, [item.use_target, item.special_kind]);
+  }, [needs.house]);
 
   const send = useCallback(
     (action: 'use' | 'gift' | 'discard', params: Record<string, unknown> = {}) => {
@@ -238,13 +241,13 @@ const ItemModal: React.FC<{ item: WalletItem; transferEnabled: boolean; onClose:
     [item.name, intl],
   );
 
-  const needsCharacter = item.use_target === 'character' || (item.use_target === 'special' && item.special_kind === 'report');
-  const useReady = needsCharacter ? Boolean(receiver)
-    : item.use_target === 'special' && item.special_kind === 'bomb' ? Boolean(houseId)
-      : item.use_target === 'special' && item.special_kind === 'howler' ? rumor.trim().length > 0 : true;
-  const useParams: Record<string, unknown> = needsCharacter ? { acct: receiver?.acct }
-    : item.use_target === 'special' && item.special_kind === 'bomb' ? { house_id: houseId }
-      : item.use_target === 'special' && item.special_kind === 'howler' ? { text: rumor } : {};
+  // 아이템 효과마다 고를 것: 캐릭터(본인 포함)·소속·소문 내용
+  const useReady = (!needs.character || Boolean(receiver)) && (!needs.house || Boolean(houseId)) && (!needs.text || rumor.trim().length > 0);
+  const useParams: Record<string, unknown> = {
+    ...(needs.character ? { acct: receiver?.acct } : {}),
+    ...(needs.house ? { house_id: houseId } : {}),
+    ...(needs.text ? { text: rumor } : {}),
+  };
 
   const back = useCallback(() => {
     setMode('menu');
@@ -278,18 +281,16 @@ const ItemModal: React.FC<{ item: WalletItem; transferEnabled: boolean; onClose:
             )}
             {mode === 'use' && (
               <>
-                {(item.use_target === 'character' || (item.use_target === 'special' && item.special_kind === 'report')) && (
+                {needs.character && (
                   <>
-                    <GiftPicker picked={receiver} onPick={setReceiver} />
-                    {item.allow_random && (
-                      <button type='button' className={receiver?.acct === 'random' ? 'item-modal__random item-modal__random--on' : 'item-modal__random'} onClick={() => { setReceiver(receiver?.acct === 'random' ? null : { acct: 'random', name: '', avatar: '' }); }}
-                        aria-pressed={receiver?.acct === 'random'}>
-                        <FormattedMessage id='item.random' defaultMessage='Pick someone at random' />
-                      </button>
-                    )}
+                    <GiftPicker picked={receiver?.acct === 'me' ? null : receiver} onPick={setReceiver} />
+                    <button type='button' className={receiver?.acct === 'me' ? 'item-modal__random item-modal__random--on' : 'item-modal__random'} onClick={() => { setReceiver(receiver?.acct === 'me' ? null : { acct: 'me', name: '', avatar: '' }); }}
+                      aria-pressed={receiver?.acct === 'me'}>
+                      <FormattedMessage id='item.use_self' defaultMessage='Use it on myself' />
+                    </button>
                   </>
                 )}
-                {item.use_target === 'special' && item.special_kind === 'bomb' && (
+                {needs.house && (
                   <div className='item-modal__houses' role='listbox'>
                     {houses.map((house) => (
                       <button
@@ -306,34 +307,21 @@ const ItemModal: React.FC<{ item: WalletItem; transferEnabled: boolean; onClose:
                     ))}
                   </div>
                 )}
-                {item.use_target === 'special' && item.special_kind === 'howler' && (
-                  <textarea className='item-modal__textarea' rows={3} maxLength={200} value={rumor} onChange={(event) => { setRumor(event.target.value); }} />
+                {needs.text && (
+                  <textarea className='item-modal__textarea' rows={3} maxLength={200} value={rumor} placeholder={intl.formatMessage(messages.rumor)} onChange={(event) => { setRumor(event.target.value); }} />
                 )}
                 <p className='item-modal__ask'>
-                  {item.use_target === 'character' ? (
+                  {needs.character ? (
                     <FormattedMessage id='item.use_on_character' defaultMessage='Pick who to use {name} on (yourself too).' values={{ name: item.name }} />
-                  ) : item.use_target === 'special' && item.special_kind === 'report' ? (
-                    <FormattedMessage id='item.use_report' defaultMessage='Pick who to report.' />
-                  ) : item.use_target === 'special' && item.special_kind === 'bomb' ? (
-                    <FormattedMessage id='item.use_bomb' defaultMessage='Pick the house to bomb.' />
-                  ) : item.use_target === 'special' && item.special_kind === 'howler' ? (
+                  ) : needs.house ? (
+                    <FormattedMessage id='item.use_on_house' defaultMessage='Pick the house.' />
+                  ) : needs.text ? (
                     <FormattedMessage id='item.use_howler' defaultMessage='Write the rumor everyone will hear.' />
                   ) : (
                     <FormattedMessage id='item.use_confirm' defaultMessage='Use one {name}?' values={{ name: item.name }} />
                   )}
-                  {item.stat && item.stat_value && item.use_target !== 'special' && (
-                    <span className='item-modal__effect'>
-                      <FormattedMessage id='item.use_effect' defaultMessage='{stat} {value}' values={{ stat: item.stat, value: item.stat_value }} />
-                      {' · '}
-                      {item.stat_temporary
-                        ? <FormattedMessage id='item.effect_temporary' defaultMessage='for {minutes} min' values={{ minutes: item.stat_minutes }} />
-                        : <FormattedMessage id='item.effect_permanent' defaultMessage='permanent' />}
-                    </span>
-                  )}
-                  {item.use_target === 'special' && item.special_kind === 'staff' && (
-                    <span className='item-modal__effect'>
-                      <FormattedMessage id='item.use_special' defaultMessage='Using it sends a DM to the system account. Staff will handle it.' />
-                    </span>
+                  {item.effects.length > 0 && (
+                    <span className='item-modal__effect'>{item.effects.join(' · ')}</span>
                   )}
                 </p>
               </>

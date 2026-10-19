@@ -37,7 +37,7 @@ RSpec.describe 'API V1 System wallet' do
 
     body = response.parsed_body
     expect(body).to include('house_term' => '기숙사', 'my_house_id' => house.id.to_s)
-    expect(body['houses']).to include('id' => house.id.to_s, 'name' => house.name, 'color' => house.color, 'total' => 12)
+    expect(body['houses']).to include('id' => house.id.to_s, 'name' => house.name, 'color' => house.color, 'total' => 12, 'fx' => nil)
     expect(body['houses'].size).to eq GameHouse.houses.count
   end
 

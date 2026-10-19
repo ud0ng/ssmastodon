@@ -2,25 +2,34 @@
 
 module Game
   module ItemUse
-    # 아이템 [사용] 한 번 (웹 인벤토리와 자동봇 [사용] 이 같은 규칙으로 쓴다).
-    #   stat       스탯을 바꾼다 (스탯 유형 '스탯'은 일시, '상태 수치'는 영구). 스탯을 정하지 않았으면 소모만
-    #   character  고른 캐릭터(본인도 가능, 랜덤 1인 가능한 아이템도 있다)에게 쓴다: 스탯·착용이 적용되고 본인이 아니면 알린다
-    #   special    특수: 시스템 계정에 DM (staff) / 캐릭터 신고 (report) / 기숙사 점수 차감 (bomb) / 소문 내기 (howler)
+    # 아이템 [사용] 한 번 (웹 인벤토리·자동봇 [사용]·시스템 DM 이 같은 규칙으로 쓴다). 효과는 아이템의 item_effects 여러 개 (Game::ItemEffects).
+    #   캐릭터를 고르는 효과(스탯·재화·RP·캐릭터 효과)는 target(@아이디 또는 캐릭터 이름, 본인도 가능),
+    #   소속을 고르는 효과(소속 점수·소속 효과)는 house(이름 또는 번호), 소문내기는 text.
     #
-    #   Game::ItemUse::Runner.new(account, '아이템', target: '@계정', house_id: 1, text: '소문', via: :web).call → 안내 문장
+    #   Game::ItemUse::Runner.new(account, '아이템', target: '@계정', house_id: '후플푸프', text: '소문', via: :web).call → 안내 문장
     #   모자라거나 규칙에 어긋나면 Game::ItemUse::Error (문구는 사용자에게 그대로 보여 준다)
     #
-    # via: :bot 이면 쓴 사람이 이미 상점 봇에게 명령어를 보낸 것이라, 봇만 받는 알림 툿은 올리지 않는다 (봇이 직접 답한다).
+    # via: :bot(상점 봇에게 명령어) / :system(시스템 계정에 DM) 이면 쓴 사람이 이미 명령어 툿을 올렸으니 알림 툿은 올리지 않는다.
     class Runner
-      attr_reader :howler_sent
+      attr_reader :howler_sent, :target
 
       def initialize(account, name, target: nil, house_id: nil, text: nil, via: :web)
         @account = account
         @name = name
-        @target = target.to_s
-        @house_id = house_id.to_s
+        @target_query = target.to_s
+        @house_query = house_id.to_s
         @text = text
         @via = via
+      end
+
+      # [사용/아이템/@상대/후플푸프/소문 내용] 처럼 뒤에 붙은 말들 → target / house / text 로 나눈다
+      def self.from_args(account, name, args, via:)
+        args = Array(args).map { |arg| arg.to_s.strip }.compact_blank
+        target = args.find { |arg| arg.start_with?('@', '＠') }&.delete_prefix('＠')
+        house = args.find { |arg| GameHouse.active.any? { |item| item.name == arg || item.id.to_s == arg } }
+        target ||= args.find { |arg| arg != house && (GameCharacter.where(name: arg).exists? || GameCharacter.eligible_accounts.exists?(username: arg)) }
+        text = (args - [target, house].compact).join('/')
+        new(account, name, target: target, house_id: house, text: text, via: via)
       end
 
       def call
@@ -28,20 +37,36 @@ module Game
         raise Error, "'#{@name}'#{particle(@name, '을를')} 가지고 있지 않습니다." unless owns?
         raise Error, "#{@name}#{particle(@name, '은는')} 사용할 수 없는 아이템입니다." if shop_item && !shop_item.usable
 
-        field = shop_item&.stat_field
-        raise Error, "'#{shop_item.stat_name}' 스탯이 없습니다. 운영진에게 문의해 주세요." if shop_item&.stat_name.present? && field.nil?
+        effects = shop_item&.effects_list || []
+        @target = effects_need_character?(effects) ? pick_character! : nil
+        @house = Game::ItemEffects.needs_house?(effects) ? pick_house! : nil
+        raise Error, '소문내기는 시스템 계정에 DM 으로 [사용/아이템/소문 내용] 을 보내 주세요. (보낸 사람이 드러나지 않게)' if Game::ItemEffects.needs_text?(effects) && @via == :bot
 
-        use_item!(shop_item, field)
+        @howler = Game::ItemEffects.rumor_text(effects)
+        @rumor = Game::ItemEffects.needs_text?(effects) ? pick_rumor! : nil
+
+        results = apply!(shop_item, effects)
+        announce!(shop_item, effects, results)
+        message(results)
       rescue Game::Dice::Error
         raise Error, '아이템 수치가 잘못되었습니다. 운영진에게 문의해 주세요.'
       end
 
-      # 사용 대상이 캐릭터인 아이템인가 (자동봇이 대상 태그를 요구할지 정할 때)
+      # 사용할 때 무엇을 고르나 (웹 모달·자동봇 안내)
+      def self.needs(shop_item)
+        effects = shop_item&.effects_list || []
+        { character: Game::ItemEffects.needs_character?(effects), house: Game::ItemEffects.needs_house?(effects), text: Game::ItemEffects.needs_text?(effects) }
+      end
+
       def self.needs_target?(shop_item)
-        shop_item&.use_target == 'character' || (shop_item&.use_target == 'special' && shop_item.special_kind == 'report')
+        needs(shop_item)[:character]
       end
 
       private
+
+      def effects_need_character?(effects)
+        Game::ItemEffects.needs_character?(effects)
+      end
 
       # 영구 아이템은 소모되지 않아 지갑이 부족을 막아 주지 못하니 직접 확인한다
       def owns?
@@ -53,74 +78,17 @@ module Game
         GameShopItem.all.find { |item| Game::Wallet.key(item.name) == Game::Wallet.key(name) }
       end
 
-      # 아이템 소모 + 효과를 한 번에 (실패하면 아무것도 바뀌지 않는다)
-      def use_item!(shop_item, field)
-        kind = shop_item&.use_target || 'stat'
-        special = kind == 'special' ? shop_item.special_kind : nil
-        target = nil
-        target = pick_character!(shop_item, allow_self: special != 'report') if kind == 'character' || special == 'report'
-        target ||= @account
+      def pick_character!
+        query = @target_query.delete_prefix('@').delete_prefix('＠').strip
+        raise Error, '아이템을 쓸 캐릭터를 골라 주세요. 예: [사용/아이템/@상대]' if query.blank?
+        return @account if query == 'me' # 웹 [나에게 쓰기]
 
-        raise Error, '호울러는 시스템 계정에 DM 으로 [사용/호울러/소문 내용] 을 보내 주세요. (보낸 사람이 드러나지 않게)' if special == 'howler' && bot?
-
-        house = pick_house! if special == 'bomb'
-        rumor = pick_rumor! if special == 'howler'
-
-        delta = field && shop_item.stat_value.present? ? Game::Dice.amount(shop_item.stat_value) : nil
-        temporary = field&.stat?
-        target_character = GameCharacter.for(target)
-        before = field && delta ? (temporary ? target_character.stat_value(field) : target_character.status_value(field)) : nil
-
-        # [영구] 아이템은 사용해도 사라지지 않고, 아니면 1개 없어진다
-        changes = [{ account: @account, items: shop_item&.permanent ? {} : { @name => -1 } }]
-        if delta && !temporary
-          # 상태 수치는 영구 변동: 본인이면 한 번에 합친다
-          if target.id == @account.id
-            changes.first[:stats] = { field.name => delta }
-          else
-            changes << { account: target, stats: { field.name => delta } }
-          end
-        end
-
-        result = nil
-        GameCharacter.transaction do
-          Game::Wallet.apply!(changes, kind: 'use', detail: use_detail(kind, special, target, house), actor: @via.to_s)
-          target_character.reload
-          target_character.add_effect!(stat: field.name, delta: delta, minutes: shop_item.stat_minutes, item: @name) if delta && temporary
-          target_character.add_wear!(label: shop_item.wear_label, minutes: shop_item.stat_minutes, item: @name) if shop_item&.wearable? && kind == 'character'
-          result = use_special!(shop_item, special, target, house) if special
-        end
-
-        target_character.reload
-        effect = effect_text(field, delta, temporary, shop_item, before, target_character)
-        announce_use!(shop_item, kind, special, target, house, rumor, effect)
-        use_message(kind, target, effect, result)
-      end
-
-      # 캐릭터를 태그해서 쓰는 아이템의 대상 (random 이고 랜덤을 허용하는 아이템이면 다른 서버원 중 한 명)
-      def pick_character!(shop_item, allow_self:)
-        if @target == 'random'
-          raise Error, '이 아이템은 랜덤으로 쓸 수 없습니다.' unless shop_item&.allow_random
-
-          target = GameCharacter.eligible_accounts.where.not(id: @account.id).order(Arel.sql('RANDOM()')).first
-          raise Error, '랜덤으로 고를 사람이 없습니다.' if target.nil?
-
-          return target
-        end
-
-        username = @target.delete_prefix('@').split('@').first.to_s
+        username = query.split('@').first.to_s
         target = GameCharacter.eligible_accounts.find_by(username: username)
-        raise Error, '아이템을 쓸 캐릭터를 골라 주세요.' if target.nil?
-        raise Error, '자신에게는 쓸 수 없습니다.' if !allow_self && target.id == @account.id
+        target ||= GameCharacter.where(name: query).first&.account
+        raise Error, "'#{query}' 캐릭터를 찾을 수 없습니다." if target.nil?
 
         target
-      end
-
-      def pick_house!
-        house = GameHouse.active.find { |item| item.id.to_s == @house_id || item.name == @house_id }
-        raise Error, '점수를 깎을 기숙사를 골라 주세요.' if house.nil?
-
-        house
       end
 
       def pick_rumor!
@@ -130,119 +98,132 @@ module Game
         text
       end
 
-      def use_detail(kind, special, target, house)
-        case special
-        when 'report' then "#{@name} → #{GameCharacter.for(target).display_name} (신고)"
-        when 'bomb' then "#{@name} → #{house.name}"
-        when 'howler' then "#{@name} (소문)"
-        when 'staff' then "#{@name} (특수)"
-        else kind == 'character' ? "#{@name} → #{GameCharacter.for(target).display_name}" : @name
+      def pick_house!
+        house = GameHouse.active.find { |item| item.id.to_s == @house_query || item.name == @house_query }
+        raise Error, "#{Game::Config.for('common')['house_term']}#{particle(Game::Config.for('common')['house_term'].to_s, '을를')} 골라 주세요." if house.nil?
+
+        house
+      end
+
+      # 아이템 소모 + 효과를 한 번에 (실패하면 아무것도 바뀌지 않는다). 효과마다 결과 한 줄
+      def apply!(shop_item, effects)
+        results = []
+        GameCharacter.transaction do
+          Game::Wallet.apply!([{ account: @account, items: shop_item&.permanent ? {} : { @name => -1 } }], kind: 'use', detail: detail, actor: @via.to_s)
+          effects.each { |effect| results << apply_effect!(effect) }
+        end
+        Game::Fx.expire!(@target.id) if @target
+        results.compact
+      end
+
+      def apply_effect!(effect)
+        case effect['type']
+        when 'stat' then apply_stat!(effect)
+        when 'currency' then apply_currency!(effect)
+        when 'fx' then apply_fx!(effect)
+        when 'counter' then apply_counter!(effect)
+        when 'special' then effect['kind'] == 'rumor' ? '호울러가 울려 퍼집니다.' : '운영진에게 알렸습니다.'
         end
       end
 
-      def duration_text(minutes)
-        (minutes % 60).zero? && minutes >= 60 ? "#{minutes / 60}시간" : "#{minutes}분"
-      end
+      def apply_stat!(effect)
+        field = GameCharacterField.stats.find { |each| Game::Wallet.key(each.name) == Game::Wallet.key(effect['stat']) }
+        raise Error, "'#{effect['stat']}' 스탯이 없습니다. 운영진에게 문의해 주세요." if field.nil?
 
-      # ' ➭ 힘 +1 (60분 동안)' / ' ➭ 체력 +30 (영구) (25 → 55)' / ' ➭ 동물 귀 착용 (24시간 동안)'
-      def effect_text(field, delta, temporary, shop_item, before, character)
-        parts = []
-        if field && delta
-          value = temporary ? character.stat_value(field) : character.status_value(field)
-          duration = temporary ? "#{duration_text(shop_item.stat_minutes)} 동안" : '영구'
-          parts << "#{field.name} #{format('%+d', delta)} (#{duration})#{before && value ? " (#{before} → #{value})" : ''}"
-        end
-        parts << "#{shop_item.wear_label} 착용 (#{duration_text(shop_item.stat_minutes)} 동안)" if shop_item&.wearable?
-        parts.empty? ? '' : " ➭ #{parts.join(', ')}"
-      end
-
-      def use_message(kind, target, effect, result)
-        case kind
-        when 'character'
-          name = target.id == @account.id ? '자신' : GameCharacter.for(target).display_name
-          "#{name}에게 #{@name}#{particle(@name, '을를')} 사용했습니다.#{effect}"
-        when 'special'
-          "#{@name}#{particle(@name, '을를')} 사용했습니다. #{result}#{@howler_sent ? " (#{@howler_sent}명에게 전달)" : ''}"
+        delta = Game::Dice.amount(effect['value'])
+        character = GameCharacter.for(@target).reload
+        if field.stat?
+          before = character.stat_value(field)
+          character.add_effect!(stat: field.name, delta: delta, minutes: effect['minutes'], item: @name)
+          "#{field.name} #{format('%+d', delta)} (#{Game::ItemEffects.duration(effect['minutes'])} 동안) (#{before} → #{character.reload.stat_value(field)})"
         else
-          "#{@name}#{particle(@name, '을를')} 사용했습니다.#{effect}"
+          before = character.status_value(field)
+          Game::Wallet.apply!([{ account: @target, stats: { field.name => delta } }], kind: 'use', detail: "#{@name} → #{name_of(@target)}", actor: @via.to_s)
+          "#{field.name} #{format('%+d', delta)} (#{before} → #{GameCharacter.for(@target).reload.status_value(field)})"
         end
       end
 
-      # 특수 아이템: 종류에 따라 점수·소문을 처리한다. 결과 안내 문장을 돌려준다.
-      def use_special!(shop_item, special, target, house)
-        case special
-        when 'report' then use_report!(shop_item, target)
-        when 'bomb' then use_bomb!(shop_item, house)
-        when 'howler' then '호울러가 호그와트 전체에 울려 퍼졌습니다.' # 실제 DM 은 트랜잭션이 끝난 뒤 announce_use! 에서 보낸다
+      # 더하기(+)·빼기(-). 빼는 만큼 없으면 가진 만큼만 뺀다
+      def apply_currency!(effect)
+        delta = Game::Dice.amount(effect['value'])
+        case effect['currency']
+        when 'house_points'
+          GameHousePoint.create!(house: @house, account: @account, amount: delta, reason: "#{@name} → #{@house.name}".truncate(200)) unless delta.zero?
+          "#{@house.name} 소속 점수 #{format('%+d', delta)}"
+        when 'item'
+          have = Array(GameCharacter.for(@target).reload.inventory).find { |item| Game::Wallet.key(item['name']) == Game::Wallet.key(effect['item']) }.to_h['count'].to_i
+          delta = [delta, -have].max
+          Game::Wallet.apply!([{ account: @target, items: { effect['item'] => delta } }], kind: 'use', detail: "#{@name} → #{name_of(@target)}", actor: @via.to_s) unless delta.zero?
+          "#{name_of(@target)}: #{effect['item']} #{format('%+d', delta)}개"
         else
-          '시스템 계정에 DM 으로 알렸습니다.'
+          delta = [delta, -GameCharacter.for(@target).reload.money].max
+          Game::Wallet.apply!([{ account: @target, money: delta }], kind: 'use', detail: "#{@name} → #{name_of(@target)}", actor: @via.to_s) unless delta.zero?
+          "#{name_of(@target)}: #{Game::Config.for('common')['currency_name']} #{format('%+d', delta)}"
         end
       end
 
-      def use_report!(shop_item, target)
-        character = GameCharacter.for(target)
-        name = character.display_name
-        deduct!(character.group, shop_item.score_delta, "교내 신고: #{name}")
-        count = character.reports_count + 1
-        volunteer = count >= [shop_item.special_limit, 1].max
-        character.update!(reports_count: volunteer ? 0 : count)
-        @report_notice = "교내 신고가 접수되었습니다. (누적 #{count}회)"
-        @report_notice += ' 누적 한도를 넘어 교수님께서 봉사활동을 시키실 거예요.' if volunteer
-        "#{name}#{particle(name, '을를')} 신고했습니다. (누적 #{count}회)#{volunteer ? ' 한도를 넘어 봉사활동 대상이 되었습니다.' : ''}"
+      # 누적 수치(신고 등): 고른 캐릭터에 더하고, 새로 닿은 누적 횟수의 효과를 붙인다
+      def apply_counter!(effect)
+        counter = GameCounter.find_by(id: effect['counter_id'])
+        raise Error, '누적 수치 목록에 없는 수치입니다. 운영진에게 문의해 주세요.' if counter.nil?
+
+        before, after, notes = counter.add!(GameCharacter.for(@target), Game::Dice.amount(effect['value']), item: @name, reason: detail, actor: @via.to_s)
+        "#{name_of(@target)}: #{counter.name} #{format('%+d', after - before)} (누적 #{after}회)#{notes.empty? ? '' : " ➭ #{notes.join(', ')}"}"
       end
 
-      def use_bomb!(shop_item, house)
-        deduct!(house, shop_item.score_delta, "#{@name} → #{house.name}")
-        "#{house.name}에 똥폭탄을 던졌습니다. (소속 점수 #{shop_item.score_delta})"
+      def apply_fx!(effect)
+        record = GameEffect.find_by(id: effect['effect_id'])
+        return if record.nil?
+
+        entry = Game::Fx.entry(record, effect['minutes'])
+        if effect['target'] == 'house'
+          @house.update!(effects: Game::Fx.active(@house.effects) + [entry])
+          "#{@house.name}: #{record.name} (#{Game::ItemEffects.duration(effect['minutes'])} 동안)"
+        else
+          character = GameCharacter.for(@target).reload
+          character.update!(effects: character.active_effects + [entry.merge('kind' => 'fx', 'item' => @name)])
+          "#{name_of(@target)}: #{record.label} (#{Game::ItemEffects.duration(effect['minutes'])} 동안)"
+        end
       end
 
-      def deduct!(house, amount, reason)
-        return if house.nil? || amount.zero?
-
-        GameHousePoint.create!(house: house, account: @account, amount: amount, reason: reason.to_s.truncate(200))
+      def detail
+        [@name, (@target && "→ #{name_of(@target)}"), (@house && "→ #{@house.name}"), ('(소문)' if @rumor)].compact.join(' ')
       end
 
-      # 쓴 사람이 직접 보내는 툿 (받는 사람·상점 봇 멘션 + 명령어 모양). Game::Gift.announce
-      def announce!(command, text, receivers: [], system: false, visibility: 'direct')
-        Game::Gift.announce(@account, command: command, text: text, receivers: receivers, system: system, visibility: visibility)
+      def name_of(account)
+        GameCharacter.for(account).display_name
       end
 
-      # 사용했을 때 알리기:
-      #   캐릭터 아이템  받는 사람(본인이면 봇만) + 상점 봇에게 DM
-      #   스탯 아이템    상점 봇에게 DM
-      #   신고           신고받은 캐릭터 + 봇 + 시스템 계정에 DM
-      #   기숙사 점수    상점 봇을 멘션한 툿 (팔로워에게 보인다)
-      #   호울러·운영진 처리  시스템 계정과 상점 봇에게만 DM (아무도 모르게)
-      # 봇에게 명령어를 보내 쓴 경우(via: :bot)는 봇만 받는 알림은 건너뛴다.
-      def announce_use!(shop_item, kind, special, target, house, rumor, effect)
-        name = GameCharacter.for(target).display_name
+      def message(results)
+        who = @target && (@target.id == @account.id ? '자신' : name_of(@target))
+        head = who ? "#{who}에게 #{@name}#{particle(@name, '을를')} 사용했습니다." : "#{@name}#{particle(@name, '을를')} 사용했습니다."
+        head += " (#{@howler_sent}명에게 전달)" if @howler_sent
+        results.empty? ? head : "#{head} ➭ #{results.join(', ')}"
+      end
+
+      # 쓴 사람이 직접 보내는 툿 (상점 봇 멘션 + [사용/아이템/@상대/소속] 모양). 상대 캐릭터는 태그해서 알린다
+      #   소속이 걸리면 팔로워 공개(모두 보게), 아니면 DM. 소문내기·DM 처리는 시스템 계정·봇에게만 DM (보낸 사람은 아무도 모르게)
+      def announce!(shop_item, effects, results)
+        specials = effects.select { |effect| effect['type'] == 'special' }.map { |effect| effect['kind'] }
+        secret = specials.any? && @target.nil? && @house.nil?
+        # ① 웹은 쓴 사람이 시스템 계정에 DM [사용/아이템/내용] 을 보낸 것처럼 먼저 남긴다 (모바일은 쓴 사람이 직접 보낸 DM)
+        Game::Gift.announce(@account, command: ['사용', @name, @rumor].compact, system: true) if secret && !%i(bot system).include?(@via)
+        # ② 시스템 계정이 연회장 문구를 올리고 ③ 이어서 모든 캐릭터에게 소문 내용을 DM 으로
+        Game::ItemUse.announce_howler!(@howler) if @howler
+        @howler_sent = Game::ItemUse.broadcast_rumor!(@rumor, header: @howler) if @rumor
+        return if %i(bot system).include?(@via) || secret
+
+        target = @target if @target && @target.id != @account.id
+        command = ['사용', @name, (target && "@#{target.username}"), @house&.name].compact
         note = shop_item&.effect.presence
-        case special
-        when 'report' then announce!(['사용', @name, name], @report_notice, receivers: [target], system: true)
-        when 'bomb' then (announce!(['사용', @name, house.name], "#{house.name}에 #{@name}#{particle(@name, '이가')} 떨어졌습니다. (소속 점수 #{shop_item.score_delta})", visibility: 'private') unless bot?)
-        when 'howler' then announce_howler!(rumor)
-        when 'staff' then announce!(['사용', @name], nil, system: true)
-        else
-          if kind == 'character'
-            return if bot? && target.id == @account.id
-
-            text = Game::Text.render(Game::Config.for('common')['msg_item_use'], player: @account, target: target, item: @name, effect: [effect, note].compact_blank.join("\n"))
-            announce!(['사용', @name, name], text, receivers: target.id == @account.id ? [] : [target])
-          elsif !bot?
-            me = GameCharacter.for(@account).display_name
-            announce!(['사용', @name], "#{me}#{particle(me, '이가')} #{@name}#{particle(@name, '을를')} 사용했습니다.#{effect}")
-          end
-        end
-      end
-
-      # 호울러: 모든 캐릭터에게 한 사람씩 DM 소문, 시스템 계정·상점 봇에게는 명령어 기록 DM (보낸 사람은 아무도 모르게)
-      def announce_howler!(rumor)
-        @howler_sent = Game::ItemUse.broadcast_rumor!(rumor)
-        announce!(['사용', @name, rumor], nil, system: true)
-      end
-
-      def bot?
-        @via == :bot
+        me = GameCharacter.for(@account).display_name
+        text = if target
+                 Game::Text.render(Game::Config.for('common')['msg_item_use'], player: @account, target: target, item: @name, effect: results.empty? ? '' : " ➭ #{results.join(', ')}")
+               else
+                 "#{me}#{particle(me, '이가')} #{@name}#{particle(@name, '을를')} 사용했습니다.#{results.empty? ? '' : " ➭ #{results.join(', ')}"}"
+               end
+        text = [text, note].compact.join("\n")
+        Game::Gift.announce(@account, command: command, text: text, receivers: [target].compact, system: specials.include?('staff'), visibility: @house ? 'private' : 'direct')
       end
 
       def particle(word, key)

@@ -1,4 +1,4 @@
--# 상점 설정 제목 + 탭 (설정 · 명령어 · 상점 목록 · 재화 기록 · 아이템 기록)
+-# 상점 설정 제목 + 탭 (설정 · 명령어 · 상점 목록 · 효과 목록 · 누적 수치 · 재화 기록 · 아이템 기록)
 .content__heading__row
   %h2= game_t('admin.games.shop.menu')
 
@@ -8,5 +8,8 @@
       primary.item :settings, safe_join([material_symbol('tune'), game_t('admin.games.shop.tabs.settings')]), admin_game_shop_settings_path, highlights_on: %r{/admin/shop/settings}
       primary.item :commands, safe_join([material_symbol('chat_bubble'), game_t('admin.games.shop.tabs.commands')]), admin_game_shop_commands_path, highlights_on: %r{/admin/shop/commands}
       primary.item :list, safe_join([material_symbol('inventory_2'), game_t('admin.games.shop.tabs.list')]), admin_game_shops_path, highlights_on: %r{/admin/shop/list}
+      primary.item :effects, safe_join([material_symbol('celebration'), game_t('admin.games.fx.title')]), admin_game_effects_path, highlights_on: %r{/admin/shop/effects}
+      primary.item :counters, safe_join([material_symbol('trending_up'), game_t('admin.games.counters.title')]), admin_game_counters_path, highlights_on: %r{/admin/shop/counters}
       primary.item :records, safe_join([material_symbol('history'), game_t('admin.games.shop.tabs.records')]), admin_game_shop_money_records_path, highlights_on: %r{/admin/shop/records}
       primary.item :item_records, safe_join([material_symbol('description'), game_t('admin.games.shop.tabs.item_records')]), admin_game_shop_item_records_path, highlights_on: %r{/admin/shop/item_records}
+      primary.item :counter_records, safe_join([material_symbol('trending_up'), game_t('admin.games.shop.tabs.counter_records')]), admin_game_shop_counter_records_path, highlights_on: %r{/admin/shop/counter_records}

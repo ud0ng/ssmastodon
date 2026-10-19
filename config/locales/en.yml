@@ -195,15 +195,135 @@ en:
         hint: Leave the chance empty to always give it. Each row is drawn separately.
         name: Item
         pick: Choose an item
+      counters:
+        max_count: "Max count"
+        max_count_hint: "Leave empty for no limit. The count keeps rising past the max."
+        opposite: "Opposite counter"
+        no_opposite: "None"
+        opposite_hint: "They cancel each other out."
+        max_info: "max %{count}"
+        opposite_info: "opposite %{name}"
+        forever: "Permanent"
+        mode_number: "Count"
+        mode_max: "Max (%{count})"
+        no_max: "Set a max count to use the max effect."
+        times_label: "Times"
+        duration_amount: "Amount"
+        title: "Counters"
+        hint: "When an item adds to a counter, the effects below are applied as the count reaches each step."
+        add: "Add counter"
+        rename: "Rename"
+        delete: "Delete counter"
+        delete_confirm: "Delete the counter '%{name}'?"
+        name: "Name"
+        add_rule: "Add step"
+        edit_rule: "Edit step"
+        delete_rule: "Delete step"
+        delete_rule_confirm: "Delete the step at %{count}?"
+        rules_hint: "Effects by %{name} count"
+        threshold: "Count"
+        threshold_hint: "Applied once when the count first reaches this"
+        effect: "Effect"
+        duration: "Duration"
+        times: "%{count}"
+        no_rules: "No steps."
+      fx:
+        forever: "Permanent"
+        ended: "Ended"
+        left: "left"
+        bad_time: "Could not read the end date."
+        entries_title: "Active effects"
+        no_entries: "No active effects."
+        card_effects: "Card effects"
+        until: "Ends at"
+        deleted: "(deleted effect)"
+        remove: "Remove effect"
+        remove_confirm: "Remove this effect?"
+        title: "Effects"
+        add: "Add effect"
+        edit: "Edit effect"
+        delete: "Delete effect"
+        delete_confirm: "Delete the effect '%{name}'?"
+        none: "No effects."
+        kind: "Kind"
+        name: "Name"
+        preview: "Preview"
+        description: "Description"
+        look: "Look"
+        look_hint: "House card effects go on the house points card; title and deco go on the character name and avatar."
+        list_hint: "Pick these in an item effect box to put them on a character or house for a while."
+        bad_look: "Kind and look do not match."
+        demo_house: "Gryffindor"
+        demo_name: "Harry Potter"
+        demo_toot: "A quiet day at Hogwarts."
+        kinds:
+          house: "House"
+          character: "Character"
+        slots:
+          card: "House card"
+          title: "Title"
+          deco: "Deco"
+      item_fx:
+        section_item: "Item"
+        section_options: "Options"
+        section_effects: "Effects"
+        hint: "Add what happens when the item is used. Positive values add, negative values take away."
+        add: "Add effect"
+        remove: "Remove effect"
+        usable: "[Use]"
+        giftable: "[Gift]"
+        permanent: "[Permanent]"
+        target: "Target"
+        stat: "Stat"
+        value: "Value"
+        duration: "Duration"
+        unit: "Unit"
+        currency: "Currency"
+        item: "Item"
+        kind: "Kind"
+        fx: "Effect"
+        minute: "min"
+        hour: "hours"
+        day: "days"
+        value_placeholder: "Value (5, -3, 1d6)"
+        amount_placeholder: "Value (+10, -5)"
+        pick_item: "Pick an item"
+        pick_fx: "Pick an effect"
+        rp: "RP"
+        counter: "Counter"
+        counter_placeholder: "Value (+1)"
+        types:
+          stat: "Stat"
+          currency: "Currency"
+          character: "Character"
+          special: "Special"
+          fx: "Effect"
+        currencies:
+          house_points: "House points"
+          item: "Item"
+        specials:
+          rumor: "Rumor (hall toot + DM everyone)"
+          staff: "Staff DM"
+          counter: "Counter"
       shop:
+        effects: "Effects"
+        effects_hint: "When off, effects from items are hidden everywhere."
         menu: Shop settings
         tabs:
           commands: Commands
           item_records: Item records
+          counter_records: Counter records
           list: Shop list
           records: Currency records
           settings: Settings
         currency_settings_hint: 'The currency name, attendance reward and post reward are in Content settings > Settings > Currency.'
+        counter_records_ui:
+          counter: Counter
+          delta: Change
+          net: Result
+          raw: Total
+          hint: "Change is this update, result is the total minus the opposite counter, total is the running count."
+          empty: No counter records.
         records_ui:
           character: Character
           direction: Type

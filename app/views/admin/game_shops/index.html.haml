@@ -6,6 +6,7 @@
 
 - none = '—'
 
+
 -# 상점 목록: [상점 추가] 아이템(그림·이름·설명·금액), [지급] 활동 탭과 같은 지급 모달. 분류(상점)는 오른쪽 작은 버튼으로
 - actions = capture do
   = button_tag safe_join([material_symbol('add'), game_t('admin.games.shop.add_item')]), type: :button, class: 'button', data: { modal_open: 'item-add' }
@@ -49,10 +50,10 @@
                   - if !item.usable
                     %span.game-badge= game_t('admin.games.shop.unusable')
                   - else
-                    %span.game-badge= game_t("admin.games.shop.use_targets.#{item.use_target}")
-                    - if item.stat_name.present?
-                      = "#{item.stat_name} #{item.stat_value.start_with?('-', '+') ? item.stat_value : "+#{item.stat_value}"}"
-                      = item.temporary_stat? ? "(#{item.stat_minutes}분)" : "(#{game_t('admin.games.shop.stat_permanent')})"
+                    - item.summary.each do |line|
+                      %span.game-badge= line
+                  - if item.permanent
+                    %span.game-badge= game_t('admin.games.item_fx.permanent')
                   - if !item.giftable
                     %span.game-badge= game_t('admin.games.shop.ungiftable')
                 %td.bot-sheet-table__actions

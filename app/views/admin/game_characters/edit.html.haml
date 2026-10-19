@@ -28,6 +28,17 @@
         %strong= draw
         %small= game_t('admin.games.manage.detail.results.draw')
       = link_to game_t('admin.games.records.view_record'), admin_game_records_path(character: @character.account_id), class: 'gd-link'
+      -# 누적 수치: 상성이 있으면 '벌점/상점' 처럼 함께, 값은 상쇄하고 난 현재값
+      - seen = []
+      - @counters.each do |counter|
+        - next if seen.include?(counter.id)
+
+        - seen << counter.id
+        - pair = counter.opposite
+        - seen << pair.id if pair
+        %span.gd-record.gd-record--counter
+          %strong= [counter, pair].compact.map { |each| each.net_for(@character) }.join('/')
+          %small= [counter, pair].compact.map(&:name).join('/')
 
   = simple_form_for @character, url: admin_game_character_path(@character, filter_params), method: :patch, html: { class: 'gd-form' } do |f|
     = render 'shared/error_messages', object: @character
@@ -47,10 +58,10 @@
           - @base_stats.each do |stat|
             = render 'admin/ui/field', label: stat.name, name: "game_character[stat_values][#{stat.name}]", id: "stat_#{stat.id}", value: @character.raw_stat_value(stat), type: :number,
                                        hint: game_t('admin.games.manage.detail.range', min: stat.min, max: stat.max), html: { min: stat.min, max: stat.max }
-        - if @character.active_effects.any?
+        - if @character.active_effects.reject { |effect| effect['kind'] == 'fx' }.any?
           %p.hint
             = game_t('admin.games.manage.detail.effects')
-            = @character.active_effects.map { |effect| "#{effect['kind'] == 'wear' ? effect['label'] : "#{effect['stat']} #{format('%+d', effect['delta'].to_i)}"} (#{l(Time.zone.parse(effect['until']), format: :short)}까지, #{effect['item']})" }.join(', ')
+            = @character.active_effects.reject { |effect| effect['kind'] == 'fx' }.map { |effect| "#{effect['kind'] == 'wear' ? effect['label'] : "#{effect['stat']} #{format('%+d', effect['delta'].to_i)}"} (#{l(Time.zone.parse(effect['until']), format: :short)}까지, #{effect['item']})" }.join(', ')
         - if @statuses.any?
           .gd-status-list
             - @statuses.each do |status|
@@ -61,3 +72,14 @@
 
     .gd-actions
       = button_tag t('generic.save_changes'), type: :submit, class: 'gd-button'
+
+  -# 붙은 칭호·데코: 미리보기·이름·남은 시간(고치기)·지우기
+  %section.gd-card
+    %h2.gd-card__title= game_t('admin.games.fx.entries_title')
+    - entries = @character.fx_entries
+    - if entries.empty?
+      %p.hint= game_t('admin.games.fx.no_entries')
+    - effects_by_id = GameEffect.unscoped.index_by(&:id)
+    - entries.each do |index, entry|
+      = render 'admin/game_effects/entry', effect: effects_by_id[entry['effect_id'].to_i], entry: entry, id: "character_fx_#{index}",
+                                           update_url: effect_admin_game_character_path(@character, index, filter_params), delete_url: effect_admin_game_character_path(@character, index, filter_params)

@@ -1,0 +1,58 @@
+- content_for :page_title do
+  = game_t('admin.games.counters.title')
+
+- content_for :heading do
+  = render 'admin/game_shops/heading'
+
+
+-# 누적 수치 목록: 수치 종류마다 누적 횟수별 효과 표. 아이템 효과 상자의 사용대상 '누적수치'로 고른 캐릭터에 더한다
+- add_counter = button_tag safe_join([material_symbol('add'), game_t('admin.games.counters.add')]), type: :button, class: 'button button-secondary', data: { modal_open: 'counter-add' }
+%p.hint= game_t('admin.games.counters.hint')
+.ui-section__actions.game-counters__add= add_counter
+
+- @counters.each do |counter|
+  - actions = capture do
+    = button_tag safe_join([material_symbol('add'), game_t('admin.games.counters.add_rule')]), type: :button, class: 'button', data: { modal_open: "rule-add-#{counter.id}" }
+    = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: game_t('admin.games.counters.rename'), data: { modal_open: "counter-#{counter.id}" }
+    = button_to admin_game_counter_path(counter), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.counters.delete'), data: { confirm: game_t('admin.games.counters.delete_confirm', name: counter.name) } do
+      = material_symbol('delete')
+  = render layout: 'admin/ui/section', locals: { title: counter.name, hint: [game_t('admin.games.counters.rules_hint', name: counter.name), (game_t('admin.games.counters.max_info', count: counter.max_count) if counter.max_count), (game_t('admin.games.counters.opposite_info', name: counter.opposite.name) if counter.opposite)].compact.join(' · '), actions: actions } do
+    .bot-sheet-table.game-table
+      %table.table
+        %thead
+          %tr
+            %th= game_t('admin.games.counters.threshold')
+            %th= game_t('admin.games.counters.effect')
+            %th= game_t('admin.games.fx.preview')
+            %th= game_t('admin.games.counters.duration')
+            %th.bot-sheet-table__actions
+        %tbody
+          - counter.rules.each do |rule|
+            %tr
+              %td.bot-sheet-table__text
+                %strong= rule.at_max ? game_t('admin.games.counters.mode_max', count: counter.max_count) : game_t('admin.games.counters.times', count: rule.threshold)
+              %td.bot-sheet-table__text= rule.effect&.label || '—'
+              %td.bot-sheet-table__text
+                - if rule.effect
+                  = render 'admin/game_effects/preview', effect: rule.effect
+              %td.bot-sheet-table__text= rule.permanent ? game_t('admin.games.counters.forever') : Game::ItemEffects.duration(rule.minutes)
+              %td.bot-sheet-table__actions
+                = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: game_t('admin.games.counters.edit_rule'), data: { modal_open: "rule-#{rule.id}" }
+                = button_to admin_game_counter_rule_path(counter, rule), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.counters.delete_rule'), data: { confirm: game_t('admin.games.counters.delete_rule_confirm', count: rule.threshold) } do
+                  = material_symbol('delete')
+          - if counter.rules.empty?
+            %tr
+              %td.bot-sheet-table__text{ colspan: 5 }= game_t('admin.games.counters.no_rules')
+
+  = render layout: 'admin/ui/modal', locals: { id: "counter-#{counter.id}", title: game_t('admin.games.counters.rename') } do
+    = render 'admin/game_counters/counter_form', counter: counter, url: admin_game_counter_path(counter), method: :patch
+
+  = render layout: 'admin/ui/modal', locals: { id: "rule-add-#{counter.id}", title: game_t('admin.games.counters.add_rule') } do
+    = render 'admin/game_counters/rule_form', rule: counter.rules.build(threshold: (counter.rules.map(&:threshold).max || 0) + 1, minutes: 1440), url: admin_game_counter_rules_path(counter), method: :post
+
+  - counter.rules.select(&:persisted?).each do |rule|
+    = render layout: 'admin/ui/modal', locals: { id: "rule-#{rule.id}", title: game_t('admin.games.counters.edit_rule') } do
+      = render 'admin/game_counters/rule_form', rule: rule, url: admin_game_counter_rule_path(counter, rule), method: :patch
+
+= render layout: 'admin/ui/modal', locals: { id: 'counter-add', title: game_t('admin.games.counters.add') } do
+  = render 'admin/game_counters/counter_form', counter: GameCounter.new, url: admin_game_counters_path, method: :post

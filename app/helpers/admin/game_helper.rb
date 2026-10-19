@@ -22,6 +22,59 @@ module Admin::GameHelper
     text.gsub(EMOJI, '').squeeze(' ').strip
   end
 
+  # 효과가 얼마나 남았나: '1일 3시간 남음', 영구면 '영구'
+  def game_fx_remaining(entry)
+    return t('admin.games.fx.forever') if Game::Fx.permanent?(entry)
+
+    seconds = (Time.zone.parse(entry['until'].to_s) - Time.current).to_i
+    return t('admin.games.fx.ended') if seconds <= 0
+
+    days, rest = seconds.divmod(86_400)
+    hours, rest = rest.divmod(3600)
+    parts = [(days.positive? ? "#{days}일" : nil), (hours.positive? ? "#{hours}시간" : nil), (days.zero? && (rest / 60).positive? ? "#{rest / 60}분" : nil)].compact
+    "#{parts.join(' ').presence || '1분 미만'} #{t('admin.games.fx.left')}"
+  end
+
+  # datetime-local 칸 값 (한국 시각)
+  def game_fx_input_value(entry)
+    Time.zone.parse(entry['until'].to_s).in_time_zone('Asia/Seoul').strftime('%Y-%m-%dT%H:%M')
+  end
+
+  # 캐릭터에 지금 붙은 칭호·데코·스킨 { 'title' => 모양, ... } (효과를 끄면 비어 있다)
+  def game_fx_of(character)
+    return {} unless Game::Fx.enabled?
+
+    character.fx_entries.each_with_object({}) do |(_, entry), result|
+      result[entry['slot']] = entry['preset'] if Game::Fx::SLOTS['character'].include?(entry['slot'])
+    end
+  end
+
+  # 누적 수치를 상성끼리 묶는다: [[수치, 상성 수치 또는 nil], ...] (명단·상세의 '벌점/상점' 표시)
+  def game_counter_groups(counters)
+    seen = []
+    counters.filter_map do |counter|
+      next if seen.include?(counter.id)
+
+      seen << counter.id
+      seen << counter.opposite_id if counter.opposite_id
+      [counter, counter.opposite]
+    end
+  end
+
+  # 표 칸용: 붙은 효과 이름과 남은 시간 (slot 이 없으면 전부)
+  def game_fx_badges(owner, slots = nil)
+    effects = (@fx_by_id ||= GameEffect.unscoped.index_by(&:id))
+    items = owner.fx_entries.filter_map do |_, entry|
+      next if slots && !Array(slots).include?(entry['slot'])
+
+      effect = effects[entry['effect_id'].to_i]
+      next if effect.nil?
+
+      content_tag(:span, safe_join([effect.name, ' ', content_tag(:small, game_fx_remaining(entry), class: 'hint')]), class: 'game-badge game-fx-badge')
+    end
+    items.empty? ? '—' : safe_join(items, ' ')
+  end
+
   # '툿 수 / 글자 수' 를 한 칸에
   def game_pair(count, chars)
     safe_join([number_with_delimiter(count), content_tag(:span, ' / ', class: 'game-pair__sep'), number_with_delimiter(chars)])

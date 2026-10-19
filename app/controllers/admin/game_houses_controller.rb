@@ -64,6 +64,26 @@ module Admin
       redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
     end
 
+    # 소속 카드 효과: 끝나는 때 고치기 (permanent=1 이면 영구)·지우기
+    def update_effect
+      authorize :settings, :update?
+
+      house = GameHouse.find(params[:id])
+      time = Admin::GameFxTime.parse(params)
+      return redirect_to(admin_game_houses_path, alert: t('admin.games.fx.bad_time')) if time.nil?
+
+      house.update!(effects: Game::Fx.change_entry(house.effects, params[:index], params[:effect_id], time))
+      redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
+    end
+
+    def remove_effect
+      authorize :settings, :update?
+
+      house = GameHouse.find(params[:id])
+      house.update!(effects: Game::Fx.change_entry(house.effects, params[:index], params[:effect_id], nil))
+      redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
+    end
+
     # 운영진 점수 조정 (+/-)
     def adjust
       authorize :settings, :update?
@@ -75,13 +95,6 @@ module Admin
     end
 
     # 점수 방식 (점수제 / 판수제)
-    # 소속 점수 카드의 순위 효과(1등 반짝·꼴등 똥) 켜기/끄기
-    def effects
-      authorize :settings, :update?
-
-      Game::Config.merge!('common', 'rank_effects' => ActiveModel::Type::Boolean.new.cast(params[:rank_effects]) || false)
-      redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
-    end
 
     def scoring
       authorize :settings, :update?

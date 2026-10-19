@@ -80,10 +80,11 @@ module Game
     def item_command(args)
       return unless status.direct_visibility?
 
+      # 소문내기 아이템만: 보낸 사람이 드러나지 않게 시스템 계정 DM [사용/아이템] 으로 받는다 (문구는 아이템에 정해 둔 것)
       item = GameShopItem.all.find { |each| Game::Wallet.key(each.name) == Game::Wallet.key(args.first) }
-      return unless item&.use_target == 'special' && item.special_kind == 'howler'
+      return unless item && Game::ItemEffects.rumor_text(item.effects_list)
 
-      reply(Game::ItemUse.howler!(actor, item, args.drop(1).join('/')))
+      reply(Game::ItemUse::Runner.from_args(actor, item.name, args.drop(1), via: :system).call)
     rescue Game::ItemUse::Error, Game::Wallet::Error => e
       reply(e.message)
     end

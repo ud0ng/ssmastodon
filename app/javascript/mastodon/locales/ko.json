@@ -1434,5 +1434,8 @@
   "item.use_howler": "모두에게 울려 퍼질 소문 내용을 적으세요.",
   "wallet.wearing": "착용 중",
   "map.sent": "보냈습니다. 기다리는 중: {names} · 다른 방을 누르면 바꿀 수 있어요.",
-  "map.wait_turn": "기다리는 중: {names}"
+  "map.wait_turn": "기다리는 중: {names}",
+  "item.use_self": "나에게 쓰기",
+  "item.use_on_house": "효과를 줄 소속을 골라 주세요.",
+  "item.rumor_placeholder": "모두에게 퍼질 소문"
 }

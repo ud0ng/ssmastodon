@@ -1,0 +1,47 @@
+- content_for :page_title do
+  = game_t('admin.games.fx.title')
+
+- content_for :heading do
+  = render 'admin/game_shops/heading'
+
+
+-# 맨 위 효과 on/off: 끄면 아이템으로 붙은 효과도 어디에도 안 보인다
+= render 'admin/game_shops/currency_sections', groups: { 'effects' => 'effects' }, return_to: admin_game_effects_path
+
+- actions = button_tag safe_join([material_symbol('add'), game_t('admin.games.fx.add')]), type: :button, class: 'button', data: { modal_open: 'effect-add' }
+= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.fx.title'), hint: game_t('admin.games.fx.list_hint'), actions: actions } do
+  .bot-sheet-table.game-table
+    %table.table
+      %thead
+        %tr
+          %th= game_t('admin.games.fx.kind')
+          %th= game_t('admin.games.fx.name')
+          %th= game_t('admin.games.fx.preview')
+          %th= game_t('admin.games.fx.description')
+          %th.bot-sheet-table__actions
+      %tbody
+        - @effects.each do |effect|
+          %tr
+            %td.bot-sheet-table__text
+              %span.game-badge= game_t("admin.games.fx.kinds.#{effect.kind}")
+              - if effect.character?
+                %span.hint= game_t("admin.games.fx.slots.#{effect.slot}")
+            %td.bot-sheet-table__text
+              %strong= effect.name
+              %span.hint= Game::Fx.preset_label(effect.slot, effect.preset)
+            %td.bot-sheet-table__text= render 'admin/game_effects/preview', effect: effect
+            %td.bot-sheet-table__text= effect.description.presence || '—'
+            %td.bot-sheet-table__actions
+              = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: game_t('admin.games.fx.edit'), data: { modal_open: "effect-#{effect.id}" }
+              = button_to admin_game_effect_path(effect), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.fx.delete'), data: { confirm: game_t('admin.games.fx.delete_confirm', name: effect.name) } do
+                = material_symbol('delete')
+        - if @effects.empty?
+          %tr
+            %td.bot-sheet-table__text{ colspan: 5 }= game_t('admin.games.fx.none')
+
+= render layout: 'admin/ui/modal', locals: { id: 'effect-add', title: game_t('admin.games.fx.add') } do
+  = render 'admin/game_effects/form', effect: GameEffect.new(kind: 'house', slot: 'card', preset: 'gold'), url: admin_game_effects_path, method: :post
+
+- @effects.each do |effect|
+  = render layout: 'admin/ui/modal', locals: { id: "effect-#{effect.id}", title: game_t('admin.games.fx.edit') } do
+    = render 'admin/game_effects/form', effect: effect, url: admin_game_effect_path(effect), method: :patch

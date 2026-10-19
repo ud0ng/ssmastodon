@@ -80,6 +80,11 @@ class GameCharacter < ApplicationRecord
     Array(effects).select { |effect| Time.zone.parse(effect['until'].to_s)&.future? }
   end
 
+  # 지금 붙은 효과 목록의 칭호·데코 [[effects 안 순서, 효과]] (관리 화면에서 고치고 지운다)
+  def fx_entries
+    Array(effects).each_with_index.select { |entry, _| entry['kind'] == 'fx' && Time.zone.parse(entry['until'].to_s)&.future? }.map { |entry, index| [index, entry] }
+  end
+
   # 착용 표시 (동물 귀 등): 일정 시간 동안 캐릭터에 붙는 표시
   def add_wear!(label:, minutes:, item:)
     update!(effects: active_effects + [{ 'kind' => 'wear', 'label' => label, 'until' => minutes.minutes.from_now.iso8601, 'item' => item }])

@@ -1,0 +1,19 @@
+-# 붙은 효과 한 줄: 미리보기 · 이름 · 종류와 남은 시간 · 끝나는 때 고치기(영구 포함) · 지우기
+-# local: effect (GameEffect, 없으면 nil), entry (효과 Hash), update_url, delete_url, id (칸 이름표용)
+- permanent = Game::Fx.permanent?(entry)
+.fx-entry
+  .fx-entry__preview
+    - if effect
+      = render 'admin/game_effects/preview', effect: effect
+  .fx-entry__info
+    %strong= effect&.name || game_t('admin.games.fx.deleted')
+    %small.hint= "#{t("admin.games.fx.slots.#{entry['slot']}", default: entry['slot'])} · #{game_fx_remaining(entry)}"
+  = form_tag update_url, method: :patch, class: 'fx-entry__form' do
+    = hidden_field_tag :effect_id, entry['effect_id'], id: nil
+    = datetime_local_field_tag :until, game_fx_input_value(entry), id: "#{id}_until", class: 'ui-input', 'aria-label': game_t('admin.games.fx.until')
+    %label.fx-entry__forever
+      = check_box_tag :permanent, '1', permanent, id: "#{id}_forever"
+      = game_t('admin.games.fx.forever')
+    = button_tag material_symbol('check'), type: :submit, class: 'icon-button', title: t('generic.save_changes')
+  = button_to delete_url, method: :delete, params: { effect_id: entry['effect_id'] }, class: 'icon-button fx-entry__remove', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.fx.remove'), data: { confirm: game_t('admin.games.fx.remove_confirm') } do
+    = material_symbol('delete')

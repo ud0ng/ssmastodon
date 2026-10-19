@@ -1,19 +1,18 @@
 # frozen_string_literal: true
 
 # 상점 아이템. price 가 없으면 비매품 (보상·조사로만 얻는다).
-#   use_target: stat(스탯 변동, 스탯 유형 '스탯'은 stat_minutes 동안 일시, '상태 수치'는 영구) / character(고른 캐릭터에게, 본인도 가능) / special(시스템 계정에 DM)
-#   usable false → [사용] 불가, giftable false → [선물]·[양도] 불가.
-#   permanent true → [영구] 아이템: [사용] 해도 사라지지 않는다 (false 면 사용할 때 1개 없어진다).
-#   stat_name/stat_value → [사용] 할 때 그 스탯이 stat_value 만큼 (정수나 주사위 1d10, -(1d6+3))
-#   image → 아이템 그림 (상점 목록, 캐릭터 상세의 인벤토리 카드). 정사각형으로 잘라 쓴다
+#   옵션: usable [사용] 가능, giftable [선물]·[양도] 가능, permanent [영구] (사용해도 사라지지 않는다)
+#   effect → 효과 설명 (사용자에게 보이는 글), item_effects → 사용할 때 실제로 일어나는 효과 여러 개 (Game::ItemEffects)
+#   image → 아이템 이미지 (상점 목록, 인벤토리 카드). 정사각형으로 잘라 쓴다
 class GameShopItem < ApplicationRecord
   include Attachmentable
 
   VALUE_FORMAT = /\A\s*[+-]?\(?\s*(\d+\s*[dD]\s*\d+(\s*[+-]\s*\d+)?|\d+)\s*\)?\s*\z/
   IMAGE_MIME_TYPES = %w(image/png image/jpeg image/gif image/webp).freeze
   IMAGE_LIMIT = 2.megabytes
-  USE_TARGETS = %w(stat character special).freeze
-  SPECIAL_KINDS = %w(staff report bomb howler).freeze
+
+  # 예전 한 칸짜리 사용 설정 (item_effects 로 옮겼다, 20261019000100_create_game_effects)
+  self.ignored_columns += %w(use_target stat_name stat_value stat_minutes special_kind score_delta special_limit allow_random wear_label)
 
   belongs_to :shop, class_name: 'GameShop', foreign_key: :game_shop_id, inverse_of: :items
 
@@ -29,15 +28,9 @@ class GameShopItem < ApplicationRecord
 
   validates :name, presence: true, length: { maximum: 50 }, uniqueness: true
   validates :description, length: { maximum: 1_000 }
-  validates :price, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
-  validates :use_target, inclusion: { in: USE_TARGETS }
-  validates :special_kind, inclusion: { in: SPECIAL_KINDS }
   validates :effect, length: { maximum: 1_000 }
-  validates :wear_label, length: { maximum: 30 }
-  validates :score_delta, :special_limit, numericality: { only_integer: true }
-  validates :stat_minutes, numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: 60 * 24 * 30 }
-  validates :stat_value, format: { with: VALUE_FORMAT }, if: -> { stat_name.present? }
-  validate :stat_exists, if: -> { stat_name.present? }
+  validates :price, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+  validate :item_effects_valid
 
   default_scope { order(:position, :id) }
   scope :for_sale, -> { where.not(price: nil) }
@@ -46,28 +39,33 @@ class GameShopItem < ApplicationRecord
     !price.nil?
   end
 
-  # [사용] 으로 바뀌는 스탯 (스탯·상태 수치 모두). 스탯(능력치)은 일시, 상태 수치는 영구 변동
-  def stat_field
-    return if stat_name.blank?
-
-    GameCharacterField.stats.find { |field| Game::Wallet.key(field.name) == Game::Wallet.key(stat_name) }
+  def item_effects=(value)
+    super(Game::ItemEffects.normalize(value))
   end
 
-  def special?
-    use_target == 'special'
+  def effects_list
+    Array(item_effects)
   end
 
-  def wearable?
-    wear_label.present?
+  def needs_character?
+    Game::ItemEffects.needs_character?(effects_list)
   end
 
-  def temporary_stat?
-    stat_field&.stat? ? true : false
+  def needs_house?
+    Game::ItemEffects.needs_house?(effects_list)
+  end
+
+  def needs_text?
+    Game::ItemEffects.needs_text?(effects_list)
+  end
+
+  def summary
+    Game::ItemEffects.summary(effects_list)
   end
 
   private
 
-  def stat_exists
-    errors.add(:stat_name, I18n.t('admin.games.shop.unknown_stat', name: stat_name)) unless GameCharacterField.stats.exists?(name: stat_name)
+  def item_effects_valid
+    Game::ItemEffects.errors(effects_list).each { |message| errors.add(:base, message) }
   end
 end

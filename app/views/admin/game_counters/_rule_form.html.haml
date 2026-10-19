@@ -1,0 +1,19 @@
+-# 누적 효과: 누적 횟수(숫자 / 최대치) · 효과(효과 목록) · 지속시간(숫자 + 단위 / 영구). 최대치는 효과만 고르면 되고 영구다 (admin.tsx setupCounterRules)
+- prefix = "rule_#{rule.id || "new_#{rule.game_counter_id}"}"
+- minutes = rule.minutes.to_i.positive? ? rule.minutes.to_i : 1440
+- unit, amount = if rule.permanent then ['forever', 1] elsif (minutes % 1440).zero? then ['day', minutes / 1440] elsif (minutes % 60).zero? then ['hour', minutes / 60] else ['minute', minutes] end
+- units = [[game_t('admin.games.item_fx.minute'), 'minute'], [game_t('admin.games.item_fx.hour'), 'hour'], [game_t('admin.games.item_fx.day'), 'day'], [game_t('admin.games.counters.forever'), 'forever']]
+- modes = [[game_t('admin.games.counters.mode_number'), 'number']]
+- modes << [game_t('admin.games.counters.mode_max', count: rule.counter.max_count), 'max'] if rule.counter.max_count
+= form_tag url, method: method, class: 'simple_form', data: { counter_rule: true } do
+  = render layout: 'admin/ui/fields', locals: { columns: 2 } do
+    = render 'admin/ui/field', label: game_t('admin.games.counters.threshold'), name: 'game_counter_rule[mode]', id: "#{prefix}_mode", value: rule.at_max ? 'max' : 'number', type: :select,
+                               options: modes, html: { data: { rule_mode: true } }, hint: (game_t('admin.games.counters.no_max') unless rule.counter.max_count)
+    = render 'admin/ui/field', label: game_t('admin.games.counters.times_label'), name: 'game_counter_rule[threshold]', id: "#{prefix}_threshold", value: rule.threshold, type: :number, data: { rule_part: 'number' },
+                               html: { min: 1 }, hint: game_t('admin.games.counters.threshold_hint')
+  = render 'admin/ui/field', label: game_t('admin.games.counters.effect'), name: 'game_counter_rule[game_effect_id]', id: "#{prefix}_effect", value: rule.game_effect_id, type: :select,
+                             options: @effects.map { |effect| [effect.label, effect.id] }, required: true, wide: true
+  = render layout: 'admin/ui/fields', locals: { columns: 2 } do
+    = render 'admin/ui/field', label: game_t('admin.games.counters.duration'), name: 'game_counter_rule[unit]', id: "#{prefix}_unit", value: unit, type: :select, options: units, data: { rule_part: 'duration' }, html: { data: { rule_unit: true } }
+    = render 'admin/ui/field', label: game_t('admin.games.counters.duration_amount'), name: 'game_counter_rule[minutes]', id: "#{prefix}_minutes", value: amount, type: :number, data: { rule_part: 'amount' }, html: { min: 1 }
+  = render 'admin/ui/modal_actions'

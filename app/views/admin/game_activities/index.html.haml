@@ -24,12 +24,7 @@
           - stats = @activity[character.account_id]
           - old = @stats[character.account_id]
           %tr.game-table__row{ data: { href: admin_game_activity_logs_path(character: character.account_id) } }
-            %td.bot-sheet-table__text.game-table__name-cell
-              = link_to admin_game_activity_logs_path(character: character.account_id), class: 'game-table__name' do
-                = image_tag full_asset_url(character.account.avatar_static_url), alt: '', class: 'game-table__avatar'
-                %span.game-who
-                  %strong= character.display_name
-                  %small.hint= "@#{character.account.username}"
+            = render 'admin/game_characters/name_cell', character: character, path: admin_game_activity_logs_path(character: character.account_id)
             -# 툿 칸은 '툿 수 / 글자 수' 를 한 칸에
             %td.game-table__number.game-table__pair= game_pair(stats.posts, stats.chars)
             %td.game-table__number.game-table__pair= game_pair(stats.dms, stats.dm_chars)

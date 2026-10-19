@@ -10,13 +10,6 @@
   = render 'admin/ui/segmented', url: mode_admin_game_houses_path, param: :mode, value: @mode, label: game_t('admin.games.houses.mode'),
                                  options: GameHouse::CATEGORIES.map { |category| [@labels[category], category] }
 
--# 순위 효과: 소속 점수 카드에서 1등 반짝반짝, 꼴등 똥 효과 켜기/끄기
-= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.houses.effects'), hint: game_t('admin.games.houses.effects_hint') } do
-  = form_tag effects_admin_game_houses_path, method: :patch, class: 'simple_form' do
-    = render 'admin/ui/switch', label: game_t('admin.games.houses.effects_label'), name: 'rank_effects', id: 'rank_effects', checked: Game::Config.for('common')['rank_effects']
-    .actions
-      = button_tag t('generic.save_changes'), type: :submit, class: 'button'
-
 = render layout: 'admin/ui/modal', locals: { id: 'house-labels', title: game_t('admin.games.houses.rename') } do
   = form_tag labels_admin_game_houses_path, method: :patch, class: 'simple_form' do
     = render layout: 'admin/ui/fields', locals: { columns: 2 } do
@@ -47,6 +40,7 @@
             %th= game_t('admin.games.houses.order')
             %th= game_t('admin.games.houses.members_head')
             %th= game_t('admin.games.houses.points_head')
+            %th= game_t('admin.games.fx.card_effects')
             %th.bot-sheet-table__actions
         %tbody
           - @lists[category].each do |house|
@@ -59,17 +53,28 @@
               %td.bot-sheet-table__text= house.position
               %td.bot-sheet-table__text= @counts[category].fetch(house.id, 0)
               %td.bot-sheet-table__text= house.total
+              %td.bot-sheet-table__text= game_fx_badges(house, 'card')
               %td.bot-sheet-table__actions
+                - if house.fx_entries.any?
+                  = button_tag material_symbol('celebration'), type: :button, class: 'icon-button', title: game_t('admin.games.fx.card_effects'), data: { modal_open: "house-fx-#{house.id}" }
                 = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: game_t('admin.games.houses.edit'), data: { modal_open: "house-#{house.id}" }
                 = button_to admin_game_house_path(house), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.houses.delete_named', name: label),
                             data: { confirm: game_t('admin.games.houses.delete_confirm_named', name: house.name, term: label) } do
                   = material_symbol('delete')
           - if @lists[category].empty?
             %tr
-              %td.bot-sheet-table__text{ colspan: 6 }= game_t('admin.games.overview.no_houses')
+              %td.bot-sheet-table__text{ colspan: 7 }= game_t('admin.games.overview.no_houses')
 
   = render layout: 'admin/ui/modal', locals: { id: "house-add-#{category}", title: game_t('admin.games.houses.add_named', name: label) } do
     = render 'admin/game_houses/form', house: GameHouse.new(category: category, color: '#6b5b3e', position: @lists[category].size), url: admin_game_houses_path, method: :post
+
+  -# 붙은 카드 효과: 미리보기·이름·남은 시간(고치기)·지우기
+  - effects_by_id = GameEffect.unscoped.index_by(&:id)
+  - @lists[category].select { |house| house.fx_entries.any? }.each do |house|
+    = render layout: 'admin/ui/modal', locals: { id: "house-fx-#{house.id}", title: "#{house.name} #{game_t('admin.games.fx.card_effects')}" } do
+      - house.fx_entries.each do |index, entry|
+        = render 'admin/game_effects/entry', effect: effects_by_id[entry['effect_id'].to_i], entry: entry, id: "house_#{house.id}_fx_#{index}",
+                                             update_url: effect_admin_game_house_path(house, index), delete_url: effect_admin_game_house_path(house, index)
 
   - @lists[category].each do |house|
     = render layout: 'admin/ui/modal', locals: { id: "house-#{house.id}", title: game_t('admin.games.houses.edit') } do

@@ -15,6 +15,7 @@ module Admin
       GameCharacterField.ensure_defaults!
       GameCharacter.sync!
       load_columns
+      @counter_groups = helpers.game_counter_groups(GameCounter.includes(:opposite).to_a)
       @characters = filtered.includes(:house, :faction, account: :user)
                             .order(Arel.sql('game_houses.position NULLS LAST, game_houses.id NULLS LAST, accounts.username'))
                             .page(params[:page]).per(PER_PAGE)
@@ -58,6 +59,28 @@ module Admin
       else
         render :edit
       end
+    end
+
+    # 상세 > 효과 카드: 끝나는 때 고치기 (permanent=1 이면 영구)·지우기
+    def update_effect
+      authorize :settings, :update?
+
+      character = GameCharacter.find(params[:id])
+      time = Admin::GameFxTime.parse(params)
+      return redirect_to(edit_admin_game_character_path(character, filter_params), alert: t('admin.games.fx.bad_time')) if time.nil?
+
+      character.update!(effects: Game::Fx.change_entry(character.effects, params[:index], params[:effect_id], time))
+      Game::Fx.expire!(character.account_id)
+      redirect_to edit_admin_game_character_path(character, filter_params), notice: t('generic.changes_saved_msg')
+    end
+
+    def remove_effect
+      authorize :settings, :update?
+
+      character = GameCharacter.find(params[:id])
+      character.update!(effects: Game::Fx.change_entry(character.effects, params[:index], params[:effect_id], nil))
+      Game::Fx.expire!(character.account_id)
+      redirect_to edit_admin_game_character_path(character, filter_params), notice: t('generic.changes_saved_msg')
     end
 
     # 활동 > 인벤토리 카드: 아이템 더하기 (이름이 같으면 개수만 더한다)
@@ -116,6 +139,7 @@ module Admin
     # 상세 화면: 전적(승·패·무)과 최근 판
     def prepare_form
       load_columns
+      @counters = GameCounter.includes(:opposite).to_a
       finished = GamePlayer.joins(:session).where(account_id: @character.account_id, game_sessions: { status: 'finished' })
       @record = finished.group(:result).count
     end

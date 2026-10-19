@@ -37,6 +37,21 @@ module Admin
       load_names(@rows.map { |row| row.record.account_id })
     end
 
+
+    # 누적 수치 기록: 시간 · 캐릭터 · 종류 · 수치(변동값) · 결과값(상성 상쇄 뒤) · 누적치 · 내용
+    def counters
+      authorize :settings, :show?
+
+      @counter_list = GameCounter.all.to_a
+      scope = GameCounterLog.includes(:account, :counter).order(id: :desc)
+      scope = scope.where(game_counter_id: params[:counter]) if params[:counter].present?
+      scope = scope.where(created_at: Time.zone.parse(params[:from].to_s).beginning_of_day..) if params[:from].present? && Time.zone.parse(params[:from].to_s)
+      scope = scope.where(created_at: ..Time.zone.parse(params[:to].to_s).end_of_day) if params[:to].present? && Time.zone.parse(params[:to].to_s)
+      ids = character_account_ids
+      scope = scope.where(account_id: ids) if ids
+      @records = scope.page(params[:page]).per(PER_PAGE)
+      load_names(@records.map(&:account_id))
+    end
     private
 
     def filtered
@@ -80,7 +95,7 @@ module Admin
     end
 
     def filter_params
-      params.permit(:house, :character, :q, :direction, :kind, :from, :to, :item).to_h.compact_blank
+      params.permit(:house, :character, :q, :direction, :kind, :from, :to, :item, :counter).to_h.compact_blank
     end
   end
 end

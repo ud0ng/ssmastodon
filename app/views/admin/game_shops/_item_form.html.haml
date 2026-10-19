@@ -1,49 +1,37 @@
--# 상점 아이템 추가·수정: 그림 · 이름 · 설명 · 금액(비우면 비매품), 그 아래 분류(상점이 여럿일 때)·사용 가능·선물 가능·[사용] 때 바뀌는 스탯과 수치
+-# 상점 아이템 추가·수정 모달: 아이템 설명(이미지·이름·가격·설명·효과 설명) / 옵션([사용]·[선물]·[영구]) / 효과(상자 여러 개, admin.tsx setupItemEffects)
 - shops = GameShop.all.map { |shop| [shop.name, shop.id] }
-- stats = [[game_t('admin.games.shop.no_stat'), '']] + @stat_options
-- targets = GameShopItem::USE_TARGETS.map { |key| [game_t("admin.games.shop.use_targets.#{key}"), key] }
-- special_kinds = GameShopItem::SPECIAL_KINDS.map { |key| [game_t("admin.games.shop.special_kinds.#{key}"), key] }
 - prefix = item.persisted? ? "item_#{item.id}" : 'item_new'
-= form_tag url, method: method, multipart: true, class: 'simple_form', id: "#{prefix}_form" do
-  = render layout: 'admin/ui/field', locals: { label: game_t('admin.games.shop.image'), id: "#{prefix}_image", type: :custom, hint: game_t('admin.games.shop.image_hint'), wide: true } do
-    .game-item-image-field
-      = render 'admin/game_characters/item_thumb', name: item.name.presence || '?', image: item.image.present? ? item.image.url(:small) : nil
-      .game-item-image-field__inputs
-        = file_field_tag 'game_shop_item[image]', id: "#{prefix}_image", accept: GameShopItem::IMAGE_MIME_TYPES.join(','), class: 'ui-input ui-input--file'
-        - if item.image.present?
-          %label.game-item-image-field__remove
-            = check_box_tag 'game_shop_item[remove_image]', '1', false, id: "#{prefix}_remove_image"
-            = game_t('admin.games.shop.remove_image')
-  = render 'admin/ui/field', label: game_t('admin.games.shop.item_name'), name: 'game_shop_item[name]', id: "#{prefix}_name", value: item.name, required: true, wide: true, html: { maxlength: 50 }
+- stats = GameCharacterField.stats.map { |field| ["#{field.name} (#{field.stat? ? I18n.t('admin.games.shop.stat_temporary') : I18n.t('admin.games.shop.stat_permanent')})", field.name] }
+- box = { stats: stats, shop_items: GameShopItem.pluck(:name).map { |name| [name, name] }, fx_effects: GameEffect.all.to_a, counters: GameCounter.all.to_a, currency: @currency }
+= form_tag url, method: method, multipart: true, class: 'simple_form game-item-form', id: "#{prefix}_form" do
+  %h5.ui-subtitle= game_t('admin.games.item_fx.section_item')
+  .game-item-form__item
+    = render 'admin/ui/image_picker', name: 'game_shop_item[image]', id: "#{prefix}_image", remove_name: 'game_shop_item[remove_image]', label: game_t('admin.games.shop.image'),
+                                      image: item.image.present? ? item.image.url(:small) : nil, accept: GameShopItem::IMAGE_MIME_TYPES.join(',')
+    .game-item-form__item-fields
+      = render layout: 'admin/ui/fields', locals: { columns: 2 } do
+        = render 'admin/ui/field', label: game_t('admin.games.shop.item_name'), name: 'game_shop_item[name]', id: "#{prefix}_name", value: item.name, required: true, html: { maxlength: 50 }
+        = render 'admin/ui/field', label: game_t('admin.games.shop.price', currency: @currency), name: 'game_shop_item[price]', id: "#{prefix}_price", value: item.price, type: :number,
+                                   hint: game_t('admin.games.shop.price_hint'), html: { min: 0 }
+      - if shops.size > 1
+        = render 'admin/ui/field', label: game_t('admin.games.shop.shop_name'), name: 'game_shop_item[game_shop_id]', id: "#{prefix}_shop", value: item.game_shop_id, type: :select, options: shops
+      - else
+        = hidden_field_tag 'game_shop_item[game_shop_id]', item.game_shop_id || shops.first&.last, id: nil
   = render 'admin/ui/field', label: game_t('admin.games.shop.description'), name: 'game_shop_item[description]', id: "#{prefix}_description", value: item.description, type: :textarea, html: { rows: 2, maxlength: 1000 }
-  = render layout: 'admin/ui/fields', locals: { columns: 2 } do
-    = render 'admin/ui/field', label: game_t('admin.games.shop.price', currency: @currency), name: 'game_shop_item[price]', id: "#{prefix}_price", value: item.price, type: :number,
-                               hint: game_t('admin.games.shop.price_hint'), html: { min: 0 }
-    - if shops.size > 1
-      = render 'admin/ui/field', label: game_t('admin.games.shop.shop_name'), name: 'game_shop_item[game_shop_id]', id: "#{prefix}_shop", value: item.game_shop_id, type: :select, options: shops
-    - else
-      = hidden_field_tag 'game_shop_item[game_shop_id]', item.game_shop_id || shops.first&.last, id: nil
-  = render 'admin/ui/switch', label: game_t('admin.games.shop.usable'), name: 'game_shop_item[usable]', id: "#{prefix}_usable", checked: item.usable
-  = render 'admin/ui/switch', label: game_t('admin.games.shop.permanent'), name: 'game_shop_item[permanent]', id: "#{prefix}_permanent", checked: item.permanent
-  = render 'admin/ui/switch', label: game_t('admin.games.shop.giftable'), name: 'game_shop_item[giftable]', id: "#{prefix}_giftable", checked: item.giftable
   = render 'admin/ui/field', label: game_t('admin.games.shop.effect'), name: 'game_shop_item[effect]', id: "#{prefix}_effect", value: item.effect, type: :textarea, hint: game_t('admin.games.shop.effect_hint'), html: { rows: 2, maxlength: 1000 }
-  = render 'admin/ui/field', label: game_t('admin.games.shop.use_target'), name: 'game_shop_item[use_target]', id: "#{prefix}_use_target", value: item.use_target, type: :select, options: targets,
-                             hint: game_t('admin.games.shop.use_target_hint')
-  = render layout: 'admin/ui/fields', locals: { columns: 2 } do
-    = render 'admin/ui/field', label: game_t('admin.games.shop.stat'), name: 'game_shop_item[stat_name]', id: "#{prefix}_stat", value: item.stat_name.to_s, type: :select, options: stats
-    = render 'admin/ui/field', label: game_t('admin.games.shop.value'), name: 'game_shop_item[stat_value]', id: "#{prefix}_value", value: item.stat_value,
-                               hint: game_t('admin.games.shop.value_hint'), placeholder: '5, -20, 1d10'
-  = render layout: 'admin/ui/fields', locals: { columns: 2 } do
-    = render 'admin/ui/field', label: game_t('admin.games.shop.special_kind'), name: 'game_shop_item[special_kind]', id: "#{prefix}_special_kind", value: item.special_kind, type: :select, options: special_kinds,
-                               hint: game_t('admin.games.shop.special_kind_hint')
-    = render 'admin/ui/field', label: game_t('admin.games.shop.score_delta'), name: 'game_shop_item[score_delta]', id: "#{prefix}_score_delta", value: item.score_delta, type: :number,
-                               hint: game_t('admin.games.shop.score_delta_hint')
-  = render layout: 'admin/ui/fields', locals: { columns: 2 } do
-    = render 'admin/ui/field', label: game_t('admin.games.shop.special_limit'), name: 'game_shop_item[special_limit]', id: "#{prefix}_special_limit", value: item.special_limit, type: :number,
-                               hint: game_t('admin.games.shop.special_limit_hint'), html: { min: 1 }
-    = render 'admin/ui/field', label: game_t('admin.games.shop.wear_label'), name: 'game_shop_item[wear_label]', id: "#{prefix}_wear_label", value: item.wear_label,
-                               hint: game_t('admin.games.shop.wear_label_hint'), html: { maxlength: 30 }
-  = render 'admin/ui/switch', label: game_t('admin.games.shop.allow_random'), name: 'game_shop_item[allow_random]', id: "#{prefix}_allow_random", checked: item.allow_random
-  = render 'admin/ui/field', label: game_t('admin.games.shop.minutes'), name: 'game_shop_item[stat_minutes]', id: "#{prefix}_minutes", value: item.stat_minutes, type: :number,
-                             hint: game_t('admin.games.shop.minutes_hint'), html: { min: 1 }
+
+  %h5.ui-subtitle= game_t('admin.games.item_fx.section_options')
+  = render 'admin/ui/checks', id_suffix: prefix, items: [[game_t('admin.games.item_fx.usable'), 'game_shop_item[usable]', item.usable],
+                                                        [game_t('admin.games.item_fx.giftable'), 'game_shop_item[giftable]', item.giftable],
+                                                        [game_t('admin.games.item_fx.permanent'), 'game_shop_item[permanent]', item.permanent]]
+
+  %h5.ui-subtitle= game_t('admin.games.item_fx.section_effects')
+  %p.hint= game_t('admin.games.item_fx.hint')
+  = hidden_field_tag 'game_shop_item[item_effects_sent]', '1', id: nil
+  .ui-effect-list{ data: { effect_list: true } }
+    - item.effects_list.each_with_index do |effect, index|
+      = render 'admin/game_shops/effect_box', index: index, effect: effect, **box
+  %template{ data: { effect_template: true } }
+    = render 'admin/game_shops/effect_box', index: '__INDEX__', effect: {}, **box
+  = button_tag safe_join([material_symbol('add'), game_t('admin.games.item_fx.add')]), type: :button, class: 'button button-secondary ui-effect-list__add', data: { effect_add: true }
   = render 'admin/ui/modal_actions'

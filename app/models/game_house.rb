@@ -55,6 +55,11 @@ class GameHouse < ApplicationRecord
     end
   end
 
+  # 지금 붙은 카드 효과 [[effects 안 순서, 효과]]
+  def fx_entries
+    Array(effects).each_with_index.select { |entry, _| Time.zone.parse(entry['until'].to_s)&.future? }.map { |entry, index| [index, entry] }
+  end
+
   def faction?
     category == 'faction'
   end

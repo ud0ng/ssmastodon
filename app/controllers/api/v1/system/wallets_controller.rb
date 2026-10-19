@@ -33,10 +33,9 @@ class Api::V1::System::WalletsController < Api::BaseController
       todo: todo_sessions,
       # 글쓰기 패널 맨 아래 소속 점수 (점수 기준 소속, 이번 시즌)
       house_term: Game::Config.for('common')['house_term'],
-      rank_effects: Game::Config.for('common')['rank_effects'] != false,
       my_house_id: character.group_id&.to_s,
-      houses: GameHouse.active.map { |house| { id: house.id.to_s, name: house.name, color: house.color, total: house.total } },
-      wearing: character.wearing.map { |effect| { label: effect['label'], until: effect['until'] } },
+      # fx: 아이템으로 붙은 소속 카드 효과 모양 (Game::Fx, 효과가 꺼져 있으면 nil)
+      houses: GameHouse.active.map { |house| { id: house.id.to_s, name: house.name, color: house.color, total: house.total, fx: Game::Fx.house_preset(house) } },
       inventory: Array(character.inventory).map { |item| inventory_json(item, shop_items[Game::Wallet.key(item['name'])]) },
     }
   end
@@ -121,14 +120,10 @@ class Api::V1::System::WalletsController < Api::BaseController
       usable: shop_item.nil? || shop_item.usable,
       giftable: shop_item.nil? || shop_item.giftable,
       permanent: shop_item&.permanent || false,
-      use_target: shop_item&.use_target || 'stat',
-      special_kind: shop_item&.special_kind || 'staff',
       effect: shop_item&.effect.to_s,
-      allow_random: shop_item&.allow_random || false,
-      stat_temporary: shop_item&.temporary_stat? || false,
-      stat_minutes: shop_item&.stat_minutes.to_i,
-      stat: shop_item&.stat_name.presence,
-      stat_value: shop_item&.stat_name.present? ? shop_item.stat_value : nil,
+      # 사용할 때 고를 것 (캐릭터·소속·소문 내용)과 효과 요약 줄
+      needs: Game::ItemUse::Runner.needs(shop_item),
+      effects: shop_item ? shop_item.summary : [],
       image: shop_item&.image.present? ? full_asset_url(shop_item.image.url(:small)) : nil,
     }
   end

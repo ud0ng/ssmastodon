@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 
+import { FxTitle } from 'mastodon/components/game_fx';
 import { useAppSelector } from 'mastodon/store';
 
 export const DisplayedName: React.FC<{
@@ -16,7 +17,9 @@ export const DisplayedName: React.FC<{
       title={`@${account.acct}`}
       data-hover-card-account={account.id}
     >
-      <bdi dangerouslySetInnerHTML={{ __html: account.display_name_html }} />
+      <FxTitle accountId={account.id}>
+        <bdi dangerouslySetInnerHTML={{ __html: account.display_name_html }} />
+      </FxTitle>
     </Link>
   );
 };

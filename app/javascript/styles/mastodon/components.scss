@@ -18956,10 +18956,11 @@ body.app-body.layout-game-room.layout-single-column {
   --sys-gold-soft: var(--ct-line, var(--background-border-color));
   --sys-serif: #{$font-sans-serif}, sans-serif;
 
-  border: 1px solid var(--ct-line, var(--background-border-color));
+  // 테두리는 칸 아래에 깔리는 선(inset 그림자)으로: 소속 효과가 있는 칸은 테두리까지 효과로 덮는다
+  border: 0;
   border-radius: 14px;
   background: var(--ct-panel-raised, var(--color-bg-compose-form, var(--surface-background-color)));
-  box-shadow: none;
+  box-shadow: inset 0 0 0 1px var(--ct-line, var(--background-border-color));
   color: var(--ct-text, var(--color-fg, #{$primary-text-color}));
 }
 
@@ -19781,7 +19782,7 @@ body.app-body.layout-game-room.layout-single-column {
   width: 100%;
 }
 
-// ── 소속 점수 카드의 1등(반짝반짝 블링블링)·꼴등(똥) 효과 (compose/components/house_points.tsx) ──
+// ── 소속 점수 카드: 칸 위에 아이템 효과 겹(_game_fx.scss)이 깔려도 이름·점수는 위로 (compose/components/house_points.tsx) ──
 .house-points__item {
   position: relative;
   isolation: isolate;
@@ -19793,6 +19794,7 @@ body.app-body.layout-game-room.layout-single-column {
   z-index: 2;
 }
 
+// 블링블링(gold)·똥(poop) 소속 카드 효과: 예전 1등·꼴등 효과 모양 그대로 (house_points.tsx GoldFx·PoopFx, 관리 화면 admin/game_effects/_preview)
 .house-points__fx {
   position: absolute;
   inset: 0;
@@ -20119,3 +20121,4 @@ body.app-body.layout-game-room.layout-single-column {
     opacity: 0.8;
   }
 }
+

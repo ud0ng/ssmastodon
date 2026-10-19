@@ -88,6 +88,7 @@ namespace :api, format: false do
       resources :commands, only: [:create]
       resources :members, only: [:index]
       resource :history, only: [:show]
+      resource :fx, only: [:show], controller: 'fx'
       resource :wallet, only: [:show] do
         get :records
         post :gift

@@ -3728,6 +3728,11 @@ body .image-picker {
   white-space: nowrap;
 }
 
+// 표 안 데코: 아바타 둘레를 도는 고리가 잘리지 않게 여백
+.game-table__name .game-fx-deco-wrap {
+  margin: 6px 8px 6px 6px;
+}
+
 // 상세 화면 표는 한 줄로 (넘치면 표 안에서 가로로 밀린다)
 .game-detail__column .bot-sheet-table .table td.bot-sheet-table__text {
   white-space: nowrap;

@@ -1,0 +1,15 @@
+-# 이미지 고르기: 작은 네모 카드. 누르면 파일 고르기, 고르면 불러와서 보여 주고, 이미지가 있으면 오른쪽 위 [삭제]. 규칙: docs/관리화면-컴포넌트.md
+-#   = render 'admin/ui/image_picker', name: 'game_shop_item[image]', remove_name: 'game_shop_item[remove_image]', image: url 또는 nil, accept: 'image/png,…', label: '이미지'
+- id = local_assigns[:id] || name.to_s.gsub(/[^\w]+/, '_').delete_suffix('_')
+.ui-image-picker{ class: ('ui-image-picker--filled' if local_assigns[:image].present?), data: { image_picker: true } }
+  %label.ui-image-picker__card{ for: id, title: local_assigns[:label] }
+    %img.ui-image-picker__img{ src: local_assigns[:image].presence, alt: '', hidden: local_assigns[:image].blank? }
+    %span.ui-image-picker__empty{ hidden: local_assigns[:image].present? }
+      = material_symbol('add_photo_alternate')
+      %span= local_assigns[:label]
+    %span.ui-image-picker__loading{ hidden: true }
+  = file_field_tag name, id: id, accept: local_assigns[:accept], class: 'ui-image-picker__input'
+  - if local_assigns[:remove_name]
+    = hidden_field_tag remove_name, '0', id: nil, class: 'ui-image-picker__remove-value'
+  %button.ui-image-picker__remove{ type: 'button', title: t('generic.delete', default: '삭제'), hidden: local_assigns[:image].blank? }
+    = material_symbol('close')

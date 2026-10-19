@@ -1297,5 +1297,8 @@
   "item.use_howler": "Write the rumor everyone will hear.",
   "wallet.wearing": "Wearing",
   "map.sent": "Sent. Waiting for: {names}. Tap another room to change it.",
-  "map.wait_turn": "Waiting for: {names}"
+  "map.wait_turn": "Waiting for: {names}",
+  "item.use_self": "Use it on myself",
+  "item.use_on_house": "Pick the house.",
+  "item.rumor_placeholder": "Rumor everyone will hear"
 }

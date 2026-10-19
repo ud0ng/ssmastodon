@@ -1,0 +1,44 @@
+-# 아이템 효과 상자 하나: 사용대상을 고르면 그 대상에 맞는 칸만 보인다 (admin.tsx setupItemEffects). 오른쪽 끝 휴지통으로 지운다.
+-# local: index (칸 이름 번호, 템플릿은 __INDEX__), effect (저장된 효과 Hash, 새 상자면 {}), stats, shop_items, fx_effects, counters, currency
+-# 안 보이는 묶음의 칸은 disabled 라 보내지지 않는다 (같은 이름 value·minutes·kind 가 묶음마다 있다)
+- base = "game_shop_item[item_effects][#{index}]"
+- type = effect['type'].presence || 'stat'
+- minutes = effect['minutes'].to_i.positive? ? effect['minutes'].to_i : 60
+- unit, amount = if (minutes % 1440).zero? then ['day', minutes / 1440] elsif (minutes % 60).zero? then ['hour', minutes / 60] else ['minute', minutes] end
+- units = [[game_t('admin.games.item_fx.minute'), 'minute'], [game_t('admin.games.item_fx.hour'), 'hour'], [game_t('admin.games.item_fx.day'), 'day']]
+.ui-effect-box{ data: { effect_box: true } }
+  .ui-effect-box__fields
+    = select_tag "#{base}[type]", options_for_select(Game::ItemEffects::TYPES.map { |key| [game_t("admin.games.item_fx.types.#{key}"), key] }, type), class: 'ui-input ui-input--select ui-effect-box__type', data: { effect_type: true }, 'aria-label': game_t('admin.games.item_fx.target')
+
+    .ui-effect-box__group{ data: { effect_group: 'stat' }, hidden: type != 'stat' }
+      = select_tag "#{base}[stat]", options_for_select(stats, effect['stat']), class: 'ui-input ui-input--select', disabled: type != 'stat', 'aria-label': game_t('admin.games.item_fx.stat')
+      = text_field_tag "#{base}[value]", effect['type'] == 'stat' ? effect['value'] : '', class: 'ui-input ui-input--text ui-effect-box__short', placeholder: game_t('admin.games.item_fx.value_placeholder'), disabled: type != 'stat', 'aria-label': game_t('admin.games.item_fx.value')
+      = number_field_tag "#{base}[minutes]", amount, min: 1, class: 'ui-input ui-input--number ui-effect-box__short', disabled: type != 'stat', 'aria-label': game_t('admin.games.item_fx.duration')
+      = select_tag "#{base}[unit]", options_for_select(units, unit), class: 'ui-input ui-input--select ui-effect-box__short', disabled: type != 'stat', 'aria-label': game_t('admin.games.item_fx.unit')
+
+    .ui-effect-box__group{ data: { effect_group: 'currency' }, hidden: type != 'currency' }
+      - currencies = [[game_t('admin.games.item_fx.currencies.house_points'), 'house_points'], [currency, 'money'], [game_t('admin.games.item_fx.currencies.item'), 'item']]
+      - is_item = effect['currency'] == 'item'
+      = select_tag "#{base}[currency]", options_for_select(currencies, effect['currency'] || 'money'), class: 'ui-input ui-input--select', data: { effect_currency: true }, disabled: type != 'currency', 'aria-label': game_t('admin.games.item_fx.currency')
+      = select_tag "#{base}[item]", options_for_select([[game_t('admin.games.item_fx.pick_item'), '']] + shop_items, effect['item']), class: 'ui-input ui-input--select', data: { effect_item: true },
+                   hidden: !is_item, disabled: type != 'currency' || !is_item, 'aria-label': game_t('admin.games.item_fx.item')
+      = text_field_tag "#{base}[value]", effect['type'] == 'currency' ? effect['value'] : '', class: 'ui-input ui-input--text ui-effect-box__short', placeholder: game_t('admin.games.item_fx.amount_placeholder'), disabled: type != 'currency', 'aria-label': game_t('admin.games.item_fx.value')
+
+    .ui-effect-box__group{ data: { effect_group: 'character' }, hidden: type != 'character' }
+      = select_tag "#{base}[kind]", options_for_select([[game_t('admin.games.item_fx.rp'), 'rp']], 'rp'), class: 'ui-input ui-input--select', disabled: type != 'character', 'aria-label': game_t('admin.games.item_fx.kind')
+
+    .ui-effect-box__group{ data: { effect_group: 'special' }, hidden: type != 'special' }
+      = select_tag "#{base}[kind]", options_for_select(Game::ItemEffects::SPECIALS.map { |key| [game_t("admin.games.item_fx.specials.#{key}"), key] }, effect['kind']), class: 'ui-input ui-input--select', data: { effect_special_kind: true }, disabled: type != 'special', 'aria-label': game_t('admin.games.item_fx.kind')
+      - rumor_on = type == 'special' && effect['kind'] == 'rumor'
+      = text_field_tag "#{base}[text]", effect['text'].presence || (rumor_on ? '' : Game::ItemEffects::DEFAULT_RUMOR), maxlength: Game::ItemEffects::MAX_RUMOR, class: 'ui-input ui-input--text ui-effect-box__wide', placeholder: game_t('admin.games.item_fx.rumor_placeholder'), data: { effect_rumor: true }, hidden: !rumor_on, disabled: !rumor_on, 'aria-label': game_t('admin.games.item_fx.rumor_text')
+
+    .ui-effect-box__group{ data: { effect_group: 'counter' }, hidden: type != 'counter' }
+      = select_tag "#{base}[counter_id]", options_for_select(counters.map { |counter| [counter.name, counter.id] }, effect['counter_id']), class: 'ui-input ui-input--select', disabled: type != 'counter', 'aria-label': game_t('admin.games.item_fx.counter')
+      = text_field_tag "#{base}[value]", effect['type'] == 'counter' ? effect['value'] : '1', class: 'ui-input ui-input--text ui-effect-box__short', placeholder: game_t('admin.games.item_fx.counter_placeholder'), disabled: type != 'counter', 'aria-label': game_t('admin.games.item_fx.value')
+
+    .ui-effect-box__group{ data: { effect_group: 'fx' }, hidden: type != 'fx' }
+      = select_tag "#{base}[target]", options_for_select([[game_t('admin.games.fx.kinds.character'), 'character'], [game_t('admin.games.fx.kinds.house'), 'house']], effect['target'] || 'character'), class: 'ui-input ui-input--select', data: { effect_fx_target: true }, disabled: type != 'fx', 'aria-label': game_t('admin.games.item_fx.kind')
+      = select_tag "#{base}[effect_id]", options_for_select([[game_t('admin.games.item_fx.pick_fx'), '']] + fx_effects.map { |fx| [fx.label, fx.id, { 'data-fx-kind': fx.kind }] }, effect['effect_id']), class: 'ui-input ui-input--select', data: { effect_fx: true }, disabled: type != 'fx', 'aria-label': game_t('admin.games.item_fx.fx')
+      = number_field_tag "#{base}[minutes]", amount, min: 1, class: 'ui-input ui-input--number ui-effect-box__short', disabled: type != 'fx', 'aria-label': game_t('admin.games.item_fx.duration')
+      = select_tag "#{base}[unit]", options_for_select(units, unit), class: 'ui-input ui-input--select ui-effect-box__short', disabled: type != 'fx', 'aria-label': game_t('admin.games.item_fx.unit')
+  = button_tag material_symbol('delete'), type: :button, class: 'icon-button ui-effect-box__remove', title: game_t('admin.games.item_fx.remove'), data: { effect_remove: true }

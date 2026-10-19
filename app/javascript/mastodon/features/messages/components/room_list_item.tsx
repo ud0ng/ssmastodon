@@ -10,6 +10,8 @@ import type { ApiDmRoomJSON } from 'mastodon/api_types/dm_rooms';
 import { previewText } from '../util/preview_text';
 import { relativeTimeLabel } from '../util/relative_time';
 
+import { FxTitle } from 'mastodon/components/game_fx';
+
 import { RoomAvatar } from './room_avatar';
 
 const messages = defineMessages({
@@ -98,7 +100,9 @@ export const RoomListItem: React.FC<Props> = ({
 
       <div className='dm-room-item__body'>
         <div className='dm-room-item__line'>
-          <span className='dm-room-item__title'>{title}</span>
+          <span className='dm-room-item__title'>
+            {room.accounts.length === 1 && !room.title ? <FxTitle accountId={room.accounts[0]?.id}>{title}</FxTitle> : title}
+          </span>
           <span className='dm-room-item__time'>
             {last ? relativeTimeLabel(intl, last.created_at) : ''}
           </span>

@@ -10,6 +10,7 @@ import {
   navigateToStatus,
   toggleStatusSpoilers,
 } from 'mastodon/actions/statuses';
+import { SkinLayer } from 'mastodon/components/game_fx';
 import type { IconProp } from 'mastodon/components/icon';
 import { Icon } from 'mastodon/components/icon';
 import Status from 'mastodon/containers/status_container';
@@ -48,6 +49,8 @@ export const NotificationWithStatus: React.FC<{
   const isPrivateMention = useAppSelector(
     (state) => state.statuses.getIn([statusId, 'visibility']) === 'direct',
   );
+
+  const authorId = useAppSelector((state) => state.statuses.getIn([statusId, 'account']) as string | undefined);
 
   const isFiltered = useAppSelector(
     (state) =>
@@ -95,6 +98,7 @@ export const NotificationWithStatus: React.FC<{
         )}
         tabIndex={0}
       >
+        <SkinLayer accountId={authorId} />
         <div className='notification-ungrouped__header'>
           <div className='notification-ungrouped__header__icon'>
             <Icon icon={icon} id={iconId} />

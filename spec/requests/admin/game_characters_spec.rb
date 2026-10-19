@@ -112,16 +112,6 @@ RSpec.describe 'Admin character roster' do
     end
   end
 
-  it 'turns the house rank effects off and on' do
-    expect(Game::Config.for('common')['rank_effects']).to be true
-
-    patch effects_admin_game_houses_path, params: { rank_effects: '0' }
-    expect(response).to redirect_to(admin_game_houses_path)
-    expect(Game::Config.for('common')['rank_effects']).to be false
-
-    patch effects_admin_game_houses_path, params: { rank_effects: '1' }
-    expect(Game::Config.for('common')['rank_effects']).to be true
-  end
 
   it 'switches the scoring unit to factions without touching house points' do
     gryffindor = GameHouse.houses.first
@@ -199,6 +189,32 @@ RSpec.describe 'Admin character roster' do
     expect { account.update!(suspended_at: Time.now.utc) }.to change(Game::RosterSyncWorker.jobs, :size).by(1)
     expect { account.update!(note: 'hello') }.to_not change(Game::RosterSyncWorker.jobs, :size)
     expect { account.user.destroy! }.to change(Game::RosterSyncWorker.jobs, :size)
+  end
+
+  it 'edits and removes the title and deco effects of a character and the card effects of a house' do
+    title = GameEffect.create!(kind: 'character', slot: 'title', preset: 'angel', name: '엔젤 칭호')
+    card = GameEffect.create!(kind: 'house', slot: 'card', preset: 'gold', name: '블링블링')
+    character.update!(effects: [Game::Fx.entry(title, 60).merge('kind' => 'fx')])
+    house = GameHouse.houses.first
+    house.update!(effects: [Game::Fx.entry(card, 60)])
+
+    patch effect_admin_game_character_path(character, 0), params: { effect_id: title.id, until: 2.days.from_now.in_time_zone('Asia/Seoul').strftime('%Y-%m-%dT%H:%M') }
+    expect(Time.zone.parse(character.reload.effects.first['until'])).to be_within(2.minutes).of(2.days.from_now)
+
+    patch effect_admin_game_character_path(character, 0), params: { effect_id: title.id, permanent: '1' }
+    expect(Game::Fx.permanent?(character.reload.effects.first)).to be true
+
+    patch effect_admin_game_character_path(character, 0), params: { effect_id: title.id, until: 'abc' }
+    expect(response).to redirect_to(edit_admin_game_character_path(character))
+    expect(Game::Fx.permanent?(character.reload.effects.first)).to be true
+
+    delete effect_admin_game_character_path(character, 0), params: { effect_id: title.id }
+    expect(character.reload.effects).to eq []
+
+    patch effect_admin_game_house_path(house, 0), params: { effect_id: card.id, permanent: '1' }
+    expect(Game::Fx.permanent?(house.reload.effects.first)).to be true
+    delete effect_admin_game_house_path(house, 0), params: { effect_id: card.id }
+    expect(house.reload.effects).to eq []
   end
 
   it 'redirects the old houses address' do

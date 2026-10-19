@@ -7,7 +7,7 @@ class Api::V1::System::ItemsController < Api::BaseController
   before_action :set_item
 
   # [사용]: 규칙은 Game::ItemUse::Runner (자동봇 [사용]과 같다)
-  #   params: name, acct (캐릭터 대상: 아이디 또는 random), house_id (기숙사 점수 아이템), text (호울러 소문)
+  #   params: name, acct (캐릭터를 고르는 효과: 아이디), house_id (소속을 고르는 효과), text (소문내기 내용)
   def use
     runner = Game::ItemUse::Runner.new(current_account, @name, target: params[:acct], house_id: params[:house_id], text: params[:text], via: :web)
     render json: { message: runner.call }

@@ -2,6 +2,7 @@ import React from 'react';
 
 import type { List } from 'immutable';
 
+import { GameFx, useAccountFx } from 'mastodon/components/game_fx';
 import type { Account } from 'mastodon/models/account';
 
 import { autoPlayGif } from '../initial_state';
@@ -16,7 +17,8 @@ interface Props {
   afterName?: React.ReactNode;
 }
 
-export class DisplayName extends React.PureComponent<Props> {
+// title: 아이템으로 붙은 칭호 (아래 DisplayName 이 효과 목록에서 찾아 넘긴다)
+class DisplayNameInner extends React.PureComponent<Props & { title?: string }> {
   handleMouseEnter: React.ReactEventHandler<HTMLSpanElement> = ({
     currentTarget,
   }) => {
@@ -50,7 +52,7 @@ export class DisplayName extends React.PureComponent<Props> {
   };
 
   render() {
-    const { others, localDomain, afterName } = this.props;
+    const { others, localDomain, afterName, title } = this.props;
 
     let displayName: React.ReactNode,
       suffix: React.ReactNode,
@@ -113,7 +115,7 @@ export class DisplayName extends React.PureComponent<Props> {
 
     return (
       <span
-        className='display-name'
+        className={title ? `display-name game-fx-title game-fx-title--${title}` : 'display-name'}
         onMouseEnter={this.handleMouseEnter}
         onMouseLeave={this.handleMouseLeave}
       >
@@ -126,7 +128,17 @@ export class DisplayName extends React.PureComponent<Props> {
           displayName
         )}{' '}
         {suffix}
+        {title && <GameFx slot='title' preset={title} />}
       </span>
     );
   }
 }
+
+// 한 사람 이름이면 칭호(효과 목록, components/game_fx)를 붙인다
+export const DisplayName: React.FC<Props> = (props) => {
+  const single = !(props.others && props.others.size > 1);
+  const accountId = props.others && props.others.size > 0 ? props.others.first()?.get('id') : props.account?.get('id');
+  const { title } = useAccountFx(single ? accountId : undefined);
+
+  return <DisplayNameInner {...props} title={title} />;
+};

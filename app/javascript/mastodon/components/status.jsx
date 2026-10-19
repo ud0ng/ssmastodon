@@ -26,6 +26,7 @@ import Card from '../features/status/components/card';
 import Bundle from '../features/ui/components/bundle';
 import { MediaGallery, Video, Audio } from '../features/ui/util/async-components';
 import { SensitiveMediaContext } from '../features/ui/util/sensitive_media_context';
+import { SkinLayer } from './game_fx';
 import { displayMedia } from '../initial_state';
 
 import { Avatar } from './avatar';
@@ -543,6 +544,7 @@ class Status extends ImmutablePureComponent {
           {!skipPrepend && prepend}
 
           <div className={classNames('status', `status-${status.get('visibility')}`, { 'status-reply': !!status.get('in_reply_to_id'), 'status--in-thread': !!rootId, 'status--first-in-thread': previousId && (!connectUp || connectToRoot), muted: this.props.muted })} data-id={status.get('id')}>
+            <SkinLayer accountId={status.getIn(['account', 'id'])} />
             {(connectReply || connectUp || connectToRoot) && <div className={classNames('status__line', { 'status__line--full': connectReply, 'status__line--first': !status.get('in_reply_to_id') && !connectToRoot })} />}
 
             <div onClick={this.handleHeaderClick} onAuxClick={this.handleHeaderClick} className='status__info'>

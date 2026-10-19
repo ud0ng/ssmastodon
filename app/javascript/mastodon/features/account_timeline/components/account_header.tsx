@@ -29,6 +29,7 @@ import { openModal } from 'mastodon/actions/modal';
 import { initMuteModal } from 'mastodon/actions/mutes';
 import { initReport } from 'mastodon/actions/reports';
 import { Avatar } from 'mastodon/components/avatar';
+import { FxTitle } from 'mastodon/components/game_fx';
 import { Badge, AutomatedBadge, GroupBadge } from 'mastodon/components/badge';
 import { Button } from 'mastodon/components/button';
 import {
@@ -829,7 +830,9 @@ export const AccountHeader: React.FC<{
 
           <div className='account__header__tabs__name'>
             <h1>
-              <span dangerouslySetInnerHTML={displayNameHtml} />
+              <FxTitle accountId={account.id}>
+                <span dangerouslySetInnerHTML={displayNameHtml} />
+              </FxTitle>
               {lockedIcon}
               <small>
                 <span>

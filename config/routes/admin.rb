@@ -85,9 +85,12 @@ namespace :admin do
   # 게임 (시스템 계정)
   get 'games/houses', to: redirect('/admin/characters/houses')
   resources :game_houses, path: 'characters/houses', only: [:index, :create, :update, :destroy] do
+    member do
+      patch 'effects/:index', action: :update_effect, as: :effect
+      delete 'effects/:index', action: :remove_effect
+    end
     post :adjust, on: :collection
     post :scoring, on: :collection
-    patch :effects, on: :collection
     post :mode, on: :collection
     patch :labels, on: :collection
   end
@@ -105,10 +108,15 @@ namespace :admin do
   get 'shop/commands', to: 'game_shops#commands', as: :game_shop_commands
   get 'shop/records', to: 'game_shop_records#money', as: :game_shop_money_records
   get 'shop/item_records', to: 'game_shop_records#items', as: :game_shop_item_records
+  get 'shop/counter_records', to: 'game_shop_records#counters', as: :game_shop_counter_records
   resources :game_shops, path: 'shop/list', only: [:index, :create, :update, :destroy] do
     patch :currency, on: :collection
   end
   resources :game_shop_items, path: 'games/shop_items', only: [:create, :update, :destroy]
+  resources :game_effects, path: 'shop/effects', only: [:index, :create, :update, :destroy]
+  resources :game_counters, path: 'shop/counters', only: [:index, :create, :update, :destroy] do
+    resources :rules, controller: 'game_counter_rules', only: [:create, :update, :destroy]
+  end
   resources :game_sessions, path: 'games/sessions', only: [] do
     member do
       post :advance
@@ -132,6 +140,8 @@ namespace :admin do
     member do
       patch :group, action: :assign_group
       post :items, action: :add_item
+      patch 'effects/:index', action: :update_effect, as: :effect
+      delete 'effects/:index', action: :remove_effect
       patch 'items/:index', action: :update_item, as: :item
       delete 'items/:index', action: :remove_item
     end

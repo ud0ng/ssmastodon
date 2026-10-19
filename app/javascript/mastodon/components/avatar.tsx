@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import classNames from 'classnames';
 import { Link } from 'react-router-dom';
 
+import { GameFx, useAccountFx } from 'mastodon/components/game_fx';
 import { useHovering } from 'mastodon/hooks/useHovering';
 import { autoPlayGif } from 'mastodon/initial_state';
 import type { Account } from 'mastodon/models/account';
@@ -18,6 +19,8 @@ interface Props {
   withLink?: boolean;
   counter?: number | string;
   counterBorderColor?: string;
+  // 데코를 붙이지 않는다 (채팅 2인 이상 방의 뒤에 겹쳐 가려지는 아바타 등)
+  noFx?: boolean;
 }
 
 export const Avatar: React.FC<Props> = ({
@@ -29,6 +32,7 @@ export const Avatar: React.FC<Props> = ({
   style: styleFromParent,
   counter,
   counterBorderColor,
+  noFx = false,
 }) => {
   const { hovering, handleMouseEnter, handleMouseLeave } = useHovering(animate);
   const [loading, setLoading] = useState(true);
@@ -50,7 +54,11 @@ export const Avatar: React.FC<Props> = ({
     setError(true);
   }, [setError]);
 
-  const avatar = (
+  // 데코: 아이템으로 붙은 아바타 둘레 효과 (작은 아바타에는 붙이지 않는다)
+  const fx = useAccountFx(account?.id);
+  const deco = size >= 24 && !noFx ? fx.deco : undefined;
+
+  const plain = (
     <div
       className={classNames('account__avatar', {
         'account__avatar--inline': inline,
@@ -74,6 +82,13 @@ export const Avatar: React.FC<Props> = ({
       )}
     </div>
   );
+
+  const avatar = deco ? (
+    <span className={`game-fx-deco game-fx-deco--${deco} game-fx-deco-wrap`}>
+      {plain}
+      <GameFx slot='deco' preset={deco} />
+    </span>
+  ) : plain;
 
   if (withLink) {
     return (

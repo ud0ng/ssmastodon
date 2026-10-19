@@ -5,7 +5,7 @@
   = render 'admin/game_characters/heading'
 
 - none = game_t('admin.games.manage.none')
-- column_count = 5 + @base_stats.size + @statuses.size
+- column_count = 5 + @counter_groups.size + @base_stats.size + @statuses.size
 
 -# 찾기 + 소속·진영 거르기 (서버원 관리와 같은 모양)
 = form_tag admin_game_characters_path, method: :get, class: 'simple_form game-table__filter' do
@@ -32,6 +32,9 @@
         %th= @labels['house_label']
         %th= @labels['faction_label']
         %th= game_t('admin.games.manage.roster.record')
+        -# 누적 수치: 상성이 있으면 '벌점/상점' 처럼 함께 (값은 상쇄하고 난 현재값)
+        - @counter_groups.each do |group|
+          %th= group.compact.map(&:name).join('/')
         - @base_stats.each do |stat|
           %th= stat.name
         - @statuses.each do |status|
@@ -44,12 +47,7 @@
       - @characters.each do |character|
         - stat_values = @base_stats.to_h { |stat| [stat.name, character.stat_value(stat)] }
         %tr.game-table__row{ data: { href: admin_game_records_path(character: character.account_id) } }
-          %td.bot-sheet-table__text.game-table__name-cell
-            = link_to admin_game_records_path(character: character.account_id), class: 'game-table__name' do
-              = image_tag full_asset_url(character.account.avatar_static_url), alt: '', class: 'game-table__avatar'
-              %span.game-who
-                %strong= character.display_name
-                %small.hint= "@#{character.account.username}"
+          = render 'admin/game_characters/name_cell', character: character, path: admin_game_records_path(character: character.account_id)
           -# 소속·진영: 누르면 바로 드롭다운, 고르면 그 자리에서 저장 (admin/inline_select.ts)
           %td.bot-sheet-table__text
             = select_tag "house_#{character.id}", options_for_select([[none, '']] + @houses.map { |house| [house.name, house.id] }, character.game_house_id), class: 'game-inline-select', 'aria-label': @labels['house_label'], data: { inline_save: group_admin_game_character_path(character), kind: 'house' }
@@ -58,6 +56,8 @@
           - record = @records[character.account_id]
           %td.bot-sheet-table__text.game-table__record
             = game_t('admin.games.manage.roster.record_format', win: record['win'].to_i, lose: record['lose'].to_i, draw: record['draw'].to_i)
+          - @counter_groups.each do |group|
+            %td.bot-sheet-table__text= group.compact.map { |counter| counter.net_for(character) }.join('/')
           - @base_stats.each do |stat|
             %td.bot-sheet-table__text= stat_values[stat.name]
           - @statuses.each do |status|

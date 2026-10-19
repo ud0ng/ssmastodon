@@ -1,0 +1,22 @@
+-# 명단·활동의 이름 칸: 아바타(데코)·이름(칭호)·칸 배경(스킨). 웹과 같은 마크업 (styles/mastodon/_game_fx.scss)
+-# local: character, path (눌렀을 때 가는 곳)
+- fx = game_fx_of(character)
+%td.bot-sheet-table__text.game-table__name-cell
+  - if fx['skin']
+    = render 'admin/game_effects/skin_layer', preset: fx['skin']
+  = link_to path, class: 'game-table__name' do
+    - avatar = image_tag(full_asset_url(character.account.avatar_static_url), alt: '', class: 'game-table__avatar')
+    - if fx['deco']
+      %span{ class: "game-fx-deco game-fx-deco--#{fx['deco']} game-fx-deco-wrap" }
+        = avatar
+        = render 'admin/game_effects/layer', slot: 'deco', preset: fx['deco']
+    - else
+      = avatar
+    %span.game-who
+      - if fx['title']
+        %strong{ class: "game-fx-title game-fx-title--#{fx['title']}" }
+          %span.game-fx-name= character.display_name
+          = render 'admin/game_effects/layer', slot: 'title', preset: fx['title']
+      - else
+        %strong= character.display_name
+      %small.hint= "@#{character.account.username}"

@@ -1,0 +1,9 @@
+-# 수치 종류: 이름 · 최대 누적치(비우면 제한 없음) · 상성 수치(서로 상쇄)
+= form_tag url, method: method, class: 'simple_form' do
+  = render 'admin/ui/field', label: game_t('admin.games.counters.name'), name: 'game_counter[name]', id: "counter_#{counter.id || 'new'}_name", value: counter.name, required: true, wide: true, html: { maxlength: 20 }
+  = render layout: 'admin/ui/fields', locals: { columns: 2 } do
+    = render 'admin/ui/field', label: game_t('admin.games.counters.max_count'), name: 'game_counter[max_count]', id: "counter_#{counter.id || 'new'}_max", value: counter.max_count, type: :number,
+                               hint: game_t('admin.games.counters.max_count_hint'), html: { min: 1 }
+    = render 'admin/ui/field', label: game_t('admin.games.counters.opposite'), name: 'game_counter[opposite_id]', id: "counter_#{counter.id || 'new'}_opposite", value: counter.opposite_id, type: :select,
+                               options: GameCounter.where.not(id: counter.id).map { |other| [other.name, other.id] }, include_blank: game_t('admin.games.counters.no_opposite'), hint: game_t('admin.games.counters.opposite_hint')
+  = render 'admin/ui/modal_actions'

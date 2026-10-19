@@ -45,7 +45,7 @@ class Api::V1::Bot::CharactersController < Api::V1::Bot::BaseController
 
   private
 
-  # 자동봇 [사용]: 아이템으로 바뀌는 스탯이 능력치(스탯 유형 '스탯')면 영구 변동이 아니라 일시 효과로 (아이템의 stat_minutes). 상태 수치는 그대로 영구.
+  # 예전 자동봇 [사용]: 아이템으로 바뀌는 스탯이 능력치(스탯 유형 '스탯')면 영구 변동이 아니라 일시 효과로 (아이템 스탯 효과의 지속시간). 상태 수치는 그대로 영구.
   def split_temporary_stats!(changes)
     shop_items = GameShopItem.all.to_a
     fields = GameCharacterField.stats.to_a
@@ -54,11 +54,13 @@ class Api::V1::Bot::CharactersController < Api::V1::Bot::BaseController
       used = change[:items].select { |_, count| count.to_i.negative? }.keys.filter_map { |name| shop_items.find { |item| Game::Wallet.key(item.name) == Game::Wallet.key(name) } }
       change[:stats].to_h.each do |name, delta|
         field = fields.find { |candidate| Game::Wallet.key(candidate.name) == Game::Wallet.key(name) }
-        item = used.find { |candidate| candidate.stat_field == field }
-        next unless field&.stat? && item
+        next unless field&.stat?
+
+        item, effect = used.lazy.filter_map { |candidate| (found = candidate.effects_list.find { |each| each['type'] == 'stat' && Game::Wallet.key(each['stat']) == Game::Wallet.key(field.name) }) && [candidate, found] }.first
+        next if item.nil?
 
         change[:stats].delete(name)
-        effects << { account: change[:account], stat: field.name, delta: delta.to_i, minutes: item.stat_minutes, item: item.name }
+        effects << { account: change[:account], stat: field.name, delta: delta.to_i, minutes: effect['minutes'].to_i, item: item.name }
       end
     end
     effects

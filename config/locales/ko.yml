@@ -197,15 +197,139 @@ ko:
         hint: 확률을 비우면 반드시 줍니다. 줄마다 따로 뽑습니다.
         name: 아이템
         pick: 아이템 고르기
+      counters:
+        title: "누적 수치 목록"
+        max_count: "최대 누적치"
+        max_count_hint: "비우면 제한이 없습니다. 최대치를 넘어도 누적치는 계속 올라갑니다."
+        opposite: "상성 수치"
+        no_opposite: "없음"
+        opposite_hint: "서로 상쇄합니다. 예) 신고 5회·칭찬 2회 → 신고 3회"
+        max_info: "최대 %{count}회"
+        opposite_info: "상성 %{name}"
+        forever: "영구"
+        mode_number: "누적 횟수"
+        mode_max: "최대치 (%{count}회)"
+        no_max: "최대 누적치를 정해야 최대치 효과를 쓸 수 있습니다."
+        times_label: "횟수"
+        duration_amount: "기간"
+        hint: "아이템 효과에서 사용대상 '누적수치'로 고른 캐릭터에게 수치를 더하면, 누적 횟수에 닿을 때 아래 효과가 붙습니다. 캐릭터 효과는 그 캐릭터에게, 소속 효과는 그 캐릭터의 소속 카드에 붙습니다."
+        add: "수치 종류 추가"
+        rename: "이름 바꾸기"
+        delete: "수치 종류 삭제"
+        delete_confirm: "'%{name}' 수치를 지울까요? 쌓인 횟수와 누적 효과도 함께 지워집니다."
+        name: "이름"
+        add_rule: "누적 효과 추가"
+        edit_rule: "누적 효과 고치기"
+        delete_rule: "누적 효과 삭제"
+        delete_rule_confirm: "%{count}회 누적 효과를 지울까요?"
+        rules_hint: "%{name} 누적 횟수별 효과"
+        threshold: "누적 횟수"
+        threshold_hint: "이 횟수에 처음 닿을 때 한 번 붙습니다"
+        effect: "효과"
+        duration: "지속시간"
+        times: "%{count}회"
+        no_rules: "누적 효과가 없습니다."
+      fx:
+        title: "효과 목록"
+        forever: "영구"
+        ended: "끝남"
+        left: "남음"
+        bad_time: "끝나는 날짜를 읽을 수 없습니다."
+        entries_title: "붙은 효과"
+        no_entries: "지금 붙은 효과가 없습니다."
+        card_effects: "카드 효과"
+        until: "끝나는 때"
+        deleted: "(지운 효과)"
+        remove: "효과 지우기"
+        remove_confirm: "이 효과를 지울까요?"
+        add: "효과 추가"
+        edit: "효과 고치기"
+        delete: "효과 삭제"
+        delete_confirm: "'%{name}' 효과를 지울까요? 이 효과를 쓰는 아이템 효과는 아무 일도 하지 않게 됩니다."
+        none: "효과가 없습니다."
+        kind: "종류"
+        name: "이름"
+        preview: "효과 미리보기"
+        description: "설명"
+        look: "모양"
+        look_hint: "소속 카드는 소속 점수 카드의 칸에, 칭호·데코는 캐릭터의 이름·아바타 둘레에 붙습니다 (툿·알림·채팅·프로필 등)."
+        list_hint: "아이템의 효과 상자에서 고르면, 사용할 때 고른 캐릭터·소속에 지속시간 동안 붙습니다."
+        bad_look: "종류와 모양이 맞지 않습니다."
+        demo_house: "그리핀도르"
+        demo_name: "해리 포터"
+        demo_toot: "안녕하세요! 오늘 처음 왔어요."
+        demo_toot: "오늘도 호그와트는 평화롭다."
+        kinds:
+          house: "소속"
+          character: "캐릭터"
+        slots:
+          card: "소속 카드"
+          title: "칭호"
+          deco: "데코"
+          skin: "스킨"
+      item_fx:
+        section_item: "아이템 설명"
+        section_options: "옵션"
+        section_effects: "효과"
+        hint: "사용할 때 일어나는 일을 여러 개 넣을 수 있습니다. 캐릭터를 고르는 효과가 있으면 사용할 때 상대 캐릭터를 태그하고(본인도 가능), 소속을 고르는 효과는 소속을 고릅니다. 수치는 + 면 더하고 - 면 뺍니다."
+        add: "효과 추가"
+        remove: "효과 삭제"
+        usable: "[사용]"
+        giftable: "[선물]"
+        permanent: "[영구]"
+        target: "사용대상"
+        stat: "스탯"
+        value: "수치"
+        duration: "지속시간"
+        unit: "단위"
+        currency: "재화 종류"
+        item: "아이템"
+        kind: "종류"
+        fx: "효과"
+        minute: "분"
+        hour: "시간"
+        day: "일"
+        value_placeholder: "수치 (5, -3, 1d6)"
+        amount_placeholder: "수치 (+10, -5)"
+        pick_item: "아이템 고르기"
+        pick_fx: "효과 고르기"
+        rp: "RP용"
+        counter: "수치 종류"
+        counter_placeholder: "수치 (+1)"
+        rumor_text: "연회장 문구"
+        rumor_placeholder: "연회장 문구 (시스템 계정이 팔로워 공개 툿으로 알립니다)"
+        types:
+          stat: "스탯"
+          currency: "재화"
+          character: "캐릭터"
+          special: "특수"
+          fx: "효과"
+          counter: "누적수치"
+        currencies:
+          house_points: "소속 점수"
+          item: "아이템"
+        specials:
+          rumor: "소문내기 (연회장 문구 + 전체 DM)"
+          staff: "DM 처리 (운영진에게 DM)"
       shop:
+        effects: "효과"
+        effects_hint: "효과를 끄면 아이템으로 붙은 효과도 소속 카드·툿 어디에도 보이지 않습니다."
         menu: 상점 설정
         tabs:
           commands: 명령어
           item_records: 아이템 기록
+          counter_records: 누적 수치 기록
           list: 상점 목록
           records: 재화 기록
           settings: 설정
         currency_settings_hint: '재화 이름·출석 보상·툿 보상은 컨텐츠 설정 > 설정 > 재화 설정에서 바꿉니다.'
+        counter_records_ui:
+          counter: 수치 종류
+          delta: 수치
+          net: 결과값
+          raw: 누적치
+          hint: "수치는 이번 변동값, 결과값은 누적치에서 상성 누적치를 상쇄한 최종값(상성이 없으면 그대로), 누적치는 지금까지 쌓은 값입니다."
+          empty: 누적 수치 기록이 없습니다.
         records_ui:
           character: 캐릭터
           direction: 구분
@@ -235,7 +359,7 @@ ko:
         give_money: '재화 (%{currency})'
         give_nothing: 받을 캐릭터와 재화나 아이템을 골라 주세요.
         given: '%{count}명에게 지급했습니다.'
-        image: 그림
+        image: 이미지
         image_hint: 'PNG·JPG·GIF·WEBP, 2MB 까지. 정사각형으로 잘려 인벤토리 카드에도 보입니다.'
         remove_image: 그림 지우기
         add_item: "상점 추가"

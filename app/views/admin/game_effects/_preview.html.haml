@@ -1,0 +1,27 @@
+-# 효과 미리보기: 소속이면 소속 카드 칸, 캐릭터면 칭호(이름)·데코(아바타)·스킨(툿 배경)
+- case effect.slot
+- when 'card'
+  - classic = { 'gold' => 'house-points__item--first', 'poop' => 'house-points__item--last' }[effect.preset]
+  %span.game-fx-demo.game-fx-demo--card.house-points__item{ class: classic || "game-fx-host game-fx-host--card game-fx-host--#{effect.preset}" }
+    - if classic
+      = render 'admin/game_effects/house_fx', preset: effect.preset
+    - else
+      = render 'admin/game_effects/layer', slot: 'card', preset: effect.preset
+    %span.house-points__name.game-fx-demo__name= game_t('admin.games.fx.demo_house')
+    %span.house-points__value
+      %strong 120
+- when 'title'
+  %span.game-fx-demo.game-fx-title{ class: "game-fx-title--#{effect.preset}" }
+    = render 'admin/game_effects/layer', slot: 'title', preset: effect.preset
+    %span.game-fx-demo__name= game_t('admin.games.fx.demo_name')
+- when 'skin'
+  %span.game-fx-demo.game-fx-demo--skin
+    = render 'admin/game_effects/skin_layer', preset: effect.preset
+    %span.game-fx-demo__name= game_t('admin.games.fx.demo_name')
+    %span.game-fx-demo__text= game_t('admin.games.fx.demo_toot')
+- when 'deco'
+  %span.game-fx-demo
+    %span.game-fx-demo__avatar.game-fx-deco{ class: "game-fx-deco--#{effect.preset}" }
+      = render 'admin/game_effects/layer', slot: 'deco', preset: effect.preset
+      = game_t('admin.games.fx.demo_name').first
+    %span.game-fx-demo__name= game_t('admin.games.fx.demo_name')

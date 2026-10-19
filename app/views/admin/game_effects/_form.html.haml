@@ -1,0 +1,7 @@
+-# 효과 추가·수정: 모양(종류·자리·애니메이션 한 번에) · 이름 · 설명
+= form_tag url, method: method, class: 'simple_form' do
+  = render layout: 'admin/ui/field', locals: { label: game_t('admin.games.fx.look'), id: "effect_#{effect.id || 'new'}_look", type: :custom, wide: true, hint: game_t('admin.games.fx.look_hint') } do
+    = select_tag 'game_effect[look]', grouped_options_for_select(Game::Fx.preset_options, effect.look), id: "effect_#{effect.id || 'new'}_look", class: 'ui-input ui-input--select'
+  = render 'admin/ui/field', label: game_t('admin.games.fx.name'), name: 'game_effect[name]', id: "effect_#{effect.id || 'new'}_name", value: effect.name, required: true, wide: true, html: { maxlength: 30 }
+  = render 'admin/ui/field', label: game_t('admin.games.fx.description'), name: 'game_effect[description]', id: "effect_#{effect.id || 'new'}_description", value: effect.description, type: :textarea, html: { rows: 2, maxlength: 300 }
+  = render 'admin/ui/modal_actions'

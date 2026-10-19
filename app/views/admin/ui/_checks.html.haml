@@ -1,0 +1,8 @@
+-# 체크박스 여러 개를 한 줄에 (여러 개 고를 수 있음). 규칙: docs/관리화면-컴포넌트.md
+-#   = render 'admin/ui/checks', items: [['[사용]', 'game_shop_item[usable]', true], …]
+.ui-checks
+  - items.each do |label, name, checked|
+    %label.ui-checks__item
+      = hidden_field_tag name, '0', id: nil
+      = check_box_tag name, '1', checked, id: name.to_s.gsub(/[^\w]+/, '_').delete_suffix('_') + "_#{local_assigns[:id_suffix]}"
+      %span= label

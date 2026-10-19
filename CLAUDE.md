@@ -56,6 +56,8 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
 - 캐릭터 관리 탭: 명단(상세: 소속·스탯·메모·전적) / 활동(퍼블·답 툿 수와 글자 수, 재화 내역, 인벤토리, 지급) / 소속(점수 기준 소속, 시즌, 목록) / 스탯(`GameCharacterField` stat·status 수식).
 - 툿 보상(컨텐츠 설정 > 설정 > 재화 설정): 툿이 저장될 때 `Status` after_create_commit → `Game::ActivityWorker` → `Game::Activity.reward!` (웹·앱 모두). 자동봇의 툿 보상은 끔 (/api/v1/bot/config 가 0).
 - 컨텐츠 설정 탭: 설정(봇 계정·재화·공통룰) / 명령어(기본 명령어·일반 문구) — 둘 다 공통 설정, `Game::Config::LAYOUT` 의 [common, 화면] / 컨텐츠 / 상점. 마법 수업·자습·성적표는 2026-10 에 없앴다 (비행 수업만 `Kinds::Flying` 비행 대결로, game_grades 테이블은 남김).
+- 누적 수치(`GameCounter`, 상점 설정 > 누적 수치 목록): 기본 벌점↔상점(최대 5, 서로 상쇄). 캐릭터 `counters` 는 누적치(최대치를 넘어도 올라감), 결과값 = 누적치 - 상성 누적치. 누적 효과(`GameCounterRule`)는 횟수/최대치(영구), 기록은 `GameCounterLog`.
+- 효과(`GameEffect`, 상점 설정 > 효과 목록): 소속 카드 / 캐릭터 칭호·데코·스킨(툿·멘션 알림 배경). 모양은 `Game::Fx::PRESETS` + `_game_fx.scss`, 웹은 `components/game_fx.tsx`. 붙은 효과는 캐릭터 상세·소속 화면에서 고치고 지운다.
 - 소속: `GameHouse.category` house/faction. 공통 설정 `group_mode` 로 점수를 모을 쪽을 고른다 (`GameHouse.active`, `GameCharacter#group`). {소속 이름}(house_term)은 그 이름.
 - 컨텐츠 보상: `Game::Rewards` (돈·아이템, game_rewards). 시스템 툿은 판 잠금 트랜잭션 안에서 올라가므로 `Game::Poster` 가 커밋 뒤 DistributionWorker 를 다시 넣는다 (안 그러면 멘션 알림이 빠짐).
 - PC 웹 카드: 시스템 툿마다 `GameEvent`(payload = `Game::Card.build`) → `REST::StatusSerializer#game_card` → `components/content_card.tsx`. 새 컨텐츠는 Kinds 에 `card_data`·`card_actions` 를 만든다 (공개된 것만, 정답·비밀 선택은 끝난 뒤).

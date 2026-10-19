@@ -16,14 +16,10 @@ export interface WalletItem {
   usable: boolean;
   giftable: boolean;
   permanent?: boolean;
-  use_target: 'stat' | 'character' | 'special';
-  special_kind: 'staff' | 'report' | 'bomb' | 'howler';
   effect: string;
-  allow_random: boolean;
-  stat_temporary: boolean;
-  stat_minutes: number;
-  stat: string | null;
-  stat_value: string | null;
+  // 사용할 때 고를 것 (캐릭터·소속·소문 내용)과 효과 요약 줄 (상점 설정 > 아이템 효과)
+  needs: { character: boolean; house: boolean; text: boolean };
+  effects: string[];
 }
 
 export interface WalletRecord {
@@ -46,11 +42,9 @@ export interface Wallet {
   record: { win: number; lose: number; draw: number };
   inventory: WalletItem[];
   house_term: string;
-  // 소속 점수 카드의 1등 반짝·꼴등 똥 효과 (관리 > 캐릭터 관리 > 소속)
-  rank_effects?: boolean;
   my_house_id: string | null;
-  houses: { id: string; name: string; color: string; total: number }[];
-  wearing?: { label: string; until: string }[];
+  // fx: 아이템으로 붙은 소속 카드 효과 모양 (상점 설정 > 효과 목록, 꺼져 있으면 null)
+  houses: { id: string; name: string; color: string; total: number; fx?: string | null }[];
   invites: number;
   // 내가 행동해야 하는 판 (수락 대기·내 차례). 알림 소리·메뉴 배지의 기준
   todo?: { session_id: string; name: string }[];

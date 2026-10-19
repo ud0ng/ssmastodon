@@ -59,7 +59,7 @@ export const RoomAvatar: React.FC<Props> = ({ accountIds, size }) => {
         className='dm-room-avatar__back'
         style={{ maskImage, WebkitMaskImage: maskImage }}
       >
-        <Avatar account={back} size={inner} />
+        <Avatar account={back} size={inner} noFx />
       </div>
 
       <div className='dm-room-avatar__front'>
