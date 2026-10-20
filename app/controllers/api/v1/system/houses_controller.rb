@@ -16,20 +16,21 @@ class Api::V1::System::HousesController < Api::BaseController
   before_action :set_house
 
   def show
+    return show_counter_logs if params[:counter].present?
+
     scope = season_points
     scope = scope.where(amount: 1..) if params[:filter] == 'gain'
     scope = scope.where(amount: ...0) if params[:filter] == 'loss'
-    scope = scope.where(game_counter_id: params[:counter].to_i) if params[:counter].present?
     scope = scope.where(id: ...params[:max_id].to_i) if params[:max_id].present?
     rows = scope.includes(:account).order(id: :desc).limit(LIMIT + 1).to_a
     page = rows.first(LIMIT)
     people = people_for(page.filter_map(&:account) + top_accounts)
 
     render json: {
-      house: { id: @house.id.to_s, name: @house.name, color: @house.color, total: @house.total, term: Game::Config.for('common')['house_term'] },
+      house: house_json,
       top_gain: top(:gain, people),
       top_loss: top(:loss, people),
-      counters: house_counters.map { |counter| { id: counter.id.to_s, name: counter.name } },
+      counters: tab_counters.map { |counter| { id: counter.id.to_s, name: counter.name } },
       members: members_json(house_counters),
       records: page.map { |point| record_json(point, people) },
       next_max_id: rows.size > LIMIT ? page.last.id.to_s : nil,
@@ -37,6 +38,66 @@ class Api::V1::System::HousesController < Api::BaseController
   end
 
   private
+
+  # 누적 수치 탭(벌점 내역·상점 내역): 이 소속 캐릭터들의 그 수치 기록 (소속 점수 내역이 아니라 수치가 오르내린 기록)
+  #   소속 점수에 반영된 것은 전체·획득·차감 탭에 나온다
+  def show_counter_logs
+    counter = tab_counters.find { |each| each.id == params[:counter].to_i }
+    scope = counter ? GameCounterLog.where(game_counter_id: counter.id, account_id: house_members.map(&:account_id)) : GameCounterLog.none
+    scope = scope.where(id: ...params[:max_id].to_i) if params[:max_id].present?
+    rows = scope.order(id: :desc).limit(LIMIT + 1).to_a
+    page = rows.first(LIMIT)
+    people = people_for(Account.where(id: page.map(&:account_id)).to_a + top_accounts)
+
+    render json: {
+      house: house_json,
+      top_gain: top(:gain, people),
+      top_loss: top(:loss, people),
+      counters: tab_counters.map { |each| { id: each.id.to_s, name: each.name } },
+      members: members_json(house_counters),
+      records: page.map { |log| counter_log_json(log, counter, people) },
+      next_max_id: rows.size > LIMIT ? page.last.id.to_s : nil,
+    }
+  end
+
+  def house_json
+    common = Game::Config.for('common')
+    { id: @house.id.to_s, name: @house.name, color: @house.color, total: @house.total, term: common['house_term'], currency: common['currency_name'], summary: summary_json }
+  end
+
+  def counter_log_json(log, counter, people)
+    {
+      id: log.id.to_s,
+      amount: log.delta,
+      reason: log.reason.to_s,
+      counter: counter.name,
+      result: log.net,
+      created_at: log.created_at.iso8601,
+      character: person_json(people[log.account_id], log.delta),
+    }
+  end
+
+  # 내역 탭: 소속 점수에 영향을 주는 수치 + 그 상성 수치 (벌점이면 상점도 '상점 내역' 탭으로)
+  def tab_counters
+    @tab_counters ||= (house_counters + house_counters.filter_map(&:opposite)).uniq(&:id).sort_by(&:position)
+  end
+
+  # 소속 점수 카드 아래 합계 카드: 이 소속 캐릭터들의 재화·전적·툿(DM 포함 전체 툿 수 / 글자 수) 합계
+  def summary_json
+    ids = house_members.map(&:account_id)
+    results = GamePlayer.joins(:session).where(account_id: ids, game_sessions: { status: 'finished' }).group(:result).count
+    activity = Game::Activity.overview(ids).values_at(*ids)
+    {
+      money: house_members.sum { |character| character.money.to_i },
+      win: results['win'].to_i, lose: results['lose'].to_i, draw: results['draw'].to_i,
+      posts: activity.sum { |each| each ? each.posts + each.dms : 0 },
+      chars: activity.sum { |each| each ? each.chars + each.dm_chars : 0 },
+    }
+  end
+
+  def house_members
+    @house_members ||= GameCharacter.visible.includes(:account).select { |character| character.group == @house }
+  end
 
   # 소속 점수에 영향을 주는 누적 수치 (소속 점수 화면의 탭·배지)
   def house_counters
@@ -46,7 +107,7 @@ class Api::V1::System::HousesController < Api::BaseController
   # 이 소속 캐릭터들: 아바타·이름(데코·칭호는 웹이 계정 번호로 입힌다)과 누적 수치 결과값.
   # 상성은 상쇄한 값이라 이긴 쪽만 남고, 0 이면 배지가 없다. points: 다음 반영 때 바뀔 소속 점수, next_at: 그때
   def members_json(counters)
-    GameCharacter.visible.includes(:account).select { |character| character.group == @house }.sort_by { |character| character.display_name.to_s }.map do |character|
+    house_members.sort_by { |character| character.display_name.to_s }.map do |character|
       {
         account_id: character.account_id.to_s,
         name: character.display_name,

@@ -12420,8 +12420,8 @@ div.compose-panel .account__bio {
   }
 
   &__manage-avatar {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
@@ -20381,6 +20381,10 @@ body.app-body.layout-game-room.layout-single-column {
     .house-page__cell strong,
     .house-page__person,
     .house-page__fx-time,
+    .house-page__summary-cell,
+    .house-page__summary-cell strong,
+    .house-page__roster-title,
+    .house-page__member-name,
     .house-page__fx-time time {
       background: none;
       color: var(--hp-ink) !important;
@@ -20437,7 +20441,7 @@ body.app-body.layout-game-room.layout-single-column {
   }
 
   &-name {
-    max-width: 76px;
+    max-width: 100%;
     overflow: hidden;
     font-size: 12px;
     font-weight: 700;
@@ -20489,4 +20493,58 @@ body.app-body.layout-game-room.layout-single-column {
     font-variant-numeric: tabular-nums;
     font-weight: 700;
   }
+}
+
+// 소속 점수 카드 아래 합계 카드: 재화 · 전적 · 툿
+.house-page__summary {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 4px;
+  padding: 10px 0;
+  border-top: 1px dashed var(--sys-gold-soft, var(--background-border-color));
+
+  .house-page__summary-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    padding: 6px;
+    color: var(--color-accent, #{$ui-highlight-color});
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+
+    & + & {
+      border-inline-start: 1px dashed var(--sys-gold-soft, var(--background-border-color));
+    }
+
+    strong {
+      color: var(--color-text, #{$primary-text-color});
+      font-size: 17px;
+      font-variant-numeric: tabular-nums;
+      font-weight: 800;
+    }
+  }
+}
+
+// 한 카드 안의 소속 캐릭터 목록 (점선 칸막이 아래)
+.house-page__roster {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--sys-gold-soft, var(--background-border-color));
+}
+
+.house-page__roster-title {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
 }

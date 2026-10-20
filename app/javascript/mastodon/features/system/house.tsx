@@ -30,6 +30,8 @@ interface PointRecord {
   reason: string;
   created_at: string;
   counter?: string | null;
+  // 누적 수치 기록이면 그때의 결과값 (amount 는 오르내린 값)
+  result?: number;
   character: Person | null;
 }
 
@@ -44,7 +46,7 @@ interface Member {
 }
 
 interface HouseData {
-  house: { id: string; name: string; color: string; total: number; term: string };
+  house: { id: string; name: string; color: string; total: number; term: string; currency: string; summary: { money: number; win: number; lose: number; draw: number; posts: number; chars: number } };
   top_gain: Person | null;
   top_loss: Person | null;
   counters: { id: string; name: string }[];
@@ -148,7 +150,7 @@ const TopCell: React.FC<{ kind: 'gain' | 'loss'; person: Person | null }> = ({ k
   </span>
 );
 
-const RecordRow: React.FC<{ record: PointRecord }> = ({ record }) => (
+const RecordRow: React.FC<{ record: PointRecord; counterTab?: boolean }> = ({ record, counterTab = false }) => (
   <li className={record.amount < 0 ? 'wallet-record wallet-record--spend' : 'wallet-record wallet-record--gain'}>
     <span className='wallet-record__icon house-page__icon'>
       {record.character ? <img src={record.character.avatar} alt='' /> : null}
@@ -157,12 +159,13 @@ const RecordRow: React.FC<{ record: PointRecord }> = ({ record }) => (
       <span className='wallet-record__title'>{record.character?.name ?? record.reason}</span>
       <span className='wallet-record__meta'>
         {record.reason ? `${record.reason} · ` : ''}
+        {counterTab && record.result !== undefined ? `${record.counter} ${record.result} · ` : ''}
         <FormattedTime value={record.created_at} hour='2-digit' minute='2-digit' />
       </span>
     </div>
     <span className='wallet-record__amount'>
       <strong>{signed(record.amount)}</strong>
-      <span><FormattedMessage id='house.unit' defaultMessage='pts' /></span>
+      <span>{counterTab ? record.counter : <FormattedMessage id='house.unit' defaultMessage='pts' />}</span>
     </span>
   </li>
 );
@@ -266,6 +269,7 @@ const HousePage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                   <strong>{data.house.total.toLocaleString()}</strong>
                   <span><FormattedMessage id='house.unit' defaultMessage='pts' /></span>
                 </span>
+
                 {data.members.length > 0 && (
                   <span className='house-page__members'>
                     {data.members.map((member) => <MemberCell key={member.account_id} member={member} term={data.house.term} />)}
@@ -275,6 +279,23 @@ const HousePage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                   <TopCell kind='gain' person={data.top_gain} />
                   <TopCell kind='loss' person={data.top_loss} />
                 </span>
+
+                {/* 소속 캐릭터들의 재화 · 전적 · 툿 합계 */}
+                <span className='house-page__summary'>
+                  <span className='house-page__summary-cell'>
+                    <FormattedMessage id='house.sum_money' defaultMessage='Total {currency}' values={{ currency: data.house.currency }} />
+                    <strong>{data.house.summary.money.toLocaleString()}</strong>
+                  </span>
+                  <span className='house-page__summary-cell'>
+                    <FormattedMessage id='house.sum_record' defaultMessage='Total record' />
+                    <strong><FormattedMessage id='wallet.record_summary' defaultMessage='{win}W {lose}L {draw}D' values={data.house.summary} /></strong>
+                  </span>
+                  <span className='house-page__summary-cell'>
+                    <FormattedMessage id='house.sum_posts' defaultMessage='Total toots' />
+                    <strong>{data.house.summary.posts.toLocaleString()} / {data.house.summary.chars.toLocaleString()}</strong>
+                  </span>
+                </span>
+
               </div>
             </div>
 
@@ -300,7 +321,7 @@ const HousePage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                       <DayTitle iso={group.iso} />
                     </h3>
                     <ul className='wallet-page__records'>
-                      {group.records.map((record) => <RecordRow key={record.id} record={record} />)}
+                      {group.records.map((record) => <RecordRow key={record.id} record={record} counterTab={filter.startsWith('counter:')} />)}
                     </ul>
                   </section>
                 ))}

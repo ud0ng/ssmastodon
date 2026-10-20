@@ -73,7 +73,14 @@ RSpec.describe 'GET /api/v1/system/houses/:id' do
     expect(ron_member['account_id']).to eq ron.id.to_s
 
     get "/api/v1/system/houses/#{house.id}", headers: headers, params: { counter: report.id }
-    expect(response.parsed_body['records'].pluck('amount')).to eq [-10]
-    expect(response.parsed_body['records'].first['counter']).to eq '벌점'
+    # 수치 탭은 소속 점수 내역이 아니라 그 수치(벌점 내역)의 기록: 이 소속 캐릭터의 변동만
+    records = response.parsed_body['records']
+    expect(records.pluck('amount')).to eq [10]
+    expect(records.first).to include('counter' => '벌점', 'result' => 10)
+    expect(records.first['character']).to include('name' => '론')
+
+    # 소속 점수에 반영된 것은 획득·차감 탭에
+    get "/api/v1/system/houses/#{house.id}", headers: headers, params: { filter: 'loss' }
+    expect(response.parsed_body['records'].pluck('amount')).to include(-10)
   end
 end
