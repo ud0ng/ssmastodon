@@ -370,8 +370,9 @@
   .display-name__account {
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-block: 2px;
-    margin-block: -2px;
+    // 글자 그림자·번쩍임이 양끝에서 잘리지 않게 여백을 안쪽에 둔다
+    padding: 4px 8px;
+    margin: -4px -8px;
   }
 }
 
@@ -1095,22 +1096,6 @@
   70% { transform: scale(1); filter: brightness(1); }
 }
 
-@keyframes game-fx-kiss-glow {
-  0%, 100% { box-shadow: inset 0 0 0 2px #ff2e93, inset 0 0 10px rgb(255 46 147 / 60%); }
-  50% { box-shadow: inset 0 0 0 2px #ffb3d9, inset 0 0 26px rgb(255 46 147 / 95%); }
-}
-
-// 앙큼: 눈웃음치듯 빛이 사선으로 스윽 훑는다
-@keyframes game-fx-kiss-drift {
-  from { transform: rotate(-8deg) scale(1.2) translateY(0); }
-  to { transform: rotate(-8deg) scale(1.2) translateY(-18px); }
-}
-
-@keyframes game-fx-kiss-wink {
-  0%, 25% { transform: translateX(-120%) skewX(-18deg); }
-  65%, 100% { transform: translateX(130%) skewX(-18deg); }
-}
-
 .game-fx--debut2 .game-fx__p::before { content: '💋'; }
 .game-fx--debut2 .game-fx__p:nth-child(3n + 2)::before { content: '💗'; }
 .game-fx--debut2 .game-fx__p:nth-child(3n)::before { content: '❣'; color: #ff2e93; }
@@ -1120,8 +1105,6 @@
 .game-fx-title--debut2 .game-fx-demo__name,
 .game-fx-title--debut2 .game-fx-name {
   display: inline-block;
-  padding: 0 3px;
-  margin: 0 -3px;
   background: linear-gradient(100deg, #b0004f, #ff2e93, #ff8fc7, #e0115f, #b0004f);
   background-size: 250% 100%;
   background-clip: text;
@@ -1200,38 +1183,78 @@
   animation: game-fx-kiss-beat 1.6s ease-in-out infinite;
 }
 
-// 스킨: 핫핑크·진홍 물결 + 입술빛 광선 + 눈웃음 스윽
+// 스킨: 아주 연한 핫핑크 바탕 (글이 잘 보이게)이 일렁이고 테두리가 은은히 빛나며, 키스 마크와 작은 하트가 여기저기 탕탕 찍힌다
+@keyframes game-fx-kiss-stamp {
+  0%, 100% { opacity: 0; transform: scale(2.6) rotate(var(--r, -14deg)); }
+  6% { opacity: 0.85; transform: scale(0.85) rotate(var(--r, -14deg)); }
+  11% { transform: scale(1.12) rotate(var(--r, -14deg)); }
+  16% { transform: scale(1) rotate(var(--r, -14deg)); }
+  62% { opacity: 0.75; }
+  84% { opacity: 0; }
+}
+
+@keyframes game-fx-kiss-glow {
+  0%, 100% { box-shadow: inset 0 0 0 1px rgb(255 46 147 / 45%), inset 0 0 8px rgb(255 46 147 / 22%); }
+  50% { box-shadow: inset 0 0 0 1px rgb(255 140 200 / 70%), inset 0 0 18px rgb(255 46 147 / 38%); }
+}
+
+// 앙큼: 눈웃음치듯 빛이 사선으로 스윽 훑는다
+@keyframes game-fx-kiss-wink {
+  0%, 25% { transform: translateX(-120%) skewX(-18deg); }
+  65%, 100% { transform: translateX(130%) skewX(-18deg); }
+}
+
 .game-fx-skin--debut2 {
-  background: linear-gradient(115deg, rgb(255 46 147 / 46%), rgb(255 140 200 / 56%), rgb(210 10 90 / 46%), rgb(255 95 176 / 54%), rgb(255 46 147 / 46%));
+  background: linear-gradient(115deg, rgb(255 46 147 / 11%), rgb(255 140 200 / 15%), rgb(210 10 90 / 10%), rgb(255 95 176 / 14%), rgb(255 46 147 / 11%));
   background-size: 300% 100%;
   animation: game-fx-wave 3.8s linear infinite, game-fx-debut-pop 1s ease-out, game-fx-kiss-glow 1.8s ease-in-out infinite;
 
-  // 입술 자국을 촘촘하게 깔고 천천히 흘려 보낸다
-  &::before {
-    content: '💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋 💋';
-    position: absolute;
-    inset: -6px;
-    overflow: hidden;
-    font-size: 15px;
-    line-height: 1.5;
-    letter-spacing: 6px;
-    opacity: 0.45;
-    word-break: break-all;
-    transform: rotate(-8deg) scale(1.2);
-    animation: game-fx-kiss-drift 6s linear infinite;
-  }
-
+  // 작은 하트 두 개도 따로 찍힌다
+  &::before,
   &::after {
-    content: '';
+    content: '💗';
     position: absolute;
-    inset: 0;
-    background: linear-gradient(105deg, transparent 30%, rgb(255 235 248 / 85%) 50%, transparent 70%);
-    transform: translateX(-120%) skewX(-18deg);
-    animation: game-fx-kiss-wink 2.6s ease-in-out infinite;
+    font-size: 15px;
+    line-height: 1;
+    opacity: 0;
+    animation: game-fx-kiss-stamp 3.6s ease-out infinite;
   }
 
-  .game-fx__p { font-size: 18px; }
-  .game-fx__p::before { content: '💋'; }
+  &::before { --r: 10deg; top: 36%; left: 36%; animation-delay: -0.4s; }
+
+  // 눈웃음 빛
+  &::after {
+    --r: -10deg;
+    inset: 0;
+    font-size: 0;
+    background: linear-gradient(105deg, transparent 30%, rgb(255 235 248 / 60%) 50%, transparent 70%);
+    opacity: 1;
+    transform: translateX(-120%) skewX(-18deg);
+    animation: game-fx-kiss-wink 2.8s ease-in-out infinite;
+  }
+
+  .game-fx__p {
+    inset: auto;
+    width: auto;
+    height: auto;
+    font-size: 26px;
+    line-height: 1;
+    opacity: 0;
+    animation: game-fx-kiss-stamp 3.6s ease-out infinite;
+  }
+
+  .game-fx__p:nth-child(n)::before { content: '💋'; color: inherit; animation: none; }
+
+  // 짝수 칸은 작은 하트
+  .game-fx__p:nth-child(even) { font-size: 15px; }
+  .game-fx__p:nth-child(even):nth-child(n)::before { content: '💗'; }
+
+  .game-fx__p:nth-child(1) { --r: -18deg; top: 8%; left: 6%; animation-delay: 0s; }
+  .game-fx__p:nth-child(2) { --r: 12deg; top: 56%; left: 24%; animation-delay: -2.9s; }
+  .game-fx__p:nth-child(3) { --r: -8deg; top: 14%; left: 46%; animation-delay: -1.7s; }
+  .game-fx__p:nth-child(4) { --r: 20deg; top: 62%; left: 62%; animation-delay: -0.8s; }
+  .game-fx__p:nth-child(5) { --r: -22deg; top: 10%; left: 80%; animation-delay: -2.3s; }
+  .game-fx__p:nth-child(6) { --r: 8deg; top: 58%; left: 90%; animation-delay: -1.2s; }
 }
 
 // 글쓰기 패널은 가로 넘침을 숨겨서 왼쪽 가장자리 아바타의 데코 빛이 잘린다: 여백을 조금 더 준다
