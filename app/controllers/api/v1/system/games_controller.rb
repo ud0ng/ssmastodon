@@ -9,7 +9,8 @@ class Api::V1::System::GamesController < Api::BaseController
   LIST_LIMIT = 15
   RANK_LIMIT = 5
 
-  before_action -> { doorkeeper_authorize! :read }
+  before_action -> { doorkeeper_authorize! :read }, only: [:show]
+  before_action -> { doorkeeper_authorize! :write }, only: [:open]
   before_action :require_user!
   before_action :require_contents_open!
   before_action :set_kind
@@ -22,8 +23,11 @@ class Api::V1::System::GamesController < Api::BaseController
       key: @kind.key,
       name: @kind.display_name,
       group: Game::Guide.group_of(@kind),
-      event: @kind.event?,
-      can_open: @kind.event? && @kind.can_open?(current_account),
+      # 여럿이 하는 컨텐츠는 운영진이 연다: event 면 [이벤트 열기] (운영진) / 모집 알림을 기다리기 (일반). 이벤트로 열 수 없는 여럿이 컨텐츠(퀴디치)는 운영진만 시작
+      event: event_kind?,
+      can_open: can_open?,
+      staff_only: staff_only?,
+      web_open: @kind.event_capable? && !@kind.event?,
       staff: current_user.can?(:manage_settings),
       # 하루 신청 횟수를 이미 넘었으면 [시작하기]를 누를 때 바로 보여 주는 안내 (같은 상대 제한은 상대를 고른 뒤 신청할 때)
       daily_limit_message: Game::DailyLimits.check(current_account, [], kind: @kind),
@@ -51,7 +55,35 @@ class Api::V1::System::GamesController < Api::BaseController
     }
   end
 
+  # 운영진이 [이벤트 열기] (모집형 이벤트: 비행·미로·도둑 지도). 비밀의 방은 멘션 명령어로 연다
+  def open
+    return render json: { error: '이벤트를 열 수 있는 사람이 아닙니다.' }, status: 403 unless can_open?
+
+    Game::Events::Opening.open!(@kind, current_account)
+    render json: { ok: true }
+  rescue Game::Events::Opening::Error => e
+    render json: { error: e.message }, status: 422
+  end
+
   private
+
+  def event_kind?
+    @kind.event? || @kind.event_capable?
+  end
+
+  def staff?
+    current_user.can?(:manage_settings)
+  end
+
+  def can_open?
+    return false unless event_kind?
+
+    @kind.event? ? @kind.can_open?(current_account) : staff?
+  end
+
+  def staff_only?
+    Game::Guide.group_of(@kind) == 'group' && !event_kind?
+  end
 
   def set_kind
     @kind = Game::Kinds.registry[params[:id]]

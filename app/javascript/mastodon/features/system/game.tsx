@@ -8,7 +8,7 @@ import { Link, useHistory, useParams } from 'react-router-dom';
 
 import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
 import { openModal } from 'mastodon/actions/modal';
-import { apiRequestDelete, apiRequestGet } from 'mastodon/api';
+import { apiRequestDelete, apiRequestGet, apiRequestPost } from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
 import { CommandText } from 'mastodon/components/command_text';
@@ -50,6 +50,10 @@ interface GameInfo {
   group: 'duel' | 'group';
   event: boolean;
   can_open?: boolean;
+  // 이벤트로 열 수 없는 여럿이 컨텐츠(퀴디치): 운영진만 시작
+  staff_only?: boolean;
+  // 운영진이 웹에서 바로 여는 모집형 이벤트 (아니면 멘션 명령어로 연다)
+  web_open?: boolean;
   // 운영진: 끝난 판 기록을 지울 수 있다
   staff?: boolean;
   daily_limit_message?: string | null;
@@ -119,7 +123,10 @@ const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => 
       return;
     }
     setBusy(true);
-    sendCommand(join ? { kind: game.key, join: true } : { kind: game.key })
+    const request = !join && game.web_open
+      ? apiRequestPost(`v1/system/games/${game.key}/open`)
+      : sendCommand(join ? { kind: game.key, join: true } : { kind: game.key });
+    request
       .then(() => waitForSession(game.key, (info) => info.active[0]?.id ?? null))
       .then((sessionId) => {
         if (sessionId) {
@@ -133,7 +140,7 @@ const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => 
       .finally(() => {
         setBusy(false);
       });
-  }, [game.key, game.busy, onSent, onBusy, history]);
+  }, [game.key, game.busy, game.web_open, onSent, onBusy, history]);
 
   if (game.my_session_id) {
     return (
@@ -164,6 +171,14 @@ const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => 
   }
 
   if (game.event && !game.can_open) {
+    return (
+      <span className='system-start system-start--off'>
+        <FormattedMessage id='system.game.staff_opens' defaultMessage='Staff open this event. Watch for the announcement.' />
+      </span>
+    );
+  }
+
+  if (game.staff_only && !game.staff) {
     return (
       <span className='system-start system-start--off'>
         <FormattedMessage id='system.game.staff_opens' defaultMessage='Staff open this event. Watch for the announcement.' />

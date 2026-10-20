@@ -116,4 +116,25 @@ RSpec.describe 'API V1 System games' do
 
     expect(response.parsed_body['summary']).to eq '젤리빈 한 봉지로 겨루기'
   end
+  describe 'group contents are opened by staff' do
+    let(:admin) { Fabricate(:user, role: UserRole.find_by(name: 'Owner')) }
+    let(:admin_headers) { { 'Authorization' => "Bearer #{Fabricate(:accessible_access_token, resource_owner_id: admin.id, scopes: 'read write').token}" } }
+
+    it 'marks recruiting events and the team game as staff-run, and lets only staff open an event' do
+      get '/api/v1/system/games/flying', headers: headers
+      expect(response.parsed_body).to include('event' => true, 'can_open' => false, 'web_open' => true)
+
+      get '/api/v1/system/games/quidditch', headers: headers
+      expect(response.parsed_body).to include('event' => false, 'staff_only' => true)
+
+      get '/api/v1/system/games/jellybean', headers: headers
+      expect(response.parsed_body).to include('event' => false, 'staff_only' => false)
+
+      get '/api/v1/system/games/flying', headers: admin_headers
+      expect(response.parsed_body).to include('can_open' => true)
+
+      post '/api/v1/system/games/flying/open', headers: headers
+      expect(response).to have_http_status(403)
+    end
+  end
 end
