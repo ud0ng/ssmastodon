@@ -64,7 +64,12 @@ RSpec.describe 'GET /api/v1/system/houses/:id' do
     body = response.parsed_body
     expect(body['counters'].pluck('name')).to eq %w(벌점 상점)
     ron_member = body['members'].find { |member| member['acct'] == 'ron' }
-    expect(ron_member['counters'].to_h { |counter| [counter['name'], counter['value']] }).to eq('벌점' => 5, '상점' => 0)
+    # 상성은 상쇄하고 이긴 쪽만, 0 이면 배지 없음. points: 다음 반영 때 바뀔 점수, next_at: 그때
+    expect(ron_member['counters'].pluck('name')).to eq %w(벌점)
+    expect(ron_member['counters'].first).to include('value' => 5, 'points' => -10)
+    expect(ron_member['counters'].first['next_at']).to be_present
+    harry_member = body['members'].find { |member| member['acct'] == 'harry' }
+    expect(harry_member['counters']).to eq []
     expect(ron_member['account_id']).to eq ron.id.to_s
 
     get "/api/v1/system/houses/#{house.id}", headers: headers, params: { counter: report.id }

@@ -20221,6 +20221,14 @@ body.app-body.layout-game-room.layout-single-column {
 }
 
 // 소속 점수 화면 카드의 효과 남은 시간
+.house-page__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 .house-page__fx-time {
   position: relative;
   z-index: 2;
@@ -20455,6 +20463,30 @@ body.app-body.layout-game-room.layout-single-column {
   white-space: nowrap;
 
   strong {
+    font-weight: 700;
+  }
+}
+
+// 누적 수치 배지와 그 밑 두 줄: '기숙사 점수 -n까지' / 카운트다운
+.house-page__member-counter {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+.house-page__due {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 10px;
+  line-height: 1.3;
+  opacity: 0.85;
+  text-align: center;
+
+  time,
+  span {
+    font-variant-numeric: tabular-nums;
     font-weight: 700;
   }
 }

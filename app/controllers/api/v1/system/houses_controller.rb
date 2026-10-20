@@ -43,7 +43,8 @@ class Api::V1::System::HousesController < Api::BaseController
     @house_counters ||= GameCounter.where(affects_house: true).includes(:opposite).to_a
   end
 
-  # 이 소속 캐릭터들: 아바타·이름(데코·칭호는 웹이 계정 번호로 입힌다)과 누적 수치 결과값(상성은 상쇄한 값)
+  # 이 소속 캐릭터들: 아바타·이름(데코·칭호는 웹이 계정 번호로 입힌다)과 누적 수치 결과값.
+  # 상성은 상쇄한 값이라 이긴 쪽만 남고, 0 이면 배지가 없다. points: 다음 반영 때 바뀔 소속 점수, next_at: 그때
   def members_json(counters)
     GameCharacter.visible.includes(:account).select { |character| character.group == @house }.sort_by { |character| character.display_name.to_s }.map do |character|
       {
@@ -51,9 +52,21 @@ class Api::V1::System::HousesController < Api::BaseController
         name: character.display_name,
         acct: character.account.acct,
         avatar: full_asset_url(character.account.avatar_static_url),
-        counters: counters.map { |counter| { id: counter.id.to_s, name: counter.name, value: counter.net_for(character) } },
+        counters: counters.filter_map { |counter| counter_json(counter, character) },
       }
     end
+  end
+
+  def counter_json(counter, character)
+    value = counter.net_for(character)
+    return if value <= 0
+
+    { id: counter.id.to_s, name: counter.name, value: value, points: value * counter.house_amount, next_at: next_house_tick(counter).iso8601 }
+  end
+
+  # 소속 점수에 다음으로 반영되는 때 (아직 한 번도 반영하지 않았으면 지금부터 한 간격 뒤)
+  def next_house_tick(counter)
+    (counter.house_applied_at || Time.current) + counter.house_interval_minutes.minutes
   end
 
   def set_house

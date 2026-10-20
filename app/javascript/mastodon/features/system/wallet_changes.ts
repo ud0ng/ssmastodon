@@ -1,4 +1,4 @@
-// 재화·인벤토리·소속 점수가 바뀌었을 때(선물·지급·보상으로 늘었을 때) 알림: 배지 + 소리.
+// 재화·인벤토리·소속 점수·누적 수치가 바뀌었을 때(선물·지급·보상으로 늘었을 때) 알림: 배지 + 소리.
 //   '본 것'(seen)을 브라우저에 기억해 두고, 지금 값이 본 것보다 늘었으면 배지를 단다.
 //   재화는 늘었을 때만, 인벤토리는 아이템이 새로 생기거나 개수가 늘었을 때만, 소속 점수는 값이 달라졌을 때(오르내림 모두).
 //   그 화면(재화·인벤토리·소속 점수)에 들어가 있으면 본 것으로 치고 알리지 않는다.
@@ -15,6 +15,8 @@ interface Seen {
   money: number;
   inventory: Record<string, number>;
   houses: Record<string, number>;
+  // 소속 캐릭터들의 누적 수치 결과값 합계 (옛 기록에는 없다)
+  counters?: Record<string, number>;
 }
 
 const KEY = 'ssm:wallet-seen';
@@ -47,7 +49,9 @@ const current = () => memory ?? read();
 const inventoryOf = (wallet: Wallet) => Object.fromEntries(wallet.inventory.map((item) => [item.name, item.count]));
 const housesOf = (wallet: Wallet) => Object.fromEntries(wallet.houses.map((house) => [house.id, house.total]));
 
-const snapshotOf = (wallet: Wallet): Seen => ({ money: wallet.money, inventory: inventoryOf(wallet), houses: housesOf(wallet) });
+const countersOf = (wallet: Wallet) => Object.fromEntries(wallet.houses.map((house) => [house.id, house.counters ?? 0]));
+
+const snapshotOf = (wallet: Wallet): Seen => ({ money: wallet.money, inventory: inventoryOf(wallet), houses: housesOf(wallet), counters: countersOf(wallet) });
 
 // 내려간 것(사용·구매)은 본 것도 같이 내려서 다음에 늘었을 때 알리게 한다
 const reconciled = (seen: Seen, wallet: Wallet): Seen => {
@@ -56,6 +60,7 @@ const reconciled = (seen: Seen, wallet: Wallet): Seen => {
     money: Math.min(seen.money, wallet.money),
     inventory: Object.fromEntries(Object.entries(seen.inventory).filter(([name]) => name in inventory).map(([name, count]) => [name, Math.min(count, inventory[name] ?? 0)])),
     houses: seen.houses,
+    counters: seen.counters,
   };
 };
 
@@ -68,7 +73,7 @@ export const isChanged = (kind: ChangeKind, wallet: Wallet, seen: Seen | null, h
   case 'inventory':
     return wallet.inventory.some((item) => item.count > (seen.inventory[item.name] ?? 0));
   default:
-    return wallet.houses.some((house) => (houseId ? house.id === houseId : true) && house.id in seen.houses && house.total !== seen.houses[house.id]);
+    return wallet.houses.some((house) => (houseId ? house.id === houseId : true) && ((house.id in seen.houses && house.total !== seen.houses[house.id]) || (seen.counters && house.id in seen.counters && (house.counters ?? 0) !== seen.counters[house.id])));
   }
 };
 
@@ -78,7 +83,10 @@ export const markSeen = (kind: ChangeKind, wallet: Wallet, houseId?: string) => 
   const next = { ...base };
   if (kind === 'money') next.money = wallet.money;
   else if (kind === 'inventory') next.inventory = inventoryOf(wallet);
-  else next.houses = { ...base.houses, ...(houseId ? { [houseId]: housesOf(wallet)[houseId] } : housesOf(wallet)) };
+  else {
+    next.houses = { ...base.houses, ...(houseId ? { [houseId]: housesOf(wallet)[houseId] } : housesOf(wallet)) };
+    next.counters = { ...base.counters, ...(houseId ? { [houseId]: countersOf(wallet)[houseId] } : countersOf(wallet)) };
+  }
   write(next);
 };
 
@@ -104,7 +112,11 @@ export const trackWalletChanges = (wallet: Wallet) => {
     if (houseId) markSeen('house', wallet, houseId);
     // 처음 보는 소속은 지금 값을 본 것으로
     const latest = current() ?? seen;
-    write({ ...reconciled(latest, wallet), houses: { ...Object.fromEntries(wallet.houses.filter((house) => !(house.id in latest.houses)).map((house) => [house.id, house.total])), ...latest.houses } });
+    write({
+      ...reconciled(latest, wallet),
+      houses: { ...Object.fromEntries(wallet.houses.filter((house) => !(house.id in latest.houses)).map((house) => [house.id, house.total])), ...latest.houses },
+      counters: { ...Object.fromEntries(wallet.houses.filter((house) => !(house.id in (latest.counters ?? {}))).map((house) => [house.id, house.counters ?? 0])), ...latest.counters },
+    });
   }
 
   const before = previous;
@@ -114,7 +126,7 @@ export const trackWalletChanges = (wallet: Wallet) => {
   const grew =
     (wallet.money > before.money && !onPage('money')) ||
     (isChanged('inventory', wallet, { money: 0, inventory: inventoryOf(before), houses: {} }) && !onPage('inventory')) ||
-    (isChanged('house', wallet, { money: 0, inventory: {}, houses: housesOf(before) }) && !onPage('house'));
+    (isChanged('house', wallet, { money: 0, inventory: {}, houses: housesOf(before), counters: countersOf(before) }) && !onPage('house'));
 
   // 소리는 sounds 미들웨어가 meta.sound 를 보고 낸다 (컨텐츠 알림과 같은 소리)
   if (grew) store.dispatch({ type: 'game_alerts/sound', meta: { sound: 'boop' } });

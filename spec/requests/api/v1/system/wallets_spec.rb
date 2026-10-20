@@ -37,8 +37,20 @@ RSpec.describe 'API V1 System wallet' do
 
     body = response.parsed_body
     expect(body).to include('house_term' => '기숙사', 'my_house_id' => house.id.to_s)
-    expect(body['houses']).to include('id' => house.id.to_s, 'name' => house.name, 'color' => house.color, 'total' => 12, 'fx' => nil, 'fx_until' => nil)
+    expect(body['houses']).to include('id' => house.id.to_s, 'name' => house.name, 'color' => house.color, 'total' => 12, 'counters' => 0, 'fx' => nil, 'fx_until' => nil)
     expect(body['houses'].size).to eq GameHouse.houses.count
+  end
+
+  it 'sums the result values of the house point counters per house so a change can raise the badge' do
+    GameHouse.ensure_defaults!
+    report = GameCounter.create!(name: '벌점', max_count: 5, affects_house: true)
+    house = GameHouse.houses.first
+    GameCharacter.for(user.account).update!(house: house)
+    report.add!(GameCharacter.for(user.account), 3)
+
+    get '/api/v1/system/wallet', headers: headers
+
+    expect(response.parsed_body['houses'].find { |entry| entry['id'] == house.id.to_s }['counters']).to eq 3
   end
 
   it 'pages the history and filters it' do

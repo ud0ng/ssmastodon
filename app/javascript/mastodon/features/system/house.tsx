@@ -39,7 +39,8 @@ interface Member {
   name: string;
   acct: string;
   avatar: string;
-  counters: { id: string; name: string; value: number }[];
+  // 이긴 쪽만 (상성 상쇄 뒤 0 이면 없음). points: 다음 반영 때 바뀔 소속 점수, next_at: 그때
+  counters: { id: string; name: string; value: number; points: number; next_at: string }[];
 }
 
 interface HouseData {
@@ -105,7 +106,7 @@ const MemberAvatar: React.FC<{ member: Member }> = ({ member }) => {
   ) : image;
 };
 
-const MemberCell: React.FC<{ member: Member }> = ({ member }) => (
+const MemberCell: React.FC<{ member: Member; term: string }> = ({ member, term }) => (
   <Link to={`/@${member.acct}`} className='house-page__member'>
     <MemberAvatar member={member} />
     <FxTitle accountId={member.account_id}>
@@ -114,7 +115,15 @@ const MemberCell: React.FC<{ member: Member }> = ({ member }) => (
     {member.counters.length > 0 && (
       <span className='house-page__member-badges'>
         {member.counters.map((counter) => (
-          <span key={counter.id} className='house-page__badge'>{counter.name} <strong>{counter.value.toLocaleString()}</strong></span>
+          <span key={counter.id} className='house-page__member-counter'>
+            <span className='house-page__badge'>{counter.name} <strong>{counter.value.toLocaleString()}</strong></span>
+            {counter.points !== 0 && (
+              <span className='house-page__due'>
+                <FormattedMessage id='house.due' defaultMessage='{term} points {points} in' values={{ term, points: signed(counter.points) }} />
+                <Remaining until={counter.next_at} />
+              </span>
+            )}
+          </span>
         ))}
       </span>
     )}
@@ -242,14 +251,16 @@ const HousePage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                   <span className='wallet-card__label'>
                     <FormattedMessage id='house.current' defaultMessage='Current {term} points' values={{ term: data.house.term }} />
                   </span>
-                  <span className='wallet-card__gift house-page__name'>{data.house.name}</span>
-                </span>
-                {fx && mine?.fx_until && (
-                  <span className='house-page__fx-time'>
-                    <FormattedMessage id='house.fx_left' defaultMessage='Effect left' />
-                    <Remaining until={mine.fx_until} />
+                  <span className='house-page__pills'>
+                    {fx && mine?.fx_until && (
+                      <span className='wallet-card__gift house-page__name house-page__fx-time'>
+                        <FormattedMessage id='house.fx_left' defaultMessage='Effect left' />
+                        <Remaining until={mine.fx_until} />
+                      </span>
+                    )}
+                    <span className='wallet-card__gift house-page__name'>{data.house.name}</span>
                   </span>
-                )}
+                </span>
                 <span className='wallet-card__balance'>
                   <Crest house={{ ...data.house, emoji: '' }} large />
                   <strong>{data.house.total.toLocaleString()}</strong>
@@ -257,7 +268,7 @@ const HousePage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                 </span>
                 {data.members.length > 0 && (
                   <span className='house-page__members'>
-                    {data.members.map((member) => <MemberCell key={member.account_id} member={member} />)}
+                    {data.members.map((member) => <MemberCell key={member.account_id} member={member} term={data.house.term} />)}
                   </span>
                 )}
                 <span className='wallet-card__stats'>

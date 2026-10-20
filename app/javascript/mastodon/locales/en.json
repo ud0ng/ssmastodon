@@ -1028,6 +1028,7 @@
   "wearing.skin": "Skin",
   "wearing.title": "Title",
   "wearing.title_all": "Wearing",
+  "house.due": "{term} points {points} in",
   "house.fx_left": "Effect left",
   "system.active.empty": "No game in progress.",
   "system.game.pending": "Waiting for accept",

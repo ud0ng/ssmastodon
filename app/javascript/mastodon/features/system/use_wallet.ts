@@ -50,7 +50,8 @@ export interface Wallet {
   house_term: string;
   my_house_id: string | null;
   // fx: 아이템으로 붙은 소속 카드 효과 모양 (상점 설정 > 효과 목록, 꺼져 있으면 null)
-  houses: { id: string; name: string; color: string; total: number; fx?: string | null; fx_until?: string | null }[];
+  // counters: 그 소속 캐릭터들의 누적 수치 결과값 합계 (바뀌면 소속 점수 카드에 알림 배지)
+  houses: { id: string; name: string; color: string; total: number; counters?: number; fx?: string | null; fx_until?: string | null }[];
   invites: number;
   // 내가 행동해야 하는 판 (수락 대기·내 차례). 알림 소리·메뉴 배지의 기준
   todo?: { session_id: string; name: string }[];

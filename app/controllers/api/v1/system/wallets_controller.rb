@@ -38,7 +38,7 @@ class Api::V1::System::WalletsController < Api::BaseController
       house_term: Game::Config.for('common')['house_term'],
       my_house_id: character.group_id&.to_s,
       # fx: 아이템으로 붙은 소속 카드 효과 모양 (Game::Fx, 효과가 꺼져 있으면 nil)
-      houses: GameHouse.active.map { |house| { id: house.id.to_s, name: house.name, color: house.color, total: house.total, fx: Game::Fx.house_preset(house), fx_until: Game::Fx.house_until(house) } },
+      houses: houses_json,
       inventory: Array(character.inventory).map { |item| inventory_json(item, shop_items[Game::Wallet.key(item['name'])]) },
     }
   end
@@ -77,6 +77,21 @@ class Api::V1::System::WalletsController < Api::BaseController
   private
 
   # 내 자리에 버튼(행동)이 열려 있는 판: 수락 대기 신청, 내가 고를 차례 (웹 방의 '내 차례예요' 와 같은 기준, Game::Card)
+  # 소속마다 점수·카드 효과와, 그 소속 캐릭터들의 누적 수치 결과값 합계 (바뀌면 소속 점수 카드에 알림 배지·소리)
+  def houses_json
+    counters = GameCounter.where(affects_house: true).includes(:opposite).to_a
+    sums = Hash.new(0)
+    unless counters.empty?
+      GameCharacter.visible.each do |each|
+        group = each.group
+        sums[group.id] += counters.sum { |counter| counter.net_for(each) } if group
+      end
+    end
+    GameHouse.active.map do |house|
+      { id: house.id.to_s, name: house.name, color: house.color, total: house.total, counters: sums[house.id], fx: Game::Fx.house_preset(house), fx_until: Game::Fx.house_until(house) }
+    end
+  end
+
   def todo_sessions
     @todo_sessions ||= recruiting_events + my_todo_sessions
   end
