@@ -246,7 +246,7 @@ const WearingSlot: React.FC<{ wallet: Wallet; slot: 'deco' | 'title' | 'skin' }>
             )}
             {slot === 'title' && (
               <span className={`game-fx-title game-fx-title--${worn.preset}`}>
-                <span className='game-fx-name wearing-slot__name'>{wallet.me.name}</span>
+                <span className='game-fx-name'>{wallet.me.name}</span>
                 <GameFx slot='title' preset={worn.preset} />
               </span>
             )}

@@ -8,7 +8,8 @@ RSpec.describe Game::Fx do
 
   it 'has a skin slot for characters and a debut look' do
     expect(described_class::SLOTS['character']).to include('skin')
-    expect(described_class::PRESETS['skin']).to include('debut')
+    expect(described_class::PRESETS['skin']).to include('debut', 'debut2')
+    expect(described_class::PRESETS.values_at('title', 'deco').map { |presets| presets.key?('debut2') }).to eq [true, true]
     expect(described_class::PRESETS['title']).to include('debut')
     expect(described_class::PRESETS['deco']).to include('debut')
   end

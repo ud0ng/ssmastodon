@@ -55,7 +55,7 @@ module Game
     def add_effect_items!
       shop = GameShop.find_by(name: DECO_SHOP) || GameShop.create!(name: DECO_SHOP, description: '', position: GameShop.unscoped.maximum(:position).to_i + 1)
       counter_ids = GameCounterRule.pluck(:game_effect_id)
-      allowed = GameEffect.all.reject { |effect| counter_ids.include?(effect.id) || effect.preset == 'debut' }
+      allowed = GameEffect.all.reject { |effect| counter_ids.include?(effect.id) || effect.preset.start_with?('debut') }
 
       allowed.select { |effect| effect.slot == 'card' }.each do |effect|
         create_item!(shop, "#{effect.name} 소속 데코", "소속 점수 카드에 #{effect.name} 효과를 #{MINUTES}분 동안 붙입니다.",
