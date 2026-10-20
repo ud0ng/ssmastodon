@@ -40,7 +40,12 @@ module Admin
     private
 
     def counter_params
-      params.expect(game_counter: [:name, :max_count, :opposite_id])
+      permitted = params.expect(game_counter: [:name, :max_count, :opposite_id, :affects_house, :house_interval, :house_unit, :house_amount])
+      interval = permitted.delete(:house_interval)
+      unit = permitted.delete(:house_unit)
+      permitted[:affects_house] = permitted[:affects_house] == '1'
+      permitted[:house_interval_minutes] = [interval.to_i, 1].max * { 'hour' => 60, 'day' => 1440 }.fetch(unit.to_s, 1) if interval.present?
+      permitted
     end
   end
 end

@@ -6,5 +6,7 @@ class GameHousePoint < ApplicationRecord
   belongs_to :account, optional: true
   belongs_to :session, class_name: 'GameSession', foreign_key: :game_session_id, optional: true, inverse_of: :house_points
 
+  belongs_to :counter, class_name: 'GameCounter', foreign_key: :game_counter_id, optional: true, inverse_of: false
+
   validates :amount, numericality: { only_integer: true }
 end

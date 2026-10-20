@@ -19,6 +19,7 @@ class Api::V1::System::HousesController < Api::BaseController
     scope = season_points
     scope = scope.where(amount: 1..) if params[:filter] == 'gain'
     scope = scope.where(amount: ...0) if params[:filter] == 'loss'
+    scope = scope.where(game_counter_id: params[:counter].to_i) if params[:counter].present?
     scope = scope.where(id: ...params[:max_id].to_i) if params[:max_id].present?
     rows = scope.includes(:account).order(id: :desc).limit(LIMIT + 1).to_a
     page = rows.first(LIMIT)
@@ -28,12 +29,32 @@ class Api::V1::System::HousesController < Api::BaseController
       house: { id: @house.id.to_s, name: @house.name, color: @house.color, total: @house.total, term: Game::Config.for('common')['house_term'] },
       top_gain: top(:gain, people),
       top_loss: top(:loss, people),
+      counters: house_counters.map { |counter| { id: counter.id.to_s, name: counter.name } },
+      members: members_json(house_counters),
       records: page.map { |point| record_json(point, people) },
       next_max_id: rows.size > LIMIT ? page.last.id.to_s : nil,
     }
   end
 
   private
+
+  # 소속 점수에 영향을 주는 누적 수치 (소속 점수 화면의 탭·배지)
+  def house_counters
+    @house_counters ||= GameCounter.where(affects_house: true).includes(:opposite).to_a
+  end
+
+  # 이 소속 캐릭터들: 아바타·이름(데코·칭호는 웹이 계정 번호로 입힌다)과 누적 수치 결과값(상성은 상쇄한 값)
+  def members_json(counters)
+    GameCharacter.visible.includes(:account).select { |character| character.group == @house }.sort_by { |character| character.display_name.to_s }.map do |character|
+      {
+        account_id: character.account_id.to_s,
+        name: character.display_name,
+        acct: character.account.acct,
+        avatar: full_asset_url(character.account.avatar_static_url),
+        counters: counters.map { |counter| { id: counter.id.to_s, name: counter.name, value: counter.net_for(character) } },
+      }
+    end
+  end
 
   def set_house
     @house = GameHouse.find(params[:id])
@@ -78,6 +99,7 @@ class Api::V1::System::HousesController < Api::BaseController
       id: point.id.to_s,
       amount: point.amount,
       reason: reason_text(point.reason),
+      counter: point.counter&.name,
       created_at: point.created_at.iso8601,
       character: point.account && person_json(people[point.account_id], point.amount),
     }

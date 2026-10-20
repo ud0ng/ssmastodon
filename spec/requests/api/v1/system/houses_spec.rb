@@ -48,4 +48,27 @@ RSpec.describe 'GET /api/v1/system/houses/:id' do
     expect(response.parsed_body['house']['total']).to eq 0
     expect(response.parsed_body['top_gain']).to be_nil
   end
+
+  it 'lists the house members with the counters that affect house points and filters the history by counter' do
+    report = GameCounter.create!(name: '벌점', max_count: 5, affects_house: true, house_amount: -2)
+    praise = GameCounter.create!(name: '상점', max_count: 5, opposite: report)
+    report.reload
+    GameCharacter.for(user.account).update!(house: house)
+    GameCharacter.for(ron).update!(house: house)
+    report.add!(GameCharacter.for(ron), 10)
+    praise.add!(GameCharacter.for(ron), 5)
+    GameHousePoint.create!(house: house, account: ron, counter: report, amount: -10, reason: '벌점 5회')
+
+    get "/api/v1/system/houses/#{house.id}", headers: headers
+
+    body = response.parsed_body
+    expect(body['counters'].pluck('name')).to eq %w(벌점 상점)
+    ron_member = body['members'].find { |member| member['acct'] == 'ron' }
+    expect(ron_member['counters'].to_h { |counter| [counter['name'], counter['value']] }).to eq('벌점' => 5, '상점' => 0)
+    expect(ron_member['account_id']).to eq ron.id.to_s
+
+    get "/api/v1/system/houses/#{house.id}", headers: headers, params: { counter: report.id }
+    expect(response.parsed_body['records'].pluck('amount')).to eq [-10]
+    expect(response.parsed_body['records'].first['counter']).to eq '벌점'
+  end
 end

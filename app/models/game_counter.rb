@@ -5,9 +5,12 @@
 # 캐릭터마다 횟수는 game_characters.counters { 수치 번호 => 누적치 }. 누적치는 최대 누적치를 넘어도 계속 올라간다.
 #   상성 수치(opposite)는 서로 상쇄한다: 결과값 = 내 누적치 - 상성 누적치 (0 아래로는 안 내려감)
 #   예) 벌점 5회·상점 2회 → 벌점 3회, 상점 0회
+# 소속 점수에 영향(affects_house)을 켜면 house_interval_minutes 마다 소속 캐릭터의 결과값 × house_amount 만큼 소속 점수가 바뀐다 (예: 1시간, -2 → 벌점 4회면 시간마다 -8).
+#   상성 수치가 켜져 있으면 이 수치도 반드시 켜진다 (간격·점수는 수치마다 따로).
 class GameCounter < ApplicationRecord
   DEFAULTS = [%w(벌점 상점), %w(상점 벌점)].freeze
   DEFAULT_MAX = 5
+  MAX_CATCH_UP = 24 # 서버가 멈췄다 돌아와도 한 번에 반영하는 최대 간격 수
 
   has_many :rules, -> { order(:at_max, :threshold, :id) }, class_name: 'GameCounterRule', dependent: :destroy, inverse_of: :counter
   has_many :logs, class_name: 'GameCounterLog', dependent: :delete_all, inverse_of: :counter
@@ -15,11 +18,16 @@ class GameCounter < ApplicationRecord
 
   validates :name, presence: true, length: { maximum: 20 }, uniqueness: true
   validates :max_count, numericality: { only_integer: true, greater_than: 0, allow_nil: true }
+  validates :house_interval_minutes, numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: 60 * 24 * 30 }
+  validates :house_amount, numericality: { only_integer: true }
   validate :opposite_is_another
+
+  before_save :follow_opposite_house
 
   default_scope { order(:position, :id) }
 
   after_save :pair_opposite
+  after_save :force_opposite_house
   after_destroy { GameCounter.unscoped.where(opposite_id: id).update_all(opposite_id: nil) } # rubocop:disable Rails/SkipsModelValidations
 
   def self.ensure_defaults!
@@ -57,12 +65,45 @@ class GameCounter < ApplicationRecord
     [before[id], after, notes]
   end
 
+  # 정한 간격이 지났으면 소속 캐릭터마다 결과값 × 점수를 소속 점수에 넣는다 (결과값 0 이면 건너뜀). 처음 켠 때부터 센다
+  def apply_house_points!(now = Time.current)
+    return unless affects_house
+
+    return update_columns(house_applied_at: now) if house_applied_at.nil? # rubocop:disable Rails/SkipsModelValidations
+
+    interval = house_interval_minutes.minutes
+    ticks = ((now - house_applied_at) / interval).floor.clamp(0, MAX_CATCH_UP)
+    return if ticks.zero?
+
+    GameCharacter.visible.includes(:account).each do |character|
+      value = net_for(character)
+      house = character.group
+      next if value.zero? || house.nil? || house_amount.zero?
+
+      GameHousePoint.create!(house: house, account: character.account, counter: self, amount: value * house_amount * ticks,
+                             reason: "#{name} #{value}회#{ticks > 1 ? " × #{ticks}" : ''}")
+    end
+    update_columns(house_applied_at: house_applied_at + (interval * ticks)) # rubocop:disable Rails/SkipsModelValidations
+  end
+
   # 결과값이 before → after 로 바뀐 것에 맞춰 누적 효과를 붙이거나 거둔다. 안내 문구 목록을 돌려준다
   def sync_rules!(character, before, after, item: nil)
     rules.includes(:effect).filter_map { |rule| rule.settle!(character, before, after, item: item) }
   end
 
   private
+
+  # 상성 수치가 소속 점수에 영향을 주면 이 수치도 반드시 준다
+  def follow_opposite_house
+    self.affects_house = true if opposite&.affects_house
+  end
+
+  # 이 수치를 켜면 상성 수치도 켠다 (간격·점수는 상성 수치의 것을 그대로 둔다)
+  def force_opposite_house
+    return unless affects_house && opposite && !opposite.affects_house
+
+    opposite.update_columns(affects_house: true) # rubocop:disable Rails/SkipsModelValidations
+  end
 
   def opposite_is_another
     errors.add(:opposite_id, :invalid) if opposite_id.present? && opposite_id == id

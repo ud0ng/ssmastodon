@@ -20400,3 +20400,61 @@ body.app-body.layout-game-room.layout-single-column {
     }
   }
 }
+
+// 소속 점수 화면 카드: 이 소속 캐릭터들 (아바타 · 이름 · 누적 수치 배지)
+.house-page__members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 12px;
+  justify-content: center;
+  margin: 12px 0 4px;
+  padding: 6px 4px;
+}
+
+.house-page__member {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  max-width: 76px;
+  color: inherit;
+  text-decoration: none;
+
+  &-avatar {
+    display: block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  &-name {
+    max-width: 76px;
+    overflow: hidden;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+  }
+}
+
+.house-page__badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 10%);
+  color: inherit;
+  font-size: 11px;
+  white-space: nowrap;
+
+  strong {
+    font-weight: 700;
+  }
+}

@@ -16,7 +16,7 @@
     = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: game_t('admin.games.counters.rename'), data: { modal_open: "counter-#{counter.id}" }
     = button_to admin_game_counter_path(counter), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.counters.delete'), data: { confirm: game_t('admin.games.counters.delete_confirm', name: counter.name) } do
       = material_symbol('delete')
-  = render layout: 'admin/ui/section', locals: { title: counter.name, hint: [game_t('admin.games.counters.rules_hint', name: counter.name), (game_t('admin.games.counters.max_info', count: counter.max_count) if counter.max_count), (game_t('admin.games.counters.opposite_info', name: counter.opposite.name) if counter.opposite)].compact.join(' · '), actions: actions } do
+  = render layout: 'admin/ui/section', locals: { title: counter.name, hint: [game_t('admin.games.counters.rules_hint', name: counter.name), (game_t('admin.games.counters.max_info', count: counter.max_count) if counter.max_count), (game_t('admin.games.counters.opposite_info', name: counter.opposite.name) if counter.opposite), (game_t('admin.games.counters.house_info', interval: Game::ItemEffects.duration(counter.house_interval_minutes), amount: format('%+d', counter.house_amount)) if counter.affects_house)].compact.join(' · '), actions: actions } do
     .bot-sheet-table.game-table
       %table.table
         %thead

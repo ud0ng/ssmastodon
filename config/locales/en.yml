@@ -197,6 +197,13 @@ en:
         pick: Choose an item
       counters:
         max_count: "Max count"
+        affects_house: "Affects house points"
+        affects_house_hint: "When on, house points change every interval by the result x the amount."
+        affects_forced: "Always on because the opposite counter is on."
+        house_interval: "Interval"
+        house_amount: "Points per count"
+        house_amount_hint: "Negative takes points away."
+        house_info: "every %{interval}: result x %{amount}"
         max_count_hint: "Leave empty for no limit. The count keeps rising past the max."
         opposite: "Opposite counter"
         no_opposite: "None"

@@ -1,19 +1,19 @@
 // 웹 소속 점수 화면 (글쓰기 패널 아래 소속 점수 카드를 누르면): /system/houses/:id
-//   현재 소속 점수 · 가장 많이 획득한 사람 / 가장 많이 깎은 사람 · 내역 (전체/획득/차감 탭, 날짜별, 더 보기)
-// 데이터: GET /api/v1/system/houses/:id?filter=gain|loss&max_id=
+//   현재 소속 점수 · 이 소속 캐릭터들(아바타·이름·누적 수치 배지, 데코·칭호 적용) · 가장 많이 획득한 사람 / 가장 많이 깎은 사람 · 내역 (전체/획득/차감/누적 수치 탭, 날짜별, 더 보기)
+// 데이터: GET /api/v1/system/houses/:id?filter=gain|loss&counter=누적수치번호&max_id=
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { defineMessages, FormattedDate, FormattedMessage, FormattedTime, useIntl } from 'react-intl';
 
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 
 import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
 import { apiRequestGet } from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
 import { Remaining } from 'mastodon/components/countdown';
-import { GameFx } from 'mastodon/components/game_fx';
+import { FxTitle, GameFx, useAccountFx } from 'mastodon/components/game_fx';
 import { LoadMore } from 'mastodon/components/load_more';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 import { GoldFx, HOUSE_FX_CLASS, PoopFx } from 'mastodon/features/compose/components/house_fx';
@@ -29,18 +29,31 @@ interface PointRecord {
   amount: number;
   reason: string;
   created_at: string;
+  counter?: string | null;
   character: Person | null;
+}
+
+// 소속 점수에 영향을 주는 누적 수치(벌점·상점 등)의 결과값 (상성은 상쇄한 값)
+interface Member {
+  account_id: string;
+  name: string;
+  acct: string;
+  avatar: string;
+  counters: { id: string; name: string; value: number }[];
 }
 
 interface HouseData {
   house: { id: string; name: string; color: string; total: number; term: string };
   top_gain: Person | null;
   top_loss: Person | null;
+  counters: { id: string; name: string }[];
+  members: Member[];
   records: PointRecord[];
   next_max_id: string | null;
 }
 
-type Filter = 'all' | 'gain' | 'loss';
+// 'all' | 'gain' | 'loss' | 'counter:<누적 수치 번호>'
+type Filter = string;
 
 const FILTERS: Filter[] = ['all', 'gain', 'loss'];
 
@@ -62,7 +75,9 @@ const DayTitle: React.FC<{ iso: string }> = ({ iso }) => {
   return <FormattedDate value={iso} month='long' day='numeric' weekday='short' />;
 };
 
-const FilterLabel: React.FC<{ filter: Filter }> = ({ filter }) => {
+const FilterLabel: React.FC<{ filter: Filter; counters: { id: string; name: string }[] }> = ({ filter, counters }) => {
+  if (filter.startsWith('counter:')) return <>{counters.find((counter) => counter.id === filter.slice(8))?.name}</>;
+
   switch (filter) {
   case 'gain':
     return <FormattedMessage id='house.filter.gain' defaultMessage='Gained' />;
@@ -75,6 +90,35 @@ const FilterLabel: React.FC<{ filter: Filter }> = ({ filter }) => {
 
 const Points: React.FC<{ value: number; signedValue?: boolean }> = ({ value, signedValue = false }) => (
   <FormattedMessage id='house.points' defaultMessage='{points} pts' values={{ points: signedValue ? signed(value) : value.toLocaleString() }} />
+);
+
+// 이 소속 캐릭터 한 명: 아바타(데코) · 이름(칭호) · 누적 수치 배지
+const MemberAvatar: React.FC<{ member: Member }> = ({ member }) => {
+  const fx = useAccountFx(member.account_id);
+  const image = <img src={member.avatar} alt='' className='house-page__member-avatar' />;
+
+  return fx.deco ? (
+    <span className={`game-fx-deco game-fx-deco--${fx.deco} game-fx-deco-wrap`}>
+      {image}
+      <GameFx slot='deco' preset={fx.deco} />
+    </span>
+  ) : image;
+};
+
+const MemberCell: React.FC<{ member: Member }> = ({ member }) => (
+  <Link to={`/@${member.acct}`} className='house-page__member'>
+    <MemberAvatar member={member} />
+    <FxTitle accountId={member.account_id}>
+      <span className='house-page__member-name'>{member.name}</span>
+    </FxTitle>
+    {member.counters.length > 0 && (
+      <span className='house-page__member-badges'>
+        {member.counters.map((counter) => (
+          <span key={counter.id} className='house-page__badge'>{counter.name} <strong>{counter.value.toLocaleString()}</strong></span>
+        ))}
+      </span>
+    )}
+  </Link>
 );
 
 // 재화 카드의 '누적 획득 / 누적 사용' 칸처럼 점선 칸막이로 나뉜 한 칸: 이름표 + 아바타 | 이름 | n점
@@ -136,7 +180,8 @@ const HousePage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
   const fetchPage = useCallback(
     (maxId: string | null) => {
       setLoading(true);
-      apiRequestGet<HouseData>(`v1/system/houses/${id}`, { ...(filter === 'all' ? {} : { filter }), ...(maxId ? { max_id: maxId } : {}) })
+      const query = filter.startsWith('counter:') ? { counter: filter.slice(8) } : filter === 'all' ? {} : { filter };
+      apiRequestGet<HouseData>(`v1/system/houses/${id}`, { ...query, ...(maxId ? { max_id: maxId } : {}) })
         .then((response) => {
           setData(response);
           setRecords((current) => (maxId && current ? [...current, ...response.records] : response.records));
@@ -210,6 +255,11 @@ const HousePage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                   <strong>{data.house.total.toLocaleString()}</strong>
                   <span><FormattedMessage id='house.unit' defaultMessage='pts' /></span>
                 </span>
+                {data.members.length > 0 && (
+                  <span className='house-page__members'>
+                    {data.members.map((member) => <MemberCell key={member.account_id} member={member} />)}
+                  </span>
+                )}
                 <span className='wallet-card__stats'>
                   <TopCell kind='gain' person={data.top_gain} />
                   <TopCell kind='loss' person={data.top_loss} />
@@ -218,9 +268,9 @@ const HousePage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
             </div>
 
             <div className='notification__filter-bar wallet-page__filter'>
-              {FILTERS.map((key) => (
+              {[...FILTERS, ...data.counters.map((counter) => `counter:${counter.id}`)].map((key) => (
                 <button key={key} type='button' className={filter === key ? 'active' : undefined} onClick={() => { setFilter(key); }}>
-                  <FilterLabel filter={key} />
+                  <FilterLabel filter={key} counters={data.counters} />
                 </button>
               ))}
             </div>

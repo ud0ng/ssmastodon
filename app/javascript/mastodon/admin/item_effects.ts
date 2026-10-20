@@ -170,8 +170,30 @@ const syncCounterRule = (form: HTMLFormElement) => {
   });
 };
 
+// 누적 수치 모달: 소속 점수에 영향을 켜면 시간 간격·점수 칸이 보인다
+const syncCounterHouse = (form: HTMLFormElement) => {
+  const toggle = form.querySelector<HTMLInputElement>('[data-house-toggle] input[type="checkbox"]');
+  const on = toggle?.checked ?? false;
+
+  form.querySelectorAll<HTMLElement>('[data-house-part]').forEach((part) => {
+    part.hidden = !on;
+    part.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select').forEach((field) => {
+      field.disabled = !on;
+    });
+  });
+};
+
 export const setupCounterRules = () => {
   document.querySelectorAll<HTMLFormElement>('form[data-counter-rule]').forEach(syncCounterRule);
+  document.querySelectorAll<HTMLFormElement>('form[data-counter-house]').forEach(syncCounterHouse);
+
+  document.addEventListener('change', (event) => {
+    const field = event.target as HTMLElement | null;
+    if (!field?.closest('[data-house-toggle]')) return;
+
+    const form = field.closest<HTMLFormElement>('form[data-counter-house]');
+    if (form) syncCounterHouse(form);
+  });
 
   document.addEventListener('change', (event) => {
     const field = event.target as HTMLElement | null;
