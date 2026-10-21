@@ -1035,14 +1035,14 @@ $fl-ink: #07060b;
 // ── 입력창 위 채팅 목록: 아바타 | 이름 : 내용 (대기방 채팅처럼, 높이는 작게, 호버할 때만 스크롤바) ──
 .fl-chatlog {
   position: absolute;
-  bottom: 66px;
+  bottom: 58px;
   left: 50%;
   z-index: 9;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 3px;
   width: min(560px, 80%);
-  max-height: 17vh;
+  max-height: 9vh;
   margin: 0;
   padding: 4px 8px;
   overflow-y: auto;

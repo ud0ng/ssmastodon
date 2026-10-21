@@ -177,4 +177,28 @@ RSpec.describe 'API V1 System games' do
       expect(response).to have_http_status(200)
     end
   end
+  it 'shows an invited waiting room only to the invited, with a waiting mark, and sends no end DM for it' do
+    harry = Fabricate(:user, account: Fabricate(:account, username: 'harry'))
+    ron = Fabricate(:user, account: Fabricate(:account, username: 'ron'))
+    [harry, ron].each { |member| GameCharacter.for(member.account) }
+    harry_headers = { 'Authorization' => "Bearer #{Fabricate(:accessible_access_token, resource_owner_id: harry.id, scopes: 'read write').token}" }
+    ron_headers = { 'Authorization' => "Bearer #{Fabricate(:accessible_access_token, resource_owner_id: ron.id, scopes: 'read write').token}" }
+    session = GameSession.create!(kind: 'flying', status: 'lobby', visibility: 'private', state: { 'mode' => 'event', 'invited' => [harry.account.id], 'lobby' => { 'ready' => [], 'start_at' => nil } })
+
+    get '/api/v1/system', headers: harry_headers
+    flying = response.parsed_body['catalog'].flat_map { |group| group['games'] }.find { |game| game['key'] == 'flying' }
+    expect(flying).to include('invited' => 1, 'recruiting' => 0)
+    get '/api/v1/system/games/flying', headers: harry_headers
+    expect(response.parsed_body['recruiting']).to be_present
+    expect(response.parsed_body['active'].pluck('waiting')).to eq [true]
+
+    get '/api/v1/system', headers: ron_headers
+    flying = response.parsed_body['catalog'].flat_map { |group| group['games'] }.find { |game| game['key'] == 'flying' }
+    expect(flying).to include('invited' => 0, 'recruiting' => 0)
+
+    before = Status.maximum(:id).to_i
+    session.update!(status: 'active')
+    session.update!(status: 'finished', finished_at: Time.now.utc)
+    expect(Status.where('id > ?', before).where('text LIKE ?', '%끝났어요%')).to be_empty
+  end
 end

@@ -4,7 +4,7 @@ module Game
   # 이벤트(비행 대결·미로·도둑 지도·비밀의 방)가 시작되거나 끝났을 때 앱에서도 알 수 있게 시스템 계정이 알린다
   # (이벤트 방과 진행은 웹 전용이라 앱에는 안 보인다).
   #   모집하기로 연 이벤트   참가자를 멘션한 툿 (모집 툿과 같은 공개 범위)
-  #   초대하기·테스트 플레이  초대받은 사람에게만 DM
+  #   초대하기·테스트 플레이  초대받은 사람에게만 시작 DM (종료 DM 은 없다)
   # 문구는 컨텐츠 설정 > 이벤트 문구 (msg_event_started / msg_event_finished)
   module EventNotice
     DEFAULTS = {
@@ -24,6 +24,8 @@ module Game
       text = Game::Text.render(kind.config["msg_event_#{event}"].presence || DEFAULTS.fetch(event), game: kind.display_name)
 
       if invited.any?
+        return if event == :finished # 초대하기·테스트 플레이: 시작 DM 만 (종료 DM 은 보내지 않는다)
+
         Account.where(id: invited).find_each { |account| Game::Poster.post(text, mentions: [account], thread: nil, visibility: 'direct') }
       else
         accounts = session.players.map(&:account)

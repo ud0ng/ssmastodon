@@ -1297,6 +1297,8 @@
   "event.room.waiting": "대기방",
   "event.room.round": "{round}라운드",
   "stage.closed": "끝났거나 취소된 이벤트입니다.",
+  "stage.badge_waiting": "대기중 {count}",
+  "event.room.waiting_badge": "대기중",
   "stage.badge_recruiting": "모집중 {count}",
   "stage.badge_running": "진행중 {count}",
   "lobby.start_now": "시작하기",

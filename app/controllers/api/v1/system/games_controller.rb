@@ -122,7 +122,9 @@ class Api::V1::System::GamesController < Api::BaseController
   # 내가 지금 하고 있는 (또는 신청받은) 이 컨텐츠 판 → 게임 화면에 바로 띄운다
   # 모집 중인 이벤트 (참가 버튼): 이 컨텐츠를 운영진이 열었고 내가 아직 참가하지 않았다
   def recruiting
-    session = GameSession.current_kinds.where(kind: @kind.key, status: 'pending').where("state->>'mode' = 'event'").order(id: :desc).first
+    # 모집 중인 이벤트, 또는 내가 초대받고 아직 수락하지 않은 대기방
+    candidates = GameSession.current_kinds.where(kind: @kind.key).where("state->>'mode' = 'event'").where(status: %w(pending lobby)).order(id: :desc).to_a
+    session = candidates.find { |each| each.status == 'pending' || waiting_for_me?(each) }
     return if session.nil? || session.players.any? { |player| player.account_id == current_account.id }
     return if Array(session.state['invited']).any? && Array(session.state['invited']).exclude?(current_account.id) # 참가자를 골라 연 이벤트는 고른 사람에게만
 
@@ -147,6 +149,11 @@ class Api::V1::System::GamesController < Api::BaseController
     { message: Game::Text.render(common['msg_busy_web'], player: current_account), session_id: session.id.to_s, name: session.kind_class&.display_name }
   end
 
+  # 내가 초대받고 아직 수락하지 않았다
+  def waiting_for_me?(session)
+    Array(session.state['invited']).map(&:to_i).include?(current_account.id) && session.players.none? { |player| player.account_id == current_account.id }
+  end
+
   def visible_sessions
     mine = GamePlayer.where(account: current_account).select(:game_session_id)
     # 테스트 플레이는 참가자와 운영진(자물쇠)에게만 보인다
@@ -167,6 +174,7 @@ class Api::V1::System::GamesController < Api::BaseController
       test: session.test?,
       status: session.status,
       turn: session.turn,
+      waiting: waiting_for_me?(session),
       round: session.state['round'],
       deadline_at: session.deadline_at&.iso8601,
       finished_at: session.finished_at&.iso8601,

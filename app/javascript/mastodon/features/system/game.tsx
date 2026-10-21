@@ -48,6 +48,8 @@ export interface SessionRow {
   turn: number;
   // 여럿이 하는 이벤트의 진행 라운드
   round?: number | null;
+  // 내가 초대받고 아직 수락하지 않은 방 ('대기중')
+  waiting?: boolean;
   deadline_at: string | null;
   finished_at: string | null;
   players: { name: string; acct: string; avatar: string; result: 'win' | 'lose' | 'draw' | null; me: boolean }[];
@@ -310,13 +312,15 @@ const EventRoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRow)
       {rows.map((row) => {
         const recruiting = row.status === 'pending' || row.status === 'lobby';
         const finished = row.status === 'finished' || row.status === 'cancelled';
-        const mode = recruiting ? 'recruiting' : finished ? 'finished' : 'running';
+        const mode = recruiting || row.waiting ? 'recruiting' : finished ? 'finished' : 'running';
         return (
           <li key={row.id} className='event-room-list__item'>
             <Link to={`/system/sessions/${row.id}`} className={`event-room event-room--${mode}`}>
               <span className='event-room__badge'>
                 {row.test && <span role='img' aria-label='test play' title='Test play'>🔒 </span>}
-                {recruiting
+                {row.waiting
+                  ? <FormattedMessage id='event.room.waiting_badge' defaultMessage='Waiting' />
+                  : recruiting
                   ? <FormattedMessage id='event.room.recruiting' defaultMessage='Recruiting' />
                   : finished
                     ? <FormattedMessage id='event.room.finished' defaultMessage='Finished' />
