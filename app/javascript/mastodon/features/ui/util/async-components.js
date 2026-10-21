@@ -317,3 +317,7 @@ export function ListMembers() {
 export function ChallengeModal() {
   return import('../../system/challenge_modal');
 }
+
+export function SystemGroup() {
+  return import('../../system/group');
+}

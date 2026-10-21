@@ -41,7 +41,8 @@ RSpec.describe 'API V1 System games' do
 
     groups = response.parsed_body['catalog'].to_h { |group| [group['key'], group['games'].pluck('key')] }
     expect(groups['duel']).to include('jellybean', 'duel')
-    expect(groups['group']).to include('quidditch', 'flying', 'maze', 'marauders_map')
+    expect(groups['group']).to include('flying', 'maze', 'marauders_map')
+    expect(groups['group']).to_not include('quidditch')
     expect(groups['group']).to include('secret_chamber')
     expect(groups.keys).to eq %w(duel group)
   end
@@ -120,15 +121,12 @@ RSpec.describe 'API V1 System games' do
     let(:admin) { Fabricate(:user, role: UserRole.find_by(name: 'Owner')) }
     let(:admin_headers) { { 'Authorization' => "Bearer #{Fabricate(:accessible_access_token, resource_owner_id: admin.id, scopes: 'read write').token}" } }
 
-    it 'marks recruiting events and the team game as staff-run, and lets only staff open an event' do
+    it 'marks the group contents as recruiting events and lets only staff open an event' do
       get '/api/v1/system/games/flying', headers: headers
       expect(response.parsed_body).to include('event' => true, 'can_open' => false, 'web_open' => true)
 
-      get '/api/v1/system/games/quidditch', headers: headers
-      expect(response.parsed_body).to include('event' => false, 'staff_only' => true)
-
       get '/api/v1/system/games/jellybean', headers: headers
-      expect(response.parsed_body).to include('event' => false, 'staff_only' => false)
+      expect(response.parsed_body).to include('event' => false)
 
       get '/api/v1/system/games/flying', headers: admin_headers
       expect(response.parsed_body).to include('can_open' => true)

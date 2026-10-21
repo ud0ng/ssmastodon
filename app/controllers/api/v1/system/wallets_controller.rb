@@ -98,7 +98,7 @@ class Api::V1::System::WalletsController < Api::BaseController
 
   def my_todo_sessions
     GamePlayer.joins(:session).merge(GameSession.current_kinds.real)
-              .where(account: current_account, game_sessions: { status: %w(pending active) })
+              .where(account: current_account, game_sessions: { status: GameSession::OPEN_STATUSES })
               .includes(:session).filter_map do |player|
       session = player.session
       next if session.state['mode'] == 'event' && session.status == 'pending'
@@ -106,14 +106,14 @@ class Api::V1::System::WalletsController < Api::BaseController
       actions = Game::Card.safe { Game::Card.actions_for(session, session.kind_class&.new(session)) } || []
       next unless actions.any? { |action| !action['meta'] && action['seats'].is_a?(Array) && action['seats'].include?(player.seat) }
 
-      { session_id: session.id.to_s, name: session.kind_class&.display_name || session.kind }
+      { session_id: session.id.to_s, name: session.kind_class&.display_name || session.kind, event: session.kind_class.present? && session.kind_class.max_opponents > 1 }
     end
   end
 
-  # 내가 아직 참가하지 않은 모집 중인 이벤트: 컨텐츠 메뉴에 알림 배지가 뜬다
+  # 내가 아직 참가하지 않은 모집 중인 이벤트: 이벤트 메뉴에 알림 배지가 뜬다
   def recruiting_events
     GameSession.current_kinds.where(status: 'pending').where("state->>'mode' = 'event'").reject { |session| session.players.any? { |player| player.account_id == current_account.id } || (Array(session.state['invited']).any? && Array(session.state['invited']).exclude?(current_account.id)) }.map do |session|
-      { session_id: session.id.to_s, name: session.kind_class&.display_name || session.kind }
+      { session_id: session.id.to_s, name: session.kind_class&.display_name || session.kind, event: true }
     end
   end
 

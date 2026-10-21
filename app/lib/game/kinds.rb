@@ -11,7 +11,6 @@ module Game
         'gobstones' => Game::Kinds::Gobstones,
         'duel' => Game::Kinds::Duel,
         'potion' => Game::Kinds::Potion,
-        'quidditch' => Game::Kinds::Quidditch,
         'flying' => Game::Kinds::Flying,
         # 웹 전용
         'maze' => Game::Web::Maze,
@@ -42,7 +41,7 @@ module Game
       matches.select { |kind| kind.max_opponents == 1 }
     end
 
-    # 여럿이 하는 컨텐츠 (퀴디치 팀전, 비행 대결, 미로, 도둑 지도, 비밀의 방)
+    # 여럿이 하는 컨텐츠 (비행 대결, 미로, 도둑 지도, 비밀의 방)
     def group_games
       matches.select { |kind| kind.max_opponents > 1 }
     end

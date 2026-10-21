@@ -18,7 +18,9 @@ module Game
       session.with_lock do
         next unless session.open?
 
-        if session.status == 'pending' && %w(class event).include?(session.state['mode'])
+        if session.lobby?
+          Game::Lobby.start!(session)
+        elsif session.status == 'pending' && %w(class event).include?(session.state['mode'])
           session.kind_class.new(session).recruitment_over!
         elsif session.status == 'pending'
           close!(session, 'cancelled', '운영진이 신청을 닫았습니다.')

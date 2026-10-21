@@ -102,7 +102,7 @@ module Game
       Game::Poster.post(text, mentions: mentions, thread: status, visibility: visibility)
     end
 
-    def open_player(account, statuses = %w(pending active))
+    def open_player(account, statuses = GameSession::OPEN_STATUSES)
       GamePlayer.joins(:session).where(account: account, game_sessions: { status: statuses }).order(id: :desc).first
     end
 

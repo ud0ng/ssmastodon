@@ -197,42 +197,4 @@ RSpec.describe 'Game kinds' do
     end
   end
 
-  describe Game::Kinds::Quidditch do
-    let!(:carol) { Fabricate(:account, username: 'carol') }
-    let!(:dave) { Fabricate(:account, username: 'dave') }
-
-    # 팀전이라 1:1 은 안 된다 (신청자 + 팀원 1명 vs 상대 팀 2명)
-    before do
-      toot(alice, '@system @carol @bob @dave [퀴디치]')
-      [carol, bob, dave].each { |account| toot(account, '@system [수락]', thread: @replies.last) }
-    end
-
-    it 'scores a guaranteed snitch catch and ends the match' do
-      Game::Config.update!('quidditch', 'seek_start' => '100', 'chase_rate' => '100')
-      session.update!(state: session.state.merge('seek' => { '0' => 100, '1' => 100, '2' => 0, '3' => 0 }))
-      toot(alice, '@system [수색]', visibility: 'direct')
-      toot(carol, '@system [수색]', visibility: 'direct')
-      toot(bob, '@system [추격]', visibility: 'direct')
-      toot(dave, '@system [추격]', visibility: 'direct')
-
-      expect(session.status).to eq 'finished'
-      expect(session.player_for(alice).result).to eq 'win'
-      expect(Status.find(session.last_status_id).text).to include('골든 스니치', '+150')
-    end
-
-    it 'lets a beater cancel the other action' do
-      Game::Config.update!('quidditch', 'beat_rate' => '100', 'chase_rate' => '100')
-      # 판이 이미 시작됐으니 스니치 확률은 상태에서 0 으로 (수색이 우연히 성공하면 시험이 흔들린다)
-      session.update!(state: session.state.merge('seek' => session.state['seek'].transform_values { 0 }))
-      toot(alice, '@system [몰이]', visibility: 'direct')
-      toot(carol, '@system [수색]', visibility: 'direct')
-      toot(bob, '@system [추격]', visibility: 'direct')
-      toot(dave, '@system [수색]', visibility: 'direct')
-
-      # 몰이는 상대 팀 행동 하나를 막는다 (어느 쪽이 막힐지는 무작위): 우리 팀은 득점이 없고, 상대 팀 득점은 한 번 이하
-      expect(session.state['scores']['A']).to eq 0
-      expect(session.state['scores']['B']).to be <= 10
-      expect(Status.find(session.last_status_id).text).to include('블러저가').and include('덮쳤다')
-    end
-  end
 end

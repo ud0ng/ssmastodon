@@ -19,6 +19,7 @@ import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 import { useAppDispatch } from 'mastodon/store';
 
 import { sendCommand, waitForSession } from './board';
+import { StageIntro } from './stage_page';
 
 const messages = defineMessages({
   title: { id: 'system.game.title', defaultMessage: 'Game' },
@@ -30,12 +31,16 @@ const messages = defineMessages({
   deleteRoom: { id: 'system.game.delete_room', defaultMessage: 'Delete this record' },
   deleteTitle: { id: 'system.game.delete_title', defaultMessage: 'Delete this game?' },
   deleteMessage: { id: 'system.game.delete_message', defaultMessage: 'The record and every related mention and message will be deleted. This cannot be undone.' },
+  tabRules: { id: 'system.game.rules', defaultMessage: 'Rules' },
+  tabRanking: { id: 'system.game.ranking', defaultMessage: 'Most wins' },
+  tabActive: { id: 'system.game.tab_active', defaultMessage: 'In progress' },
+  tabRecent: { id: 'system.game.finished', defaultMessage: 'Finished' },
   deleteConfirm: { id: 'system.game.delete_confirm', defaultMessage: 'Delete' },
 });
 
 const REFRESH_MS = 15_000;
 
-interface SessionRow {
+export interface SessionRow {
   id: string;
   // 운영진의 테스트 플레이 (참가자와 운영진에게만 보인다, 운영진은 자물쇠)
   test?: boolean;
@@ -46,14 +51,12 @@ interface SessionRow {
   players: { name: string; acct: string; avatar: string; result: 'win' | 'lose' | 'draw' | null; me: boolean }[];
 }
 
-interface GameInfo {
+export interface GameInfo {
   key: string;
   name: string;
   group: 'duel' | 'group';
   event: boolean;
   can_open?: boolean;
-  // 이벤트로 열 수 없는 여럿이 컨텐츠(퀴디치): 운영진만 시작
-  staff_only?: boolean;
   // 운영진이 웹에서 바로 여는 모집형 이벤트 (아니면 멘션 명령어로 연다)
   web_open?: boolean;
   event_min_players?: number;
@@ -95,7 +98,7 @@ const RULE_LABELS: Record<string, React.ReactNode> = {
 
 // [시작하기]: 상대 고르기 모달. 서버 이벤트는 바로 열기, 내가 하는 방이 있으면 그 방으로.
 // 동시 진행을 막았는데 다른 컨텐츠를 하고 있으면 신청하지 않고 바로 안내 (onBusy)
-const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => void }> = ({ game, onSent, onBusy }) => {
+export const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => void }> = ({ game, onSent, onBusy }) => {
   const intl = useIntl();
   const dispatch = useAppDispatch();
   const history = useHistory();
@@ -194,14 +197,6 @@ const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => 
     );
   }
 
-  if (game.staff_only && !game.staff) {
-    return (
-      <span className='system-start system-start--off'>
-        <FormattedMessage id='system.game.staff_opens' defaultMessage='Staff open this event. Watch for the announcement.' />
-      </span>
-    );
-  }
-
   if (game.event) {
     return sent ? (
       <span className='system-start system-start--off'>
@@ -223,7 +218,7 @@ const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => 
 
 // 방 목록 카드: 참가자 아바타 · 이름 (VS) · 상태(턴·남은 시간 / 끝난 때). 내 방은 테마색 바탕.
 // 끝난 판은 승리자 아바타에 금빛 테두리 + 왕관, 이름은 테마색. 패배자는 흐리게, 무승부는 '무' 표시
-const RoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRow) => void }> = ({ rows, onDelete }) => {
+export const RoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRow) => void }> = ({ rows, onDelete }) => {
   const intl = useIntl();
   return (
     <ul className='system-room-list'>
@@ -294,7 +289,7 @@ const RoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRow) => v
   );
 };
 
-type Tab = 'rules' | 'active' | 'recent';
+type Tab = 'rules' | 'ranking' | 'active' | 'recent';
 
 // 주문 상성 삼각형: 화살표가 가리키는 쪽을 이긴다 (0 → 1 → 2 → 0)
 const SpellTriangle: React.FC<{ nodes: string[] }> = ({ nodes }) => {
@@ -331,6 +326,163 @@ const SpellTriangle: React.FC<{ nodes: string[] }> = ({ nodes }) => {
         </g>
       ))}
     </svg>
+  );
+};
+
+// 규칙 · 역할 · 아이템 · 진행 방법 · 보상 (일반 화면과 스테이지 화면이 같이 쓴다)
+export const RulesBody: React.FC<{ game: GameInfo }> = ({ game }) => (
+  <>
+          {/* 룰: 알아야 할 규칙 (아이콘 + 제목 + 설명) */}
+          {game.rules_text && game.rules_text.length > 0 && (
+            <section className='system-section'>
+              <h2 className='system-section__title'>
+                <FormattedMessage id='system.game.rules' defaultMessage='Rules' />
+              </h2>
+              <ul className='system-rules'>
+                {game.rules_text.map((rule) => (
+                  <li key={rule.title} className='system-rule'>
+                    <span className='system-rule__icon'><GameIcon name={rule.icon} /></span>
+                    <div className='system-rule__body'>
+                      <strong className='system-rule__title'>{rule.title}</strong>
+                      <p className='system-rule__text'><CommandText text={rule.text} noEmoji /></p>
+                      {rule.visual === 'triangle' && rule.nodes && rule.nodes.length === 3 && <SpellTriangle nodes={rule.nodes} />}
+                      {rule.table && (
+                        <table className='system-rule__table'>
+                          <thead>
+                            <tr>{rule.table.head.map((cell) => <th key={cell}>{cell}</th>)}</tr>
+                          </thead>
+                          <tbody>
+                            {rule.table.rows.map((row) => (
+                              <tr key={row.join('|')}>
+                                {row.map((cell, index) => (index === 0 ? <th key={cell} scope='row'>{cell}</th> : <td key={cell}>{cell}</td>))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* 역할과 승리 조건: 역할마다 카드 하나 */}
+          {game.roles && game.roles.length > 0 && (
+            <section className='system-section'>
+              <h2 className='system-section__title'>
+                {game.roles.length > 1 || game.roles[0]?.name ? (
+                  <FormattedMessage id='system.game.roles' defaultMessage='Roles and how to win' />
+                ) : (
+                  <FormattedMessage id='system.game.role_win' defaultMessage='How to win' />
+                )}
+              </h2>
+              <div className='system-roles'>
+                {game.roles.map((role, index) => (
+                  <article key={role.name ?? index} className='system-role'>
+                    {role.name && <span className='system-role__badge'>{role.name}</span>}
+                    <div className='system-role__row system-role__row--win'>
+                      <span className='system-role__label'><GameIcon name='tournament' /> <FormattedMessage id='system.game.role_win_label' defaultMessage='Win' /></span>
+                      <span className='system-role__text'><CommandText text={role.win} noEmoji /></span>
+                    </div>
+                    {role.notes.length > 0 && (
+                      <div className='system-role__row'>
+                        <span className='system-role__label'><GameIcon name='star' /> <FormattedMessage id='system.game.role_notes' defaultMessage='Differences' /></span>
+                        <ul className='system-role__notes'>
+                          {role.notes.map((note) => <li key={note}><CommandText text={note} noEmoji /></li>)}
+                        </ul>
+                      </div>
+                    )}
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 아이템: 아이콘 + 카드 */}
+          {game.items && game.items.length > 0 && (
+            <section className='system-section'>
+              <h2 className='system-section__title'>
+                <FormattedMessage id='system.game.role_items' defaultMessage='Items' />
+              </h2>
+              <div className='system-items'>
+                {game.items.map((item) => (
+                  <article key={item.name} className='system-item-card'>
+                    <span className='system-item-card__icon'><GameIcon name={item.icon} /></span>
+                    <div className='system-item-card__body'>
+                      <div className='system-item-card__head'>
+                        <CommandText text={`[${item.name}]`} noEmoji />
+                      </div>
+                      <p className='system-item-card__effect'>{item.effect}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 진행 방법: 한 줄씩, [명령어]는 배지 */}
+          <section className='system-section'>
+            <h2 className='system-section__title'>
+              <FormattedMessage id='system.game.how_to_play' defaultMessage='How to play' />
+            </h2>
+            <ol className='system-steps'>
+              {game.steps.map((step, index) => (
+                <li key={step} className='system-steps__item'>
+                  <span className='system-steps__number'>{index + 1}</span>
+                  <span className='system-steps__text'><CommandText text={step} noEmoji /></span>
+                </li>
+              ))}
+            </ol>
+            {/* 보상: 결과마다 한 칸 (점수 · 재화 · 아이템) */}
+            <div className='system-rewards'>
+              {game.rules.map((rule) => (
+                <div key={rule.label} className={`system-rewards__cell system-rewards__cell--${rule.label}`}>
+                  <span className='system-rewards__label'>{RULE_LABELS[rule.label] ?? rule.label}</span>
+                  <strong className='system-rewards__points'>
+                    <FormattedMessage id='system.game.points_value' defaultMessage='{points} pts' values={{ points: rule.points }} />
+                  </strong>
+                  <span className='system-rewards__money'>{rule.money} {game.currency}</span>
+                  {rule.items && rule.items.length > 0 && <span className='system-rewards__items'>+ {rule.items.join(', ')}</span>}
+                </div>
+              ))}
+            </div>
+          </section>
+  </>
+);
+
+// 최다 승리 (최대 5명): 한 줄씩, 메달 + 승수 막대
+export const RankingBody: React.FC<{ game: GameInfo }> = ({ game }) => {
+  const topWins = game.ranking[0]?.wins || 1;
+  return (
+  <>
+          {/* 최다 승리 (최대 5명): 한 줄씩, 메달 + 승수 막대 */}
+          <section className='system-section'>
+            <h2 className='system-section__title'>
+              <FormattedMessage id='system.game.ranking' defaultMessage='Most wins' />
+            </h2>
+            {game.ranking.length > 0 ? (
+              <ol className='system-podium'>
+                {game.ranking.map((row, index) => (
+                  <li key={row.acct} className={row.me ? 'system-podium__row system-podium__row--me' : 'system-podium__row'}>
+                    <span className={`system-podium__rank system-podium__rank--${index + 1}`}>{index + 1}</span>
+                    <span className='system-podium__name'>{row.name}</span>
+                    <span className='system-podium__bar'>
+                      <span style={{ width: `${(row.wins / topWins) * 100}%` }} />
+                    </span>
+                    <strong className='system-podium__wins'>
+                      <FormattedMessage id='system.game.wins' defaultMessage='{wins} W' values={{ wins: row.wins }} />
+                    </strong>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className='system-page__empty'>
+                <FormattedMessage id='system.game.no_ranking' defaultMessage='No wins yet.' />
+              </p>
+            )}
+          </section>
+  </>
   );
 };
 
@@ -386,8 +538,48 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
   }, [dispatch, intl, load]);
 
   const title = game?.name ?? intl.formatMessage(messages.title);
-  const rooms = game && tab !== 'rules' ? game[tab] : [];
-  const topWins = game?.ranking[0]?.wins || 1;
+  const rooms = game && (tab === 'active' || tab === 'recent') ? game[tab] : [];
+
+  // 여럿이 하는 컨텐츠: 어두운 스테이지 소개 화면 (왼쪽 큰 제목·메뉴, 오른쪽 내용)
+  if (game?.group === 'group') {
+    const stageTabs = [
+      { key: 'rules', label: intl.formatMessage(messages.tabRules) },
+      { key: 'ranking', label: intl.formatMessage(messages.tabRanking) },
+      { key: 'active', label: intl.formatMessage(messages.tabActive), count: game.active.length },
+      { key: 'recent', label: intl.formatMessage(messages.tabRecent) },
+    ];
+    const stageRooms = tab === 'active' ? game.active : game.recent;
+
+    return (
+      <StageIntro
+        name={game.name}
+        summary={game.summary}
+        record={game.record}
+        action={<StartButton game={game} onSent={load} onBusy={showBusy} />}
+        notice={busyShown && game.busy && !game.my_session_id ? (
+          <div className='system-busy' role='alert'>
+            <span className='system-busy__text'><CommandText text={game.busy.message} noEmoji /></span>
+            <Link to={`/system/sessions/${game.busy.session_id}`} className='system-busy__link'>
+              {game.busy.name ? <FormattedMessage id='system.game.busy_room' defaultMessage='Go to {name}' values={{ name: game.busy.name }} /> : <FormattedMessage id='system.game.enter_room' defaultMessage='Go to my room' />}
+            </Link>
+          </div>
+        ) : null}
+        tabs={stageTabs}
+        tab={tab}
+        onTab={(next) => { setTab(next as Tab); }}
+      >
+        {tab === 'rules' && <div className='system-page system-game-page'><RulesBody game={game} /></div>}
+        {tab === 'ranking' && <div className='system-page system-game-page'><RankingBody game={game} /></div>}
+        {(tab === 'active' || tab === 'recent') && (stageRooms.length > 0 ? (
+          <RoomList rows={stageRooms} onDelete={game.staff && tab === 'recent' ? handleDelete : undefined} />
+        ) : (
+          <p className='system-page__empty'>
+            {tab === 'active' ? <FormattedMessage id='system.active.empty' defaultMessage='No game in progress.' /> : <FormattedMessage id='system.game.no_finished' defaultMessage='No finished games yet.' />}
+          </p>
+        ))}
+      </StageIntro>
+    );
+  }
 
   return (
     <Column bindToDocument={!multiColumn} label={title}>
@@ -452,151 +644,10 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
             </div>
 
             {tab === 'rules' ? (
-              <>
-                {/* 룰: 알아야 할 규칙 (아이콘 + 제목 + 설명) */}
-                {game.rules_text && game.rules_text.length > 0 && (
-                  <section className='system-section'>
-                    <h2 className='system-section__title'>
-                      <FormattedMessage id='system.game.rules' defaultMessage='Rules' />
-                    </h2>
-                    <ul className='system-rules'>
-                      {game.rules_text.map((rule) => (
-                        <li key={rule.title} className='system-rule'>
-                          <span className='system-rule__icon'><GameIcon name={rule.icon} /></span>
-                          <div className='system-rule__body'>
-                            <strong className='system-rule__title'>{rule.title}</strong>
-                            <p className='system-rule__text'><CommandText text={rule.text} noEmoji /></p>
-                            {rule.visual === 'triangle' && rule.nodes && rule.nodes.length === 3 && <SpellTriangle nodes={rule.nodes} />}
-                            {rule.table && (
-                              <table className='system-rule__table'>
-                                <thead>
-                                  <tr>{rule.table.head.map((cell) => <th key={cell}>{cell}</th>)}</tr>
-                                </thead>
-                                <tbody>
-                                  {rule.table.rows.map((row) => (
-                                    <tr key={row.join('|')}>
-                                      {row.map((cell, index) => (index === 0 ? <th key={cell} scope='row'>{cell}</th> : <td key={cell}>{cell}</td>))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            )}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                )}
-
-                {/* 역할과 승리 조건: 역할마다 카드 하나 */}
-                {game.roles && game.roles.length > 0 && (
-                  <section className='system-section'>
-                    <h2 className='system-section__title'>
-                      {game.roles.length > 1 || game.roles[0]?.name ? (
-                        <FormattedMessage id='system.game.roles' defaultMessage='Roles and how to win' />
-                      ) : (
-                        <FormattedMessage id='system.game.role_win' defaultMessage='How to win' />
-                      )}
-                    </h2>
-                    <div className='system-roles'>
-                      {game.roles.map((role, index) => (
-                        <article key={role.name ?? index} className='system-role'>
-                          {role.name && <span className='system-role__badge'>{role.name}</span>}
-                          <div className='system-role__row system-role__row--win'>
-                            <span className='system-role__label'><GameIcon name='tournament' /> <FormattedMessage id='system.game.role_win_label' defaultMessage='Win' /></span>
-                            <span className='system-role__text'><CommandText text={role.win} noEmoji /></span>
-                          </div>
-                          {role.notes.length > 0 && (
-                            <div className='system-role__row'>
-                              <span className='system-role__label'><GameIcon name='star' /> <FormattedMessage id='system.game.role_notes' defaultMessage='Differences' /></span>
-                              <ul className='system-role__notes'>
-                                {role.notes.map((note) => <li key={note}><CommandText text={note} noEmoji /></li>)}
-                              </ul>
-                            </div>
-                          )}
-                        </article>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                {/* 아이템: 아이콘 + 카드 */}
-                {game.items && game.items.length > 0 && (
-                  <section className='system-section'>
-                    <h2 className='system-section__title'>
-                      <FormattedMessage id='system.game.role_items' defaultMessage='Items' />
-                    </h2>
-                    <div className='system-items'>
-                      {game.items.map((item) => (
-                        <article key={item.name} className='system-item-card'>
-                          <span className='system-item-card__icon'><GameIcon name={item.icon} /></span>
-                          <div className='system-item-card__body'>
-                            <div className='system-item-card__head'>
-                              <CommandText text={`[${item.name}]`} noEmoji />
-                            </div>
-                            <p className='system-item-card__effect'>{item.effect}</p>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                {/* 진행 방법: 한 줄씩, [명령어]는 배지 */}
-                <section className='system-section'>
-                  <h2 className='system-section__title'>
-                    <FormattedMessage id='system.game.how_to_play' defaultMessage='How to play' />
-                  </h2>
-                  <ol className='system-steps'>
-                    {game.steps.map((step, index) => (
-                      <li key={step} className='system-steps__item'>
-                        <span className='system-steps__number'>{index + 1}</span>
-                        <span className='system-steps__text'><CommandText text={step} noEmoji /></span>
-                      </li>
-                    ))}
-                  </ol>
-                  {/* 보상: 결과마다 한 칸 (점수 · 재화 · 아이템) */}
-                  <div className='system-rewards'>
-                    {game.rules.map((rule) => (
-                      <div key={rule.label} className={`system-rewards__cell system-rewards__cell--${rule.label}`}>
-                        <span className='system-rewards__label'>{RULE_LABELS[rule.label] ?? rule.label}</span>
-                        <strong className='system-rewards__points'>
-                          <FormattedMessage id='system.game.points_value' defaultMessage='{points} pts' values={{ points: rule.points }} />
-                        </strong>
-                        <span className='system-rewards__money'>{rule.money} {game.currency}</span>
-                        {rule.items && rule.items.length > 0 && <span className='system-rewards__items'>+ {rule.items.join(', ')}</span>}
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                {/* 최다 승리 (최대 5명): 한 줄씩, 메달 + 승수 막대 */}
-                <section className='system-section'>
-                  <h2 className='system-section__title'>
-                    <FormattedMessage id='system.game.ranking' defaultMessage='Most wins' />
-                  </h2>
-                  {game.ranking.length > 0 ? (
-                    <ol className='system-podium'>
-                      {game.ranking.map((row, index) => (
-                        <li key={row.acct} className={row.me ? 'system-podium__row system-podium__row--me' : 'system-podium__row'}>
-                          <span className={`system-podium__rank system-podium__rank--${index + 1}`}>{index + 1}</span>
-                          <span className='system-podium__name'>{row.name}</span>
-                          <span className='system-podium__bar'>
-                            <span style={{ width: `${(row.wins / topWins) * 100}%` }} />
-                          </span>
-                          <strong className='system-podium__wins'>
-                            <FormattedMessage id='system.game.wins' defaultMessage='{wins} W' values={{ wins: row.wins }} />
-                          </strong>
-                        </li>
-                      ))}
-                    </ol>
-                  ) : (
-                    <p className='system-page__empty'>
-                      <FormattedMessage id='system.game.no_ranking' defaultMessage='No wins yet.' />
-                    </p>
-                  )}
-                </section>
-              </>
+            <>
+              <RulesBody game={game} />
+              <RankingBody game={game} />
+            </>
             ) : rooms.length > 0 ? (
               <RoomList rows={rooms} onDelete={game.staff && tab === 'recent' ? handleDelete : undefined} />
             ) : (

@@ -4,7 +4,7 @@
   = title
 
 - content_for :heading do
-  = render 'admin/game_settings/heading', save_form: 'edit_game_config'
+  = render 'admin/game_settings/heading', save_form: 'edit_game_config', event: kind.present? && Game::Kinds.group_games.include?(kind)
 
 - if @key == 'help'
   -# 도움말: 상점봇 | 시스템봇 (탭 안의 탭)

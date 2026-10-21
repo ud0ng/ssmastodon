@@ -127,6 +127,7 @@ namespace :admin do
     end
   end
   resource :game_event, path: 'games/event', only: [:create]
+  get 'events', to: 'game_events#index', as: :game_events_settings
   resource :game_staff, path: 'settings/staff', only: [:update], controller: 'game_staff'
   resources :game_settings, path: 'games', only: [:index, :show, :update]
   resources :game_activities, path: 'characters/activity', only: [:index, :show] do

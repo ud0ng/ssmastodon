@@ -24,9 +24,12 @@ RSpec.describe Game::Events::Opening do
     GameSession.where(kind: key).order(:id).last.reload
   end
 
+  # 모집이 끝나면 대기방이 열린다 → 모두 준비해 카운트다운이 끝난 것처럼 시작한다
   def finish_recruiting!(key)
     session = event_session(key)
     session.with_lock { session.kind_class.new(session).recruitment_over! }
+    session = event_session(key)
+    Game::Lobby.start!(session) if session.lobby?
     event_session(key)
   end
 
@@ -67,8 +70,10 @@ RSpec.describe Game::Events::Opening do
       before = Status.maximum(:id).to_i
       join_by_toot(picked.last)
 
-      expect(session.reload).to have_attributes(status: 'active')
+      expect(session.reload).to have_attributes(status: 'lobby') # 모두 수락하면 대기방, 준비하고 카운트다운이 끝나야 시작
       expect(session.players.map(&:account_id)).to match_array(picked.map(&:id))
+      Game::Lobby.start!(session)
+      expect(session.reload.status).to eq 'active'
       expect(Status.where(account: system).where('id > ?', before).where.not(visibility: :direct).count).to be <= 1 # 마지막 참가 확인 답장뿐 (진행은 웹 메시지)
       expect(session.messages.count).to be_positive
     end
@@ -83,13 +88,15 @@ RSpec.describe Game::Events::Opening do
       session = described_class.open!(Game::Web::Maze, admin, mode: 'pick', players: picked)
       picked.first(2).each { |account| join_by_toot(account) }
       session.with_lock { session.kind_class.new(session).recruitment_over! }
+      expect(session.reload.status).to eq 'lobby'
+      Game::Lobby.start!(session)
       expect(session.reload.status).to eq 'active'
       expect(session.players.size).to eq 2
     end
 
     it 'refuses too few or too many players and a content that cannot be opened as an event' do
       expect { described_class.open!(Game::Web::Maze, admin, mode: 'pick', players: accounts.first(1)) }.to raise_error(described_class::Error, /2명 이상/)
-      expect { described_class.open!(Game::Kinds::Quidditch, admin, mode: 'pick', players: accounts) }.to raise_error(described_class::Error, /이벤트로 열 수 없습니다/)
+      expect { described_class.open!(Game::Kinds::Jellybean, admin, mode: 'pick', players: accounts) }.to raise_error(described_class::Error, /이벤트로 열 수 없습니다/)
       expect(GameSession.where(kind: 'maze').count).to eq 0
     end
 
@@ -105,6 +112,8 @@ RSpec.describe Game::Events::Opening do
       expect(invites.first.text).to include('테스트 플레이', '보상이 존재하지 않습니다')
 
       picked.each { |account| join_by_toot(account, visibility: 'direct') }
+      expect(session.reload.status).to eq 'lobby'
+      Game::Lobby.start!(session)
       expect(session.reload.status).to eq 'active'
       before = Status.maximum(:id).to_i
 

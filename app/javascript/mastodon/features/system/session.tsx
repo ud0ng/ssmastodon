@@ -26,6 +26,9 @@ import { Composer } from 'mastodon/features/messages/components/composer';
 import { DateDivider } from 'mastodon/features/messages/components/date_divider';
 
 import { sendCommand } from './board';
+import type { LobbyData, LobbyMessage } from './lobby';
+import { LobbyStage } from './lobby';
+import { StageTutorial } from './stage_tutorial';
 import { MaraudersMapPlay } from './marauders_map';
 import { MazePlay } from './maze';
 import { ChamberPlay } from './secret_chamber';
@@ -38,6 +41,8 @@ const messages = defineMessages({
 });
 
 const REFRESH_MS = 5_000;
+// 대기방은 준비·채팅·카운트다운이 빨리 보이게 자주 읽는다
+const LOBBY_REFRESH_MS = 1_500;
 // 툿을 올리고 시스템이 처리할 때까지 잠깐 기다렸다 다시 읽는다
 const AFTER_SEND_MS = [1_200, 3_500];
 
@@ -46,6 +51,7 @@ interface RoomMessage {
   system: boolean;
   mine: boolean;
   secret: boolean;
+  chat?: boolean;
   name: string;
   acct: string;
   avatar: string;
@@ -61,6 +67,9 @@ interface RoomData {
   status: GameCard['phase'];
   system_acct: string;
   player: boolean;
+  staff?: boolean;
+  // 모집이 끝난 뒤 대기방 (status 'lobby')
+  lobby: LobbyData | null;
   messages: RoomMessage[];
 }
 
@@ -287,7 +296,8 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   const lastId = useRef<string | null>(null);
   const wasMyTurn = useRef(false);
 
-  useRoomLayout(['maze', 'marauders_map', 'secret_chamber'].includes(data?.kind ?? ''));
+  // 대기방은 전체 화면이라 판 화면용 두 칸 배치는 쓰지 않는다
+  useRoomLayout(['maze', 'marauders_map', 'secret_chamber'].includes(data?.kind ?? '') && data?.status !== 'lobby');
 
   const load = useCallback(() => {
     apiRequestGet<RoomData>(`v1/system/sessions/${id}`)
@@ -301,15 +311,17 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
       });
   }, [id]);
 
+  const inLobby = data?.status === 'lobby';
+
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, REFRESH_MS);
+    const timer = window.setInterval(load, inLobby ? LOBBY_REFRESH_MS : REFRESH_MS);
     const pending = timers.current;
     return () => {
       window.clearInterval(timer);
       pending.forEach((each) => { window.clearTimeout(each); });
     };
-  }, [load]);
+  }, [load, inLobby]);
 
   // 새 메시지가 오면 메시지 칸만 맨 아래로
   useLayoutEffect(() => {
@@ -380,7 +392,7 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
     || (data?.kind === 'secret_chamber' && data.player && data.status !== 'cancelled')
   );
   const title = data?.name ?? intl.formatMessage(messages.title);
-  const open = data ? data.status === 'pending' || data.status === 'active' : false;
+  const open = data ? ['pending', 'lobby', 'active'].includes(data.status) : false;
   // 맨 위에 고정하는 지금 상태: 마지막 카드
   const current = data ? [...data.messages].reverse().find((message) => message.card)?.card ?? null : null;
   const actions = data?.player && open && current ? myActions(current) : [];
@@ -407,6 +419,16 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
 
   return (
     <Column bindToDocument={!multiColumn} label={title}>
+      {data?.status === 'active' && data.player && ['maze', 'marauders_map', 'secret_chamber', 'flying'].includes(data.kind) && <StageTutorial kind={data.kind} />}
+      {data?.lobby && (
+        <LobbyStage
+          sessionId={data.id}
+          name={data.name}
+          lobby={data.lobby}
+          messages={data.messages.filter((message) => message.id.startsWith('m') && !message.secret && message.text) as LobbyMessage[]}
+          onChanged={load}
+        />
+      )}
       <ColumnHeader
         icon='system'
         iconComponent={StarIcon}

@@ -110,6 +110,9 @@ namespace :api, format: false do
         member do
           get :view
           post :move
+          post :ready
+          post :cancel_start
+          post :chat
         end
       end
     end

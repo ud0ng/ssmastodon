@@ -9,7 +9,7 @@ class Api::V1::System::SessionsController < Api::BaseController
   MESSAGE_LIMIT = 200
 
   before_action -> { doorkeeper_authorize! :read }, only: [:show, :view]
-  before_action -> { doorkeeper_authorize! :write }, only: [:move, :destroy]
+  before_action -> { doorkeeper_authorize! :write }, only: [:move, :destroy, :ready, :cancel_start, :chat]
   before_action :require_user!
   before_action :require_contents_open!
   before_action :set_session
@@ -25,6 +25,8 @@ class Api::V1::System::SessionsController < Api::BaseController
       root_status_id: @session.root_status_id&.to_s,
       last_status_id: @session.last_status_id&.to_s,
       player: @session.player_for(current_account).present?,
+      lobby: @session.lobby? ? Game::Lobby.view(@session, current_account, staff: staff?) : nil,
+      staff: staff?,
       messages: messages(events),
       events: events.map do |event|
         {
@@ -45,7 +47,7 @@ class Api::V1::System::SessionsController < Api::BaseController
 
     kind = @session.kind_class.new(@session)
     # 모집 중인 이벤트(비밀의 방 제외)는 아직 판이 없다
-    recruiting = @session.status == 'pending'
+    recruiting = %w(pending lobby).include?(@session.status)
     view = kind.respond_to?(:view_for) && !recruiting ? kind.view_for(player) : nil
     add_avatars!(view)
     render json: { web: @session.kind_class.web?, status: @session.status, view: view }
@@ -59,6 +61,34 @@ class Api::V1::System::SessionsController < Api::BaseController
     render json: { deleted: true, statuses: count }
   rescue Game::SessionPurge::Error => e
     render json: { error: e.message }, status: 422
+  end
+
+  # 대기방: 준비하기 / 준비 취소 (운영진은 acct 로 다른 참가자의 준비도 바꾼다)
+  def ready
+    account = current_account
+    if params[:acct].present?
+      return render json: { error: 'forbidden' }, status: 403 unless staff?
+
+      account = Account.local.find_by(username: params[:acct].to_s.delete_prefix('@')) || (return render json: { error: 'not found' }, status: 404)
+    end
+    @session.with_lock { Game::Lobby.set_ready!(@session, account, ActiveModel::Type::Boolean.new.cast(params[:ready])) }
+    show
+  end
+
+  # 대기방 카운트다운 중 누구든 취소 (참가자·운영진)
+  def cancel_start
+    return render json: { error: 'forbidden' }, status: 403 unless @session.player_for(current_account) || staff?
+
+    @session.with_lock { Game::Lobby.cancel_countdown!(@session, current_account) }
+    show
+  end
+
+  # 채팅 (대기방): 참가자·운영진
+  def chat
+    return render json: { error: 'forbidden' }, status: 403 unless @session.player_for(current_account) || staff?
+
+    Game::Lobby.chat!(@session, current_account, params[:text]) if @session.lobby?
+    show
   end
 
   # 웹 전용 컨텐츠: 이번 턴 행동 (미로 이동 등)
@@ -98,14 +128,17 @@ class Api::V1::System::SessionsController < Api::BaseController
     system = Game::System.account
     scope = @session.messages.where(account_id: [nil, current_account.id]).order(:id).last(MESSAGE_LIMIT)
     scope.map do |message|
+      speaker = message.chat? ? message.author : system
       {
         id: "m#{message.id}",
-        system: true,
-        mine: false,
+        system: !message.chat?,
+        chat: message.chat?,
+        mine: message.chat? && message.author_id == current_account.id,
         secret: message.secret?,
-        name: system ? GameCharacter.for(system).display_name : '',
-        acct: system&.acct.to_s,
-        avatar: system ? full_asset_url(system.avatar_static_url) : '',
+        name: speaker ? GameCharacter.for(speaker).display_name : '',
+        acct: speaker&.acct.to_s,
+        avatar: speaker ? full_asset_url(speaker.avatar_static_url) : '',
+        account_id: speaker&.id&.to_s,
         text: message.text,
         created_at: message.created_at.iso8601,
         card: message.secret? || message.payload.blank? ? nil : message.current_payload,
@@ -166,6 +199,10 @@ class Api::V1::System::SessionsController < Api::BaseController
 
   # 운영진은 테스트 플레이를 관전할 수 있다
   def staff_watching?
-    @session.test? && current_user.can?(:manage_settings)
+    @session.test? && staff?
+  end
+
+  def staff?
+    current_user.can?(:manage_settings)
   end
 end

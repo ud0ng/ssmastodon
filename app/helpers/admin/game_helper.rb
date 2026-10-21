@@ -8,7 +8,7 @@ module Admin::GameHelper
 
   # 컨텐츠·과목 그림 (웹 컨텐츠 카드 content_card.tsx 와 같게)
   GAME_ICONS = {
-    'jellybean' => '🍬', 'gobstones' => '🔮', 'duel' => '⚡', 'potion' => '⚗️', 'quidditch' => '🧹',
+    'jellybean' => '🍬', 'gobstones' => '🔮', 'duel' => '⚡', 'potion' => '⚗️',
     'levitation' => '🪶', 'flying' => '🧹', 'transfiguration' => '🐈', 'practice' => '✨', 'secret_chamber' => '🐍', 'maze' => '🏆', 'marauders_map' => '🗺️',
   }.freeze
 

@@ -1,17 +1,18 @@
 -# 컨텐츠 설정 제목 + 탭 (설정 · 명령어 · 도움말 · 컨텐츠). 상점은 상점 설정 메뉴로 옮겼다. 컨텐츠별 화면은 컨텐츠 탭에서 들어간다.
 -# save_form: 저장 버튼이 제출할 폼 id
-- content_keys = Game::Kinds.keys
+- content_keys = Game::Kinds.duels.map(&:key)
 .content__heading__row
-  %h2= game_t('admin.games.title')
+  %h2= local_assigns[:event] ? game_t('admin.games.event_settings') : game_t('admin.games.title')
 
   - if local_assigns[:save_form]
     .content__heading__actions
       = button_tag t('generic.save_changes'), class: 'button', form: save_form
 
-.content__heading__tabs
-  = render_navigation renderer: :links do |primary|
-    :ruby
-      primary.item :common, safe_join([material_symbol('tune'), game_t('admin.games.tabs.settings')]), admin_game_setting_path('common'), highlights_on: %r{/admin/games/common}
-      primary.item :commands, safe_join([material_symbol('chat_bubble'), game_t('admin.games.tabs.commands')]), admin_game_setting_path('commands'), highlights_on: %r{/admin/games/commands}
-      primary.item :help, safe_join([material_symbol('info'), game_t('admin.games.tabs.help')]), admin_game_setting_path('help'), highlights_on: %r{/admin/games/help}
-      primary.item :overview, safe_join([material_symbol('list'), game_t('admin.games.tabs.contents')]), admin_game_settings_path, highlights_on: %r{/admin/games\z|/admin/games/(#{content_keys.join('|')})\z}
+- unless local_assigns[:event]
+  .content__heading__tabs
+    = render_navigation renderer: :links do |primary|
+      :ruby
+        primary.item :common, safe_join([material_symbol('tune'), game_t('admin.games.tabs.settings')]), admin_game_setting_path('common'), highlights_on: %r{/admin/games/common}
+        primary.item :commands, safe_join([material_symbol('chat_bubble'), game_t('admin.games.tabs.commands')]), admin_game_setting_path('commands'), highlights_on: %r{/admin/games/commands}
+        primary.item :help, safe_join([material_symbol('info'), game_t('admin.games.tabs.help')]), admin_game_setting_path('help'), highlights_on: %r{/admin/games/help}
+        primary.item :overview, safe_join([material_symbol('list'), game_t('admin.games.tabs.contents')]), admin_game_settings_path, highlights_on: %r{/admin/games\z|/admin/games/(#{content_keys.join('|')})\z}

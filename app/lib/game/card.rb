@@ -37,7 +37,7 @@ module Game
         'tournament' => safe { tournament_info(session) },
         'awards' => safe { awards(session) } || [],
         'rewards' => safe { rewards(session) } || [],
-        'actions' => session.open? ? (safe { actions_for(session, kind) } || []) : [],
+        'actions' => session.open? && !session.lobby? ? (safe { actions_for(session, kind) } || []) : [],
       }
     end
 

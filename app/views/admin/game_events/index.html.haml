@@ -1,0 +1,30 @@
+- content_for :page_title do
+  = game_t('admin.games.event_settings')
+
+- content_for :heading do
+  = render 'admin/game_settings/heading', event: true
+
+-# 이벤트 열기: 모집형 컨텐츠(미로·도둑 지도·비행 대결)와 비밀의 방
+= render 'admin/game_settings/events'
+
+-# 진행 중인 이벤트: 멈추거나 잘못된 판을 운영진이 직접 다룬다
+= render 'admin/game_settings/running', sessions: @running
+
+-# 여럿이 하는 컨텐츠 목록. 줄을 누르면 그 컨텐츠 설정
+- title = capture do
+  = game_t('admin.games.overview.sections.teams')
+  %span.game-table__count= game_t('admin.games.overview.count', count: Game::Kinds.group_games.size)
+= render layout: 'admin/ui/section', locals: { title: title } do
+  .bot-sheet-table.game-table.game-overview-table
+    %table.table
+      %thead
+        %tr
+          %th= game_t('admin.games.overview.name')
+          %th= game_t('admin.games.overview.command')
+          %th= game_t('admin.games.overview.state')
+          %th.game-table__number= game_t('admin.games.overview.recent_head')
+          %th.game-table__number= game_t('admin.games.overview.open_head')
+          %th.bot-sheet-table__actions
+      %tbody
+        - Game::Kinds.group_games.each do |kind|
+          = render 'admin/game_settings/kind_row', kind: kind, recent: @recent, open: @open

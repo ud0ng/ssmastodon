@@ -27,7 +27,6 @@ const REFRESH_MS = 30_000;
 
 const GROUP_TITLES: Record<string, React.ReactNode> = {
   duel: <FormattedMessage id='system.group.duel' defaultMessage='1:1 duels' />,
-  group: <FormattedMessage id='system.group.group' defaultMessage='Group games' />,
 };
 
 interface Game {
@@ -171,7 +170,7 @@ const System: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
               </section>
             )}
 
-            {data.catalog.filter((group) => group.games.length > 0).map((group) => (
+            {data.catalog.filter((group) => group.key !== 'group' && group.games.length > 0).map((group) => (
               <section className='system-section' key={group.key}>
                 <h2 className='system-section__title'>{GROUP_TITLES[group.key]}</h2>
                 <div className='system-tiles'>

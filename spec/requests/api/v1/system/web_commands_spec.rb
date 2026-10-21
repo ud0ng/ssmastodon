@@ -21,6 +21,7 @@ RSpec.describe 'Web-only content commands' do
       status = PostStatusService.new.call(member.account, text: '@system [참가]', visibility: 'private')
       Game::Engine.new(status).call
     end
+    Game::Lobby.start!(GameSession.where(kind: 'maze').last.reload) # 대기방에서 모두 준비해 시작
   end
 
   let(:session) { GameSession.where(kind: 'maze').last.reload }

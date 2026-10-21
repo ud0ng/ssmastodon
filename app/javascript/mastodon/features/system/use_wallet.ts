@@ -54,7 +54,7 @@ export interface Wallet {
   houses: { id: string; name: string; color: string; total: number; counters?: number; fx?: string | null; fx_until?: string | null }[];
   invites: number;
   // 내가 행동해야 하는 판 (수락 대기·내 차례). 알림 소리·메뉴 배지의 기준
-  todo?: { session_id: string; name: string }[];
+  todo?: { session_id: string; name: string; event?: boolean }[];
 }
 
 export type RecordFilter = 'all' | 'gain' | 'spend' | 'items';

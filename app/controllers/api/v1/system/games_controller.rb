@@ -26,7 +26,6 @@ class Api::V1::System::GamesController < Api::BaseController
       # 여럿이 하는 컨텐츠는 운영진이 연다: event 면 [이벤트 열기] (운영진) / 모집 알림을 기다리기 (일반). 이벤트로 열 수 없는 여럿이 컨텐츠(퀴디치)는 운영진만 시작
       event: event_kind?,
       can_open: can_open?,
-      staff_only: staff_only?,
       web_open: @kind.event_capable?,
       event_min_players: @kind.config['event_min_players'],
       event_max_players: @kind.config['event_max_players'],
@@ -52,7 +51,7 @@ class Api::V1::System::GamesController < Api::BaseController
       my_session_id: my_session&.id&.to_s,
       recruiting: recruiting,
       busy: busy(common),
-      active: visible_sessions.where(status: %w(pending active)).order(updated_at: :desc).limit(LIST_LIMIT).map { |session| session_json(session) },
+      active: visible_sessions.where(status: GameSession::OPEN_STATUSES).order(updated_at: :desc).limit(LIST_LIMIT).map { |session| session_json(session) },
       recent: visible_sessions.where(status: 'finished').order(finished_at: :desc).limit(LIST_LIMIT).map { |session| session_json(session) },
       ranking: ranking,
     }
@@ -99,10 +98,6 @@ class Api::V1::System::GamesController < Api::BaseController
     staff?
   end
 
-  def staff_only?
-    Game::Guide.group_of(@kind) == 'group' && !event_kind?
-  end
-
   def set_kind
     @kind = Game::Kinds.registry[params[:id]]
     not_found if @kind.nil?
@@ -134,7 +129,7 @@ class Api::V1::System::GamesController < Api::BaseController
   end
 
   def my_session
-    GameSession.current_kinds.joins(:players).where(kind: @kind.key, status: %w(pending active), game_players: { account_id: current_account.id })
+    GameSession.current_kinds.joins(:players).where(kind: @kind.key, status: GameSession::OPEN_STATUSES, game_players: { account_id: current_account.id })
                .order(updated_at: :desc).first
   end
 
@@ -142,7 +137,7 @@ class Api::V1::System::GamesController < Api::BaseController
   def busy(common)
     return unless common['one_game_per_person']
 
-    session = GameSession.current_kinds.joins(:players).where(status: %w(pending active), game_players: { account_id: current_account.id })
+    session = GameSession.current_kinds.joins(:players).where(status: GameSession::OPEN_STATUSES, game_players: { account_id: current_account.id })
                          .order(updated_at: :desc).first
     return if session.nil?
 

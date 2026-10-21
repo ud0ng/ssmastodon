@@ -804,6 +804,7 @@ en:
         time: Time
         timed_out: 'no reply for %{minutes} min'
         title: Tournament
+      event_settings: Event settings
       title: Content settings
       undo_all: Undo
       unknown_tokens: "Not available in this message: {tokens}"

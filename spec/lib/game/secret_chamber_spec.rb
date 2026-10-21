@@ -51,8 +51,10 @@ RSpec.describe Game::Web::SecretChamber do
   def start_game!
     open_event!
     accounts.each { |account| toot(account, '@system [참가]') }
-    @before_start = Status.maximum(:id).to_i
     session.with_lock { kind.recruitment_over! }
+    expect(session.reload.status).to eq 'lobby' # 모집이 끝나면 대기방, 모두 준비하면 시작
+    @before_start = Status.maximum(:id).to_i
+    Game::Lobby.start!(session)
   end
 
   it 'recruits with a toot, then deals roles by web messages only and starts the first day' do

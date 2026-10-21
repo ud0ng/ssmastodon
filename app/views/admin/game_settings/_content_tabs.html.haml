@@ -1,4 +1,8 @@
 -# 컨텐츠 탭 안의 탭: 목록 | 컨텐츠들 (꺼진 컨텐츠는 흐리게). current: 지금 컨텐츠 (목록이면 nil)
-- items = [[game_t('admin.games.tabs.list'), admin_game_settings_path, current.nil?, false]]
-- items += Game::Kinds.all.map { |kind| [kind.display_name, admin_game_setting_path(kind.key), kind == current, !kind.enabled?] }
+-# 여럿이 하는 컨텐츠는 이벤트 설정의 탭이라 그 목록·컨텐츠끼리만 묶는다.
+- group = current.present? && Game::Kinds.group_games.include?(current)
+- kinds = group ? Game::Kinds.group_games : Game::Kinds.duels
+- list_path = group ? admin_game_events_settings_path : admin_game_settings_path
+- items = [[game_t('admin.games.tabs.list'), list_path, current.nil?, false]]
+- items += kinds.map { |kind| [kind.display_name, admin_game_setting_path(kind.key), kind == current, !kind.enabled?] }
 = render 'admin/ui/subtabs', items: items, label: game_t('admin.games.tabs.contents')

@@ -3751,6 +3751,10 @@ body .compose-form .compose-form__uploads {
     order: 8;
   }
 
+  .layout-single-column .column-link[href="/system/group"] {
+    order: 8;
+  }
+
   .layout-single-column .column-link[href="/bookmarks"] {
     order: 9;
   }
@@ -4736,6 +4740,10 @@ body .compose-form .compose-form__uploads {
 
   /* 컨텐츠 메뉴: 상점 바로 아래 (같은 순서, 코드에서 상점 다음) */
   .layout-single-column .column-link[href="/system"] {
+    order: 8;
+  }
+
+  .layout-single-column .column-link[href="/system/group"] {
     order: 8;
   }
 
@@ -6474,4 +6482,29 @@ body.layout-single-column
 .layout-single-column .column-link:not(.active):hover .icon-contents,
 .layout-single-column .column-link:not(.active):focus-visible .icon-contents {
   background-color: var(--color-column-link-hover);
+}
+
+/* 이벤트 메뉴 아이콘 (달력) */
+.layout-single-column .column-link .icon-events {
+  mask-image: url('./bird-theme-svg/calendar-day.svg');
+  -webkit-mask-image: url('./bird-theme-svg/calendar-day.svg');
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
+  background-color: var(--color-column-link);
+  background-image: none;
+}
+
+.layout-single-column .column-link:not(.active):hover .icon-events,
+.layout-single-column .column-link:not(.active):focus-visible .icon-events {
+  background-color: var(--color-column-link-hover);
+}
+
+/* 이벤트 메뉴 순서: 컨텐츠 바로 아래 (화면 크기와 상관없이) */
+.layout-single-column .column-link[href="/system/group"],
+.layout-multiple-columns .column-link[href="/system/group"] {
+  order: 8;
 }

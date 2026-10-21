@@ -4310,6 +4310,11 @@ body .compose-form .compose-form__uploads {
     order: 8;
   }
 
+  /* 이벤트 메뉴: 컨텐츠 바로 아래 */
+  .layout-multiple-columns .column-link[href="/system/group"] {
+    order: 8;
+  }
+
   .layout-multiple-columns .column-link[href="/bookmarks"] {
     order: 9;
   }

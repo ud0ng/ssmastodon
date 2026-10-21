@@ -33,7 +33,7 @@ class Api::V1::SystemController < Api::BaseController
       },
       daily: daily_json(common),
       record: record,
-      active: my_players(%w(pending active)).map { |player| game_json(player) },
+      active: my_players(GameSession::OPEN_STATUSES).map { |player| game_json(player) },
       recent: my_players(%w(finished)).limit(RECENT_LIMIT).map { |player| game_json(player) },
       games: Game::Kinds.matches.select(&:enabled?).map { |kind| { key: kind.key, name: kind.display_name, command: kind.config['command'], max_opponents: kind.max_opponents } },
       catalog: catalog,
@@ -67,8 +67,8 @@ class Api::V1::SystemController < Api::BaseController
 
   # 컨텐츠 고르기 (묶음별): 진행 중 판 수, 내가 하는 중인지
   def catalog
-    open = GameSession.current_kinds.real.where(status: %w(pending active)).group(:kind).count
-    mine = GamePlayer.joins(:session).where(account: current_account, game_sessions: { status: %w(pending active) }).distinct.pluck('game_sessions.kind')
+    open = GameSession.current_kinds.real.where(status: GameSession::OPEN_STATUSES).group(:kind).count
+    mine = GamePlayer.joins(:session).where(account: current_account, game_sessions: { status: GameSession::OPEN_STATUSES }).distinct.pluck('game_sessions.kind')
     # 해금이 꺼진(컨텐츠 설정 > 켜기) 컨텐츠 카드는 서버원에게 숨기고, 운영진에게만 '꺼짐' 표시와 함께 보여 준다
     kinds = Game::Staff.web?(current_user) ? Game::Kinds.all : Game::Kinds.all.select(&:enabled?)
     Game::Guide::GROUPS.map do |group|

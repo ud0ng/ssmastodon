@@ -29,6 +29,7 @@ import ScheduledStatusesIcon from '@/styles/bird-theme-svg/calendar-clock.svg?re
 import ShopActiveIcon from '@/styles/bird-theme-svg/shop-fill.svg?react';
 import ShopIcon from '@/styles/bird-theme-svg/shop.svg?react';
 import StarActiveIcon from '@/styles/bird-theme-svg/star-fill.svg?react';
+import EventIcon from '@/styles/bird-theme-svg/calendar-day.svg?react';
 import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
 import FollowRequestsActiveIcon from '@/styles/bird-theme-svg/user-add-fill.svg?react';
 import FollowRequestsIcon from '@/styles/bird-theme-svg/user-add.svg?react';
@@ -92,6 +93,7 @@ const messages = defineMessages({
   scheduledStatuses: { id: 'navigation_bar.scheduled_statuses', defaultMessage: 'Scheduled posts' },
   shop: { id: 'navigation_bar.shop', defaultMessage: 'Shop' },
   contents: { id: 'navigation_bar.contents', defaultMessage: 'Contents' },
+  events: { id: 'navigation_bar.events', defaultMessage: 'Events' },
   scheduledStatusesFailed: { id: 'navigation_bar.scheduled_statuses_failed', defaultMessage: 'Scheduled posts (failed)' },
   lists: { id: 'navigation_bar.lists', defaultMessage: 'Lists' },
   preferences: { id: 'navigation_bar.preferences', defaultMessage: 'Preferences' },
@@ -225,7 +227,7 @@ const ContentsLink = () => {
   // 내가 행동해야 하는 판 수 (수락 대기·내 차례). 지금 들어와 있는 방은 바로 보이므로 빼고 센다
   const room = useRouteMatch('/system/sessions/:id');
   const roomId = room?.params?.id;
-  const count = (wallet?.todo ?? []).filter((item) => item.session_id !== roomId).length;
+  const count = (wallet?.todo ?? []).filter((item) => !item.event && item.session_id !== roomId).length;
 
   return (
     <ColumnLink
@@ -235,6 +237,25 @@ const ContentsLink = () => {
       icon={<IconWithBadge id='contents' icon={StarIcon} count={count} className='column-link__icon' />}
       activeIcon={<IconWithBadge id='contents' icon={StarActiveIcon} count={count} className='column-link__icon' />}
       text={intl.formatMessage(messages.contents)}
+    />
+  );
+};
+
+// 이벤트 메뉴: 열린 이벤트 모집·초대와 이벤트 컨텐츠에서 내가 할 일 수를 배지로
+const EventsLink = () => {
+  const wallet = useWallet();
+  const intl = useIntl();
+  const room = useRouteMatch('/system/sessions/:id');
+  const roomId = room?.params?.id;
+  const count = (wallet?.todo ?? []).filter((item) => item.event && item.session_id !== roomId).length;
+
+  return (
+    <ColumnLink
+      transparent
+      to='/system/group'
+      icon={<IconWithBadge id='events' icon={EventIcon} count={count} className='column-link__icon' />}
+      activeIcon={<IconWithBadge id='events' icon={EventIcon} count={count} className='column-link__icon' />}
+      text={intl.formatMessage(messages.events)}
     />
   );
 };
@@ -459,6 +480,7 @@ class NavigationPanel extends Component {
         <ScheduledStatusesLink />
         {shopEnabled && <ColumnLink transparent to='/shop' icon='shop' iconComponent={ShopIcon} activeIconComponent={ShopActiveIcon} text={intl.formatMessage(messages.shop)} />}
         {contentsEnabled && <ContentsLink />}
+        {contentsEnabled && <EventsLink />}
         <ColumnLink transparent to='/bookmarks' icon='bookmarks' iconComponent={BookmarksIcon} activeIconComponent={BookmarksActiveIcon} text={bookmarksLabel} />
         <ColumnLink transparent to='/lists' icon='list-ul' iconComponent={ListAltIcon} activeIconComponent={ListAltActiveIcon} text={listsLabel} />
         <ColumnLink transparent href={settingsHref} icon='cog' iconComponent={SettingsIcon} text={preferencesLabel} />

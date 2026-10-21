@@ -103,9 +103,8 @@ module Game
           return
         end
 
-        session.update!(status: 'active', deadline_at: nil)
-        prepare_event_players!
-        start!
+        # 모집이 끝나면 바로 시작하지 않고 대기방을 연다: 모두 준비하면 카운트다운 뒤 시작 (Game::Lobby)
+        Game::Lobby.enter!(session)
       end
 
       # 시작 전에 역할을 섞는다. 개인전(미로·비행)은 할 일이 없다.

@@ -5,7 +5,13 @@ class GameMessage < ApplicationRecord
   belongs_to :session, class_name: 'GameSession', foreign_key: :game_session_id, inverse_of: :messages
   belongs_to :account, optional: true
 
+  belongs_to :author, class_name: 'Account', optional: true
+
   scope :visible_to, ->(account) { where(account_id: [nil, account.id]) }
+
+  def chat?
+    kind == 'chat'
+  end
 
   def secret?
     account_id.present?

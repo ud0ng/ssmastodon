@@ -67,6 +67,7 @@ import {
   SystemShop,
   SystemSession,
   SystemGame,
+  SystemGroup,
   SystemHouse,
   SystemRecord,
   FollowedTags,
@@ -245,6 +246,7 @@ class SwitchingColumnsArea extends PureComponent {
             {shopEnabled ? <WrappedRoute path='/shop' component={SystemShop} content={children} /> : <Redirect from='/shop' to='/home' exact />}
             {/* 컨텐츠 해금이 꺼져 있으면(운영진 제외) 컨텐츠 화면은 홈으로 */}
             {contentsEnabled ? <WrappedRoute path='/system/sessions/:id' component={SystemSession} content={children} /> : <Redirect from='/system/sessions/:id' to='/home' />}
+            {contentsEnabled ? <WrappedRoute path='/system/group' component={SystemGroup} content={children} /> : <Redirect from='/system/group' to='/home' />}
             {contentsEnabled ? <WrappedRoute path='/system/games/:key' component={SystemGame} content={children} /> : <Redirect from='/system/games/:key' to='/home' />}
             <WrappedRoute path='/system/:section(wallet|inventory)' component={SystemWallet} content={children} />
             <WrappedRoute path='/system/record' component={SystemRecord} content={children} />
