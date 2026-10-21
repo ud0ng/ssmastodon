@@ -136,5 +136,47 @@ RSpec.describe 'API V1 System games' do
       post '/api/v1/system/games/flying/open', headers: headers
       expect(response).to have_http_status(403)
     end
+
+    it 'lets staff test play with picked players: staff see it with a lock, players once they accepted, nobody else' do
+      Game::Config.merge!('flying', 'event_min_players' => '2')
+      harry = Fabricate(:user, account: Fabricate(:account, username: 'harry'))
+      ron = Fabricate(:user, account: Fabricate(:account, username: 'ron'))
+      [harry, ron, user].each { |member| GameCharacter.for(member.account) }
+      harry_headers = { 'Authorization' => "Bearer #{Fabricate(:accessible_access_token, resource_owner_id: harry.id, scopes: 'read write').token}" }
+
+      post '/api/v1/system/games/flying/open', headers: headers, params: { mode: 'test', accts: %w(harry ron) }
+      expect(response).to have_http_status(403)
+
+      post '/api/v1/system/games/flying/open', headers: admin_headers, params: { mode: 'test', accts: %w(harry nobody) }
+      expect(response).to have_http_status(422)
+
+      post '/api/v1/system/games/flying/open', headers: admin_headers, params: { mode: 'test', accts: %w(harry ron) }
+      expect(response).to have_http_status(200)
+
+      get '/api/v1/system/games/flying', headers: admin_headers
+      expect(response.parsed_body['active'].pluck('test')).to eq [true]
+
+      # 고른 사람에게만 참가 안내(DM)가 가고, 고르지 않은 사람에게는 모집 알림도 안 뜬다
+      get '/api/v1/system/games/flying', headers: harry_headers
+      expect(response.parsed_body['recruiting']).to be_present
+      get '/api/v1/system/games/flying', headers: headers
+      expect(response.parsed_body['recruiting']).to be_nil
+      expect(response.parsed_body['active']).to eq []
+
+      [harry, ron].each do |member|
+        status = PostStatusService.new.call(member.account, text: '@system [참가]', visibility: 'direct')
+        Game::Engine.new(status).call
+      end
+      get '/api/v1/system/games/flying', headers: harry_headers
+      expect(response.parsed_body['active'].size).to eq 1
+
+      get '/api/v1/system/games/flying', headers: headers
+      expect(response.parsed_body['active']).to eq []
+      session = GameSession.where(kind: 'flying').last
+      get "/api/v1/system/sessions/#{session.id}", headers: headers
+      expect(response).to have_http_status(404)
+      get "/api/v1/system/sessions/#{session.id}", headers: admin_headers
+      expect(response).to have_http_status(200)
+    end
   end
 end

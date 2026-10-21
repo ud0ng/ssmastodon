@@ -17,7 +17,7 @@
   = render 'admin/game_settings/content_tabs', current: kind
   %p.hint.game-config__hint
     = game_t('admin.games.kind_hint')
-    - unless kind.event?
+    - unless kind.event_only?
       %span.game-config__flow= [game_t('admin.games.flow.invite', command: kind.config['command']), game_t('admin.games.flow.accept'), game_t('admin.games.flow.play'), game_t('admin.games.flow.result')].join(' → ')
 
 - system = Game::System.account

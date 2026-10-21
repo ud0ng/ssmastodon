@@ -4354,3 +4354,20 @@ button.game-token:focus-visible {
     padding: 0;
   }
 }
+
+// 이벤트 열기 모달 (참가자 모집 / 고르기 / 테스트 플레이 / 취소)
+.event-open {
+  &__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    form {
+      margin: 0;
+    }
+  }
+
+  &__picker {
+    margin-top: 12px;
+  }
+}

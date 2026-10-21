@@ -45,7 +45,7 @@ module Game
 
     def decide!(session, player)
       session.with_lock do
-        next unless session.open? && session.status == 'active' && !tournament?(session) && !session.kind_class.event?
+        next unless session.open? && session.status == 'active' && !tournament?(session) && !session.kind_class.event_only?
 
         session.kind_class.new(session).send(:finish!, winner: player, message: '운영진이 승자를 정해 판을 끝냈습니다.')
       end

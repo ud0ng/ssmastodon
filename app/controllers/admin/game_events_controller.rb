@@ -9,8 +9,10 @@ module Admin
       kind = Game::Kinds.registry[params[:kind].to_s]
       return redirect_to(admin_game_settings_path, alert: t('admin.games.events.unknown')) if kind.nil?
 
-      Game::Events::Opening.open!(kind, current_account)
-      redirect_to admin_game_settings_path, notice: t('admin.games.events.opened', name: kind.display_name)
+      mode = params[:mode].presence || 'recruit'
+      players = mode == 'recruit' ? [] : GameCharacter.eligible_accounts.where(id: Array(params[:account_ids]).compact_blank).to_a
+      Game::Events::Opening.open!(kind, current_account, mode: mode, players: players)
+      redirect_to admin_game_settings_path, notice: t("admin.games.events.opened_#{Game::Events::Opening::MODES.include?(mode) ? mode : 'recruit'}", name: kind.display_name)
     rescue Game::Events::Opening::Error => e
       redirect_to admin_game_settings_path, alert: e.message
     end

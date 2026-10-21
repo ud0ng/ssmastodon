@@ -42,6 +42,79 @@ RSpec.describe Game::Events::Opening do
     expect(root.mentions.map(&:account_id)).to include(*accounts.map(&:id))
   end
 
+  describe 'picking the players' do
+    def join_by_toot(account, visibility: 'private')
+      status = PostStatusService.new.call(account, text: '@system [참가]', visibility: visibility)
+      Game::Engine.new(status).call
+    end
+
+    it 'sends a participation DM to each picked player only and starts when they all accept, with progress on the web only' do
+      picked = accounts.first(3)
+      session = described_class.open!(Game::Web::Maze, admin, mode: 'pick', players: picked)
+
+      expect(session).to have_attributes(status: 'pending', visibility: 'private')
+      expect(session.test?).to be false
+      invites = Status.where(account: system, visibility: :direct).to_a
+      expect(invites.flat_map { |status| status.mentions.map(&:account_id) }).to match_array(picked.map(&:id))
+      expect(invites.first.text).to include('참가자로 뽑혔습니다', '[참가]')
+
+      join_by_toot(accounts.last) # 고르지 않은 사람은 못 낀다
+      expect(session.reload.players).to be_empty
+      expect(system.statuses.reorder(:id).last.text).to include('고른 참가자만')
+
+      picked.first(2).each { |account| join_by_toot(account) }
+      expect(session.reload.status).to eq 'pending'
+      before = Status.maximum(:id).to_i
+      join_by_toot(picked.last)
+
+      expect(session.reload).to have_attributes(status: 'active')
+      expect(session.players.map(&:account_id)).to match_array(picked.map(&:id))
+      expect(Status.where(account: system).where('id > ?', before).where.not(visibility: :direct).count).to be <= 1 # 마지막 참가 확인 답장뿐 (진행은 웹 메시지)
+      expect(session.messages.count).to be_positive
+    end
+
+    it 'starts with the ones who accepted when the time is up, and cancels when too few did' do
+      picked = accounts.first(3)
+      session = described_class.open!(Game::Web::Maze, admin, mode: 'pick', players: picked)
+      join_by_toot(picked.first)
+      session.with_lock { session.kind_class.new(session).recruitment_over! }
+      expect(session.reload.status).to eq 'cancelled'
+
+      session = described_class.open!(Game::Web::Maze, admin, mode: 'pick', players: picked)
+      picked.first(2).each { |account| join_by_toot(account) }
+      session.with_lock { session.kind_class.new(session).recruitment_over! }
+      expect(session.reload.status).to eq 'active'
+      expect(session.players.size).to eq 2
+    end
+
+    it 'refuses too few or too many players and a content that cannot be opened as an event' do
+      expect { described_class.open!(Game::Web::Maze, admin, mode: 'pick', players: accounts.first(1)) }.to raise_error(described_class::Error, /2명 이상/)
+      expect { described_class.open!(Game::Kinds::Quidditch, admin, mode: 'pick', players: accounts) }.to raise_error(described_class::Error, /이벤트로 열 수 없습니다/)
+      expect(GameSession.where(kind: 'maze').count).to eq 0
+    end
+
+    it 'plays a hidden test: DM invites, nothing in lists, no points, rewards or records, and nothing posted as toots' do
+      picked = accounts.first(2)
+      session = described_class.open!(Game::Web::Maze, admin, mode: 'test', players: picked)
+
+      expect(session).to have_attributes(status: 'pending', visibility: 'direct')
+      expect(session.test?).to be true
+      expect(GameSession.real).to_not include(session)
+      invites = Status.where(account: system, visibility: :direct).to_a
+      expect(invites.flat_map { |status| status.mentions.map(&:account_id) }).to match_array(picked.map(&:id))
+      expect(invites.first.text).to include('테스트 플레이', '보상이 존재하지 않습니다')
+
+      picked.each { |account| join_by_toot(account, visibility: 'direct') }
+      expect(session.reload.status).to eq 'active'
+      before = Status.maximum(:id).to_i
+
+      expect { Game::Web::Maze.new(session).send(:finish!, winner: session.players.first) }.to_not(change { [GameReward.count, GameHousePoint.count] })
+      expect(session.reload.status).to eq 'finished'
+      expect(Status.where(account: system).where('id > ?', before).count).to eq 0
+      expect(session.messages.order(:id).last.text).to include('테스트 플레이라 점수와 보상은 없습니다')
+    end
+  end
+
   it 'allows only one event at a time and refuses a turned-off content' do
     described_class.open!(Game::Web::Maze, admin)
 

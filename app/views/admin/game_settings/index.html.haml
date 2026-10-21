@@ -13,8 +13,8 @@
 -# 진행 중인 컨텐츠: 멈추거나 잘못된 판을 운영진이 직접 다룬다 (단계 넘기기·취소·무승부·승자 지정)
 = render 'admin/game_settings/running', sessions: @running
 
--# 목록: 1:1 컨텐츠 / 팀 컨텐츠(여럿이 하는 컨텐츠 + 서버 이벤트). 줄을 누르면 그 컨텐츠 설정
-- [['duels', Game::Kinds.duels], ['teams', Game::Kinds.group_games + Game::Kinds.events]].each do |section, kinds|
+-# 목록: 1:1 컨텐츠 / 팀 컨텐츠(여럿이 하는 컨텐츠). 줄을 누르면 그 컨텐츠 설정
+- [['duels', Game::Kinds.duels], ['teams', Game::Kinds.group_games]].each do |section, kinds|
   - title = capture do
     = game_t("admin.games.overview.sections.#{section}")
     %span.game-table__count= game_t('admin.games.overview.count', count: kinds.size)

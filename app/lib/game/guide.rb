@@ -7,7 +7,7 @@ module Game
   #   roles: 역할마다 승리 조건과 다른 점 (역할이 하나면 name 을 비운다), items: [이름, 효과, 아이콘]
   #   steps: 신청부터 끝까지 하는 방법 (룰에 있는 설명은 되풀이하지 않는다)
   module Guide
-    # 웹 컨텐츠 메뉴 묶음: 1:1 / 팀(여럿이 하는 컨텐츠 + 서버 이벤트)
+    # 웹 컨텐츠 메뉴 묶음: 1:1 / 팀(여럿이 하는 컨텐츠: 퀴디치·비행 대결·미로·도둑 지도·비밀의 방)
     GROUPS = %w(duel group).freeze
 
     TEXT = {
@@ -133,8 +133,6 @@ module Game
     module_function
 
     def group_of(kind)
-      return 'group' if kind.event?
-
       kind.max_opponents > 1 ? 'group' : 'duel'
     end
 

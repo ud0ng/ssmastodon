@@ -54,9 +54,6 @@ module Game
       # 모바일에서 시스템 계정에 DM 으로 쓰는 특수 아이템: [사용/호울러/소문 내용] (그 밖의 [사용]은 상점 봇이 처리한다)
       when use_command then item_command(args)
       else
-        event = Game::Kinds.events.find { |each| each.enabled? && each.config['command'] == command }
-        return open_event(event) if event
-
         pending = pending_event
         return join if pending && pending.kind_class&.config&.dig('cmd_join') == command
 
@@ -188,7 +185,7 @@ module Game
       end
     end
 
-    # 내가 한 신청을 상대가 수락하기 전에 취소 (서버 이벤트 모집은 제외)
+    # 내가 한 신청을 상대가 수락하기 전에 취소 (운영진이 연 이벤트 모집은 제외)
     def cancel_invite
       player = GamePlayer.joins(:session)
                          .where(account: actor, game_sessions: { status: 'pending' })
@@ -224,22 +221,12 @@ module Game
       common['bot_usernames'].to_s.split(/[,s]+/).map { |name| name.delete_prefix('@').downcase }.include?(account.username.downcase)
     end
 
-    # 모집 중인 서버 이벤트 (비밀의방 등)
+    # 모집 중인 이벤트 (미로·도둑 지도·비행 대결·비밀의 방)
     def pending_event
       GameSession.where(status: 'pending').where("state->>'mode' = 'event'").order(id: :desc).first
     end
 
-    # [비밀의방] 서버 이벤트 열기 (한 번에 하나)
-    def open_event(kind)
-      return reply(Game::Text.render(common['msg_event_not_opener'], game: kind.display_name)) unless kind.can_open?(actor)
-      return reply(Game::Text.render(common['msg_event_running'], game: kind.display_name)) if GameSession.open.exists?(kind: kind.key)
-
-      session = GameSession.create!(kind: kind.key, status: 'pending', visibility: visibility, root_status_id: status.id, last_status_id: status.id,
-                                    state: { 'mode' => 'event' })
-      kind.new(session).open!
-    end
-
-    # [참가] 모집 중인 서버 이벤트 (가장 최근 것)
+    # [참가] 모집 중인 이벤트 (가장 최근 것)
     def join
       event = pending_event
       return if event.nil? || event.players.exists?(account_id: actor.id)

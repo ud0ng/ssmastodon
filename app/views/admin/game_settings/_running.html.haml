@@ -31,7 +31,7 @@
                 - if locked
                   %span.hint= game_t('admin.games.running.tournament')
                 - else
-                  - if session.status == 'active' && !session.kind_class&.event?
+                  - if session.status == 'active' && !session.kind_class&.event_only?
                     = form_with url: decide_admin_game_session_path(session), method: :post, class: 'inline-form' do |f|
                       = select_tag :player_id, options_from_collection_for_select(session.players, :id, ->(player) { player.account.username }), class: 'game-running__select'
                       = f.submit game_t('admin.games.running.decide'), class: 'button button--dangerous', data: { confirm: game_t('admin.games.running.confirm_decide') }

@@ -1,11 +1,10 @@
 # frozen_string_literal: true
 
 module Game
-  module Events
-    # 비밀의 방 (마피아형 서버 이벤트): 학생들 사이에 숨은 비밀의 방 주인(방주)을 찾아내는 사회적 추리 게임. 최대 진행 시간·페이즈 수가 정해져 있다.
+  module Web
+    # 비밀의 방 (웹 전용, 마피아형): 학생들 사이에 숨은 비밀의 방 주인(방주)을 찾아내는 사회적 추리 게임. 최대 진행 시간·페이즈 수가 정해져 있다.
     #
-    #   [비밀의방]        참가 모집 (모집 시간이 지나면 시작, 여는 사람은 설정으로 제한 가능)
-    #   [참가]            모집 중에 참가 (최소~최대 인원)
+    #   운영진이 이벤트로 열어 참가를 모집한다 (미로·도둑 지도와 같다). 모집·참가 안내만 툿이고 시작한 뒤의 진행·결과는 웹 화면에만 올라간다.
     #   낮  [고발] @누구  살아 있는 사람끼리 공개로 토론하고 투표 → 최다 득표는 퇴학 (진영 공개), 동률이면 아무도 (설정)
     #   밤  DM 으로 역할 행동
     #        방주   [석화] @누구   방주들이 고른 사람 중 가장 많이 고른 사람 (보호받지 않았으면 석화)
@@ -23,6 +22,8 @@ module Game
     class SecretChamber < Game::Kinds::Base
       KEY = 'secret_chamber'
 
+      include Game::Events::Recruiting
+
       ROLES = %w(traitor auror healer seer student).freeze
       DARK = %w(traitor).freeze
       CHAT_KEEP = 40
@@ -32,16 +33,12 @@ module Game
 
       FIELDS = (base_fields(name: '비밀의 방', command: '비밀의방', points_win: 15) + [
         F.new(key: 'points_survive', type: :integer, default: 0, group: 'points', label: '살아남은 사람 추가 점수'),
-        F.new(key: 'openers', type: :lines, default: [], group: 'basic', label: '열 수 있는 사람 (아이디, 줄마다 하나)', hint: '운영진은 항상 열 수 있습니다. 여기에는 운영진이 아닌데 열 수 있게 할 사람만 적습니다 (비우면 운영진만)'),
-        F.new(key: 'min_players', type: :integer, default: 7, group: 'rules', label: '최소 인원'),
-        F.new(key: 'max_players', type: :integer, default: 20, group: 'rules', label: '최대 인원'),
         F.new(key: 'traitor_percent', type: :integer, default: 25, group: 'rules', label: '방주 비율 (%)', hint: '최소 1명'),
         F.new(key: 'max_phases', type: :integer, default: 8, group: 'rules', label: '최대 페이즈 수', hint: '낮 하나, 밤 하나가 각각 1페이즈. 넘으면 끝납니다'),
         F.new(key: 'total_minutes', type: :integer, default: 60, group: 'rules', label: '최대 진행 시간 (분)', hint: '시작부터 이 시간이 지나면 끝납니다'),
         F.new(key: 'limit_dark_wins', type: :boolean, default: true, group: 'rules', label: '시간·페이즈가 다 되면 어둠 진영 승리', hint: '끄면 무승부'),
         F.new(key: 'tie_expels', type: :boolean, default: false, group: 'rules', label: '동률이면 무작위로 한 명 퇴학', hint: '끄면 동률일 때 아무도 퇴학되지 않는다'),
         F.new(key: 'healer_repeat', type: :boolean, default: false, group: 'rules', label: '치유사가 같은 사람을 이틀 연속 보호'),
-        F.new(key: 'join_minutes', type: :integer, default: 30, group: 'time', label: '참가 모집 (분)'),
         F.new(key: 'day_minutes', type: :integer, default: 10, group: 'time', label: '낮 (토론·고발) 길이 (분)'),
         F.new(key: 'night_minutes', type: :integer, default: 5, group: 'time', label: '밤 (역할 행동) 길이 (분)'),
         F.new(key: 'role_traitor', type: :string, default: '방주', group: 'roles', label: '방주 이름'),
@@ -51,18 +48,12 @@ module Game
         F.new(key: 'role_student', type: :string, default: '학생', group: 'roles', label: '학생 이름'),
         F.new(key: 'faction_light', type: :string, default: '호그와트', group: 'roles', label: '선한 진영 이름'),
         F.new(key: 'faction_dark', type: :string, default: '어둠', group: 'roles', label: '어둠 진영 이름'),
-        F.new(key: 'cmd_join', type: :string, default: '참가', group: 'commands', label: '참가'),
         F.new(key: 'cmd_accuse', type: :string, default: '고발', group: 'commands', label: '고발 (낮)', hint: '[고발] @누구'),
         F.new(key: 'cmd_petrify', type: :string, default: '석화', group: 'commands', label: '석화 (방주, 밤)'),
         F.new(key: 'cmd_investigate', type: :string, default: '조사', group: 'commands', label: '조사 (오러, 밤)'),
         F.new(key: 'cmd_protect', type: :string, default: '보호', group: 'commands', label: '보호 (치유사, 밤)'),
         F.new(key: 'cmd_prophecy', type: :string, default: '예언', group: 'commands', label: '예언 전하기 (방주, 밤)', hint: '[예언/호그와트] @누구 처럼 사실인 예언만 전할 수 있다'),
         F.new(key: 'cmd_chat', type: :string, default: '밀담', group: 'commands', label: '방주 비밀 단톡 (방주)', hint: '[밀담/내용] 으로 방주끼리만 이야기한다'),
-        F.new(key: 'msg_recruit', type: :text, group: 'messages', label: '모집',
-              default: "%{game}의 문이 열렸습니다.\n%{minutes}분 동안 [%{join}] 명령어로 참가해 주세요. (%{min}~%{max}명)\n\n참가자 중 누군가는 어둠의 편입니다."),
-        F.new(key: 'msg_joined', type: :text, group: 'messages', label: '참가 확인', default: '%{player}{이가} 참가했습니다. (지금 %{count}명)'),
-        F.new(key: 'msg_full', type: :text, group: 'messages', label: '정원 초과', default: '%{game}은 %{max}명까지 참가할 수 있어 더 참가할 수 없습니다.'),
-        F.new(key: 'msg_cancel', type: :text, group: 'messages', label: '인원 부족', default: '참가자가 %{min}명이 되지 않아 %{game}{이가} 닫혔습니다.'),
         F.new(key: 'msg_start', type: :text, group: 'messages', label: '시작',
               default: "%{game} 시작! 참가자 %{count}명, 그중 %{traitors}명이 %{traitor}입니다.\n각자 시스템 계정이 보낸 DM 으로 역할을 확인하세요. 진행 화면은 컨텐츠 방에서 볼 수 있습니다.\n최대 %{phases}페이즈, %{total}분 안에 끝납니다.\n\n참가자: %{names}"),
         F.new(key: 'msg_role', type: :text, group: 'messages', label: '역할 안내 (DM)',
@@ -107,48 +98,25 @@ module Game
         F.new(key: 'msg_win_dark', type: :text, group: 'messages', label: '어둠 진영 승리',
               default: "%{game} 종료! %{traitor}{이가} 학교를 장악했습니다. %{faction}의 승리!\n\n%{roles}"),
         F.new(key: 'msg_draw', type: :text, group: 'messages', label: '무승부', default: "%{game} 종료! 승부가 나지 않았습니다. 무승부!\n\n%{roles}"),
-      ]).freeze
+      ] + Game::Events::Recruiting.fields(min: 7, max: 20)).freeze
 
       class << self
-        def event?
+        def web?
           true
         end
 
-        # 운영진(서버 설정 권한)과 '열 수 있는 사람'에 적은 계정만 연다. 일반 참가자는 참가만 한다.
-        def can_open?(account)
-          openers = Array(config['openers']).map { |name| name.delete_prefix('@').strip.downcase }.compact_blank
-          account.user&.can?(:manage_settings) || openers.include?(account.username.downcase)
-        end
-      end
-
-      # 모집 시작 (Engine#open_event)
-      def open!
-        state.merge!('mode' => 'event', 'phase' => 'recruit')
-        session.save!
-        post(render(config['msg_recruit'], minutes: config['join_minutes'], join: config['cmd_join'], min: min_players, max: max_players))
-        Game::Engine.set_deadline!(session, config['join_minutes'])
-      end
-
-      # [참가]
-      def join!(account, status)
-        return if players.any? { |player| player.account_id == account.id }
-        return reply(status, render(config['msg_full'], max: max_players)) if players.size >= max_players
-
-        player = session.players.create!(account: account, seat: (players.map(&:seat).max || -1) + 1, state: { 'accepted' => true })
-        session.players.reset
-        reply(status, render(config['msg_joined'], player: player, count: session.players.size))
-      end
-
-      # 모집 시간이 끝났을 때 (Game::TimeoutWorker)
-      def recruitment_over!
-        if players.size < min_players
-          session.update!(status: 'cancelled', finished_at: Time.now.utc, deadline_at: nil)
-          post(render(config['msg_cancel'], min: min_players))
-          return
+        def event_only?
+          true
         end
 
-        session.update!(status: 'active', deadline_at: nil)
-        start!
+        # 7~20명이 하는 컨텐츠라 여럿이 하는 컨텐츠로 센다 (신청이 아니라 이벤트로 연다)
+        def max_opponents
+          [config['event_max_players'].to_i - 1, 2].max
+        end
+
+        def invite_error(_total, _args = [])
+          '비밀의 방은 운영진이 이벤트로 엽니다. 모집 안내를 기다려 주세요.'
+        end
       end
 
       def start!
@@ -258,21 +226,14 @@ module Game
 
       protected
 
-      # 공지는 살아 있는 사람만 멘션
-      def post(text)
-        alive = state['alive']
-        mentions = alive ? players.select { |player| alive.include?(player.seat) }.map(&:account) : players.map(&:account)
-        Game::Poster.to_session(session, text, mentions: mentions.presence || [], kind: self)
-      end
-
       private
 
       def min_players
-        [config['min_players'].to_i, 3].max
+        [event_min_players, 3].max
       end
 
       def max_players
-        [config['max_players'].to_i, min_players].max
+        event_max_players
       end
 
       def deal_roles
@@ -335,8 +296,10 @@ module Game
         (found + mentioned).uniq
       end
 
+      # 웹 전용이라 답은 보낸 사람에게만 가는 웹 안내 (툿이 아니다)
       def reply(status, text)
-        Game::Poster.post(text, mentions: [status.account], thread: status, visibility: status.direct_visibility? ? 'direct' : session.visibility)
+        player = players.find { |each| each.account_id == status.account.id }
+        player ? dm(player, text) : nil
       end
 
       # ── 시간·페이즈 ──

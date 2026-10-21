@@ -8,7 +8,7 @@ import { setupCommunitySelect } from '../mastodon/admin/community_select';
 import { setupDateInputs } from '../mastodon/admin/date_picker';
 import { setupCommunityThemeEditor } from '../mastodon/admin/community_theme_editor';
 import { setupGameConfigEditor, setupStatsEditor } from '../mastodon/admin/game_config_editor';
-import { setupCounterRules, setupImagePickers, setupItemEffects } from '../mastodon/admin/item_effects';
+import { setupCounterRules, setupEventOpen, setupImagePickers, setupItemEffects } from '../mastodon/admin/item_effects';
 import { addItemCard, filterItemOptions } from '../mastodon/admin/item_picker';
 import ready from '../mastodon/ready';
 
@@ -701,6 +701,7 @@ ready(() => {
   setupImagePickers();
   setupItemEffects();
   setupCounterRules();
+  setupEventOpen();
 
   const domainBlockSeveritySelect = document.querySelector<HTMLSelectElement>(
     'select#domain_block_severity',

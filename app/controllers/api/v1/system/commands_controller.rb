@@ -4,7 +4,6 @@
 # 진행은 툿으로 하던 그대로 (Game::Engine 이 처리, 앱에서는 멘션 알림으로 보인다).
 #
 #   새 판 신청:  kind, opponents[] (아이디)        → '@시스템 @상대 … [시작 명령어]'
-#   서버 이벤트: kind                              → '@시스템 [이벤트 명령어]'
 #   판 안 명령:  session_id, command, args?, target?, dm?
 #                공개 답장이면 다른 참가자도 태그(알림), 대상이 있으면 대상만, dm 이면 시스템에게 DM
 class Api::V1::System::CommandsController < Api::BaseController
@@ -14,6 +13,9 @@ class Api::V1::System::CommandsController < Api::BaseController
   before_action :require_contents_open!
 
   def create
+    web_session = params[:session_id].present? ? GameSession.find_by(id: params[:session_id]) : nil
+    return web_command(web_session) if web_session&.web_channel?
+
     text, thread, visibility = params[:session_id].present? ? session_command : new_command
     return render json: { error: @limit_error || 'invalid', limit: @limit_error.present? }, status: 422 if text.nil?
 
@@ -25,6 +27,14 @@ class Api::V1::System::CommandsController < Api::BaseController
   end
 
   private
+
+  # 웹 전용 컨텐츠(시작한 뒤): 툿을 올리지 않고 웹에서 바로 행동을 넣는다
+  def web_command(session)
+    command, args = params[:command].present? ? [clean(params[:command]), clean(params[:args]).split('/').map(&:strip)] : Game::Engine.parse(params[:text])
+    targets = Account.local.where(username: [params[:target], *Array(params[:targets])].map { |acct| clean(acct).delete_prefix('@') }.compact_blank).to_a
+    Game::WebCommand.play(session, current_account, command, args || [], targets: targets)
+    render json: { status_id: nil }
+  end
 
   # 웹 버튼: 큐(Sidekiq)에서 기다리지 않고 지금 바로 처리해서 화면이 빨리 바뀌게 한다
   def handle_now!(status)
@@ -39,6 +49,11 @@ class Api::V1::System::CommandsController < Api::BaseController
     "@#{Game::System.username}"
   end
 
+  def join_visibility(kind)
+    pending = GameSession.where(kind: kind.key, status: 'pending').where("state->>'mode' = 'event'").order(:id).last
+    pending&.test? ? 'direct' : 'private'
+  end
+
   def clean(value)
     value.to_s.delete('[]').strip
   end
@@ -47,8 +62,8 @@ class Api::V1::System::CommandsController < Api::BaseController
     kind = Game::Kinds.registry[params[:kind].to_s]
     return if kind.nil? || !kind.enabled?
 
-    return ["#{system_mention} [#{kind.config['cmd_join']}]", nil, 'private'] if ActiveModel::Type::Boolean.new.cast(params[:join]) && kind.config['cmd_join'].present?
-    return ["#{system_mention} [#{kind.config['command']}]", nil, 'private'] if kind.event?
+    # 참가: 비공개 테스트 플레이는 DM 으로 (다른 사람 눈에 안 띄게)
+    return ["#{system_mention} [#{kind.config['cmd_join']}]", nil, join_visibility(kind)] if ActiveModel::Type::Boolean.new.cast(params[:join]) && kind.config['cmd_join'].present?
 
     usernames = Array(params[:opponents]).map { |acct| clean(acct).delete_prefix('@') }
     # 고른 순서를 지킨다: 팀전은 앞에서부터 우리 팀(팀원 → 상대 팀)이다

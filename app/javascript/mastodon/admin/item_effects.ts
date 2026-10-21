@@ -183,6 +183,22 @@ const syncCounterHouse = (form: HTMLFormElement) => {
   });
 };
 
+// 이벤트 열기 모달: [참가자 고르기]·[테스트 플레이]를 누르면 참가자 고르는 칸이 열린다
+export const setupEventOpen = () => {
+  document.addEventListener('click', (event) => {
+    const button = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-event-mode]');
+    const root = button?.closest<HTMLElement>('[data-event-open]');
+    if (!button || !root) return;
+
+    root.querySelectorAll<HTMLElement>('[data-event-mode]').forEach((each) => {
+      each.classList.toggle('button-secondary', each !== button);
+    });
+    root.querySelectorAll<HTMLElement>('[data-event-panel]').forEach((panel) => {
+      panel.hidden = panel.dataset.eventPanel !== button.dataset.eventMode;
+    });
+  });
+};
+
 export const setupCounterRules = () => {
   document.querySelectorAll<HTMLFormElement>('form[data-counter-rule]').forEach(syncCounterRule);
   document.querySelectorAll<HTMLFormElement>('form[data-counter-house]').forEach(syncCounterHouse);

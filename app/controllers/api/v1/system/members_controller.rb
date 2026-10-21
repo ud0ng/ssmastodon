@@ -8,7 +8,8 @@ class Api::V1::System::MembersController < Api::BaseController
   before_action :require_contents_open!
 
   def index
-    accounts = GameCharacter.eligible_accounts.where.not(id: current_account.id).order(:username)
+    accounts = GameCharacter.eligible_accounts.order(:username)
+    accounts = accounts.where.not(id: current_account.id) unless params[:include_me] == '1' # 참가자 고르기(운영진)는 나도 고를 수 있다
     characters = GameCharacter.where(account_id: accounts.select(:id)).includes(:house, :faction).index_by(&:account_id)
     render json: accounts.map { |account|
       character = characters[account.id]

@@ -7,7 +7,7 @@ module Game
   #
   # 공개 결과만 담는다. DM 으로 받은 비밀 선택(주문·조합 등)은 결과가 공개된 뒤의 것만.
   #
-  #   kind / name / mode            컨텐츠 종류·이름, 서버 이벤트면 mode=event
+  #   kind / name / mode            컨텐츠 종류·이름, 운영진이 이벤트로 연 판이면 mode=event
   #   phase                         pending(신청·모집) / active / finished / cancelled
   #   turn, deadline_at             턴, 이번 단계 마감 시각
   #   players                       [{ seat, account_id, acct, name, avatar, house, result, accepted }]

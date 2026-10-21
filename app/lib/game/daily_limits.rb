@@ -34,7 +34,7 @@ module Game
     # 오늘 내가 보낸 신청 (모두 합쳐서, 취소·거절된 것도 센다)
     def sent_today(actor)
       today = Time.now.in_time_zone('Asia/Seoul').beginning_of_day
-      GameSession.current_kinds.joins(:players)
+      GameSession.current_kinds.real.joins(:players)
                  .where(game_players: { account_id: actor.id, seat: 0 })
                  .where(created_at: today..)
                  .where("COALESCE(game_sessions.state->>'mode', '') <> 'event'")

@@ -122,7 +122,7 @@ module Game
       common = Game::Config.for('common')
       rows = []
 
-      matches = Game::Kinds.matches.select(&:enabled?)
+      matches = Game::Kinds.matches.select(&:enabled?).reject(&:event_only?)
       if matches.any?
         rows << "▸ 대결#{SEP}"
         rows += matches.map { |kind| match_row(kind) }
@@ -132,7 +132,7 @@ module Game
         rows << "#{common['cmd_forfeit']}#{SEP}진행 중인 컨텐츠를 포기합니다."
       end
 
-      events = Game::Kinds.events.select(&:enabled?)
+      events = Game::Kinds.matches.select { |kind| kind.enabled? && kind.event_capable? }
       if events.any?
         rows << "▸ 이벤트#{SEP}"
         rows += events.map { |kind| event_row(kind) }
@@ -153,9 +153,7 @@ module Game
 
     def event_row(kind)
       name = kind.display_name.to_s.strip
-      command = kind.config['command'].to_s.strip
-      "#{kind.config['cmd_join']}#{SEP}#{name}#{Game::Text.particle(name[-1], '이가')} 열리면 참가합니다. " \
-        "(운영진이 [#{command}]#{Game::Text.particle(command[-1], '으로로')} 엽니다)"
+      "#{kind.config['cmd_join']}#{SEP}운영진이 연 #{name}에 참가합니다. (웹 컨텐츠 화면에서도 참가할 수 있습니다)"
     end
   end
 end

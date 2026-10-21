@@ -27,7 +27,10 @@ class Api::V1::System::GamesController < Api::BaseController
       event: event_kind?,
       can_open: can_open?,
       staff_only: staff_only?,
-      web_open: @kind.event_capable? && !@kind.event?,
+      web_open: @kind.event_capable?,
+      event_min_players: @kind.config['event_min_players'],
+      event_max_players: @kind.config['event_max_players'],
+      event_join_minutes: @kind.config['event_join_minutes'],
       staff: current_user.can?(:manage_settings),
       # 하루 신청 횟수를 이미 넘었으면 [시작하기]를 누를 때 바로 보여 주는 안내 (같은 상대 제한은 상대를 고른 뒤 신청할 때)
       daily_limit_message: Game::DailyLimits.check(current_account, [], kind: @kind),
@@ -56,10 +59,14 @@ class Api::V1::System::GamesController < Api::BaseController
   end
 
   # 운영진이 [이벤트 열기] (모집형 이벤트: 비행·미로·도둑 지도). 비밀의 방은 멘션 명령어로 연다
+  #   mode: recruit(참가자 모집, 기본) / pick(accts 로 고른 참가자에게만 알림) / test(accts 로 고른 참가자끼리 단체 DM 으로 하는 테스트 플레이)
   def open
     return render json: { error: '이벤트를 열 수 있는 사람이 아닙니다.' }, status: 403 unless can_open?
 
-    Game::Events::Opening.open!(@kind, current_account)
+    mode = params[:mode].presence || 'recruit'
+    return render json: { error: '운영진만 할 수 있습니다.' }, status: 403 if mode != 'recruit' && !staff?
+
+    Game::Events::Opening.open!(@kind, current_account, mode: mode, players: picked_accounts(mode))
     render json: { ok: true }
   rescue Game::Events::Opening::Error => e
     render json: { error: e.message }, status: 422
@@ -67,8 +74,19 @@ class Api::V1::System::GamesController < Api::BaseController
 
   private
 
+  # 고른 참가자 (아이디 목록). 목록에 없는 사람이 있으면 에러
+  def picked_accounts(mode)
+    return [] if mode == 'recruit'
+
+    names = Array(params[:accts]).map { |name| name.to_s.delete_prefix('@') }.uniq
+    accounts = GameCharacter.eligible_accounts.where(username: names).to_a.uniq(&:id)
+    raise Game::Events::Opening::Error, '고른 참가자 중에 컨텐츠에 낄 수 없는 사람이 있습니다.' if accounts.size != names.size
+
+    accounts
+  end
+
   def event_kind?
-    @kind.event? || @kind.event_capable?
+    @kind.event_capable?
   end
 
   def staff?
@@ -78,7 +96,7 @@ class Api::V1::System::GamesController < Api::BaseController
   def can_open?
     return false unless event_kind?
 
-    @kind.event? ? @kind.can_open?(current_account) : staff?
+    staff?
   end
 
   def staff_only?
@@ -101,7 +119,7 @@ class Api::V1::System::GamesController < Api::BaseController
   end
 
   def record
-    results = GamePlayer.joins(:session).merge(GameSession.current_kinds).where(account: current_account, game_sessions: { kind: @kind.key, status: 'finished' }).group(:result).count
+    results = GamePlayer.joins(:session).merge(GameSession.current_kinds.real).where(account: current_account, game_sessions: { kind: @kind.key, status: 'finished' }).group(:result).count
     { win: results['win'].to_i, lose: results['lose'].to_i, draw: results['draw'].to_i }
   end
 
@@ -110,6 +128,7 @@ class Api::V1::System::GamesController < Api::BaseController
   def recruiting
     session = GameSession.current_kinds.where(kind: @kind.key, status: 'pending').where("state->>'mode' = 'event'").order(id: :desc).first
     return if session.nil? || session.players.any? { |player| player.account_id == current_account.id }
+    return if Array(session.state['invited']).any? && Array(session.state['invited']).exclude?(current_account.id) # 참가자를 골라 연 이벤트는 고른 사람에게만
 
     { session_id: session.id.to_s, ends_at: session.deadline_at&.iso8601, count: session.players.size }
   end
@@ -132,12 +151,20 @@ class Api::V1::System::GamesController < Api::BaseController
 
   def visible_sessions
     mine = GamePlayer.where(account: current_account).select(:game_session_id)
-    GameSession.current_kinds.where(kind: @kind.key).where('game_sessions.visibility <> ? OR game_sessions.id IN (?)', 'direct', mine).includes(players: :account)
+    # 테스트 플레이는 참가자와 운영진(자물쇠)에게만 보인다
+    scope = GameSession.current_kinds.where(kind: @kind.key)
+    scope = if staff?
+              scope.where("game_sessions.visibility <> 'direct' OR game_sessions.id IN (?) OR COALESCE(game_sessions.state->>'test', '') = 'true'", mine)
+            else
+              scope.where('game_sessions.visibility <> ? OR game_sessions.id IN (?)', 'direct', mine)
+            end
+    scope.includes(players: :account)
   end
 
   def session_json(session)
     {
       id: session.id.to_s,
+      test: session.test?,
       status: session.status,
       turn: session.turn,
       deadline_at: session.deadline_at&.iso8601,
@@ -151,7 +178,7 @@ class Api::V1::System::GamesController < Api::BaseController
 
   # 이 컨텐츠 승리 수 순위
   def ranking
-    wins = GamePlayer.joins(:session).merge(GameSession.current_kinds).where(result: 'win', game_sessions: { kind: @kind.key, status: 'finished' }).group(:account_id).count
+    wins = GamePlayer.joins(:session).merge(GameSession.current_kinds.real).where(result: 'win', game_sessions: { kind: @kind.key, status: 'finished' }).group(:account_id).count
     top = wins.sort_by { |_, count| -count }.first(RANK_LIMIT)
     accounts = Account.where(id: top.map(&:first)).index_by(&:id)
     top.filter_map do |account_id, count|

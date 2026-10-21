@@ -685,8 +685,20 @@ ko:
       events:
         confirm: '%{name}을(를) 이벤트로 엽니다. 시스템 계정이 모두에게 멘션을 보내고, 모집 시간 동안 컨텐츠 메뉴에 알림 배지가 뜹니다. 열까요?'
         hint: '누르면 시스템 계정이 모집 툿을 올립니다(등록된 모든 캐릭터 멘션). 참가자는 [참가]로 답하거나 컨텐츠 메뉴에서 참가를 누르고, 모집이 끝나면 시작합니다. 도둑 지도와 비밀의 방은 역할을 무작위로 나눕니다. 모집 문구·시간·인원은 각 컨텐츠 설정의 이벤트 칸에서 바꿉니다.'
+        modal_title: '%{name} 이벤트 열기'
         open: 이벤트 열기
         opened: '%{name} 이벤트를 열었습니다.'
+        opened_recruit: '%{name} 이벤트를 열었습니다. 참가자를 모집합니다.'
+        opened_pick: '%{name} 이벤트를 열었습니다. 고른 참가자에게만 알렸습니다.'
+        opened_test: '%{name} 테스트 플레이를 시작했습니다. 참가자 단체 DM 으로 진행합니다.'
+        recruit: 참가자 모집하기
+        recruit_hint: '%{minutes}분 동안 %{min}~%{max}명을 모집합니다.'
+        pick: 참가자 고르기
+        pick_hint: '%{min}~%{max}명을 선택합니다.'
+        test: 테스트 플레이
+        test_hint: '비공개로 진행되며 보상이 존재하지 않습니다.'
+        pick_placeholder: 참가자 고르기
+        start: 시작
         recruiting: 모집 중
         recruiting_now: '%{name} · 참가 %{count}명 · 마감 %{time}'
         summary: '모집 %{minutes}분 · %{min}~%{max}명'

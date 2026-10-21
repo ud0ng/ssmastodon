@@ -145,7 +145,7 @@ module Admin
 
     # 명단의 전적: 계정마다 { 'win' => n, 'lose' => n, 'draw' => n } (끝난 판만)
     def load_records(account_ids)
-      counts = GamePlayer.joins(:session).merge(GameSession.current_kinds).where(account_id: account_ids, game_sessions: { status: 'finished' }).group(:account_id, :result).count
+      counts = GamePlayer.joins(:session).merge(GameSession.current_kinds.real).where(account_id: account_ids, game_sessions: { status: 'finished' }).group(:account_id, :result).count
       @records = Hash.new { |hash, key| hash[key] = {} }
       counts.each { |(account_id, result), count| @records[account_id][result] = count }
     end

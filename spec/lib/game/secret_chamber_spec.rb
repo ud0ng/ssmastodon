@@ -2,15 +2,15 @@
 
 require 'rails_helper'
 
-# 비밀의방 (마피아형 서버 이벤트)
-RSpec.describe Game::Events::SecretChamber do
+# 비밀의방 (웹 전용, 마피아형): 운영진이 이벤트로 열어 모집하고, 시작한 뒤의 진행·안내는 툿이 아니라 웹 메시지(GameMessage)로만 간다
+RSpec.describe Game::Web::SecretChamber do
   let!(:system) { Fabricate(:account, username: 'system') }
   let(:accounts) { %w(harry ron hermione draco neville luna ginny).map { |name| Fabricate(:account, username: name) } }
   let(:house) { GameHouse.create!(name: '그리핀도르', emoji: '🦁') }
 
   before do
+    allow(Game::System).to receive(:account).and_return(system)
     accounts.each { |account| GameCharacter.for(account).update!(house: house) }
-    Game::Config.merge!('secret_chamber', 'openers' => ['harry']) # 운영진이 아니어도 열 수 있는 사람
   end
 
   def toot(account, text, visibility: 'private')
@@ -35,46 +35,62 @@ RSpec.describe Game::Events::SecretChamber do
     session.reload.players.reject { |player| session.state['roles'][player.seat.to_s] == role }
   end
 
+  # 웹에서 보낸 행동 (툿을 올리지 않는다). targets: [고발] @누구 처럼 고른 사람
+  def act(account, command, args = [], targets: [])
+    Game::WebCommand.play(session.reload, account, command, args, targets: targets)
+  end
+
+  def secret_texts_for(account)
+    session.reload.messages.where(account: account).order(:id).map(&:text)
+  end
+
+  def open_event!
+    Game::Events::Opening.open!(described_class, accounts.first)
+  end
+
   def start_game!
-    toot(accounts.first, '@system [비밀의방]')
+    open_event!
     accounts.each { |account| toot(account, '@system [참가]') }
+    @before_start = Status.maximum(:id).to_i
     session.with_lock { kind.recruitment_over! }
   end
 
-  it 'recruits, then deals roles by DM and starts the first day' do
+  it 'recruits with a toot, then deals roles by web messages only and starts the first day' do
     start_game!
 
     expect(session).to have_attributes(status: 'active')
     expect(session.state).to include('phase' => 'day', 'day' => 1)
     expect(session.state['roles'].values.tally).to include('traitor' => 1, 'auror' => 1, 'healer' => 1, 'seer' => 1, 'student' => 3)
-    dms = Status.where(account: system, visibility: :direct)
-    expect(dms.count).to eq 7
-    expect(GameEvent.last.payload['data']).to include('phase' => 'day', 'alive' => [0, 1, 2, 3, 4, 5, 6])
+    # 시작한 뒤의 진행·역할 안내는 툿이 아니다 (앱에는 아무것도 안 나간다)
+    expect(Status.where(account: system).where('id > ?', @before_start).count).to eq 0
+    expect(session.messages.where.not(account_id: nil).count).to eq 7
+    expect(session.messages.where(account_id: nil).last.payload['data']).to include('phase' => 'day', 'alive' => [0, 1, 2, 3, 4, 5, 6])
+    expect(Status.find(session.root_status_id).text).to include('[참가]') # 모집은 툿
   end
 
-  it 'cancels when too few join' do
-    toot(accounts.first, '@system [비밀의방]')
+  it 'cancels when too few join, with a toot' do
+    open_event!
     toot(accounts.second, '@system [참가]')
     session.with_lock { kind.recruitment_over! }
 
     expect(session.status).to eq 'cancelled'
+    expect(system.statuses.reorder(:id).last.text).to include('닫혔습니다')
   end
 
   it 'expels the most accused player and ends when the traitor is gone' do
     start_game!
     traitor = player_with('traitor')
-    players_without('traitor').each do |player|
-      toot(player.account, "@system [고발] @#{traitor.account.username}")
-    end
+    players_without('traitor').each { |player| act(player.account, '고발', targets: [traitor.account]) }
     session.with_lock { kind.timeout! }
 
     expect(session.reload).to have_attributes(status: 'finished')
     expect(session.state['winner']).to eq 'light'
     expect(traitor.reload.result).to eq 'lose'
     expect(GameHousePoint.where(game_session_id: session.id).sum(:amount)).to be_positive
+    expect(Status.where(account: system).where('id > ?', @before_start).count).to eq 0
   end
 
-  it 'petrifies at night unless the healer protects, and lets the auror investigate by DM' do
+  it 'petrifies at night unless the healer protects, and lets the auror investigate privately' do
     start_game!
     session.with_lock { kind.timeout! } # 아무도 고발하지 않은 낮 → 밤
 
@@ -83,42 +99,45 @@ RSpec.describe Game::Events::SecretChamber do
     student = player_with('student')
     auror = player_with('auror')
 
-    toot(auror.account, "@system [조사] @#{traitor.account.username}", visibility: 'direct')
-    expect(Status.where(account: system, visibility: :direct).map(&:text)).to include(a_string_including('진영은 「어둠」'))
+    act(auror.account, '조사', targets: [traitor.account])
+    expect(secret_texts_for(auror.account)).to include(a_string_including('진영은 「어둠」'))
 
-    toot(traitor.account, "@system [석화] @#{student.account.username}", visibility: 'direct')
+    act(traitor.account, '석화', targets: [student.account])
     session.with_lock { kind.timeout! }
 
     expect(session.reload.state['alive']).to_not include(student.seat)
     expect(session.state).to include('phase' => 'day', 'day' => 2)
   end
 
-  it 'ignores night actions sent publicly or by the wrong role' do
+  it 'ignores night actions by the wrong role' do
     start_game!
     session.with_lock { kind.timeout! }
     student = player_with('student')
     traitor = player_with('traitor')
 
-    toot(student.account, "@system [석화] @#{traitor.account.username}", visibility: 'direct')
+    act(student.account, '석화', targets: [traitor.account])
     expect(session.reload.state.dig('night', 'petrify')).to be_empty
   end
 
-  it 'lets only staff or listed openers open the event, not a normal participant' do
-    toot(accounts.second, '@system [비밀의방]')
-    expect(GameSession.where(kind: 'secret_chamber').count).to eq 0
-
-    staff = Fabricate(:user, role: UserRole.find_by(name: 'Admin') || Fabricate(:user_role, name: 'Boss', permissions: UserRole::FLAGS[:administrator])).account
-    toot(staff, '@system [비밀의방]')
-    expect(GameSession.where(kind: 'secret_chamber').count).to eq 1
+  it 'is opened by staff as an event and cannot be started by challenging someone' do
+    expect(described_class.event_only?).to be true
+    expect(described_class.web?).to be true
+    expect(described_class.invite_error(3)).to include('이벤트로 엽니다')
+    expect(Game::Kinds.by_command(described_class.config['command'])).to be_nil
+    expect(Game::Kinds.group_games).to include(described_class)
+    expect(Game::Events::Opening.kinds).to include(described_class)
   end
 
   it 'refuses more players than the maximum' do
-    Game::Config.update!('secret_chamber', 'max_players' => '7', 'min_players' => '7')
-    start_game!
+    Game::Config.update!('secret_chamber', 'event_max_players' => '7', 'event_min_players' => '7')
+    open_event!
+    accounts.each { |account| toot(account, '@system [참가]') }
     extra = Fabricate(:account, username: 'late')
-    toot(accounts.first, '@system [비밀의방]') # 이미 진행 중이라 무시
-    expect(session.players.size).to eq 7
-    expect(extra).to be_persisted
+    GameCharacter.for(extra)
+    toot(extra, '@system [참가]') # 정원이 차서 안 들어간다 (시작은 모집이 끝난 뒤)
+
+    expect(session.reload.players.size).to eq 7
+    expect(system.statuses.reorder(:id).last.text).to include('7명까지')
   end
 
   it 'only lets the traitor pass on true prophecies and delivers them to the seer and her notes' do
@@ -129,17 +148,16 @@ RSpec.describe Game::Events::SecretChamber do
     student = player_with('student')
 
     # 거짓 예언은 막힌다: 방주를 호그와트 진영이라고, 학생 둘을 '둘 중 한 명은 방주'라고
-    toot(traitor.account, "@system [예언/호그와트/#{traitor.account.username}]", visibility: 'direct')
+    act(traitor.account, '예언', ['호그와트', traitor.account.username])
     expect(session.reload.state.dig('night', 'prophecy')).to be_nil
-    expect(Status.where(account: system, visibility: :direct).reorder(:id).last.text).to include('사실이 아닌 예언')
+    expect(secret_texts_for(traitor.account).last).to include('사실이 아닌 예언')
     others = players_without('traitor').reject { |p| p.seat == seer.seat }.first(2)
-    toot(traitor.account, "@system [예언/둘중/#{others.map { |p| p.account.username }.join('/')}]", visibility: 'direct')
+    act(traitor.account, '예언', ['둘중', *others.map { |p| p.account.username }])
     expect(session.reload.state.dig('night', 'prophecy')).to be_nil
 
-    # 사실인 예언: 이름(인자)으로 대상을 고르니 상대에게 DM 이 가지 않는다
-    toot(traitor.account, "@system [예언/둘중/#{student.account.username}/#{traitor.account.username}]", visibility: 'direct')
+    # 사실인 예언: 이름(인자)으로 대상을 고른다
+    act(traitor.account, '예언', ['둘중', student.account.username, traitor.account.username])
     expect(session.reload.state.dig('night', 'prophecy', 'text')).to include('적어도 한 명은 방주')
-    expect(Status.where(account: system, visibility: :direct).reorder(:id).last.mentions.map(&:account_id)).to eq [traitor.account_id]
     session.with_lock { kind.timeout! }
 
     expect(session.reload.state.dig('notes', seer.seat.to_s).last['text']).to include('적어도 한 명은 방주')
@@ -149,13 +167,13 @@ RSpec.describe Game::Events::SecretChamber do
     expect(kind.view_for(traitor)[:prophecy_kinds].size).to eq 4
   end
 
-  it 'accepts night targets by name so the target never receives the DM' do
+  it 'accepts night targets by name' do
     start_game!
     session.with_lock { kind.timeout! }
     traitor = player_with('traitor')
     student = player_with('student')
 
-    toot(traitor.account, "@system [석화/#{student.account.username}]", visibility: 'direct')
+    act(traitor.account, '석화', [student.account.username])
 
     expect(session.reload.state.dig('night', 'petrify', traitor.seat.to_s)).to eq student.seat
   end
@@ -165,7 +183,7 @@ RSpec.describe Game::Events::SecretChamber do
     session.with_lock { kind.timeout! }
     student = player_with('student')
     traitor = player_with('traitor')
-    toot(traitor.account, "@system [석화] @#{student.account.username}", visibility: 'direct')
+    act(traitor.account, '석화', targets: [student.account])
     session.with_lock { kind.timeout! }
 
     expect(kind.view_for(student)[:players].map { |p| p[:role_name] }).to all(be_present)

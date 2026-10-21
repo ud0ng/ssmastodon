@@ -8,8 +8,8 @@
       %strong= kind.display_name
   %td.bot-sheet-table__text
     %code
-      - if kind.event?
-        = "[#{config['command']}] → [#{config['cmd_join']}]"
+      - if kind.event_only?
+        = "[#{config['cmd_join']}]"
       - elsif kind.max_opponents > 1
         = "[#{config['command']}] @#{game_t('admin.games.overview.opponent')} … (#{game_t('admin.games.overview.up_to', count: kind.max_opponents + 1)})"
       - else

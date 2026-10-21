@@ -9,21 +9,44 @@ module Game
 
       module_function
 
-      # 열 수 있는 컨텐츠: 모집형 이벤트(미로·도둑 지도·비행 대결)와 비밀의 방
+      # 열 수 있는 컨텐츠: 모집형 이벤트(미로·도둑 지도·비행 대결·비밀의 방)
       def kinds
-        Game::Kinds.all.select { |kind| kind.event? || kind.event_capable? }
+        Game::Kinds.all.select(&:event_capable?)
       end
 
-      def open!(kind, account)
+      MODES = %w(recruit pick test).freeze
+
+      # mode: recruit(참가자 모집: 모집 툿, 모두에게 알림) / pick(고른 참가자들에게만 참가 수락 DM 툿) / test(pick 과 같지만 비공개 테스트 플레이: 목록에 안 보이고 보상·기록 없음)
+      # 어느 쪽이든 모집·참가 안내만 툿이라 앱에도 보이고, 시작한 뒤의 진행·결과는 웹 화면에만 나온다.
+      def open!(kind, account, mode: 'recruit', players: [])
+        mode = MODES.include?(mode.to_s) ? mode.to_s : 'recruit'
         raise Error, '시스템 계정이 설정되지 않았습니다.' if Game::System.account.nil?
         raise Error, "#{kind.display_name}#{Game::Text.particle(kind.display_name.to_s.strip[-1], '은는')} 이벤트로 열 수 없습니다." unless kinds.include?(kind)
         raise Error, "#{kind.display_name}#{Game::Text.particle(kind.display_name.to_s.strip[-1], '은는')} 꺼져 있습니다. 먼저 켜 주세요." unless kind.enabled?
         raise Error, '이미 모집 중이거나 진행 중인 이벤트가 있습니다.' if GameSession.current_kinds.open.where("state->>'mode' = 'event'").exists?
         raise Error, "#{kind.display_name}#{Game::Text.particle(kind.display_name.to_s.strip[-1], '이가')} 이미 진행 중입니다." if GameSession.open.exists?(kind: kind.key)
 
+        return open_invited!(kind, account, players, test: mode == 'test') unless mode == 'recruit'
+
         session = GameSession.create!(kind: kind.key, status: 'pending', visibility: 'private', state: { 'mode' => 'event', 'opened_by' => account.id })
         kind.new(session).open!
         session.update!(root_status_id: session.last_status_id) if session.root_status_id.nil?
+        session
+      end
+
+      # 고른 사람들에게 참가 수락 DM 툿을 보낸다. 모두 수락하면 바로, 아니면 모집 시간이 끝났을 때 수락한 사람들로 시작한다
+      def open_invited!(kind, account, players, test:)
+        raise Error, '이 컨텐츠는 참가자를 골라 열 수 없습니다. 참가자 모집으로 열어 주세요.' unless kind.event_capable?
+
+        players = players.uniq
+        game = kind.new(GameSession.new(kind: kind.key))
+        min = game.event_min_players
+        max = game.event_max_players
+        raise Error, "참가자를 #{min}명 이상 골라 주세요." if players.size < min
+        raise Error, "참가자는 #{max}명까지 고를 수 있습니다." if players.size > max
+
+        session = GameSession.create!(kind: kind.key, status: 'pending', visibility: test ? 'direct' : 'private', state: { 'mode' => 'event', 'opened_by' => account.id })
+        kind.new(session).open_invited!(players, test: test)
         session
       end
     end

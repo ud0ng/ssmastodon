@@ -1,5 +1,7 @@
--# 이벤트 열기: 운영진이 누르면 시스템 계정이 모집 툿을 올리고 모두의 컨텐츠 메뉴에 알림 배지가 뜬다 (모집형 컨텐츠 + 비밀의 방)
+-# 이벤트 열기: 운영진이 누르면 모달이 뜬다 — 참가자 모집하기 / 참가자 고르기 / 테스트 플레이 / 취소.
+-# (모집: 아래처럼 시스템 계정이 모집 툿) 시스템 계정이 모집 툿을 올리고 모두의 컨텐츠 메뉴에 알림 배지가 뜬다 (모집형 컨텐츠 + 비밀의 방)
 - recruiting = GameSession.current_kinds.where(status: 'pending').where("state->>'mode' = 'event'").first
+- character_options = GameCharacter.visible.includes(:account).map { |character| [character.display_name, character.account_id] }.sort_by(&:first)
 = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.events.title') } do
   %p.hint= game_t('admin.games.events.hint')
   - if recruiting
@@ -15,9 +17,24 @@
               %span.game-table__icon{ 'aria-hidden': 'true' }= game_kind_icon(kind.key)
               %strong= kind.display_name
             %td.bot-sheet-table__text
-              - limits = kind.event? ? [kind.config['min_players'], kind.config['max_players']] : [kind.config['event_min_players'], kind.config['event_max_players']]
-              - minutes = kind.event? ? kind.config['join_minutes'] : kind.config['event_join_minutes']
-              = game_t('admin.games.events.summary', minutes: minutes, min: limits[0], max: limits[1])
+              = game_t('admin.games.events.summary', minutes: kind.config['event_join_minutes'], min: kind.config['event_min_players'], max: kind.config['event_max_players'])
             %td.bot-sheet-table__actions
-              = button_to game_t('admin.games.events.open'), admin_game_event_path, params: { kind: kind.key }, method: :post, class: 'button',
-                          disabled: !kind.enabled? || recruiting.present?, data: { confirm: game_t('admin.games.events.confirm', name: kind.display_name) }
+              = button_tag game_t('admin.games.events.open'), type: :button, class: 'button', disabled: !kind.enabled? || recruiting.present?, data: { modal_open: "event-open-#{kind.key}" }
+
+  -# 이벤트 열기 모달: 모집 / 고르기 / 테스트 플레이 / 취소
+  - Game::Events::Opening.kinds.each do |kind|
+    = render layout: 'admin/ui/modal', locals: { id: "event-open-#{kind.key}", title: game_t('admin.games.events.modal_title', name: kind.display_name) } do
+      .event-open{ data: { event_open: true } }
+        .event-open__buttons
+          = button_to game_t('admin.games.events.recruit'), admin_game_event_path, params: { kind: kind.key, mode: 'recruit' }, method: :post, class: 'button', form_class: 'event-open__recruit', data: { confirm: game_t('admin.games.events.confirm', name: kind.display_name) }
+          = button_tag game_t('admin.games.events.pick'), type: :button, class: 'button button-secondary', data: { event_mode: 'pick' }
+          = button_tag game_t('admin.games.events.test'), type: :button, class: 'button button-secondary', data: { event_mode: 'test' }
+          = button_tag t('generic.cancel'), type: :button, class: 'button button-tertiary', data: { modal_close: true }
+        %p.hint= game_t('admin.games.events.recruit_hint', minutes: kind.config['event_join_minutes'], min: kind.config['event_min_players'], max: kind.config['event_max_players'])
+        - %w(pick test).each do |mode|
+          = form_tag admin_game_event_path, method: :post, class: 'simple_form event-open__picker', hidden: true, data: { event_panel: mode } do
+            = hidden_field_tag :kind, kind.key, id: nil
+            = hidden_field_tag :mode, mode, id: nil
+            %p.hint= game_t("admin.games.events.#{mode}_hint", min: kind.config['event_min_players'], max: kind.config['event_max_players'])
+            = render 'admin/ui/multi_select', name: 'account_ids[]', placeholder: game_t('admin.games.events.pick_placeholder'), options: character_options, selected: []
+            = render 'admin/ui/modal_actions', submit: game_t('admin.games.events.start')

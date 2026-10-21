@@ -20548,3 +20548,83 @@ body.app-body.layout-game-room.layout-single-column {
   font-size: 12px;
   font-weight: 700;
 }
+
+// 이벤트 열기 모달 (운영진)
+.event-open-modal {
+  &__choices {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  &__choice {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 14px;
+    border: 1px solid var(--background-border-color);
+    border-radius: 12px;
+    background: transparent;
+    color: inherit;
+    text-align: start;
+    cursor: pointer;
+
+    strong {
+      font-size: 15px;
+    }
+
+    span {
+      font-size: 13px;
+      opacity: 0.8;
+    }
+
+    &:hover:not(:disabled),
+    &:focus-visible {
+      border-color: var(--ct-point, #1d9bf0);
+    }
+  }
+
+  &__hint,
+  &__count {
+    margin: 10px 0 6px;
+    font-size: 13px;
+  }
+
+  &__search {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    border: 1px solid var(--background-border-color);
+    border-radius: 10px;
+    background: transparent;
+    color: inherit;
+  }
+
+  &__members {
+    max-height: 240px;
+    margin: 8px 0 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+  }
+
+  &__member {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 6px 4px;
+    cursor: pointer;
+
+    img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+  }
+}
+
+.system-room-card__lock {
+  font-size: 14px;
+}

@@ -670,7 +670,19 @@ en:
       events:
         confirm: 'Open %{name} as an event? The system account mentions everyone and a badge shows on the Contents menu while people join.'
         hint: 'The system account posts a recruiting toot mentioning every registered character. People join by replying [join] or with the join button on the contents page; it starts when recruiting ends. Maps and the secret chamber deal roles at random. Recruiting text, time and size are on each content settings page (Event).'
+        modal_title: 'Open %{name}'
         open: Open event
+        opened_recruit: '%{name} opened. Recruiting players.'
+        opened_pick: '%{name} opened for the picked players.'
+        opened_test: '%{name} test play started in a group DM.'
+        recruit: Recruit players
+        recruit_hint: 'Recruits %{min}-%{max} players for %{minutes} minutes.'
+        pick: Pick players
+        pick_hint: 'Pick %{min}-%{max} players.'
+        test: Test play
+        test_hint: 'Played in private, with no rewards.'
+        pick_placeholder: Pick players
+        start: Start
         opened: '%{name} event opened.'
         recruiting: Recruiting
         recruiting_now: '%{name} · %{count} joined · ends %{time}'

@@ -48,7 +48,8 @@ RSpec.describe Game::Web::Maze do
     expect(session.players.map(&:account)).to eq [harry, cedric, fleur]
     expect(session.state['positions'].values.uniq.size).to eq 3
     
-    expect(Status.where(account: system, visibility: :direct).count).to eq 3
+    expect(session.messages.where.not(account_id: nil).count).to eq 3 # 이동 안내는 툿이 아니라 웹 메시지
+    expect(Status.where(account: system, visibility: :direct).count).to eq 0
   end
 
   it 'refuses more opponents than allowed' do
@@ -109,7 +110,7 @@ RSpec.describe Game::Web::Maze do
     dm(harry, '[이동/동/동/동]')
 
     expect(session.state['moves']).to eq({})
-    expect(Status.where(account: system, visibility: :direct).reorder(:id).last.text).to include('갈 수 없는 길')
+    expect(session.messages.where(account: harry).order(:id).last.text).to include('갈 수 없는 길')
   end
 
   it 'ends with the first player to reach the cup' do

@@ -52,13 +52,13 @@ module Game
           false
         end
 
-        # 운영진이 모집형 이벤트로 열 수 있는 컨텐츠인가 (Game::Events::Recruiting, 비밀의 방은 event? 로 따로)
+        # 운영진이 모집형 이벤트로 열 수 있는 컨텐츠인가 (Game::Events::Recruiting: 비행·미로·도둑 지도·비밀의 방)
         def event_capable?
           false
         end
 
-        # 여러 날 진행하는 서버 이벤트인가 (Game::Events)
-        def event?
+        # 운영진이 이벤트로만 열 수 있고 신청([명령어] @상대)으로는 못 하는 컨텐츠인가 (비밀의 방)
+        def event_only?
           false
         end
 
@@ -181,12 +181,34 @@ module Game
         Game::Text.render(template, game: self.class.display_name, **values)
       end
 
+      # 공개 진행 안내. 웹 전용 컨텐츠가 시작한 뒤에는 툿 없이 웹 메시지로만 (모집은 툿)
       def post(text)
+        return web_post(text) if session.web_channel?
+
         Game::Poster.to_session(session, text, kind: self)
+      end
+
+      # 툿으로 알린다 (웹 전용 컨텐츠의 모집·모집 취소처럼 앱에도 보여야 하는 것)
+      def post_toot(text)
+        Game::Poster.to_session(session, text, kind: self)
+      end
+
+      def web_post(text)
+        GameMessage.create!(session: session, text: web_text(text), payload: Game::Card.build(session, self))
+      end
+
+      def web_dm(player, text)
+        GameMessage.create!(session: session, account: player.account, text: web_text(text))
+      end
+
+      def web_text(text)
+        text.to_s.gsub(Game::Text::AVATAR_PATTERN, '').strip
       end
 
       # 한 사람에게만 DM (비밀 선택 안내). 같은 DM 스레드로 이어 보낸다.
       def dm(player, text)
+        return web_dm(player, text) if session.web_channel?
+
         thread = Status.find_by(id: player.state['dm_status_id'])
         status = Game::Poster.post(text, mentions: [player.account], thread: thread, visibility: 'direct')
         player.update!(state: player.state.merge('dm_status_id' => status.id.to_s)) if status
@@ -213,6 +235,9 @@ module Game
           player.update!(result: draw ? 'draw' : (winners.include?(player) ? 'win' : 'lose'))
         end
         session.update!(status: 'finished', finished_at: Time.now.utc, deadline_at: nil)
+        # 테스트 플레이: 결과 안내만 (점수·보상·토너먼트에는 넣지 않는다)
+        return post([message, '(테스트 플레이라 점수와 보상은 없습니다)'].compact.join("\n\n")) if session.test?
+
         reward_lines = draw || winners.any? ? give_rewards! : []
 
         # 토너먼트 경기: 점수 대신 승자를 다음 칸으로 (무승부면 운영진 판정). 돈·아이템 보상은 그대로.

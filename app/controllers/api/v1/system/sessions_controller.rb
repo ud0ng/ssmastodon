@@ -41,11 +41,11 @@ class Api::V1::System::SessionsController < Api::BaseController
   # 웹 전용 컨텐츠: 내게 보이는 판 (미로 시야 등). 참가자는 자기 시야만, 관전자(미로·도둑 지도)와 끝난 판은 전체.
   def view
     player = @session.player_for(current_account)
-    raise ActiveRecord::RecordNotFound if player.nil? && !@session.kind_class.spectatable?
+    raise ActiveRecord::RecordNotFound if player.nil? && !@session.kind_class.spectatable? && !staff_watching?
 
     kind = @session.kind_class.new(@session)
     # 모집 중인 이벤트(비밀의 방 제외)는 아직 판이 없다
-    recruiting = @session.status == 'pending' && !@session.kind_class.event?
+    recruiting = @session.status == 'pending'
     view = kind.respond_to?(:view_for) && !recruiting ? kind.view_for(player) : nil
     add_avatars!(view)
     render json: { web: @session.kind_class.web?, status: @session.status, view: view }
@@ -90,6 +90,30 @@ class Api::V1::System::SessionsController < Api::BaseController
   # 컨텐츠 방(채팅) 메시지: 판 스레드의 툿 전부(신청·명령어·시스템 진행) + 내가 낀 판이면 그 사이 시스템과 주고받은 DM(비밀 선택).
   # 관전하는 사람은 스레드만 본다.
   def messages(events)
+    (status_messages(events) + web_messages).sort_by { |message| message[:created_at] }.last(MESSAGE_LIMIT)
+  end
+
+  # 웹 전용 컨텐츠의 진행 메시지 (툿이 아니다): 판 전체 메시지 + 내게만 온 비밀 안내
+  def web_messages
+    system = Game::System.account
+    scope = @session.messages.where(account_id: [nil, current_account.id]).order(:id).last(MESSAGE_LIMIT)
+    scope.map do |message|
+      {
+        id: "m#{message.id}",
+        system: true,
+        mine: false,
+        secret: message.secret?,
+        name: system ? GameCharacter.for(system).display_name : '',
+        acct: system&.acct.to_s,
+        avatar: system ? full_asset_url(system.avatar_static_url) : '',
+        text: message.text,
+        created_at: message.created_at.iso8601,
+        card: message.secret? || message.payload.blank? ? nil : message.current_payload,
+      }
+    end
+  end
+
+  def status_messages(events)
     root = Status.find_by(id: @session.root_status_id)
     return [] if root.nil?
 
@@ -135,7 +159,13 @@ class Api::V1::System::SessionsController < Api::BaseController
     @session = GameSession.find(params[:id])
     raise ActiveRecord::RecordNotFound if @session.kind_class.nil?
     return unless @session.visibility == 'direct' && @session.players.none? { |player| player.account_id == current_account.id }
+    return if staff_watching?
 
     raise ActiveRecord::RecordNotFound
+  end
+
+  # 운영진은 테스트 플레이를 관전할 수 있다
+  def staff_watching?
+    @session.test? && current_user.can?(:manage_settings)
   end
 end

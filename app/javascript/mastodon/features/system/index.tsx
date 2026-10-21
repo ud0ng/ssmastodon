@@ -28,7 +28,6 @@ const REFRESH_MS = 30_000;
 const GROUP_TITLES: Record<string, React.ReactNode> = {
   duel: <FormattedMessage id='system.group.duel' defaultMessage='1:1 duels' />,
   group: <FormattedMessage id='system.group.group' defaultMessage='Group games' />,
-  event: <FormattedMessage id='system.group.event' defaultMessage='Server events' />,
 };
 
 interface Game {

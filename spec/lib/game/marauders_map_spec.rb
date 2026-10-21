@@ -148,8 +148,8 @@ RSpec.describe Game::Web::MaraudersMap do
 
     expect(kind.view_for(session.players.to_a[2])[:team_chat]).to eq([{ 'name' => minerva.username, 'text' => '정문 쪽으로 몰자' }])
     expect(kind.view_for(session.players.first)[:team_chat]).to eq []
-    relayed = Status.where(account: system, visibility: :direct).select { |status| status.text.include?('정문 쪽으로 몰자') }
-    expect(relayed.map { |status| status.mentions.map(&:account_id) }.flatten).to eq [severus.id]
+    relayed = session.messages.where.not(account_id: nil).select { |message| message.text.include?('정문 쪽으로 몰자') }
+    expect(relayed.map(&:account_id)).to eq [severus.id]
     dm(harry, '[팀채팅/난 학생]')
     expect(kind.view_for(session.players.first)[:team_chat]).to eq([{ 'name' => harry.username, 'text' => '난 학생' }]) # 학생 팀 채팅은 따로
     expect(kind.view_for(session.players.to_a[1])[:team_chat].size).to eq 1

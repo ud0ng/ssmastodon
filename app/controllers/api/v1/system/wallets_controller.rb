@@ -97,7 +97,7 @@ class Api::V1::System::WalletsController < Api::BaseController
   end
 
   def my_todo_sessions
-    GamePlayer.joins(:session).merge(GameSession.current_kinds)
+    GamePlayer.joins(:session).merge(GameSession.current_kinds.real)
               .where(account: current_account, game_sessions: { status: %w(pending active) })
               .includes(:session).filter_map do |player|
       session = player.session
@@ -112,7 +112,7 @@ class Api::V1::System::WalletsController < Api::BaseController
 
   # 내가 아직 참가하지 않은 모집 중인 이벤트: 컨텐츠 메뉴에 알림 배지가 뜬다
   def recruiting_events
-    GameSession.current_kinds.where(status: 'pending').where("state->>'mode' = 'event'").reject { |session| session.players.any? { |player| player.account_id == current_account.id } }.map do |session|
+    GameSession.current_kinds.where(status: 'pending').where("state->>'mode' = 'event'").reject { |session| session.players.any? { |player| player.account_id == current_account.id } || (Array(session.state['invited']).any? && Array(session.state['invited']).exclude?(current_account.id)) }.map do |session|
       { session_id: session.id.to_s, name: session.kind_class&.display_name || session.kind }
     end
   end

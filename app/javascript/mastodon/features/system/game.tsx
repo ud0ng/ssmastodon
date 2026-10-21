@@ -37,6 +37,8 @@ const REFRESH_MS = 15_000;
 
 interface SessionRow {
   id: string;
+  // 운영진의 테스트 플레이 (참가자와 운영진에게만 보인다, 운영진은 자물쇠)
+  test?: boolean;
   status: 'pending' | 'active' | 'finished' | 'cancelled';
   turn: number;
   deadline_at: string | null;
@@ -54,6 +56,9 @@ interface GameInfo {
   staff_only?: boolean;
   // 운영진이 웹에서 바로 여는 모집형 이벤트 (아니면 멘션 명령어로 연다)
   web_open?: boolean;
+  event_min_players?: number;
+  event_max_players?: number;
+  event_join_minutes?: number;
   // 운영진: 끝난 판 기록을 지울 수 있다
   staff?: boolean;
   daily_limit_message?: string | null;
@@ -117,17 +122,10 @@ const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => 
     dispatch(openModal({ modalType: 'CHALLENGE', modalProps: { gameKey: game.key, name: game.name, maxOpponents: game.max_opponents, minOpponents: game.min_opponents ?? 1, team: (game.team ?? false) || (game.uneven_teams ?? false), unevenTeams: game.uneven_teams ?? false } }));
   }, [dispatch, intl, game.key, game.name, game.max_opponents, game.min_opponents, game.team, game.uneven_teams, game.daily_limit_message, game.busy, onBusy]);
 
-  const openEvent = useCallback((join = false) => {
-    if (game.busy) {
-      onBusy();
-      return;
-    }
+  // 이벤트가 열린 뒤: 내 방이 생기면 거기로, 아니면 잠깐 안내
+  const afterOpened = useCallback(() => {
     setBusy(true);
-    const request = !join && game.web_open
-      ? apiRequestPost(`v1/system/games/${game.key}/open`)
-      : sendCommand(join ? { kind: game.key, join: true } : { kind: game.key });
-    request
-      .then(() => waitForSession(game.key, (info) => info.active[0]?.id ?? null))
+    waitForSession(game.key, (info) => info.active[0]?.id ?? null)
       .then((sessionId) => {
         if (sessionId) {
           history.push(`/system/sessions/${sessionId}`);
@@ -140,7 +138,25 @@ const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => 
       .finally(() => {
         setBusy(false);
       });
-  }, [game.key, game.busy, game.web_open, onSent, onBusy, history]);
+  }, [game.key, onSent, history]);
+
+  // 운영진이 웹에서 여는 이벤트는 모달(모집·고르기·테스트 플레이·취소), 그 밖에는 멘션 명령어
+  const openEvent = useCallback((join = false) => {
+    if (game.busy) {
+      onBusy();
+      return;
+    }
+    if (!join && game.web_open) {
+      dispatch(openModal({ modalType: 'EVENT_OPEN', modalProps: { gameKey: game.key, name: game.name, minPlayers: game.event_min_players, maxPlayers: game.event_max_players, joinMinutes: game.event_join_minutes, onOpened: afterOpened } }));
+      return;
+    }
+    setBusy(true);
+    sendCommand(join ? { kind: game.key, join: true } : { kind: game.key })
+      .then(afterOpened)
+      .catch(() => {
+        setBusy(false);
+      });
+  }, [dispatch, game.key, game.name, game.busy, game.web_open, game.event_min_players, game.event_max_players, game.event_join_minutes, afterOpened, onBusy]);
 
   if (game.my_session_id) {
     return (
@@ -247,6 +263,7 @@ const RoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRow) => v
               </span>
 
               <span className='system-room-card__side'>
+                {row.test && <span className='system-room-card__lock' role='img' aria-label='test play' title='Test play'>🔒</span>}
                 <span className='system-room-card__state'>
                   {row.status === 'finished' && row.finished_at ? (
                     <RelativeTimestamp timestamp={row.finished_at} />

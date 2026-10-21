@@ -16,8 +16,7 @@ module Game
         # 웹 전용
         'maze' => Game::Web::Maze,
         'marauders_map' => Game::Web::MaraudersMap,
-        # 서버 이벤트
-        'secret_chamber' => Game::Events::SecretChamber,
+        'secret_chamber' => Game::Web::SecretChamber,
       }
     end
 
@@ -33,9 +32,9 @@ module Game
       registry.values
     end
 
-    # 신청해서 하는 컨텐츠 (서버 이벤트 제외)
+    # 컨텐츠 전부 (예전에는 서버 이벤트를 뺐다)
     def matches
-      all.reject(&:event?)
+      all
     end
 
     # 1:1 대결
@@ -43,24 +42,19 @@ module Game
       matches.select { |kind| kind.max_opponents == 1 }
     end
 
-    # 여럿이 하는 컨텐츠 (퀴디치 팀전, 미로, 도둑 지도)
+    # 여럿이 하는 컨텐츠 (퀴디치 팀전, 비행 대결, 미로, 도둑 지도, 비밀의 방)
     def group_games
       matches.select { |kind| kind.max_opponents > 1 }
     end
 
-    # 서버 이벤트 (비밀의방 등)
-    def events
-      all.select(&:event?)
-    end
-
     # 이 명령어로 시작하는 켜진 게임
     def by_command(command)
-      matches.find { |kind| kind.enabled? && kind.config['command'] == command }
+      matches.reject(&:event_only?).find { |kind| kind.enabled? && kind.config['command'] == command }
     end
 
     # 명령어는 같지만 꺼져 있는 게임 (안내용)
     def disabled_by_command(command)
-      matches.find { |kind| !kind.enabled? && kind.config['command'] == command }
+      matches.reject(&:event_only?).find { |kind| !kind.enabled? && kind.config['command'] == command }
     end
   end
 end
