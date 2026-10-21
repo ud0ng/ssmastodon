@@ -37,6 +37,8 @@ module Game
           F.new(key: 'msg_cancel', type: :text, group: 'messages', label: '이벤트 인원 부족', default: MESSAGES[:cancel]),
           F.new(key: 'msg_invite', type: :text, group: 'messages', label: '이벤트 참가자 초대하기: 참가 수락 DM', default: MESSAGES[:invite]),
           F.new(key: 'msg_invite_test', type: :text, group: 'messages', label: '이벤트 테스트 플레이: 참가 수락 DM', default: MESSAGES[:invite_test]),
+          F.new(key: 'msg_event_started', type: :text, group: 'messages', label: '이벤트 시작 알림 (앱용 툿·초대한 이벤트는 DM)', default: Game::EventNotice::DEFAULTS[:started]),
+          F.new(key: 'msg_event_finished', type: :text, group: 'messages', label: '이벤트 종료 알림 (앱용 툿·초대한 이벤트는 DM)', default: Game::EventNotice::DEFAULTS[:finished]),
           F.new(key: 'msg_not_invited', type: :text, group: 'messages', label: '이벤트 고른 참가자가 아님', default: MESSAGES[:not_invited]),
         ]
       end

@@ -115,7 +115,7 @@ RSpec.describe Game::Events::Opening do
 
       expect { Game::Web::Maze.new(session).send(:finish!, winner: session.players.first) }.to_not(change { [GameReward.count, GameHousePoint.count] })
       expect(session.reload.status).to eq 'finished'
-      expect(Status.where(account: system).where('id > ?', before).count).to eq 0
+      expect(Status.where(account: system).where('id > ?', before).where.not('text LIKE ?', '%이벤트를 확인하세요%').count).to eq 0 # 종료 알림 DM 은 빼고
       expect(session.messages.order(:id).last.text).to include('테스트 플레이라 점수와 보상은 없습니다')
     end
   end
@@ -184,5 +184,36 @@ RSpec.describe Game::Events::Opening do
     accounts.first(3).each { |account| toot(account, '@system [참가]') }
 
     expect(event_session('maze').players.size).to eq 2
+  end
+  describe 'start and end notices for the app' do
+    def system_toots_since(id)
+      Status.where(account: system).where('id > ?', id).order(:id).to_a
+    end
+
+    it 'mentions the participants for a recruited event and DMs only the invited ones for an invited event' do
+      Game::Config.merge!('maze', 'event_min_players' => '2')
+      described_class.open!(Game::Web::Maze, admin)
+      recruited = event_session('maze')
+      accounts.first(2).each { |account| recruited.players.create!(account: account, seat: recruited.players.count, state: { 'accepted' => true }) }
+      recruited.with_lock { recruited.kind_class.new(recruited).recruitment_over! }
+      before = Status.maximum(:id).to_i
+      Game::Lobby.start!(recruited.reload)
+
+      started = system_toots_since(before).find { |status| status.text.include?('시작됐어요') }
+      expect(started).to be_present
+      expect(started.visibility).to eq 'private'
+      expect(started.mentions.map(&:account_id)).to match_array(accounts.first(2).map(&:id))
+
+      before = Status.maximum(:id).to_i
+      recruited.reload.update!(status: 'finished', finished_at: Time.now.utc)
+      expect(system_toots_since(before).map(&:text).join).to include('끝났어요')
+
+      invited = described_class.open!(Game::Kinds::Flying, admin, mode: 'pick', players: accounts.first(3))
+      before = Status.maximum(:id).to_i
+      invited.reload.update!(status: 'active')
+      dms = system_toots_since(before).select { |status| status.text.include?('시작됐어요') }
+      expect(dms.map(&:visibility).uniq).to eq ['direct']
+      expect(dms.flat_map { |status| status.mentions.map(&:account_id) }).to match_array(accounts.first(3).map(&:id))
+    end
   end
 end

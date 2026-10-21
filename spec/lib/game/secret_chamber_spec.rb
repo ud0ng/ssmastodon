@@ -64,7 +64,7 @@ RSpec.describe Game::Web::SecretChamber do
     expect(session.state).to include('phase' => 'day', 'day' => 1)
     expect(session.state['roles'].values.tally).to include('traitor' => 1, 'auror' => 1, 'healer' => 1, 'seer' => 1, 'student' => 3)
     # 시작한 뒤의 진행·역할 안내는 툿이 아니다 (앱에는 아무것도 안 나간다)
-    expect(Status.where(account: system).where('id > ?', @before_start).count).to eq 0
+    expect(Status.where(account: system).where('id > ?', @before_start).where.not('text LIKE ?', '%이벤트를 확인하세요%').count).to eq 0 # 시작·종료 알림 툿은 빼고
     expect(session.messages.where.not(account_id: nil).count).to eq 7
     expect(session.messages.where(account_id: nil).last.payload['data']).to include('phase' => 'day', 'alive' => [0, 1, 2, 3, 4, 5, 6])
     expect(Status.find(session.root_status_id).text).to include('[참가]') # 모집은 툿
@@ -89,7 +89,7 @@ RSpec.describe Game::Web::SecretChamber do
     expect(session.state['winner']).to eq 'light'
     expect(traitor.reload.result).to eq 'lose'
     expect(GameHousePoint.where(game_session_id: session.id).sum(:amount)).to be_positive
-    expect(Status.where(account: system).where('id > ?', @before_start).count).to eq 0
+    expect(Status.where(account: system).where('id > ?', @before_start).where.not('text LIKE ?', '%이벤트를 확인하세요%').count).to eq 0 # 시작·종료 알림 툿은 빼고
   end
 
   it 'petrifies at night unless the healer protects, and lets the auror investigate privately' do

@@ -1158,3 +1158,118 @@ $stage-ink: #07060b;
   0%, 100% { opacity: 0.65; }
   50% { opacity: 1; }
 }
+
+// ── 이벤트 열기 모달 (운영진): 게임방 안내창(stage-tutorial)처럼 어둡고 금빛으로. 초대하기·테스트 플레이 고르기도 같은 모양 ──
+.modal-root__modal.event-open-modal {
+  width: min(520px, 94vw);
+  max-width: 520px;
+  border: 1px solid rgb(232 199 106 / 30%);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #11141d, #090b11);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 70%), 0 0 0 1px rgb(255 255 255 / 4%) inset;
+  color: #efe9dc;
+
+  .safety-action-modal__top,
+  .safety-action-modal__bottom {
+    background: transparent;
+    border: 0;
+  }
+
+  .safety-action-modal__top {
+    padding: 26px 30px 6px;
+  }
+
+  .safety-action-modal__bottom {
+    padding: 8px 30px 22px;
+  }
+
+  .safety-action-modal__confirmation h1 {
+    margin: 0 0 6px;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .event-open-modal__choice {
+    border-color: rgb(255 255 255 / 14%);
+    background: rgb(255 255 255 / 3%);
+    color: #efe9dc;
+
+    span {
+      color: rgb(239 233 220 / 68%);
+      opacity: 1;
+    }
+
+    &:hover:not(:disabled),
+    &:focus-visible {
+      border-color: $stage-gold;
+      background: rgb(232 199 106 / 10%);
+      box-shadow: 0 0 18px rgb(232 199 106 / 18%);
+    }
+  }
+
+  .event-open-modal__hint,
+  .event-open-modal__count {
+    color: rgb(239 233 220 / 72%);
+  }
+
+  .event-open-modal__count {
+    color: $stage-gold;
+    font-weight: 700;
+  }
+
+  .event-open-modal__search {
+    border-color: rgb(255 255 255 / 18%);
+    background: rgb(255 255 255 / 5%);
+    color: #fff;
+
+    &::placeholder {
+      color: rgb(239 233 220 / 45%);
+    }
+  }
+
+  .event-open-modal__member {
+    border-radius: 10px;
+    color: #efe9dc;
+
+    &:hover {
+      background: rgb(255 255 255 / 6%);
+    }
+
+    input[type='checkbox'] {
+      accent-color: $stage-gold;
+    }
+  }
+
+  .event-open-modal__members {
+    scrollbar-color: rgb(232 199 106 / 45%) transparent;
+    scrollbar-width: thin;
+  }
+
+  // 버튼: 시작은 금빛, 취소·뒤로는 같은 크기의 회색 윤곽
+  .button {
+    border: 1px solid color-mix(in srgb, $stage-gold 70%, #000);
+    background: linear-gradient(180deg, #f0d57f, #cfa63f);
+    color: $stage-ink;
+    font-weight: 800;
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.07);
+    }
+
+    &.button-secondary,
+    &.button--secondary {
+      border-color: rgb(255 255 255 / 45%);
+      background: rgb(255 255 255 / 12%);
+      color: #e9e9ee;
+    }
+
+    &:disabled {
+      opacity: 0.45;
+    }
+  }
+
+  .item-modal__error {
+    color: #ff9a8a;
+  }
+}

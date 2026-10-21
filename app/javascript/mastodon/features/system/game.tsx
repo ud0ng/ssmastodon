@@ -164,6 +164,19 @@ export const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy:
       });
   }, [dispatch, game.key, game.name, game.busy, game.web_open, game.event_min_players, game.event_max_players, game.event_join_minutes, afterOpened, onBusy]);
 
+  // 운영진은 언제나 [이벤트 열기]가 보인다 (모집 중이어도, 내가 다른 방에 있어도): 여러 이벤트를 동시에 열 수 있다
+  if (game.event && game.can_open && game.enabled) {
+    return sent ? (
+      <span className='system-start system-start--off'>
+        <FormattedMessage id='system.game.sent' defaultMessage='Sent. The system will answer in a moment.' />
+      </span>
+    ) : (
+      <button type='button' className='system-start' disabled={busy} onClick={() => { openEvent(); }}>
+        <FormattedMessage id='system.game.open_event' defaultMessage='Open the event' />
+      </button>
+    );
+  }
+
   if (game.my_session_id) {
     return (
       <Link to={`/system/sessions/${game.my_session_id}`} className='system-start'>
