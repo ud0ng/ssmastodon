@@ -313,7 +313,7 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
       });
   }, [id]);
 
-  const inLobby = data?.status === 'lobby';
+  const inLobby = data?.status === 'lobby' || Boolean(data?.lobby?.recruiting);
   // 비행 대결 게임방은 라운드·채팅이 빨리 보이게 대기방처럼 자주 읽는다
   const flyingRoom = data?.kind === 'flying' && ['active', 'finished'].includes(data.status);
 

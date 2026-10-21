@@ -92,6 +92,11 @@ module Game
       GameMessage.create!(session: session, text: text)
     end
 
+    # 모집 중인가 (이벤트를 열고 참가를 받는 동안): 같은 대기방 화면에 남은 모집 시간을 보여 준다
+    def recruiting?(session)
+      session.status == 'pending' && session.state['mode'] == 'event' && session.state['phase'] == 'recruit'
+    end
+
     # 웹 대기방 화면: 참가자(아바타·소속·준비)와 카운트다운
     def view(session, viewer, staff:)
       kind = session.kind_class.new(session)
@@ -104,6 +109,8 @@ module Game
         start_at: at&.future? ? at.iso8601(3) : nil,
         now: Time.current.iso8601(3),
         can_manage: staff,
+        recruiting: recruiting?(session),
+        recruit_ends_at: recruiting?(session) ? session.deadline_at&.iso8601(3) : nil,
         me: session.player_for(viewer)&.account_id&.to_s,
         players: session.players.map do |player|
           account = player.account

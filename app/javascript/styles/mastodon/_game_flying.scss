@@ -511,6 +511,13 @@ $fl-ink: #07060b;
   }
 }
 
+.fl-big-button--ghost {
+  border: 1px solid rgb(255 255 255 / 55%);
+  background: rgb(255 255 255 / 14%);
+  box-shadow: none;
+  color: #e9e9ee;
+}
+
 .fl-small-button {
   padding: 5px 16px;
   border: 1px solid rgb(255 255 255 / 45%);
@@ -816,6 +823,7 @@ $fl-ink: #07060b;
 }
 
 .fl-podium {
+  margin-top: 30px; // 왕관이 제목을 가리지 않게
   display: flex;
   gap: 14px;
   align-items: flex-end;

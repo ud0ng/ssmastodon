@@ -11,6 +11,8 @@ import { createPortal } from 'react-dom';
 
 import { apiRequestPost } from 'mastodon/api';
 
+import { Countdown } from 'mastodon/components/countdown';
+
 import { TokenAvatar, TokenName } from './game_token';
 
 export interface LobbyPlayer {
@@ -29,6 +31,9 @@ export interface LobbyData {
   start_at: string | null;
   now: string;
   can_manage: boolean;
+  // 모집 중(참가 받는 동안)이면 준비 대신 남은 모집 시간을 보여 준다
+  recruiting?: boolean;
+  recruit_ends_at?: string | null;
   me: string | null;
   players: LobbyPlayer[];
 }
@@ -116,6 +121,7 @@ export const LobbyStage: React.FC<{
   const lastId = useRef<string | null>(null);
   const remaining = useRemaining(lobby);
   const counting = remaining !== null;
+  const recruiting = Boolean(lobby.recruiting);
   const readyCount = lobby.players.filter((player) => player.ready).length;
   const participant = lobby.me !== null;
 
@@ -169,10 +175,17 @@ export const LobbyStage: React.FC<{
       <div className='game-stage__spot' aria-hidden />
 
       <header className='game-stage__head'>
-        <small className='game-stage__eyebrow'><FormattedMessage id='lobby.title' defaultMessage='Waiting room' /></small>
+        <small className='game-stage__eyebrow'>{recruiting ? <FormattedMessage id='lobby.recruit_title' defaultMessage='Gathering players' /> : <FormattedMessage id='lobby.title' defaultMessage='Waiting room' />}</small>
         <h1>{name}</h1>
         <p>
-          <FormattedMessage id='lobby.status' defaultMessage='{ready} of {total} ready · {min}–{max} players' values={{ ready: readyCount, total: lobby.players.length, min: lobby.min, max: lobby.max }} />
+          {recruiting ? (
+            <>
+              <FormattedMessage id='lobby.recruiting' defaultMessage='Recruiting · {total} joined · {min}–{max} players' values={{ total: lobby.players.length, min: lobby.min, max: lobby.max }} />
+              {lobby.recruit_ends_at && <> · <Countdown until={lobby.recruit_ends_at} /></>}
+            </>
+          ) : (
+            <FormattedMessage id='lobby.status' defaultMessage='{ready} of {total} ready · {min}–{max} players' values={{ ready: readyCount, total: lobby.players.length, min: lobby.min, max: lobby.max }} />
+          )}
         </p>
       </header>
 
@@ -182,7 +195,7 @@ export const LobbyStage: React.FC<{
             key={player.account_id}
             player={player}
             mine={player.account_id === lobby.me}
-            canToggle={player.account_id === lobby.me || lobby.can_manage}
+            canToggle={!recruiting && (player.account_id === lobby.me || lobby.can_manage)}
             busy={busy || counting}
             onToggle={toggle}
           />

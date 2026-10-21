@@ -1106,6 +1106,8 @@
   "wallet.total_posts": "Toots (toots / chars)",
   "wallet.other_from": "From {name}",
   "wallet.other_to": "To {name}",
+  "lobby.recruit_title": "Gathering players",
+  "lobby.recruiting": "Recruiting · {total} joined · {min}–{max} players",
   "house.fx_left": "Effect left",
   "system.active.empty": "No game in progress.",
   "system.game.pending": "Waiting for accept",

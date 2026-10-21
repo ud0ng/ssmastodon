@@ -107,4 +107,14 @@ RSpec.describe Game::Kinds::Flying do
     pick(session, 0, 1)
     expect(session.state['choices']).to eq({})
   end
+  it 'shows the waiting room with the recruiting time while players are being gathered' do
+    session = GameSession.create!(kind: 'flying', status: 'pending', visibility: 'private', deadline_at: 20.minutes.from_now, state: { 'mode' => 'event', 'phase' => 'recruit' })
+    session.players.create!(account: accounts.first, seat: 0, state: { 'accepted' => true })
+
+    expect(Game::Lobby.recruiting?(session)).to be true
+    view = Game::Lobby.view(session, accounts.first, staff: false)
+    expect(view).to include(recruiting: true)
+    expect(view[:recruit_ends_at]).to be_present
+    expect(view[:players].size).to eq 1
+  end
 end

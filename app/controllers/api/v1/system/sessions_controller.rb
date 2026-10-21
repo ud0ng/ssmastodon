@@ -25,7 +25,7 @@ class Api::V1::System::SessionsController < Api::BaseController
       root_status_id: @session.root_status_id&.to_s,
       last_status_id: @session.last_status_id&.to_s,
       player: @session.player_for(current_account).present?,
-      lobby: @session.lobby? ? Game::Lobby.view(@session, current_account, staff: staff?) : nil,
+      lobby: @session.lobby? || Game::Lobby.recruiting?(@session) ? Game::Lobby.view(@session, current_account, staff: staff?) : nil,
       staff: staff?,
       messages: messages(events),
       events: events.map do |event|
@@ -88,7 +88,7 @@ class Api::V1::System::SessionsController < Api::BaseController
     return render json: { error: 'forbidden' }, status: 403 unless @session.player_for(current_account) || staff?
 
     # 대기방과 웹 전용 컨텐츠 방은 끝난 뒤에도 채팅할 수 있다
-    Game::Lobby.chat!(@session, current_account, params[:text]) if @session.lobby? || (@session.web_channel? && @session.status != 'cancelled')
+    Game::Lobby.chat!(@session, current_account, params[:text]) if @session.lobby? || Game::Lobby.recruiting?(@session) || (@session.web_channel? && @session.status != 'cancelled')
     show
   end
 

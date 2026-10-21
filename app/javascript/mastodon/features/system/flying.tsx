@@ -434,14 +434,17 @@ const Replay: React.FC<{ view: FlyView; entry: RoundEntry; highlight?: number[];
   useEffect(() => {
     let active = true;
     settle(entry.alive_before, 0.01);
+    let again = 0;
     const timer = window.setTimeout(() => {
-      if (active) void play(entry, { returnToLine: false });
+      // 끝나면 잠깐 쉬었다가 처음부터 계속 되풀이한다
+      if (active) void play(entry, { returnToLine: false }).then(() => { if (active) again = window.setTimeout(() => { setRun((value) => value + 1); }, 1_800); return true; });
     }, 700);
     return () => {
       active = false;
       window.clearTimeout(timer);
+      window.clearTimeout(again);
     };
-    // 장면이 바뀌거나 [다시 보기]를 눌렀을 때만 처음부터
+    // 장면이 바뀌면 처음부터
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entry.round, seatsKey, run]);
 
@@ -459,9 +462,6 @@ const Replay: React.FC<{ view: FlyView; entry: RoundEntry; highlight?: number[];
         highlight={highlight}
         size={size}
       />
-      <button type='button' className='fl-small-button' onClick={() => { setRun((value) => value + 1); }}>
-        <FormattedMessage id='flying.replay' defaultMessage='Replay' />
-      </button>
     </div>
   );
 };
@@ -564,13 +564,19 @@ const Podium: React.FC<{ view: FlyView; finish: FinishView; onNext: () => void }
         </p>
       )}
 
-      <AnimatePresence>
-        {ready && (
-          <motion.button type='button' className='fl-big-button' initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} onClick={onNext}>
-            <FormattedMessage id='flying.next' defaultMessage='Next' />
-          </motion.button>
-        )}
-      </AnimatePresence>
+      {/* 자리를 미리 잡아 둔다: 버튼이 나타날 때 화면이 밀려 올라가 글자를 가리지 않게 */}
+      <motion.button
+        type='button'
+        className='fl-big-button'
+        initial={false}
+        animate={{ opacity: ready ? 1 : 0, y: ready ? 0 : 12 }}
+        style={{ pointerEvents: ready ? 'auto' : 'none' }}
+        tabIndex={ready ? 0 : -1}
+        aria-hidden={!ready}
+        onClick={onNext}
+      >
+        <FormattedMessage id='flying.next' defaultMessage='Next' />
+      </motion.button>
     </motion.div>
   );
 };
@@ -614,11 +620,11 @@ const Mvp: React.FC<{ view: FlyView; finish: FinishView; onLeave: () => void; on
       )}
 
       <div className='fl-result__buttons'>
+        <button type='button' className='fl-big-button fl-big-button--ghost' onClick={onClose}>
+          <FormattedMessage id='flying.stay' defaultMessage='Stay and watch' />
+        </button>
         <button type='button' className='fl-big-button' onClick={onLeave}>
           <FormattedMessage id='flying.leave' defaultMessage='Leave room' />
-        </button>
-        <button type='button' className='fl-small-button' onClick={onClose}>
-          <FormattedMessage id='flying.stay' defaultMessage='Stay and watch' />
         </button>
       </div>
     </motion.div>

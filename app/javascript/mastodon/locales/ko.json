@@ -1290,6 +1290,8 @@
   "wallet.total_posts": "툿 합계 (툿 / 글자)",
   "wallet.other_from": "{name} 님에게서",
   "wallet.other_to": "{name} 님에게",
+  "lobby.recruit_title": "참가자 모집 중",
+  "lobby.recruiting": "참가 모집 · {total}명 참가 · {min}~{max}명",
   "house.fx_left": "효과 남은 시간",
   "system.active.empty": "진행 중인 컨텐츠가 없습니다.",
   "system.game.pending": "수락 대기",
