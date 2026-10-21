@@ -6484,10 +6484,10 @@ body.layout-single-column
   background-color: var(--color-column-link-hover);
 }
 
-/* 이벤트 메뉴 아이콘 (달력) */
+/* 이벤트 메뉴 아이콘 (마법 지팡이) */
 .layout-single-column .column-link .icon-events {
-  mask-image: url('./bird-theme-svg/calendar-day.svg');
-  -webkit-mask-image: url('./bird-theme-svg/calendar-day.svg');
+  mask-image: url('./bird-theme-svg/wand.svg');
+  -webkit-mask-image: url('./bird-theme-svg/wand.svg');
   mask-size: contain;
   -webkit-mask-size: contain;
   mask-repeat: no-repeat;

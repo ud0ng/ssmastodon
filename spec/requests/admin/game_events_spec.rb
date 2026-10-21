@@ -10,15 +10,18 @@ RSpec.describe 'Admin open event' do
     sign_in Fabricate(:admin_user)
   end
 
-  it 'opens a recruiting event and refuses a second one' do
+  it 'opens recruiting events, one per content' do
     post admin_game_event_path, params: { kind: 'maze' }
 
-    expect(response).to redirect_to(admin_game_settings_path)
+    expect(response).to redirect_to(admin_game_events_settings_path)
     expect(GameSession.where(kind: 'maze', status: 'pending').count).to eq 1
 
+    post admin_game_event_path, params: { kind: 'maze' }
+    expect(flash[:alert]).to include('이미 진행 중')
+    expect(GameSession.where(kind: 'maze').count).to eq 1
+
     post admin_game_event_path, params: { kind: 'flying' }
-    expect(flash[:alert]).to include('이미 모집 중')
-    expect(GameSession.where(kind: 'flying').count).to eq 0
+    expect(GameSession.where(kind: 'flying', status: 'pending').count).to eq 1
   end
 
   it 'shows a badge to members who have not joined and a join button state on the content page' do

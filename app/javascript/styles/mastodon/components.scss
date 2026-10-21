@@ -19359,7 +19359,7 @@ body.app-body.layout-game-room.layout-single-column {
     padding: 2px 12px;
     border-radius: 999px;
     background: var(--ct-point, #{$ui-highlight-color});
-    color: #fff;
+    color: var(--ct-on-point, #fff);
     font-size: 13px;
     font-weight: 700;
   }

@@ -23,7 +23,6 @@ module Game
         raise Error, '시스템 계정이 설정되지 않았습니다.' if Game::System.account.nil?
         raise Error, "#{kind.display_name}#{Game::Text.particle(kind.display_name.to_s.strip[-1], '은는')} 이벤트로 열 수 없습니다." unless kinds.include?(kind)
         raise Error, "#{kind.display_name}#{Game::Text.particle(kind.display_name.to_s.strip[-1], '은는')} 꺼져 있습니다. 먼저 켜 주세요." unless kind.enabled?
-        raise Error, '이미 모집 중이거나 진행 중인 이벤트가 있습니다.' if GameSession.current_kinds.open.where("state->>'mode' = 'event'").exists?
         raise Error, "#{kind.display_name}#{Game::Text.particle(kind.display_name.to_s.strip[-1], '이가')} 이미 진행 중입니다." if GameSession.open.exists?(kind: kind.key)
 
         return open_invited!(kind, account, players, test: mode == 'test') unless mode == 'recruit'

@@ -54,8 +54,8 @@ module Game
       # 모바일에서 시스템 계정에 DM 으로 쓰는 특수 아이템: [사용/호울러/소문 내용] (그 밖의 [사용]은 상점 봇이 처리한다)
       when use_command then item_command(args)
       else
-        pending = pending_event
-        return join if pending && pending.kind_class&.config&.dig('cmd_join') == command
+        pending = pending_event(command, args.first)
+        return join(pending) if pending
 
         kind = Game::Kinds.by_command(command)
         if kind
@@ -102,8 +102,12 @@ module Game
       Game::Poster.post(text, mentions: mentions, thread: status, visibility: visibility)
     end
 
-    def open_player(account, statuses = GameSession::OPEN_STATUSES)
-      GamePlayer.joins(:session).where(account: account, game_sessions: { status: statuses }).order(id: :desc).first
+    # 진행 중인 방에 있는 사람. events: true 면 이벤트(여럿이 하는 컨텐츠)방만, false 면 컨텐츠(1:1)방만, nil 이면 모두
+    def open_player(account, statuses = GameSession::OPEN_STATUSES, events: nil)
+      scope = GamePlayer.joins(:session).where(account: account, game_sessions: { status: statuses })
+      keys = Game::Kinds.group_games.map(&:key)
+      scope = events ? scope.where(game_sessions: { kind: keys }) : scope.where.not(game_sessions: { kind: keys }) unless events.nil?
+      scope.order(id: :desc).first
     end
 
     # 게임 신청: 상대 한 명을 태그해야 한다
@@ -124,8 +128,10 @@ module Game
       return reply(limited) if limited
 
       opponent = opponents.first
-      if common['one_game_per_person']
-        busy = [actor, *opponents].find { |account| open_player(account) }
+      # 컨텐츠(1:1)는 컨텐츠끼리, 이벤트는 이벤트끼리 1개까지 (이벤트는 설정과 상관없이 늘 1개)
+      event = kind.max_opponents > 1
+      if event || common['one_game_per_person']
+        busy = [actor, *opponents].find { |account| open_player(account, events: event) }
         return reply(Game::Text.render(common['msg_busy'], player: busy)) if busy
       end
 
@@ -161,6 +167,13 @@ module Game
       session = player.session
       session.with_lock do
         next unless session.status == 'pending'
+
+        # 이벤트는 한 번에 1개만 (진행 중인 다른 이벤트가 있으면 수락할 수 없다)
+        other = open_player(actor, events: true)
+        if Game::Kinds.group_games.map(&:key).include?(session.kind) && other && other.game_session_id != session.id
+          reply(Game::Text.render(common['msg_busy'], player: actor))
+          next
+        end
 
         follow_up!(session)
         player.update!(state: player.state.merge('accepted' => true))
@@ -222,16 +235,20 @@ module Game
     end
 
     # 모집 중인 이벤트 (미로·도둑 지도·비행 대결·비밀의 방)
-    def pending_event
-      GameSession.where(status: 'pending').where("state->>'mode' = 'event'").order(id: :desc).first
+    # 모집 중인 이벤트 중 이 참가 명령어에 맞는 것. 여럿이 열려 있으면 [참가/컨텐츠 키]로 고르거나 모집 툿에 답한 쪽, 아니면 가장 최근 것
+    def pending_event(command = nil, kind_key = nil)
+      events = GameSession.where(status: 'pending').where("state->>'mode' = 'event'").order(id: :desc).to_a
+      events = events.select { |event| event.kind_class&.config&.dig('cmd_join') == command } if command
+      events = events.select { |event| event.kind == kind_key } if kind_key.present? && events.any? { |event| event.kind == kind_key }
+      replied = events.find { |event| [event.root_status_id, event.last_status_id].compact.include?(status.in_reply_to_id) }
+      replied || events.first
     end
 
-    # [참가] 모집 중인 이벤트 (가장 최근 것)
-    def join
-      event = pending_event
+    # [참가] 모집 중인 이벤트
+    def join(event)
       return if event.nil? || event.players.exists?(account_id: actor.id)
       return if bot_account?(actor) # 상점 봇이 모집 툿의 [참가]를 따라 읽어도 참가자로 넣지 않는다
-      return reply(Game::Text.render(common['msg_busy'], player: actor)) if common['one_game_per_person'] && open_player(actor)
+      return reply(Game::Text.render(common['msg_busy'], player: actor)) if open_player(actor, events: true)
 
       event.with_lock { event.kind_class.new(event).join!(actor, status) if event.status == 'pending' }
     end

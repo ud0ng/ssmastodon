@@ -124,10 +124,22 @@ RSpec.describe Game::Events::Opening do
     end
   end
 
-  it 'allows only one event at a time and refuses a turned-off content' do
+  it 'lets staff open several events at once, one per content' do
     described_class.open!(Game::Web::Maze, admin)
 
-    expect { described_class.open!(Game::Kinds::Flying, admin) }.to raise_error(described_class::Error, /이미 모집 중/)
+    expect { described_class.open!(Game::Kinds::Flying, admin) }.to_not raise_error
+    expect { described_class.open!(Game::Web::Maze, admin) }.to raise_error(described_class::Error, /이미 진행 중/)
+  end
+
+  it 'limits a person to one event at a time but does not count 1:1 contents' do
+    described_class.open!(Game::Web::Maze, admin)
+    described_class.open!(Game::Kinds::Flying, admin)
+    toot(accounts.first, '@system [참가/maze]')
+    expect(GamePlayer.where(account: accounts.first).count).to eq 1
+
+    toot(accounts.first, '@system [참가/flying]')
+    expect(GamePlayer.where(account: accounts.first).count).to eq 1
+    expect(GamePlayer.joins(:session).where(account: accounts.first, game_sessions: { kind: 'maze' }).count).to eq 1
   end
 
   it 'cancels when too few people joined' do

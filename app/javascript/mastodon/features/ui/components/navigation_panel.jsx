@@ -29,7 +29,7 @@ import ScheduledStatusesIcon from '@/styles/bird-theme-svg/calendar-clock.svg?re
 import ShopActiveIcon from '@/styles/bird-theme-svg/shop-fill.svg?react';
 import ShopIcon from '@/styles/bird-theme-svg/shop.svg?react';
 import StarActiveIcon from '@/styles/bird-theme-svg/star-fill.svg?react';
-import EventIcon from '@/styles/bird-theme-svg/calendar-day.svg?react';
+import EventIcon from '@/styles/bird-theme-svg/wand.svg?react';
 import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
 import FollowRequestsActiveIcon from '@/styles/bird-theme-svg/user-add-fill.svg?react';
 import FollowRequestsIcon from '@/styles/bird-theme-svg/user-add.svg?react';

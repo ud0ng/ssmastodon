@@ -136,10 +136,12 @@ class Api::V1::System::GamesController < Api::BaseController
 
   # 동시 진행을 막았는데 다른 컨텐츠를 하고 있으면 [시작하기] 대신 바로 안내 (문구는 명령어 탭 '이미 진행 중 (웹 시작하기)')
   def busy(common)
-    return unless common['one_game_per_person']
+    event = @kind.max_opponents > 1
+    return unless event || common['one_game_per_person'] # 이벤트는 설정과 상관없이 이벤트끼리 1개까지, 컨텐츠는 컨텐츠끼리
 
-    session = GameSession.current_kinds.joins(:players).where(status: GameSession::OPEN_STATUSES, game_players: { account_id: current_account.id })
-                         .order(updated_at: :desc).first
+    keys = Game::Kinds.group_games.map(&:key)
+    scope = GameSession.current_kinds.joins(:players).where(status: GameSession::OPEN_STATUSES, game_players: { account_id: current_account.id })
+    session = (event ? scope.where(kind: keys) : scope.where.not(kind: keys)).order(updated_at: :desc).first
     return if session.nil?
 
     { message: Game::Text.render(common['msg_busy_web'], player: current_account), session_id: session.id.to_s, name: session.kind_class&.display_name }

@@ -420,7 +420,7 @@
   "event_open.cancel": "취소",
   "event_open.count": "{count}명 고름 ({min}~{max}명)",
   "event_open.failed": "문제가 생겼어요. 다시 시도해 주세요.",
-  "event_open.pick": "참가자 고르기",
+  "event_open.pick": "참가자 초대하기",
   "event_open.pick_hint": "{min}~{max}명을 선택합니다.",
   "event_open.pick_pick": "참가자를 고르세요. 고른 사람에게만 알림이 갑니다.",
   "event_open.recruit": "참가자 모집하기",

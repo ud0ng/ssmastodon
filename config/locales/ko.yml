@@ -693,11 +693,11 @@ ko:
         opened_test: '%{name} 테스트 플레이를 시작했습니다. 참가자 단체 DM 으로 진행합니다.'
         recruit: 참가자 모집하기
         recruit_hint: '%{minutes}분 동안 %{min}~%{max}명을 모집합니다.'
-        pick: 참가자 고르기
+        pick: 참가자 초대하기
         pick_hint: '%{min}~%{max}명을 선택합니다.'
         test: 테스트 플레이
         test_hint: '비공개로 진행되며 보상이 존재하지 않습니다.'
-        pick_placeholder: 참가자 고르기
+        pick_placeholder: 참가자 초대하기
         start: 시작
         recruiting: 모집 중
         recruiting_now: '%{name} · 참가 %{count}명 · 마감 %{time}'

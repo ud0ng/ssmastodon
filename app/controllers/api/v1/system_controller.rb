@@ -33,7 +33,7 @@ class Api::V1::SystemController < Api::BaseController
       },
       daily: daily_json(common),
       record: record,
-      active: my_players(GameSession::OPEN_STATUSES).map { |player| game_json(player) },
+      active: my_players(GameSession::OPEN_STATUSES).where.not(game_sessions: { kind: Game::Kinds.group_games.map(&:key) }).map { |player| game_json(player) },
       recent: my_players(%w(finished)).limit(RECENT_LIMIT).map { |player| game_json(player) },
       games: Game::Kinds.matches.select(&:enabled?).map { |kind| { key: kind.key, name: kind.display_name, command: kind.config['command'], max_opponents: kind.max_opponents } },
       catalog: catalog,

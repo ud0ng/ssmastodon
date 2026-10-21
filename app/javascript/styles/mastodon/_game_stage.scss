@@ -280,22 +280,29 @@ $stage-ink: #07060b;
   // 채팅: 말풍선은 위로 쌓이고 입력창은 맨 아래. 스크롤바는 호버했을 때만
   &__chat {
     display: flex;
-    flex: 0 0 auto;
+    flex: 0 0 32vh;
     flex-direction: column;
     gap: 8px;
     width: min(680px, 100%);
+    min-height: 0;
   }
 
   &__log {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
     gap: 6px;
-    max-height: 26vh;
+    min-height: 0;
     margin: 0;
     padding: 6px 8px;
     overflow-y: auto;
     list-style: none;
     scrollbar-width: none;
+
+    // 메시지는 아래부터 쌓이고, 넘치면 스크롤
+    > :first-child {
+      margin-top: auto;
+    }
 
     &:hover {
       scrollbar-width: thin;
@@ -615,6 +622,7 @@ $stage-ink: #07060b;
   --ct-dim: rgb(239 233 220 / 62%);
   --ct-hover: rgb(255 255 255 / 7%);
   --ct-text: #efe9dc;
+  --ct-on-point: #{$stage-ink};
   --ct-paren: rgb(239 233 220 / 55%);
   --ct-bracket: #{$stage-gold};
   --ct-panel-raised: rgb(255 255 255 / 5%);
