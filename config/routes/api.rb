@@ -111,6 +111,8 @@ namespace :api, format: false do
           get :view
           post :move
           post :ready
+          post :join
+          post :leave
           post :cancel_start
           post :chat
         end

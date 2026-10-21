@@ -33,6 +33,9 @@ export interface LobbyData {
   can_manage: boolean;
   // 모집 중(참가 받는 동안)이면 준비 대신 남은 모집 시간을 보여 준다
   recruiting?: boolean;
+  // 아직 참가하지 않은 사람은 [참여하기], 참가한 사람은 [참여 취소] (시작 전에만)
+  can_join?: boolean;
+  can_leave?: boolean;
   recruit_ends_at?: string | null;
   me: string | null;
   players: LobbyPlayer[];
@@ -43,6 +46,7 @@ export interface LobbyMessage {
   chat?: boolean;
   mine: boolean;
   name: string;
+  acct?: string;
   avatar: string;
   text: string;
   created_at: string;
@@ -82,14 +86,18 @@ const useRemaining = (lobby: LobbyData) => {
   return Math.max(0, Math.ceil((Date.parse(lobby.start_at) - (Date.now() + offset)) / 1000));
 };
 
+const BUBBLE_MS = 6_000;
+
 const PlayerCard: React.FC<{
   player: LobbyPlayer;
   mine: boolean;
   canToggle: boolean;
   busy: boolean;
+  bubble?: string;
   onToggle: (player: LobbyPlayer) => void;
-}> = ({ player, mine, canToggle, busy, onToggle }) => (
+}> = ({ player, mine, canToggle, busy, bubble, onToggle }) => (
   <li className={['game-stage__player', player.ready && 'game-stage__player--ready', mine && 'game-stage__player--me'].filter(Boolean).join(' ')}>
+    {bubble && <span className='game-stage__speech' key={bubble}>{bubble}</span>}
     <span className='game-stage__avatar'>
       <TokenAvatar accountId={player.account_id} avatar={player.avatar} size={88} />
       {player.ready && <span className='game-stage__check' aria-hidden>✓</span>}
@@ -124,6 +132,23 @@ export const LobbyStage: React.FC<{
   const recruiting = Boolean(lobby.recruiting);
   const readyCount = lobby.players.filter((player) => player.ready).length;
   const participant = lobby.me !== null;
+  // 채팅 말풍선: 토큰 위에 몇 초 동안만 (서버 시계 기준)
+  const offset = useMemo(() => Date.parse(lobby.now) - Date.now(), [lobby.now]);
+  const [clock, setClock] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => { setClock((value) => value + 1); }, 500);
+    return () => { window.clearInterval(timer); };
+  }, []);
+  void clock;
+  const bubbles = useMemo(() => {
+    const found: Record<string, string> = {};
+    const now = Date.now() + offset;
+    log.forEach((message) => {
+      if (message.chat && message.acct && now - Date.parse(message.created_at) < BUBBLE_MS) found[message.acct] = message.text;
+    });
+    return found;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [log, offset, clock]);
 
   useStageLayout(true);
 
@@ -197,21 +222,35 @@ export const LobbyStage: React.FC<{
             mine={player.account_id === lobby.me}
             canToggle={!recruiting && (player.account_id === lobby.me || lobby.can_manage)}
             busy={busy || counting}
+            bubble={bubbles[player.acct]}
             onToggle={toggle}
           />
         ))}
       </ul>
 
+      {(lobby.can_join || lobby.can_leave) && (
+        <div className='game-stage__membership'>
+          {lobby.can_join && (
+            <button type='button' className='game-stage__join' disabled={busy} onClick={() => { post('join'); }}>
+              <FormattedMessage id='lobby.join' defaultMessage='Join' />
+            </button>
+          )}
+          {lobby.can_leave && !counting && (
+            <button type='button' className='game-stage__join game-stage__join--off' disabled={busy} onClick={() => { post('leave'); }}>
+              <FormattedMessage id='lobby.leave' defaultMessage='Cancel joining' />
+            </button>
+          )}
+        </div>
+      )}
+
       <section className='game-stage__chat'>
         <ul className='game-stage__log' ref={logRef}>
           {log.map((message) => (
             message.chat ? (
-              <li key={message.id} className={message.mine ? 'game-stage__bubble game-stage__bubble--mine' : 'game-stage__bubble'}>
-                {!message.mine && <img src={message.avatar} alt='' />}
-                <span className='game-stage__bubble-body'>
-                  {!message.mine && <strong>{message.name}</strong>}
-                  <span className='game-stage__bubble-text'>{message.text}</span>
-                </span>
+              <li key={message.id} className={message.mine ? 'game-stage__line game-stage__line--mine' : 'game-stage__line'}>
+                <img src={message.avatar} alt='' />
+                <strong>{message.name}</strong>
+                <span className='game-stage__line-text'>: {message.text}</span>
               </li>
             ) : (
               <li key={message.id} className='game-stage__note'>{message.text}</li>

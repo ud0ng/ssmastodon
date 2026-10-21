@@ -117,4 +117,23 @@ RSpec.describe Game::Kinds::Flying do
     expect(view[:recruit_ends_at]).to be_present
     expect(view[:players].size).to eq 1
   end
+  it 'lets members join and cancel joining from the web before the game starts' do
+    session = GameSession.create!(kind: 'flying', status: 'pending', visibility: 'private', deadline_at: 20.minutes.from_now, state: { 'mode' => 'event', 'phase' => 'recruit' })
+    session.players.create!(account: accounts.first, seat: 0, state: { 'accepted' => true })
+    newcomer = accounts.second
+    allow(GameCharacter).to receive(:eligible_accounts).and_return(Account.where(id: accounts.map(&:id)))
+
+    expect(Game::Lobby.view(session, newcomer, staff: false)).to include(can_join: true, can_leave: false)
+    expect(Game::Lobby.join!(session, newcomer)).to eq :ok
+    expect(Game::Lobby.join!(session, newcomer)).to eq :joined
+    expect(session.reload.players.size).to eq 2
+    expect(Game::Lobby.view(session, newcomer, staff: false)).to include(can_join: false, can_leave: true)
+
+    expect(Game::Lobby.leave!(session, newcomer)).to eq :ok
+    expect(session.reload.players.size).to eq 1
+    expect(Game::Lobby.leave!(session, newcomer)).to eq :absent
+
+    session.update!(status: 'active')
+    expect(Game::Lobby.join!(session, newcomer)).to eq :closed
+  end
 end

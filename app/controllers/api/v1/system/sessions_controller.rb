@@ -75,6 +75,27 @@ class Api::V1::System::SessionsController < Api::BaseController
     show
   end
 
+  JOIN_ERRORS = {
+    closed: '지금은 참가하거나 취소할 수 없습니다.', full: '참가 인원이 가득 찼습니다.', ineligible: '참가할 수 없는 계정입니다.',
+    busy: '이미 다른 이벤트에 참가 중입니다.', absent: '참가하지 않았습니다.'
+  }.freeze
+
+  # 대기방·모집 중: 아직 참가하지 않은 사람이 [참여하기]
+  def join
+    result = @session.with_lock { Game::Lobby.join!(@session.reload, current_account) }
+    return render json: { error: JOIN_ERRORS.fetch(result) }, status: 422 if JOIN_ERRORS.key?(result)
+
+    show
+  end
+
+  # 대기방·모집 중: [참여 취소]
+  def leave
+    result = @session.with_lock { Game::Lobby.leave!(@session.reload, current_account) }
+    return render json: { error: JOIN_ERRORS.fetch(result) }, status: 422 if JOIN_ERRORS.key?(result)
+
+    show
+  end
+
   # 대기방 카운트다운 중 누구든 취소 (참가자·운영진)
   def cancel_start
     return render json: { error: 'forbidden' }, status: 403 unless @session.player_for(current_account) || staff?

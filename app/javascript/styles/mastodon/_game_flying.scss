@@ -274,19 +274,60 @@ $fl-ink: #07060b;
   filter: brightness(0.15) drop-shadow(0 0 6px rgb(255 255 255 / 25%));
 }
 
-.fl-line {
-  position: absolute;
-  right: 6%;
-  left: 6%;
-  border-top: 5px dashed rgb(232 199 106 / 80%);
-  filter: drop-shadow(0 0 8px rgb(232 199 106 / 45%));
-}
-
 .fl-lanes {
   position: absolute;
   right: 0;
   left: 0;
   height: 16%;
+  transition: opacity 350ms ease;
+}
+
+// 날아가는 동안 길 표시는 보이지 않고, 배경이 아래로 흘러 앞으로 나아가는 느낌을 준다
+.fl-sky.is-moving .fl-lanes {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fl-backdrop {
+  transform-origin: 50% 18%;
+  transition: transform 1500ms cubic-bezier(0.45, 0, 0.35, 1);
+}
+
+.fl-sky.is-moving .fl-backdrop {
+  transform: translateY(9%) scale(1.1);
+}
+
+// 속도선: 날아가는 동안만 위에서 아래로 쏟아진다
+.fl-streaks {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 400ms;
+
+  span {
+    position: absolute;
+    top: -20%;
+    width: 2px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, transparent, rgb(255 255 255 / 55%), transparent);
+    animation: fl-streak 0.9s linear infinite;
+  }
+}
+
+.fl-sky.is-moving .fl-streaks {
+  opacity: 1;
+}
+
+@keyframes fl-orb {
+  0%, 100% { opacity: 0.75; transform: translateX(-50%) scale(0.9); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.15); }
+}
+
+@keyframes fl-streak {
+  from { transform: translateY(0); }
+  to { transform: translateY(140vh); }
 }
 
 .fl-lane {
@@ -298,13 +339,29 @@ $fl-ink: #07060b;
   gap: 2px;
   align-items: center;
   justify-content: center;
-  border: 2px dashed rgb(232 199 106 / 65%);
-  border-radius: 16px;
-  background: rgb(18 14 44 / 52%);
+  border: 1px solid rgb(232 199 106 / 55%);
+  border-radius: 18px;
+  background: radial-gradient(ellipse 80% 70% at 50% 0%, rgb(232 199 106 / 26%), rgb(18 14 44 / 62%) 72%);
+  box-shadow: inset 0 0 18px rgb(232 199 106 / 14%), 0 0 16px rgb(232 199 106 / 18%);
   color: #f6e9bd;
   text-shadow: 0 1px 6px rgb(0 0 0 / 60%);
   backdrop-filter: blur(2px);
   transition: background 150ms, border-color 150ms, transform 150ms;
+
+  // 길 포인트: 가운데 위쪽에 떠 있는 빛 구슬
+  &::before {
+    content: '';
+    position: absolute;
+    top: -9px;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #fffbe0, #f3d36b 45%, rgb(232 199 106 / 0%) 72%);
+    box-shadow: 0 0 14px 4px rgb(246 217 120 / 70%);
+    transform: translateX(-50%);
+    animation: fl-orb 2.2s ease-in-out infinite;
+  }
 
   b {
     font-size: clamp(22px, 3vw, 34px);
@@ -972,5 +1029,240 @@ $fl-ink: #07060b;
         color: $fl-ink;
       }
     }
+  }
+}
+
+// ── 입력창 위 채팅 목록: 아바타 | 이름 : 내용 (대기방 채팅처럼, 높이는 작게, 호버할 때만 스크롤바) ──
+.fl-chatlog {
+  position: absolute;
+  bottom: 66px;
+  left: 50%;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: min(560px, 80%);
+  max-height: 17vh;
+  margin: 0;
+  padding: 4px 8px;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-width: none;
+  transform: translateX(-50%);
+
+  > :first-child {
+    margin-top: auto;
+  }
+
+  &:hover {
+    scrollbar-color: rgb(232 199 106 / 50%) transparent;
+    scrollbar-width: thin;
+  }
+
+  &::-webkit-scrollbar {
+    width: 0;
+  }
+
+  &:hover::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background: rgb(232 199 106 / 50%);
+  }
+
+  li {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.4;
+    text-shadow: 0 1px 5px rgb(0 0 0 / 80%);
+
+    img {
+      flex: 0 0 auto;
+      align-self: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    strong {
+      flex: 0 0 auto;
+      color: #f6e9bd;
+      font-size: 13px;
+    }
+
+    span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    &.is-mine strong {
+      color: $fl-gold;
+    }
+  }
+}
+
+// ── 배경 여러 개: 날아갈 때마다 바뀐다 ──
+.fl-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.fl-scene--forest {
+  background: linear-gradient(180deg, #03100d 0%, #08241d 34%, #0f3a30 62%, #173d2e 100%);
+}
+
+.fl-scene--pitch {
+  background: linear-gradient(180deg, #25163f 0%, #6b3468 30%, #d9696a 58%, #f6b46b 82%, #f9d28a 100%);
+}
+
+.fl-scene--lake {
+  background: linear-gradient(180deg, #04081c 0%, #0b2146 38%, #17496b 66%, #0f3552 100%);
+}
+
+.fl-scene--aurora {
+  background: linear-gradient(180deg, #030614 0%, #07122b 45%, #101f3f 75%, #1a2a47 100%);
+}
+
+.fl-moon--small {
+  top: 8%;
+  right: 16%;
+  width: clamp(50px, 6vw, 80px);
+  opacity: 0.9;
+}
+
+.fl-pines {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+
+  &--far {
+    height: 54%;
+    color: #0c2b23;
+  }
+
+  &--near {
+    height: 62%;
+    color: #05140f;
+  }
+}
+
+.fl-firefly {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.fl-sun {
+  position: absolute;
+  bottom: 14%;
+  left: 50%;
+  width: clamp(120px, 16vw, 220px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff3c4 0%, #ffd27a 45%, rgb(255 190 110 / 0%) 72%);
+  transform: translateX(-50%);
+}
+
+.fl-stands {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 34%;
+  color: #1d1030;
+}
+
+.fl-hoop {
+  position: absolute;
+  bottom: 12%;
+  width: clamp(36px, 5vw, 60px);
+}
+
+.fl-ridge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 40%;
+  color: #07162b;
+}
+
+.fl-water {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 32%;
+  background: linear-gradient(180deg, rgb(120 180 230 / 8%), rgb(10 40 70 / 60%));
+
+  span {
+    position: absolute;
+    left: 20%;
+    width: 60%;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, rgb(255 246 200 / 55%), transparent);
+    animation: fl-water 4.2s ease-in-out infinite;
+  }
+}
+
+@keyframes fl-water {
+  0%, 100% { opacity: 0.2; transform: scaleX(0.6); }
+  50% { opacity: 0.9; transform: scaleX(1.1); }
+}
+
+.fl-boat {
+  position: absolute;
+  bottom: 18%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffd98a;
+  box-shadow: 0 0 12px 4px rgb(255 217 138 / 70%);
+  animation: fl-bob 3s ease-in-out infinite;
+
+  &--a { left: 28%; }
+
+  &--b { left: 66%; animation-delay: -1.4s; }
+}
+
+@keyframes fl-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.fl-aurora {
+  position: absolute;
+  top: 6%;
+  left: -10%;
+  width: 120%;
+  height: 46%;
+  border-radius: 50%;
+  filter: blur(28px);
+  mix-blend-mode: screen;
+
+  &--0 { background: linear-gradient(90deg, transparent, rgb(80 255 170 / 55%), rgb(60 220 255 / 40%), transparent); }
+
+  &--1 {
+    top: 14%;
+    background: linear-gradient(90deg, transparent, rgb(170 120 255 / 50%), rgb(90 255 200 / 40%), transparent);
+  }
+
+  &--2 {
+    top: 2%;
+    height: 34%;
+    background: linear-gradient(90deg, transparent, rgb(120 255 220 / 40%), rgb(200 140 255 / 40%), transparent);
   }
 }

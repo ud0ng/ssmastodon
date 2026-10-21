@@ -97,6 +97,49 @@ module Game
       session.status == 'pending' && session.state['mode'] == 'event' && session.state['phase'] == 'recruit'
     end
 
+    # 웹에서 참가·참가 취소를 할 수 있는 때: 모집 중이거나, 대기방이면서 카운트다운 전
+    def joinable?(session)
+      recruiting?(session) || (session.lobby? && !counting?(session))
+    end
+
+    # 웹 [참여하기]: :ok / :joined(이미 참가) / :closed / :full / :ineligible / :busy
+    def join!(session, account)
+      return :closed unless joinable?(session)
+      return :joined if session.player_for(account)
+      return :full if session.players.size >= session.kind_class.new(session).event_max_players
+      return :ineligible unless GameCharacter.eligible_accounts.exists?(id: account.id)
+      return :busy if Game::Config.for('common')['one_game_per_person'] && busy_elsewhere?(session, account)
+
+      session.players.create!(account: account, seat: (session.players.maximum(:seat) || -1) + 1, state: { 'accepted' => true })
+      session.players.reset
+      note!(session, "#{GameCharacter.for(account).display_name}님이 참가했습니다.")
+      :ok
+    end
+
+    # 웹 [참여 취소]: 시작 전에만. 남은 사람이 모두 준비한 상태가 되면 바로 카운트다운
+    def leave!(session, account)
+      return :closed unless joinable?(session)
+
+      player = session.player_for(account)
+      return :absent if player.nil?
+
+      player.destroy!
+      session.players.reset
+      if session.lobby?
+        session.state['lobby'] = session.state['lobby'].merge('ready' => ready_ids(session) - [account.id])
+        session.save!
+      end
+      note!(session, "#{GameCharacter.for(account).display_name}님이 참가를 취소했습니다.")
+      begin_countdown!(session) if session.lobby? && session.players.size >= session.kind_class.new(session).event_min_players && all_ready?(session)
+      :ok
+    end
+
+    # 다른 이벤트에 이미 끼어 있는가 (이벤트는 한 번에 하나)
+    def busy_elsewhere?(session, account)
+      keys = Game::Kinds.group_games.map(&:key)
+      GamePlayer.joins(:session).where(account: account, game_sessions: { kind: keys, status: %w(pending lobby active) }).where.not(game_session_id: session.id).exists?
+    end
+
     # 웹 대기방 화면: 참가자(아바타·소속·준비)와 카운트다운
     def view(session, viewer, staff:)
       kind = session.kind_class.new(session)
@@ -110,6 +153,8 @@ module Game
         now: Time.current.iso8601(3),
         can_manage: staff,
         recruiting: recruiting?(session),
+        can_join: joinable?(session) && session.player_for(viewer).nil? && session.players.size < kind.event_max_players && GameCharacter.eligible_accounts.exists?(id: viewer.id),
+        can_leave: joinable?(session) && session.player_for(viewer).present?,
         recruit_ends_at: recruiting?(session) ? session.deadline_at&.iso8601(3) : nil,
         me: session.player_for(viewer)&.account_id&.to_s,
         players: session.players.map do |player|

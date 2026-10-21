@@ -68,6 +68,9 @@ class Api::V1::SystemController < Api::BaseController
   # 컨텐츠 고르기 (묶음별): 진행 중 판 수, 내가 하는 중인지
   def catalog
     open = GameSession.current_kinds.real.where(status: GameSession::OPEN_STATUSES).group(:kind).count
+    # 모집 중(참가 받는 중·대기방)과 진행 중 (이벤트 목록 카드 배지)
+    recruiting = GameSession.current_kinds.real.where(status: %w(pending lobby)).group(:kind).count
+    running = GameSession.current_kinds.real.where(status: 'active').group(:kind).count
     mine = GamePlayer.joins(:session).where(account: current_account, game_sessions: { status: GameSession::OPEN_STATUSES }).distinct.pluck('game_sessions.kind')
     # 해금이 꺼진(컨텐츠 설정 > 켜기) 컨텐츠 카드는 서버원에게 숨기고, 운영진에게만 '꺼짐' 표시와 함께 보여 준다
     kinds = Game::Staff.web?(current_user) ? Game::Kinds.all : Game::Kinds.all.select(&:enabled?)
@@ -75,7 +78,7 @@ class Api::V1::SystemController < Api::BaseController
       {
         key: group,
         games: kinds.select { |kind| Game::Guide.group_of(kind) == group }.map do |kind|
-          { key: kind.key, name: kind.display_name, summary: Game::Guide.for(kind)[:summary], open: open.fetch(kind.key, 0), mine: mine.include?(kind.key), enabled: kind.enabled? }
+          { key: kind.key, name: kind.display_name, summary: Game::Guide.for(kind)[:summary], open: open.fetch(kind.key, 0), recruiting: recruiting.fetch(kind.key, 0), running: running.fetch(kind.key, 0), mine: mine.include?(kind.key), enabled: kind.enabled? }
         end,
       }
     end

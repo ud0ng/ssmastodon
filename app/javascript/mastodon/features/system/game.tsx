@@ -44,8 +44,10 @@ export interface SessionRow {
   id: string;
   // 운영진의 테스트 플레이 (참가자와 운영진에게만 보인다, 운영진은 자물쇠)
   test?: boolean;
-  status: 'pending' | 'active' | 'finished' | 'cancelled';
+  status: 'pending' | 'lobby' | 'active' | 'finished' | 'cancelled';
   turn: number;
+  // 여럿이 하는 이벤트의 진행 라운드
+  round?: number | null;
   deadline_at: string | null;
   finished_at: string | null;
   players: { name: string; acct: string; avatar: string; result: 'win' | 'lose' | 'draw' | null; me: boolean }[];
@@ -99,7 +101,7 @@ const RULE_LABELS: Record<string, React.ReactNode> = {
 
 // [시작하기]: 상대 고르기 모달. 서버 이벤트는 바로 열기, 내가 하는 방이 있으면 그 방으로.
 // 동시 진행을 막았는데 다른 컨텐츠를 하고 있으면 신청하지 않고 바로 안내 (onBusy)
-export const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => void }> = ({ game, onSent, onBusy }) => {
+export const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy: () => void; onRooms?: () => void }> = ({ game, onSent, onBusy, onRooms }) => {
   const intl = useIntl();
   const dispatch = useAppDispatch();
   const history = useHistory();
@@ -178,13 +180,10 @@ export const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy:
     );
   }
 
+  // 열려 있는 이벤트: [이벤트 참가하기] → 진행중 탭의 방 목록으로 (방에 들어가 [참여하기])
   if (game.recruiting) {
-    return sent ? (
-      <span className='system-start system-start--off'>
-        <FormattedMessage id='system.game.sent' defaultMessage='Sent. The system will answer in a moment.' />
-      </span>
-    ) : (
-      <button type='button' className='system-start' disabled={busy} onClick={() => { openEvent(true); }}>
+    return (
+      <button type='button' className='system-start' onClick={() => { onRooms?.(); }}>
         <FormattedMessage id='system.game.join_event' defaultMessage='Join the event ({count} joined)' values={{ count: game.recruiting.count }} />
       </button>
     );
@@ -193,7 +192,7 @@ export const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy:
   if (game.event && !game.can_open) {
     return (
       <span className='system-start system-start--off'>
-        <FormattedMessage id='system.game.staff_opens' defaultMessage='Staff open this event. Watch for the announcement.' />
+        <FormattedMessage id='system.game.preparing' defaultMessage='Preparing' />
       </span>
     );
   }
@@ -280,6 +279,54 @@ export const RoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRo
                 aria-label={intl.formatMessage(messages.deleteRoom)}
                 onClick={() => { onDelete(row); }}
               >
+                <GameIcon name='x' />
+              </button>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+};
+
+// 이벤트 방 목록 (여럿이 하는 컨텐츠): [모집중·진행중·완료 배지] | 참가 캐릭터 아바타(아래 이름) | 오른쪽: 모집 종료까지 / 라운드 / 끝난 때. 완료된 방은 승리자를 색으로 강조
+const EventRoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRow) => void }> = ({ rows, onDelete }) => {
+  const intl = useIntl();
+  return (
+    <ul className='event-room-list'>
+      {rows.map((row) => {
+        const recruiting = row.status === 'pending' || row.status === 'lobby';
+        const finished = row.status === 'finished' || row.status === 'cancelled';
+        const mode = recruiting ? 'recruiting' : finished ? 'finished' : 'running';
+        return (
+          <li key={row.id} className='event-room-list__item'>
+            <Link to={`/system/sessions/${row.id}`} className={`event-room event-room--${mode}`}>
+              <span className='event-room__badge'>
+                {recruiting
+                  ? <FormattedMessage id='event.room.recruiting' defaultMessage='Recruiting' />
+                  : finished
+                    ? <FormattedMessage id='event.room.finished' defaultMessage='Finished' />
+                    : <FormattedMessage id='event.room.running' defaultMessage='In progress' />}
+              </span>
+              <span className='event-room__players'>
+                {row.players.map((player) => (
+                  <span key={player.acct} className={['event-room__player', player.result === 'win' && 'is-winner', player.me && 'is-me'].filter(Boolean).join(' ')}>
+                    <img src={player.avatar} alt='' />
+                    <span>{player.name}</span>
+                  </span>
+                ))}
+              </span>
+              <span className='event-room__side'>
+                {row.test && <span role='img' aria-label='test play' title='Test play'>🔒</span>}
+                {recruiting && (row.deadline_at
+                  ? <Countdown until={row.deadline_at} className='event-room__time' />
+                  : <FormattedMessage id='event.room.waiting' defaultMessage='Waiting room' />)}
+                {row.status === 'active' && <FormattedMessage id='event.room.round' defaultMessage='Round {round}' values={{ round: row.round ?? row.turn }} />}
+                {finished && row.finished_at && <RelativeTimestamp timestamp={row.finished_at} />}
+              </span>
+            </Link>
+            {onDelete && (
+              <button type='button' className='system-room-list__delete' title={intl.formatMessage(messages.deleteRoom)} aria-label={intl.formatMessage(messages.deleteRoom)} onClick={() => { onDelete(row); }}>
                 <GameIcon name='x' />
               </button>
             )}
@@ -597,7 +644,7 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
         {tab === 'rules' && <div className='system-page system-game-page'><RulesBody game={game} /></div>}
         {tab === 'ranking' && <div className='system-page system-game-page'><RankingBody game={game} /></div>}
         {(tab === 'active' || tab === 'recent') && (stageRooms.length > 0 ? (
-          <RoomList rows={stageRooms} onDelete={game.staff && tab === 'recent' ? handleDelete : undefined} />
+          <EventRoomList rows={stageRooms} onDelete={game.staff && tab === 'recent' ? handleDelete : undefined} />
         ) : (
           <p className='system-page__empty'>
             {tab === 'active' ? <FormattedMessage id='system.active.empty' defaultMessage='No game in progress.' /> : <FormattedMessage id='system.game.no_finished' defaultMessage='No finished games yet.' />}

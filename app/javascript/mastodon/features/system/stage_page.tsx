@@ -77,6 +77,8 @@ export interface HubGame {
   name: string;
   summary: string;
   open: number;
+  recruiting?: number;
+  running?: number;
   mine: boolean;
   enabled?: boolean;
 }
@@ -93,14 +95,15 @@ export const StageHub: React.FC<{ games: HubGame[] }> = ({ games }) => (
       <ul className='stage-hub__list'>
         {games.map((game, index) => (
           <li key={game.key}>
-            <Link to={`/system/games/${game.key}`} className={['stage-card', game.mine && 'stage-card--mine', game.enabled === false && 'stage-card--off'].filter(Boolean).join(' ')}>
+            <Link to={`/system/games/${game.key}`} className={['stage-card', game.mine && 'stage-card--mine', (game.recruiting ?? 0) > 0 && 'stage-card--recruiting', game.enabled === false && 'stage-card--off'].filter(Boolean).join(' ')}>
               <span className='stage-card__no'>{String(index + 1).padStart(2, '0')}</span>
               <strong className='stage-card__name'>{game.name}</strong>
               <span className='stage-card__summary'>{game.summary}</span>
               <span className='stage-card__meta'>
                 {game.enabled === false && <span className='stage-card__badge'><FormattedMessage id='system.tile.off' defaultMessage='Off (staff only)' /></span>}
                 {game.mine && <span className='stage-card__badge stage-card__badge--on'><FormattedMessage id='system.tile.mine' defaultMessage='Playing' /></span>}
-                {game.open > 0 && <span className='stage-card__badge'><FormattedMessage id='system.tile.open' defaultMessage='{count} in progress' values={{ count: game.open }} /></span>}
+                {(game.recruiting ?? 0) > 0 && <span className='stage-card__badge stage-card__badge--recruit'><FormattedMessage id='stage.badge_recruiting' defaultMessage='Recruiting {count}' values={{ count: game.recruiting }} /></span>}
+                {(game.running ?? 0) > 0 && <span className='stage-card__badge stage-card__badge--run'><FormattedMessage id='stage.badge_running' defaultMessage='In progress {count}' values={{ count: game.running }} /></span>}
               </span>
             </Link>
           </li>

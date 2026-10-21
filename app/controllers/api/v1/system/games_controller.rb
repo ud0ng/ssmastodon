@@ -165,6 +165,7 @@ class Api::V1::System::GamesController < Api::BaseController
       test: session.test?,
       status: session.status,
       turn: session.turn,
+      round: session.state['round'],
       deadline_at: session.deadline_at&.iso8601,
       finished_at: session.finished_at&.iso8601,
       players: session.players.map do |player|

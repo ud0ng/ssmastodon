@@ -101,8 +101,6 @@ export interface FlyChatMessage {
 const messages = defineMessages({
   chatPlaceholder: { id: 'flying.chat_placeholder', defaultMessage: 'Say something' },
   send: { id: 'flying.send', defaultMessage: 'Send' },
-  chatOpen: { id: 'flying.chat_open', defaultMessage: 'Open chat' },
-  chatClose: { id: 'flying.chat_close', defaultMessage: 'Close chat' },
   rankN: { id: 'flying.rank_n', defaultMessage: '#{rank}' },
 });
 
@@ -295,8 +293,114 @@ const CANDLES = Array.from({ length: 14 }, (_, index) => ({
   drift: 6 + ((index * 5) % 10),
 }));
 
-const Backdrop: React.FC = React.memo(() => (
-  <div className='fl-backdrop' aria-hidden>
+// ── 배경 여러 개 (호그와트 분위기): 날아갈 때마다 이 안에서 무작위로 바뀐다 ──
+const SCENE_KEYS = ['castle', 'forest', 'pitch', 'lake', 'aurora'] as const;
+type SceneKey = typeof SCENE_KEYS[number];
+
+// 지금 배경이 아닌 것 중에서 하나
+const nextScene = (current: SceneKey): SceneKey => {
+  const others = SCENE_KEYS.filter((key) => key !== current);
+  return others[Math.floor(Math.random() * others.length)] ?? 'castle';
+};
+
+const Fireflies: React.FC<{ count: number; color?: string }> = ({ count, color = '#d8ff8a' }) => (
+  <>
+    {Array.from({ length: count }, (_, index) => (
+      <motion.span
+        key={index}
+        className='fl-firefly'
+        style={{ left: `${6 + ((index * 41) % 88)}%`, top: `${38 + ((index * 23) % 40)}%`, background: color, boxShadow: `0 0 8px 2px ${color}` }}
+        animate={{ y: [0, -14, 6, -8, 0], x: [0, 10, -6, 4, 0], opacity: [0.2, 1, 0.4, 1, 0.2] }}
+        transition={{ duration: 5 + (index % 4), repeat: Infinity, ease: 'easeInOut', delay: (index % 5) * 0.5 }}
+      />
+    ))}
+  </>
+);
+
+// 금지된 숲: 짙은 초록 하늘과 소나무 실루엣, 반딧불
+const Pines: React.FC<{ className: string; shift: number; tall: number }> = ({ className, shift, tall }) => (
+  <svg className={className} viewBox='0 0 1200 300' preserveAspectRatio='none' aria-hidden>
+    <g fill='currentColor'>
+      <rect x='0' y='290' width='1200' height='10' />
+      {Array.from({ length: 24 }, (_, index) => {
+        const x = (index * 52) + shift;
+        const height = tall + ((index * 37) % 60);
+        return <polygon key={index} points={`${x},300 ${x + 26},${300 - height} ${x + 52},300`} />;
+      })}
+    </g>
+  </svg>
+);
+
+const ForestScene: React.FC = () => (
+  <>
+    <span className='fl-moon fl-moon--small' />
+    <Pines className='fl-pines fl-pines--far' shift={-10} tall={150} />
+    <Pines className='fl-pines fl-pines--near' shift={20} tall={200} />
+    <span className='fl-mist fl-mist--a' />
+    <Fireflies count={16} />
+  </>
+);
+
+// 해질녘 퀴디치 경기장: 노을 하늘, 골대 세 개, 관중석 실루엣
+const Hoop: React.FC<{ left: string; height: number }> = ({ left, height }) => (
+  <svg className='fl-hoop' style={{ left }} viewBox='0 0 60 200' aria-hidden>
+    <rect x='28' y={200 - height} width='4' height={height} fill='#2b1b3d' />
+    <ellipse cx='30' cy={200 - height} rx='24' ry='24' fill='none' stroke='#f3d36b' strokeWidth='4' />
+  </svg>
+);
+
+const PitchScene: React.FC = () => (
+  <>
+    <span className='fl-sun' />
+    <svg className='fl-stands' viewBox='0 0 1200 200' preserveAspectRatio='none' aria-hidden>
+      <g fill='currentColor'>
+        <path d='M0 200 L0 120 L120 100 L120 70 L250 90 L250 60 L420 80 L420 110 L700 100 L700 70 L880 90 L880 50 L1050 80 L1050 110 L1200 100 L1200 200 Z' />
+      </g>
+    </svg>
+    <Hoop left='18%' height={120} />
+    <Hoop left='48%' height={150} />
+    <Hoop left='78%' height={120} />
+    <Fireflies count={8} color='#ffd9a0' />
+  </>
+);
+
+// 검은 호수: 달빛 아래 물결, 먼 산 실루엣과 작은 배의 불빛
+const LakeScene: React.FC = () => (
+  <>
+    <span className='fl-moon' />
+    <svg className='fl-ridge' viewBox='0 0 1200 220' preserveAspectRatio='none' aria-hidden>
+      <path fill='currentColor' d='M0 220 L0 150 L130 90 L230 140 L380 60 L520 130 L650 80 L800 150 L950 70 L1080 130 L1200 100 L1200 220 Z' />
+    </svg>
+    <div className='fl-water'>
+      {[0, 1, 2, 3, 4, 5].map((index) => <span key={index} style={{ top: `${12 + (index * 14)}%`, animationDelay: `${index * 0.6}s` }} />)}
+    </div>
+    <span className='fl-boat fl-boat--a' />
+    <span className='fl-boat fl-boat--b' />
+  </>
+);
+
+// 천문탑 위 오로라: 초록·청록·보라색 띠가 일렁인다
+const AuroraScene: React.FC = () => (
+  <>
+    {STARS.slice(0, 50).map((star, index) => (
+      <span key={index} className='fl-star' style={{ left: `${star.left}%`, top: `${star.top}%`, width: star.size, height: star.size, animationDelay: `${star.delay}s` }} />
+    ))}
+    {[0, 1, 2].map((index) => (
+      <motion.span
+        key={index}
+        className={`fl-aurora fl-aurora--${index}`}
+        animate={{ x: ['-8%', '8%', '-8%'], skewX: [-14, 10, -14], opacity: [0.55, 0.9, 0.55] }}
+        transition={{ duration: 9 + (index * 3), repeat: Infinity, ease: 'easeInOut' }}
+      />
+    ))}
+    <svg className='fl-ridge' viewBox='0 0 1200 220' preserveAspectRatio='none' aria-hidden>
+      <path fill='currentColor' d='M0 220 L0 170 L200 130 L360 160 L560 110 L760 150 L980 120 L1200 160 L1200 220 Z' />
+    </svg>
+  </>
+);
+
+const CastleScene: React.FC = () => (
+  <>
     <span className='fl-moon' />
     {STARS.map((star, index) => (
       <span key={index} className='fl-star' style={{ left: `${star.left}%`, top: `${star.top}%`, width: star.size, height: star.size, animationDelay: `${star.delay}s` }} />
@@ -338,8 +442,24 @@ const Backdrop: React.FC = React.memo(() => (
         🦉
       </motion.span>
     ))}
-  </div>
-));
+  </>
+);
+
+const SCENE_VIEWS: Record<SceneKey, React.FC> = { castle: CastleScene, forest: ForestScene, pitch: PitchScene, lake: LakeScene, aurora: AuroraScene };
+
+// 배경이 바뀌면 이전 배경은 서서히 사라지고 새 배경이 나타난다
+const Backdrop: React.FC<{ scene: SceneKey }> = React.memo(({ scene }) => {
+  const View = SCENE_VIEWS[scene];
+  return (
+    <div className='fl-backdrop' aria-hidden>
+      <AnimatePresence initial={false}>
+        <motion.div key={scene} className={`fl-scene fl-scene--${scene}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 1.1 }}>
+          <View />
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+});
 Backdrop.displayName = 'Backdrop';
 
 interface SkyProps {
@@ -352,15 +472,22 @@ interface SkyProps {
   mine: number | null;
   showChosen: boolean;
   highlight?: number[];
+  // 날아가는 동안: 길 표시는 사라지고 배경이 함께 흘러간다
+  moving?: boolean;
+  scene?: SceneKey;
   onPick?: (lane: number) => void;
   children?: React.ReactNode;
   size?: number;
 }
 
-const Sky: React.FC<SkyProps> = ({ players, pos, bursts, lanes, routes, selectable, mine, showChosen, highlight, onPick, children, size = 64 }) => (
-  <div className='fl-sky' style={{ '--fl-size': `${size}px` } as React.CSSProperties}>
-    <Backdrop />
-    <div className='fl-line' style={{ top: `${LINE_Y + 8}%` }} aria-hidden />
+const STREAKS = Array.from({ length: 14 }, (_, index) => ({ left: 4 + ((index * 37) % 92), delay: ((index * 17) % 10) / 10, length: 8 + ((index * 5) % 12) }));
+
+const Sky: React.FC<SkyProps> = ({ players, pos, bursts, lanes, routes, selectable, mine, showChosen, highlight, moving = false, scene = 'castle', onPick, children, size = 64 }) => (
+  <div className={moving ? 'fl-sky is-moving' : 'fl-sky'} style={{ '--fl-size': `${size}px` } as React.CSSProperties}>
+    <Backdrop scene={scene} />
+    <div className='fl-streaks' aria-hidden>
+      {STREAKS.map((streak, index) => <span key={index} style={{ left: `${streak.left}%`, height: `${streak.length}%`, animationDelay: `${streak.delay}s` }} />)}
+    </div>
 
     {lanes > 0 && (
       <div className='fl-lanes' style={{ top: `${LANE_Y - 8}%` }}>
@@ -460,6 +587,7 @@ const Replay: React.FC<{ view: FlyView; entry: RoundEntry; highlight?: number[];
         mine={null}
         showChosen={false}
         highlight={highlight}
+        moving={player.flying}
         size={size}
       />
     </div>
@@ -631,7 +759,7 @@ const Mvp: React.FC<{ view: FlyView; finish: FinishView; onLeave: () => void; on
   );
 };
 
-// ── 채팅: 토큰 위 말풍선(최대 2개, 잠깐 보였다 사라진다) + 아래 가운데 입력창 + 오른쪽 가장자리 채팅 목록 ──
+// ── 채팅: 토큰 위 말풍선(최대 2개, 잠깐 보였다 사라진다) + 아래 가운데 입력창과 그 위 채팅 목록 ──
 const ChatLayer: React.FC<{
   sessionId: string;
   chat: FlyChatMessage[];
@@ -642,7 +770,6 @@ const ChatLayer: React.FC<{
 }> = ({ sessionId, chat, players, pos, canChat, onSent }) => {
   const intl = useIntl();
   const [text, setText] = useState('');
-  const [open, setOpen] = useState(false);
   const [recent, setRecent] = useState<(FlyChatMessage & { at: number })[]>([]);
   const seen = useRef<Set<string> | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -668,9 +795,10 @@ const ChatLayer: React.FC<{
     return () => { window.clearTimeout(timer); };
   }, [recent]);
 
+  // 새 채팅이 오면 맨 아래로
   useEffect(() => {
-    if (open && listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [open, chat]);
+    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+  }, [chat]);
 
   const submit = useCallback((event: React.FormEvent) => {
     event.preventDefault();
@@ -711,24 +839,16 @@ const ChatLayer: React.FC<{
         </AnimatePresence>
       </div>
 
-      <button type='button' className={open ? 'fl-chat-toggle is-open' : 'fl-chat-toggle'} aria-label={intl.formatMessage(open ? messages.chatClose : messages.chatOpen)} onClick={() => { setOpen((value) => !value); }}>
-        {open ? '›' : '‹'}
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.aside className='fl-chat-list' initial={{ x: 320 }} animate={{ x: 0 }} exit={{ x: 320 }} transition={{ type: 'spring', stiffness: 260, damping: 28 }}>
-            <ul ref={listRef}>
-              {chat.map((message) => (
-                <li key={message.id} className={message.mine ? 'is-mine' : undefined}>
-                  {!message.mine && <strong>{message.name}</strong>}
-                  <span>{message.text}</span>
-                </li>
-              ))}
-            </ul>
-          </motion.aside>
-        )}
-      </AnimatePresence>
+      {/* 입력창 위 채팅 목록: 아바타 | 이름 : 내용 (대기방처럼, 높이는 작게, 호버할 때만 스크롤바) */}
+      <ul className='fl-chatlog' ref={listRef}>
+        {chat.map((message) => (
+          <li key={message.id} className={message.mine ? 'is-mine' : undefined}>
+            <img src={message.avatar} alt='' />
+            <strong>{message.name}</strong>
+            <span>: {message.text}</span>
+          </li>
+        ))}
+      </ul>
 
       {canChat && (
         <form className='fl-chat-input' onSubmit={submit}>
@@ -758,10 +878,16 @@ export const FlyingStage: React.FC<{
   const [reviewRun, setReviewRun] = useState(0);
   // 지금 틀어 주는 라운드 (그 라운드의 길 칸을 날아가는 동안 계속 보여 준다)
   const [flightEntry, setFlightEntry] = useState<RoundEntry | null>(null);
+  const [scene, setScene] = useState<SceneKey>('castle');
   const player = useRoundPlayer();
   const { settle, play } = player;
   const playing = useRef(false);
   const remaining = useRemaining(view);
+
+  // 날아갈 때마다 배경이 호그와트의 다른 풍경으로 바뀐다
+  useEffect(() => {
+    if (player.flying) setScene(nextScene);
+  }, [player.flying]);
 
   useStageLayout(true);
 
@@ -909,6 +1035,8 @@ export const FlyingStage: React.FC<{
         selectable={canPick}
         mine={review ?? flightEntry ? ((review ?? flightEntry)?.choices[String(view.me)] ?? null) : choosing ? myLane : (shownEntry?.choices[String(view.me)] ?? null)}
         showChosen={choosing}
+        moving={player.flying}
+        scene={scene}
         onPick={pick}
       >
         <AnimatePresence>
