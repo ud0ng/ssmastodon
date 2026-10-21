@@ -47,7 +47,7 @@ class Api::V1::System::HousesController < Api::BaseController
     scope = scope.where(id: ...params[:max_id].to_i) if params[:max_id].present?
     rows = scope.order(id: :desc).limit(LIMIT + 1).to_a
     page = rows.first(LIMIT)
-    people = people_for(Account.where(id: page.map(&:account_id)).to_a + top_accounts)
+    people = people_for(Account.where(id: page.flat_map { |log| [log.account_id, log.source_account_id] }.compact).to_a + top_accounts)
 
     render json: {
       house: house_json,
@@ -72,6 +72,8 @@ class Api::V1::System::HousesController < Api::BaseController
       reason: log.reason.to_s,
       counter: counter.name,
       result: log.net,
+      # 수치를 올려 준 사람 (아이템을 쓴 사람)
+      source: log.source_account_id && person_json(people[log.source_account_id], log.delta),
       created_at: log.created_at.iso8601,
       character: person_json(people[log.account_id], log.delta),
     }

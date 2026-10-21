@@ -101,4 +101,14 @@ RSpec.describe 'API V1 System wallet' do
 
     expect(response).to have_http_status(401)
   end
+  it 'shows who an item or currency was given by or to in the history' do
+    Game::Wallet.apply!([{ account: user.account, items: { '초콜릿 개구리' => -1 }, other: friend.account, other_dir: 'to' },
+                         { account: friend.account, items: { '초콜릿 개구리' => 1 }, other: user.account, other_dir: 'from' }], kind: 'transfer', detail: '초콜릿 개구리 1개 → 친구')
+    Game::Wallet.apply!([{ account: user.account, items: { '초콜릿 개구리' => 2 }, other: friend.account, other_dir: 'from' }], kind: 'transfer', detail: '받음')
+
+    get '/api/v1/system/wallet/records', headers: headers
+
+    others = response.parsed_body['records'].filter_map { |record| record['other']&.slice('acct', 'dir') }
+    expect(others).to eq [{ 'acct' => friend.account.acct, 'dir' => 'from' }, { 'acct' => friend.account.acct, 'dir' => 'to' }]
+  end
 end

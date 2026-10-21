@@ -18,6 +18,7 @@ class Api::V1::System::WalletsController < Api::BaseController
     shop_items = GameShopItem.includes(:shop).index_by { |item| Game::Wallet.key(item.name) }
     results = GamePlayer.joins(:session).where(account: current_account, game_sessions: { status: 'finished' }).group(:result).count
     rewards = GameReward.where(account: current_account)
+    activity = Game::Activity.overview([current_account.id])[current_account.id]
 
     render json: {
       currency: currency,
@@ -28,6 +29,9 @@ class Api::V1::System::WalletsController < Api::BaseController
       transfer_enabled: transfer_enabled?,
       gained: rewards.gained.sum(:money),
       spent: rewards.spent.sum(:money),
+      # 내 툿 합계 (DM 포함 전체 툿 수 / 글자 수): 재화 화면 누적 사용 옆
+      posts: activity.posts + activity.dms,
+      post_chars: activity.chars + activity.dm_chars,
       item_count: character.item_count,
       record: { win: results['win'].to_i, lose: results['lose'].to_i, draw: results['draw'].to_i },
       # 왼쪽 컨텐츠 메뉴 배지: 받고 아직 수락하지 않은 신청 수
@@ -49,8 +53,10 @@ class Api::V1::System::WalletsController < Api::BaseController
     scope = scope.where(id: ...params[:max_id].to_i) if params[:max_id].present?
     page = scope.order(id: :desc).limit(RECORDS + 1).to_a
 
+    shown = page.first(RECORDS)
+    others = Account.where(id: shown.filter_map(&:other_account_id)).index_by(&:id)
     render json: {
-      records: page.first(RECORDS).map { |record| record_json(record) },
+      records: shown.map { |record| record_json(record, others[record.other_account_id]) },
       next_max_id: page.size > RECORDS ? page[RECORDS - 1].id.to_s : nil,
     }
   end
@@ -65,7 +71,7 @@ class Api::V1::System::WalletsController < Api::BaseController
     return fail!('받을 사람을 골라 주세요.') if receiver.nil?
 
     name = GameCharacter.for(receiver).display_name
-    character = Game::Wallet.apply!([{ account: current_account, money: -amount }, { account: receiver, money: amount }],
+    character = Game::Wallet.apply!([{ account: current_account, money: -amount, other: receiver, other_dir: 'to' }, { account: receiver, money: amount, other: current_account, other_dir: 'from' }],
                                     kind: 'transfer', detail: "#{amount}#{currency} → #{name}", actor: 'web').first
     Game::Gift.announce(current_account, command: ['양도', "#{amount}#{currency}", name],
                                          text: Game::Text.render(Game::Config.for('common')['msg_gift_money'], player: current_account, target: receiver, money: amount, currency: currency), receivers: [receiver])
@@ -147,7 +153,7 @@ class Api::V1::System::WalletsController < Api::BaseController
     }
   end
 
-  def record_json(record)
+  def record_json(record, other = nil)
     {
       id: record.id.to_s,
       kind: record.kind,
@@ -155,6 +161,8 @@ class Api::V1::System::WalletsController < Api::BaseController
       money: record.money,
       items: Array(record.items).map { |item| { name: item['name'], count: item['count'].to_i } },
       reason: reason_label(record.reason),
+      # 양도·사용의 상대: dir 'to' 내가 상대에게 / 'from' 상대가 나에게
+      other: other && { name: GameCharacter.for(other).display_name, acct: other.acct, avatar: full_asset_url(other.avatar_static_url), dir: record.other_dir },
       created_at: record.created_at.iso8601,
     }
   end

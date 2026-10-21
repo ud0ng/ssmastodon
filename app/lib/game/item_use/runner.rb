@@ -109,7 +109,7 @@ module Game
       def apply!(shop_item, effects)
         results = []
         GameCharacter.transaction do
-          Game::Wallet.apply!([{ account: @account, items: shop_item&.permanent ? {} : { @name => -1 } }], kind: 'use', detail: detail, actor: @via.to_s)
+          Game::Wallet.apply!([{ account: @account, items: shop_item&.permanent ? {} : { @name => -1 }, other: other_target, other_dir: 'to' }], kind: 'use', detail: detail, actor: @via.to_s)
           effects.each { |effect| results << apply_effect!(effect) }
         end
         Game::Fx.expire!(@target.id) if @target
@@ -138,7 +138,7 @@ module Game
           "#{field.name} #{format('%+d', delta)} (#{Game::ItemEffects.duration(effect['minutes'])} 동안) (#{before} → #{character.reload.stat_value(field)})"
         else
           before = character.status_value(field)
-          Game::Wallet.apply!([{ account: @target, stats: { field.name => delta } }], kind: 'use', detail: "#{@name} → #{name_of(@target)}", actor: @via.to_s)
+          Game::Wallet.apply!([{ account: @target, stats: { field.name => delta }, other: other_user, other_dir: 'from' }], kind: 'use', detail: "#{@name} → #{name_of(@target)}", actor: @via.to_s)
           "#{field.name} #{format('%+d', delta)} (#{before} → #{GameCharacter.for(@target).reload.status_value(field)})"
         end
       end
@@ -153,11 +153,11 @@ module Game
         when 'item'
           have = Array(GameCharacter.for(@target).reload.inventory).find { |item| Game::Wallet.key(item['name']) == Game::Wallet.key(effect['item']) }.to_h['count'].to_i
           delta = [delta, -have].max
-          Game::Wallet.apply!([{ account: @target, items: { effect['item'] => delta } }], kind: 'use', detail: "#{@name} → #{name_of(@target)}", actor: @via.to_s) unless delta.zero?
+          Game::Wallet.apply!([{ account: @target, items: { effect['item'] => delta }, other: other_user, other_dir: 'from' }], kind: 'use', detail: "#{@name} → #{name_of(@target)}", actor: @via.to_s) unless delta.zero?
           "#{name_of(@target)}: #{effect['item']} #{format('%+d', delta)}개"
         else
           delta = [delta, -GameCharacter.for(@target).reload.money].max
-          Game::Wallet.apply!([{ account: @target, money: delta }], kind: 'use', detail: "#{@name} → #{name_of(@target)}", actor: @via.to_s) unless delta.zero?
+          Game::Wallet.apply!([{ account: @target, money: delta, other: other_user, other_dir: 'from' }], kind: 'use', detail: "#{@name} → #{name_of(@target)}", actor: @via.to_s) unless delta.zero?
           "#{name_of(@target)}: #{Game::Config.for('common')['currency_name']} #{format('%+d', delta)}"
         end
       end
@@ -167,7 +167,7 @@ module Game
         counter = GameCounter.find_by(id: effect['counter_id'])
         raise Error, '누적 수치 목록에 없는 수치입니다. 운영진에게 문의해 주세요.' if counter.nil?
 
-        before, after, notes = counter.add!(GameCharacter.for(@target), Game::Dice.amount(effect['value']), item: @name, reason: detail, actor: @via.to_s)
+        before, after, notes = counter.add!(GameCharacter.for(@target), Game::Dice.amount(effect['value']), item: @name, reason: detail, actor: @via.to_s, source: @account)
         "#{name_of(@target)}: #{counter.name} #{format('%+d', after - before)} (누적 #{after}회)#{notes.empty? ? '' : " ➭ #{notes.join(', ')}"}"
       end
 
@@ -184,6 +184,15 @@ module Game
           character.update!(effects: character.active_effects + [entry.merge('kind' => 'fx', 'item' => @name)])
           "#{name_of(@target)}: #{record.label} (#{Game::ItemEffects.duration(effect['minutes'])} 동안)"
         end
+      end
+
+      # 기록의 상대: 내가 대상에게 쓴 것 (나 자신이면 없음) / 대상이 받은 것에는 쓴 사람
+      def other_target
+        @target if @target && @target.id != @account.id
+      end
+
+      def other_user
+        @account if @target && @target.id != @account.id
       end
 
       def detail

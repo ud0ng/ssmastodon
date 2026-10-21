@@ -25,7 +25,7 @@ class Api::V1::System::ItemsController < Api::BaseController
     return fail!('받을 사람을 골라 주세요.') if receiver.nil?
 
     name = GameCharacter.for(receiver).display_name
-    apply!([{ account: current_account, items: { @name => -@count } }, { account: receiver, items: { @name => @count } }],
+    apply!([{ account: current_account, items: { @name => -@count }, other: receiver, other_dir: 'to' }, { account: receiver, items: { @name => @count }, other: current_account, other_dir: 'from' }],
            'transfer', "#{@name} #{@count}개 → #{name}")
     announce!(['양도', "#{@name}: #{@count}", name], Game::Text.render(Game::Config.for('common')['msg_gift_item'], player: current_account, target: receiver, item: @name, count: @count), receivers: [receiver])
     render json: { message: "#{name}에게 #{@name} #{@count}개#{particle('개', '을를')} 선물했습니다." }

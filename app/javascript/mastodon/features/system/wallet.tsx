@@ -97,6 +97,16 @@ const RecordRow: React.FC<{ record: WalletRecord; currency: string; itemsOnly?: 
         <span className='wallet-record__meta'>
           {record.kind_name} · <FormattedTime value={record.created_at} hour='2-digit' minute='2-digit' />
         </span>
+        {record.other && (
+          <span className='wallet-record__other'>
+            <img src={record.other.avatar} alt='' />
+            <span>
+              {record.other.dir === 'to'
+                ? <FormattedMessage id='wallet.other_to' defaultMessage='To {name}' values={{ name: record.other.name }} />
+                : <FormattedMessage id='wallet.other_from' defaultMessage='From {name}' values={{ name: record.other.name }} />}
+            </span>
+          </span>
+        )}
         {record.items.length > 0 && (
           <span className='wallet-record__items'>
             {record.items.map((item) => (
@@ -183,6 +193,10 @@ const MoneyView: React.FC<{ wallet: Wallet }> = ({ wallet }) => {
             <span>
               <FormattedMessage id='wallet.total_spend' defaultMessage='Total spent' />
               <strong>{signed(wallet.spent)}</strong>
+            </span>
+            <span>
+              <FormattedMessage id='wallet.total_posts' defaultMessage='Toots (toots / chars)' />
+              <strong>{wallet.posts.toLocaleString()} / {wallet.post_chars.toLocaleString()}</strong>
             </span>
           </span>
         </div>

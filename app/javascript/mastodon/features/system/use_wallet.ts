@@ -32,6 +32,8 @@ export interface WalletRecord {
   money: number;
   items: { name: string; count: number }[];
   reason: string;
+  // 양도·사용의 상대: dir 'to' 내가 상대에게 / 'from' 상대가 나에게
+  other?: { name: string; acct: string; avatar: string; dir: 'to' | 'from' } | null;
   created_at: string;
 }
 
@@ -44,6 +46,8 @@ export interface Wallet {
   transfer_enabled: boolean;
   gained: number;
   spent: number;
+  posts: number;
+  post_chars: number;
   item_count: number;
   record: { win: number; lose: number; draw: number };
   inventory: WalletItem[];

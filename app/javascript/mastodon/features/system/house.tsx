@@ -32,6 +32,8 @@ interface PointRecord {
   counter?: string | null;
   // 누적 수치 기록이면 그때의 결과값 (amount 는 오르내린 값)
   result?: number;
+  // 수치를 올려 준 사람 (아이템을 쓴 사람)
+  source?: Person | null;
   character: Person | null;
 }
 
@@ -162,6 +164,12 @@ const RecordRow: React.FC<{ record: PointRecord; counterTab?: boolean }> = ({ re
         {counterTab && record.result !== undefined ? `${record.counter} ${record.result} · ` : ''}
         <FormattedTime value={record.created_at} hour='2-digit' minute='2-digit' />
       </span>
+      {counterTab && record.source && (
+        <span className='wallet-record__other'>
+          <img src={record.source.avatar} alt='' />
+          <span><FormattedMessage id='house.given_by' defaultMessage='From {name}' values={{ name: record.source.name }} /></span>
+        </span>
+      )}
     </div>
     <span className='wallet-record__amount'>
       <strong>{signed(record.amount)}</strong>

@@ -4,7 +4,7 @@ module Game
   # 캐릭터 돈·아이템·스탯을 바꾸고 기록한다 (자동봇 /api/v1/bot 과 운영진).
   # 여러 캐릭터를 한 번에 (양도), 모두 되거나 하나도 안 되게 처리한다.
   #
-  #   Game::Wallet.apply!([{ account:, money: -3, items: { '사과' => 1 }, stats: { '힘' => 2 } }],
+  #   Game::Wallet.apply!([{ account:, money: -3, items: { '사과' => 1 }, stats: { '힘' => 2 }, other: 상대계정, other_dir: 'to' }],
   #                       kind: 'purchase', detail: '사과 1개', actor: 'ssbot', once_per_day: false)
   #
   # 돈·아이템이 모자라면 Insufficient, 오늘 이미 했으면(once_per_day) AlreadyDone,
@@ -47,7 +47,8 @@ module Game
           apply_one(character, change, base_stats)
           character.save!
           GameReward.create!(account: change[:account], kind: kind, money: change[:money], items: change[:items].map { |name, count| { 'name' => name, 'count' => count } },
-                             stats: change[:stats], reason: detail.to_s.truncate(500), actor: actor.to_s.truncate(100))
+                             stats: change[:stats], reason: detail.to_s.truncate(500), actor: actor.to_s.truncate(100),
+                             other_account_id: change[:other]&.id, other_dir: change[:other] ? change[:other_dir].to_s : '')
         end
         characters
       end
@@ -60,6 +61,9 @@ module Game
         money: change[:money].to_i,
         items: change[:items].to_h.transform_keys(&:to_s).transform_values(&:to_i).reject { |name, count| name.strip.empty? || count.zero? },
         stats: change[:stats].to_h.transform_keys(&:to_s).transform_values(&:to_i).reject { |name, _| name.strip.empty? },
+        # 양도·사용의 상대 (기록에 누가 누구에게 했는지): other 계정, other_dir 'to'(내가 상대에게) / 'from'(상대가 나에게)
+        other: change[:other],
+        other_dir: change[:other_dir],
       }
     end
 

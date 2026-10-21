@@ -83,4 +83,14 @@ RSpec.describe 'GET /api/v1/system/houses/:id' do
     get "/api/v1/system/houses/#{house.id}", headers: headers, params: { filter: 'loss' }
     expect(response.parsed_body['records'].pluck('amount')).to include(-10)
   end
+  it 'records who raised a counter in the counter history' do
+    report = GameCounter.create!(name: '벌점', max_count: 5, affects_house: true, house_amount: -2)
+    GameCharacter.for(user.account).update!(house: house)
+    GameCharacter.for(ron).update!(house: house)
+    report.add!(GameCharacter.for(ron), 1, source: user.account)
+
+    get "/api/v1/system/houses/#{house.id}", headers: headers, params: { counter: report.id }
+
+    expect(response.parsed_body['records'].first['source']).to include('name' => '해리')
+  end
 end

@@ -51,7 +51,7 @@ class GameCounter < ApplicationRecord
 
   # 캐릭터의 누적치를 바꾸고(0 아래로는 안 내려감), 이 수치와 상성 수치의 누적 효과를 맞춘다.
   # [전, 후(결과값), 붙은 효과 안내] 를 돌려주고 기록(GameCounterLog)을 남긴다
-  def add!(character, delta, item: nil, reason: nil, actor: nil)
+  def add!(character, delta, item: nil, reason: nil, actor: nil, source: nil)
     character.reload
     related = [self, opposite].compact
     before = related.to_h { |counter| [counter.id, counter.net_for(character)] }
@@ -61,7 +61,7 @@ class GameCounter < ApplicationRecord
 
     notes = related.flat_map { |counter| counter.sync_rules!(character, before[counter.id], counter.net_for(character), item: item) }
     after = net_for(character)
-    logs.create!(account_id: character.account_id, delta: raw_after - raw_before, raw: raw_after, net: after, reason: (reason || item).to_s.truncate(200), actor: actor.to_s)
+    logs.create!(account_id: character.account_id, delta: raw_after - raw_before, raw: raw_after, net: after, reason: (reason || item).to_s.truncate(200), actor: actor.to_s, source_account_id: source&.id)
     [before[id], after, notes]
   end
 

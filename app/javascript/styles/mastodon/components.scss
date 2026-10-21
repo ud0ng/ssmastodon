@@ -20647,3 +20647,20 @@ body.app-body.layout-game-room.layout-single-column {
 .system-room-card__lock {
   font-size: 14px;
 }
+
+// 재화 기록·벌점 상점 기록: 상대(양도·사용·준 사람)를 작은 아바타와 이름으로
+.wallet-record__other {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 700;
+
+  img {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+}
