@@ -1266,3 +1266,40 @@ $fl-ink: #07060b;
     background: linear-gradient(90deg, transparent, rgb(120 255 220 / 40%), rgb(200 140 255 / 40%), transparent);
   }
 }
+
+// ── 결과 발표: 보상은 시상대 바로 아래, [다음]과는 넉넉히 띄운다 ──
+.fl-podium__reward {
+  margin-top: 12px;
+  min-height: 52px;
+}
+
+.fl-result > .fl-big-button {
+  margin-top: 34px;
+}
+
+// ── 다음 라운드: 돌아오는 동안 배경이 반대로 흐르고, 끝나면 선택 칸이 위에서 내려온다 ──
+.fl-sky.is-returning .fl-lanes {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fl-sky.is-returning .fl-backdrop {
+  transform: translateY(-6%) scale(1.07);
+}
+
+.fl-sky.is-returning .fl-streaks {
+  opacity: 1;
+
+  span {
+    animation-direction: reverse;
+  }
+}
+
+.fl-sky:not(.is-moving):not(.is-returning) .fl-lanes {
+  animation: fl-lanes-in 0.8s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@keyframes fl-lanes-in {
+  from { opacity: 0; transform: translateY(-34px); }
+  to { opacity: 1; transform: translateY(0); }
+}

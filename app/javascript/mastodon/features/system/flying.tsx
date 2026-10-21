@@ -139,6 +139,8 @@ const useRoundPlayer = () => {
   const [pos, setPos] = useState<Record<string, TokenPos>>({});
   const [bursts, setBursts] = useState<Burst[]>([]);
   const [flying, setFlying] = useState(false);
+  // 살아남은 토큰이 출발선으로 돌아오는 동안 (배경이 반대로 흐른다)
+  const [returning, setReturning] = useState(false);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -224,12 +226,17 @@ const useRoundPlayer = () => {
     });
     await wait(650);
     if (!mounted.current) return;
-    if (options.returnToLine) settle(survivors, 0.9);
-    await wait(options.returnToLine ? 900 : 100);
-    if (mounted.current) setFlying(false);
+    if (options.returnToLine) {
+      setReturning(true);
+      settle(survivors, 1.5);
+    }
+    await wait(options.returnToLine ? 1_600 : 100);
+    if (!mounted.current) return;
+    setReturning(false);
+    setFlying(false);
   }, [settle]);
 
-  return { pos, bursts, flying, settle, play };
+  return { pos, bursts, flying, returning, settle, play };
 };
 
 // ── 서버 시계 기준 남은 초 ──
@@ -297,10 +304,15 @@ const CANDLES = Array.from({ length: 14 }, (_, index) => ({
 const SCENE_KEYS = ['castle', 'forest', 'pitch', 'lake', 'aurora'] as const;
 type SceneKey = typeof SCENE_KEYS[number];
 
-// 지금 배경이 아닌 것 중에서 하나
-const nextScene = (current: SceneKey): SceneKey => {
-  const others = SCENE_KEYS.filter((key) => key !== current);
-  return others[Math.floor(Math.random() * others.length)] ?? 'castle';
+// 라운드마다 배경이 바뀐다. 방 번호와 라운드로 정해져서, 게임 중·다시 보기·MVP에서 그 라운드는 항상 같은 배경이다 (바로 앞 라운드와는 다르게)
+const sceneFor = (sessionId: string, round: number): SceneKey => {
+  let scene: SceneKey = 'castle';
+  const base = (Number(sessionId.slice(-6)) || 7) * 31;
+  for (let each = 1; each <= round; each += 1) {
+    const others = SCENE_KEYS.filter((key) => key !== scene);
+    scene = others[(base + (each * 97)) % others.length] ?? 'castle';
+  }
+  return scene;
 };
 
 const Fireflies: React.FC<{ count: number; color?: string }> = ({ count, color = '#d8ff8a' }) => (
@@ -474,6 +486,7 @@ interface SkyProps {
   highlight?: number[];
   // 날아가는 동안: 길 표시는 사라지고 배경이 함께 흘러간다
   moving?: boolean;
+  returning?: boolean;
   scene?: SceneKey;
   onPick?: (lane: number) => void;
   children?: React.ReactNode;
@@ -482,8 +495,8 @@ interface SkyProps {
 
 const STREAKS = Array.from({ length: 14 }, (_, index) => ({ left: 4 + ((index * 37) % 92), delay: ((index * 17) % 10) / 10, length: 8 + ((index * 5) % 12) }));
 
-const Sky: React.FC<SkyProps> = ({ players, pos, bursts, lanes, routes, selectable, mine, showChosen, highlight, moving = false, scene = 'castle', onPick, children, size = 64 }) => (
-  <div className={moving ? 'fl-sky is-moving' : 'fl-sky'} style={{ '--fl-size': `${size}px` } as React.CSSProperties}>
+const Sky: React.FC<SkyProps> = ({ players, pos, bursts, lanes, routes, selectable, mine, showChosen, highlight, moving = false, returning = false, scene = 'castle', onPick, children, size = 64 }) => (
+  <div className={['fl-sky', moving && 'is-moving', returning && 'is-returning'].filter(Boolean).join(' ')} style={{ '--fl-size': `${size}px` } as React.CSSProperties}>
     <Backdrop scene={scene} />
     <div className='fl-streaks' aria-hidden>
       {STREAKS.map((streak, index) => <span key={index} style={{ left: `${streak.left}%`, height: `${streak.length}%`, animationDelay: `${streak.delay}s` }} />)}
@@ -552,7 +565,7 @@ const Sky: React.FC<SkyProps> = ({ players, pos, bursts, lanes, routes, selectab
 );
 
 // ── 다시보기: 한 라운드를 처음부터 틀어 준다 (라운드 되돌아보기 · MVP 장면) ──
-const Replay: React.FC<{ view: FlyView; entry: RoundEntry; highlight?: number[]; size?: number }> = ({ view, entry, highlight, size = 52 }) => {
+const Replay: React.FC<{ view: FlyView; entry: RoundEntry; highlight?: number[]; size?: number; scene?: SceneKey }> = ({ view, entry, highlight, size = 52, scene = 'castle' }) => {
   const player = useRoundPlayer();
   const [run, setRun] = useState(0);
   const { settle, play } = player;
@@ -581,13 +594,14 @@ const Replay: React.FC<{ view: FlyView; entry: RoundEntry; highlight?: number[];
         players={view.players}
         pos={player.pos}
         bursts={player.bursts}
-        lanes={entry.lanes}
+        lanes={0}
         routes={entry.routes}
         selectable={false}
         mine={null}
         showChosen={false}
         highlight={highlight}
         moving={player.flying}
+        scene={scene}
         size={size}
       />
     </div>
@@ -631,11 +645,14 @@ const Podium: React.FC<{ view: FlyView; finish: FinishView; onNext: () => void }
   const mine = view.me !== null ? view.players.find((player) => player.seat === view.me) : null;
   const rest = finish.ranks.slice(3).flatMap((group) => group.seats.map((seat) => ({ rank: group.rank, seat })));
   const myGroup = mine ? finish.ranks.find((group) => group.seats.includes(mine.seat)) : null;
+  // 순위가 모두 발표된 뒤에 보상이 올라가며 나타나고, 그다음에 [다음]이 뜬다
+  const [rewardsOn, setRewardsOn] = useState(false);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { setReady(true); }, 4_600);
-    return () => { window.clearTimeout(timer); };
+    const first = window.setTimeout(() => { setRewardsOn(true); }, 3_900);
+    const second = window.setTimeout(() => { setReady(true); }, 6_300);
+    return () => { window.clearTimeout(first); window.clearTimeout(second); };
   }, []);
 
   return (
@@ -662,7 +679,6 @@ const Podium: React.FC<{ view: FlyView; finish: FinishView; onNext: () => void }
                     <GameToken key={seat} accountId={player.account_id} avatar={player.avatar} name={player.name} house={player.house} size={group.rank === 1 ? 84 : 64} />
                   ) : null;
                 })}
-                <RewardLine reward={finish.rewards[String(group.seats[0])]} currency={finish.currency} test={finish.test} delay={delayOf(group.rank) + 1.1} />
               </motion.div>
               <motion.div
                 className='fl-podium__stand'
@@ -674,6 +690,10 @@ const Podium: React.FC<{ view: FlyView; finish: FinishView; onNext: () => void }
                 <b>{group.rank}</b>
                 {group.seats.length > 1 && <small><FormattedMessage id='flying.joint' defaultMessage='Joint' /></small>}
               </motion.div>
+              {/* 보상은 시상대(1·2·3) 바로 아래 */}
+              <div className='fl-podium__reward'>
+                {rewardsOn && <RewardLine reward={finish.rewards[String(group.seats[0])]} currency={finish.currency} test={finish.test} delay={0.1} />}
+              </div>
             </div>
           );
         })}
@@ -683,7 +703,7 @@ const Podium: React.FC<{ view: FlyView; finish: FinishView; onNext: () => void }
         <p className='fl-result__mine'>
           <FormattedMessage id='flying.my_rank' defaultMessage='Your rank: {rank}' values={{ rank: myGroup.rank }} />
           {' '}
-          <RewardLine reward={finish.rewards[String(mine?.seat)]} currency={finish.currency} test={finish.test} delay={0.4} />
+          {rewardsOn && <RewardLine reward={finish.rewards[String(mine?.seat)]} currency={finish.currency} test={finish.test} delay={0.1} />}
         </p>
       )}
       {rest.length > 0 && (
@@ -710,7 +730,7 @@ const Podium: React.FC<{ view: FlyView; finish: FinishView; onNext: () => void }
 };
 
 // ── 오늘의 MVP ──
-const Mvp: React.FC<{ view: FlyView; finish: FinishView; onLeave: () => void; onClose: () => void }> = ({ view, finish, onLeave, onClose }) => {
+const Mvp: React.FC<{ view: FlyView; finish: FinishView; sessionId: string; onLeave: () => void; onClose: () => void }> = ({ view, finish, sessionId, onLeave, onClose }) => {
   const [index, setIndex] = useState(0);
   const scene = finish.mvp[index];
   const entry = scene ? view.history.find((each) => each.round === scene.round) : undefined;
@@ -732,7 +752,7 @@ const Mvp: React.FC<{ view: FlyView; finish: FinishView; onLeave: () => void; on
               <p>{scene.text}</p>
             </motion.div>
           </AnimatePresence>
-          <Replay view={view} entry={entry} highlight={scene.seats} />
+          <Replay view={view} entry={entry} highlight={scene.seats} scene={sceneFor(sessionId, scene.round)} />
           {finish.mvp.length > 1 && (
             <div className='fl-mvp__chips'>
               {finish.mvp.map((each, position) => (
@@ -884,10 +904,16 @@ export const FlyingStage: React.FC<{
   const playing = useRef(false);
   const remaining = useRemaining(view);
 
-  // 날아갈 때마다 배경이 호그와트의 다른 풍경으로 바뀐다
+  // 라운드마다 배경이 호그와트의 다른 풍경으로 바뀐다 (그 라운드를 날아가기 시작할 때)
   useEffect(() => {
-    if (player.flying) setScene(nextScene);
-  }, [player.flying]);
+    if (player.flying && flightEntry) setScene(sceneFor(sessionId, flightEntry.round));
+  }, [player.flying, flightEntry, sessionId]);
+
+  // 날아가지 않는 동안: 방금까지 본 라운드의 배경 (새로 들어온 사람·다시 보기 포함)
+  useEffect(() => {
+    if (review) setScene(sceneFor(sessionId, review.round));
+    else if (!player.flying && shown !== null) setScene(sceneFor(sessionId, shown));
+  }, [player.flying, shown, review, sessionId]);
 
   useStageLayout(true);
 
@@ -1030,12 +1056,13 @@ export const FlyingStage: React.FC<{
         players={view.players}
         pos={player.pos}
         bursts={player.bursts}
-        lanes={lanes}
+        lanes={view.status === 'active' && isPlayer && !review ? lanes : 0}
         routes={routes}
         selectable={canPick}
         mine={review ?? flightEntry ? ((review ?? flightEntry)?.choices[String(view.me)] ?? null) : choosing ? myLane : (shownEntry?.choices[String(view.me)] ?? null)}
         showChosen={choosing}
         moving={player.flying}
+        returning={player.returning}
         scene={scene}
         onPick={pick}
       >
@@ -1091,7 +1118,7 @@ export const FlyingStage: React.FC<{
         )}
         {finished && finish && ending === 'mvp' && (
           <motion.div key='mvp' className='fl-curtain' initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <Mvp view={view} finish={finish} onLeave={() => { history.push('/system/group'); }} onClose={() => { setEnding('closed'); }} />
+            <Mvp view={view} finish={finish} sessionId={sessionId} onLeave={() => { history.push('/system/group'); }} onClose={() => { setEnding('closed'); }} />
           </motion.div>
         )}
       </AnimatePresence>

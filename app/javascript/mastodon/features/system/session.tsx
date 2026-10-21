@@ -30,6 +30,7 @@ import type { FlyChatMessage } from './flying';
 import { FlyingStage } from './flying';
 import type { LobbyData, LobbyMessage } from './lobby';
 import { LobbyStage } from './lobby';
+import { StageFrame } from './stage_page';
 import { StageTutorial } from './stage_tutorial';
 import { MaraudersMapPlay } from './marauders_map';
 import { MazePlay } from './maze';
@@ -420,6 +421,45 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
     }
     wasMyTurn.current = myTurn;
   }, [myTurn]);
+
+  // 비행 대결 방은 옛 채팅방 화면 없이 새 화면(대기방·게임방)만 보인다. 읽는 동안·취소된 방도 어두운 무대 화면으로
+  if (!data || data.kind === 'flying') {
+    return (
+      <>
+        {data?.status === 'active' && data.player && <StageTutorial kind={data.kind} />}
+        {data && flyingRoom && (
+          <FlyingStage
+            sessionId={data.id}
+            name={data.name}
+            chat={data.messages.filter((message) => message.chat).map((message): FlyChatMessage => ({ id: message.id, mine: message.mine, name: message.name, acct: message.acct, avatar: message.avatar, text: message.text }))}
+            staff={Boolean(data.staff)}
+            isPlayer={data.player}
+            onChanged={load}
+          />
+        )}
+        {data?.lobby && (
+          <LobbyStage
+            sessionId={data.id}
+            name={data.name}
+            lobby={data.lobby}
+            messages={data.messages.filter((message) => message.id.startsWith('m') && !message.secret && message.text) as LobbyMessage[]}
+            onChanged={load}
+          />
+        )}
+        {(!data || (!flyingRoom && !data.lobby)) && (
+          <StageFrame back='/system/group' label={title}>
+            {(data || failed) && (
+              <p className='stage-notice'>
+                {failed && !data
+                  ? <FormattedMessage id='system.load_failed' defaultMessage='Could not load. Try again in a moment.' />
+                  : <FormattedMessage id='stage.closed' defaultMessage='This event has ended or was cancelled.' />}
+              </p>
+            )}
+          </StageFrame>
+        )}
+      </>
+    );
+  }
 
   return (
     <Column bindToDocument={!multiColumn} label={title}>

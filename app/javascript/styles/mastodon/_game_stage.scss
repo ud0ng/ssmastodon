@@ -1126,3 +1126,11 @@ $stage-ink: #07060b;
     font-weight: 700;
   }
 }
+
+.stage-notice {
+  position: relative;
+  margin: 40vh auto 0;
+  color: rgb(239 233 220 / 75%);
+  font-size: 16px;
+  text-align: center;
+}

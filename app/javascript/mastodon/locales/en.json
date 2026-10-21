@@ -1112,6 +1112,7 @@
   "event.room.finished": "Finished",
   "event.room.waiting": "Waiting room",
   "event.room.round": "Round {round}",
+  "stage.closed": "This event has ended or was cancelled.",
   "stage.badge_recruiting": "Recruiting {count}",
   "stage.badge_running": "In progress {count}",
   "lobby.join": "Join",
