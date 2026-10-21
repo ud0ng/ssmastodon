@@ -16,7 +16,7 @@ class Api::V1::System::WalletsController < Api::BaseController
   def show
     character = GameCharacter.for(current_account)
     shop_items = GameShopItem.includes(:shop).index_by { |item| Game::Wallet.key(item.name) }
-    results = GamePlayer.joins(:session).where(account: current_account, game_sessions: { status: 'finished' }).group(:result).count
+    results = GamePlayer.joins(:session).merge(GameSession.real).where(account: current_account, game_sessions: { status: 'finished' }).group(:result).count
     rewards = GameReward.where(account: current_account)
     activity = Game::Activity.overview([current_account.id])[current_account.id]
 
@@ -118,9 +118,18 @@ class Api::V1::System::WalletsController < Api::BaseController
 
   # 내가 아직 참가하지 않은 모집 중인 이벤트: 이벤트 메뉴에 알림 배지가 뜬다
   def recruiting_events
-    GameSession.current_kinds.where(status: 'pending').where("state->>'mode' = 'event'").reject { |session| session.players.any? { |player| player.account_id == current_account.id } || (Array(session.state['invited']).any? && Array(session.state['invited']).exclude?(current_account.id)) }.map do |session|
+    (invitations + open_recruitments).map do |session|
       { session_id: session.id.to_s, name: session.kind_class&.display_name || session.kind, event: true }
     end
+  end
+
+  # 초대받고 아직 수락하지 않은 이벤트 대기방 (이벤트 메뉴 알림 배지)
+  def invitations
+    GameSession.current_kinds.where(status: 'lobby').where("COALESCE(state->'invited', '[]'::jsonb) @> ?::jsonb", [current_account.id].to_json).reject { |session| session.players.any? { |player| player.account_id == current_account.id } }
+  end
+
+  def open_recruitments
+    GameSession.current_kinds.where(status: 'pending').where("state->>'mode' = 'event'").reject { |session| session.players.any? { |player| player.account_id == current_account.id } || (Array(session.state['invited']).any? && Array(session.state['invited']).exclude?(current_account.id)) }
   end
 
   def currency

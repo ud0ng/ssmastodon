@@ -10,7 +10,7 @@ class Api::V1::System::HistoriesController < Api::BaseController
   before_action :require_user!
 
   def show
-    scope = GamePlayer.joins(:session).merge(GameSession.current_kinds).where(account: current_account, game_sessions: { status: 'finished' })
+    scope = GamePlayer.joins(:session).merge(GameSession.real).merge(GameSession.current_kinds).where(account: current_account, game_sessions: { status: 'finished' })
     scope = scope.where(result: params[:filter]) if %w(win lose draw).include?(params[:filter])
     scope = scope.where(id: ...params[:max_id].to_i) if params[:max_id].present?
     players = scope.includes(session: { players: :account }).order(id: :desc).limit(LIMIT + 1).to_a

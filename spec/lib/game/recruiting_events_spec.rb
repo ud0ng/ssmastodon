@@ -120,11 +120,12 @@ RSpec.describe Game::Events::Opening do
     end
   end
 
-  it 'lets staff open several events at once, one per content' do
+  it 'lets staff open several events at once, even the same content several times' do
     described_class.open!(Game::Web::Maze, admin)
 
     expect { described_class.open!(Game::Kinds::Flying, admin) }.to_not raise_error
-    expect { described_class.open!(Game::Web::Maze, admin) }.to raise_error(described_class::Error, /이미 진행 중/)
+    expect { described_class.open!(Game::Web::Maze, admin) }.to_not raise_error
+    expect(GameSession.where(kind: 'maze').count).to eq 2
   end
 
   it 'limits a person to one event at a time but does not count 1:1 contents' do

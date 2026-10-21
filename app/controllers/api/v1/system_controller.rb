@@ -124,7 +124,7 @@ class Api::V1::SystemController < Api::BaseController
   end
 
   def record
-    results = GamePlayer.joins(:session).where(account: current_account, game_sessions: { status: 'finished' }).group(:result).count
+    results = GamePlayer.joins(:session).merge(GameSession.real).where(account: current_account, game_sessions: { status: 'finished' }).group(:result).count
     { win: results['win'].to_i, lose: results['lose'].to_i, draw: results['draw'].to_i }
   end
 

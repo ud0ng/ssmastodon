@@ -118,7 +118,7 @@ module Game
       return :not_invited unless invite_ids(session).include?(account.id)
       return :joined if session.player_for(account)
       return :full if session.players.size >= session.kind_class.new(session).event_max_players
-      return :busy if Game::Config.for('common')['one_game_per_person'] && busy_elsewhere?(session, account)
+      return :busy if busy_elsewhere?(session, account) # 멤버는 한 번에 이벤트 하나만 (끝나야 다른 이벤트)
 
       session.players.create!(account: account, seat: (session.players.maximum(:seat) || -1) + 1, state: { 'accepted' => true })
       session.players.reset
@@ -147,7 +147,7 @@ module Game
       return :joined if session.player_for(account)
       return :full if session.players.size >= session.kind_class.new(session).event_max_players
       return :ineligible unless GameCharacter.eligible_accounts.exists?(id: account.id)
-      return :busy if Game::Config.for('common')['one_game_per_person'] && busy_elsewhere?(session, account)
+      return :busy if busy_elsewhere?(session, account) # 멤버는 한 번에 이벤트 하나만 (끝나야 다른 이벤트)
 
       session.players.create!(account: account, seat: (session.players.maximum(:seat) || -1) + 1, state: { 'accepted' => true })
       session.players.reset

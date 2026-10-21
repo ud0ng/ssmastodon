@@ -154,7 +154,7 @@ module Admin
     def prepare_form
       load_columns
       @counters = GameCounter.includes(:opposite).to_a
-      finished = GamePlayer.joins(:session).where(account_id: @character.account_id, game_sessions: { status: 'finished' })
+      finished = GamePlayer.joins(:session).merge(GameSession.real).where(account_id: @character.account_id, game_sessions: { status: 'finished' })
       @record = finished.group(:result).count
     end
 

@@ -50,7 +50,7 @@ module Game
 
     # [내전적] 답장
     def record(account)
-      results = GamePlayer.joins(:session).where(account: account, game_sessions: { status: 'finished' }).group(:result).count
+      results = GamePlayer.joins(:session).merge(GameSession.real).where(account: account, game_sessions: { status: 'finished' }).group(:result).count
       Game::Text.render(Game::Config.for('common')['msg_record'],
                         player: account,
                         win: results['win'].to_i, lose: results['lose'].to_i, draw: results['draw'].to_i)

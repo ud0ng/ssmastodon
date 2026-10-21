@@ -87,7 +87,7 @@ class Api::V1::System::HousesController < Api::BaseController
   # 소속 점수 카드 아래 합계 카드: 이 소속 캐릭터들의 재화·전적·툿(DM 포함 전체 툿 수 / 글자 수) 합계
   def summary_json
     ids = house_members.map(&:account_id)
-    results = GamePlayer.joins(:session).where(account_id: ids, game_sessions: { status: 'finished' }).group(:result).count
+    results = GamePlayer.joins(:session).merge(GameSession.real).where(account_id: ids, game_sessions: { status: 'finished' }).group(:result).count
     activity = Game::Activity.overview(ids).values_at(*ids)
     {
       money: house_members.sum { |character| character.money.to_i },

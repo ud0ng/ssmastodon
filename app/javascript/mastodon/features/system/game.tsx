@@ -181,7 +181,7 @@ export const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy:
   }
 
   // 열려 있는 이벤트: [이벤트 참가하기] → 진행중 탭의 방 목록으로 (방에 들어가 [참여하기])
-  if (game.recruiting) {
+  if (game.recruiting && !game.can_open) {
     return (
       <button type='button' className='system-start' onClick={() => { onRooms?.(); }}>
         <FormattedMessage id='system.game.join_event' defaultMessage='Join the event ({count} joined)' values={{ count: game.recruiting.count }} />

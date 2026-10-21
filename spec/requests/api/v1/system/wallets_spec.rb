@@ -111,4 +111,26 @@ RSpec.describe 'API V1 System wallet' do
     others = response.parsed_body['records'].filter_map { |record| record['other']&.slice('acct', 'dir') }
     expect(others).to eq [{ 'acct' => friend.account.acct, 'dir' => 'from' }, { 'acct' => friend.account.acct, 'dir' => 'to' }]
   end
+  it 'leaves test plays out of the record' do
+    real = GameSession.create!(kind: 'jellybean', status: 'finished', finished_at: Time.now.utc, visibility: 'private')
+    real.players.create!(account: user.account, seat: 0, result: 'win')
+    test = GameSession.create!(kind: 'flying', status: 'finished', finished_at: Time.now.utc, visibility: 'direct', state: { 'test' => true })
+    test.players.create!(account: user.account, seat: 0, result: 'win')
+
+    get '/api/v1/system/wallet', headers: headers
+
+    expect(response.parsed_body['record']).to eq('win' => 1, 'lose' => 0, 'draw' => 0)
+  end
+  it 'badges the events menu for someone who was invited to a waiting room and has not answered yet' do
+    friend = Fabricate(:user)
+    GameCharacter.for(friend.account)
+    session = GameSession.create!(kind: 'flying', status: 'lobby', visibility: 'private', state: { 'mode' => 'event', 'invited' => [friend.account.id], 'lobby' => { 'ready' => [], 'start_at' => nil } })
+    friend_headers = { 'Authorization' => "Bearer #{Fabricate(:accessible_access_token, resource_owner_id: friend.id, scopes: 'read write').token}" }
+
+    get '/api/v1/system/wallet', headers: friend_headers
+    expect(response.parsed_body['todo'].pluck('session_id')).to include(session.id.to_s)
+
+    get '/api/v1/system/wallet', headers: headers
+    expect(response.parsed_body['todo'].pluck('session_id')).to_not include(session.id.to_s)
+  end
 end
