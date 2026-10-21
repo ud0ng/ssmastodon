@@ -1,11 +1,8 @@
-// 재화·인벤토리·소속 점수·누적 수치가 바뀌었을 때(선물·지급·보상으로 늘었을 때) 알림: 배지 + 소리.
+// 재화·인벤토리·소속 점수·누적 수치가 바뀌었을 때(선물·지급·보상으로 늘었을 때) 알림: 배지 (소리는 없다).
 //   '본 것'(seen)을 브라우저에 기억해 두고, 지금 값이 본 것보다 늘었으면 배지를 단다.
 //   재화는 늘었을 때만, 인벤토리는 아이템이 새로 생기거나 개수가 늘었을 때만, 소속 점수는 값이 달라졌을 때(오르내림 모두).
 //   그 화면(재화·인벤토리·소속 점수)에 들어가 있으면 본 것으로 치고 알리지 않는다.
-//   소리는 새로 읽었을 때 앞서 읽은 값보다 늘었을 때 한 번 (처음 읽을 때는 울리지 않는다).
 import { useEffect, useState } from 'react';
-
-import { store } from 'mastodon/store';
 
 import type { Wallet } from './use_wallet';
 
@@ -90,8 +87,6 @@ export const markSeen = (kind: ChangeKind, wallet: Wallet, houseId?: string) => 
   write(next);
 };
 
-let previous: Wallet | null = null;
-
 const onPage = (kind: ChangeKind) => {
   const path = window.location.pathname;
   if (kind === 'money') return path.startsWith('/system/wallet');
@@ -99,7 +94,7 @@ const onPage = (kind: ChangeKind) => {
   return path.startsWith('/system/houses/');
 };
 
-// 재화를 새로 읽을 때마다 (use_wallet): 본 것 맞추기 + 새로 늘었으면 소리
+// 재화를 새로 읽을 때마다 (use_wallet): 본 것 맞추기 (알림 배지만, 소리는 내지 않는다)
 export const trackWalletChanges = (wallet: Wallet) => {
   const seen = current();
   if (!seen) {
@@ -118,18 +113,6 @@ export const trackWalletChanges = (wallet: Wallet) => {
       counters: { ...Object.fromEntries(wallet.houses.filter((house) => !(house.id in (latest.counters ?? {}))).map((house) => [house.id, house.counters ?? 0])), ...latest.counters },
     });
   }
-
-  const before = previous;
-  previous = wallet;
-  if (!before) return;
-
-  const grew =
-    (wallet.money > before.money && !onPage('money')) ||
-    (isChanged('inventory', wallet, { money: 0, inventory: inventoryOf(before), houses: {} }) && !onPage('inventory')) ||
-    (isChanged('house', wallet, { money: 0, inventory: {}, houses: housesOf(before), counters: countersOf(before) }) && !onPage('house'));
-
-  // 소리는 sounds 미들웨어가 meta.sound 를 보고 낸다 (컨텐츠 알림과 같은 소리)
-  if (grew) store.dispatch({ type: 'game_alerts/sound', meta: { sound: 'boop' } });
 };
 
 // 이 종류에 알림 배지를 달아야 하나 (본 것이 바뀌면 다시 그린다)
