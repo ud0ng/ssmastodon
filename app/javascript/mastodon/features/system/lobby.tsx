@@ -11,7 +11,7 @@ import { createPortal } from 'react-dom';
 
 import { apiRequestPost } from 'mastodon/api';
 
-import { Crest } from './crest';
+import { TokenAvatar, TokenName } from './game_token';
 
 export interface LobbyPlayer {
   account_id: string;
@@ -86,12 +86,11 @@ const PlayerCard: React.FC<{
 }> = ({ player, mine, canToggle, busy, onToggle }) => (
   <li className={['game-stage__player', player.ready && 'game-stage__player--ready', mine && 'game-stage__player--me'].filter(Boolean).join(' ')}>
     <span className='game-stage__avatar'>
-      <img src={player.avatar} alt='' />
+      <TokenAvatar accountId={player.account_id} avatar={player.avatar} size={88} />
       {player.ready && <span className='game-stage__check' aria-hidden>✓</span>}
     </span>
     <span className='game-stage__who'>
-      <Crest house={player.house ? { id: '', name: player.house.name, emoji: '', color: player.house.color, total: 0 } : undefined} />
-      <span className='game-stage__name'>{player.name}</span>
+      <TokenName accountId={player.account_id} name={player.name} house={player.house} />
     </span>
     {canToggle && (
       <button type='button' className={player.ready ? 'game-stage__button game-stage__button--off' : 'game-stage__button'} disabled={busy} onClick={() => { onToggle(player); }}>

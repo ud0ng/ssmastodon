@@ -87,7 +87,8 @@ class Api::V1::System::SessionsController < Api::BaseController
   def chat
     return render json: { error: 'forbidden' }, status: 403 unless @session.player_for(current_account) || staff?
 
-    Game::Lobby.chat!(@session, current_account, params[:text]) if @session.lobby?
+    # 대기방과 웹 전용 컨텐츠 방은 끝난 뒤에도 채팅할 수 있다
+    Game::Lobby.chat!(@session, current_account, params[:text]) if @session.lobby? || (@session.web_channel? && @session.status != 'cancelled')
     show
   end
 

@@ -2,66 +2,109 @@
 
 require 'rails_helper'
 
-# 비행 대결 (여럿이): 겹치지 않는 경로를 고르면 통과, 통과 횟수가 가장 많은 사람 승리
+# 비행 대결 (이벤트, 웹 전용): 혼자 고른 길만 통과, 겹치면 추락, 마지막 1인(더 줄일 수 없으면 2인)이 남을 때까지
 RSpec.describe Game::Kinds::Flying do
   let!(:system) { Fabricate(:account, username: 'system') }
-  let!(:harry) { Fabricate(:account, username: 'harry') }
-  let!(:ron) { Fabricate(:account, username: 'ron') }
-  let!(:draco) { Fabricate(:account, username: 'draco') }
+  let(:accounts) { %w(harry ron draco luna cedric).map { |name| Fabricate(:account, username: name) } }
 
-  def toot(account, text, visibility: 'private')
-    status = PostStatusService.new.call(account, text: text, visibility: visibility)
-    Game::Engine.new(status).call
-    status
+  def start!(count)
+    session = GameSession.create!(kind: 'flying', status: 'active', visibility: 'private', state: { 'mode' => 'event' })
+    accounts.first(count).each_with_index { |account, index| session.players.create!(account: account, seat: index, state: { 'accepted' => true }) }
+    described_class.new(session).start!
+    session.reload
   end
 
-  def session
-    GameSession.where(kind: 'flying').order(:id).last
+  def pick(session, index, lane)
+    Game::WebCommand.play(session.reload, accounts[index], '비행', [lane.to_s])
+    session.reload
   end
 
-  def start!
-    toot(harry, '@system @ron @draco [비행대결]')
-    [ron, draco].each { |account| toot(account, '@system [수락]') }
+  def results(session)
+    session.players.order(:seat).map(&:result)
   end
 
-  before { Game::Config.update!('flying', 'rounds' => '1') }
+  it 'is an event with fewer lanes than players and hides the choices of the round' do
+    session = start!(4)
 
-  it 'is a group content with fewer routes than players' do
     expect(Game::Guide.group_of(described_class)).to eq 'group'
-
-    start!
-
+    expect(described_class.web?).to be true
     expect(session.status).to eq 'active'
-    expect(session.state['routes'].size).to eq 2
-    expect(described_class.new(session).card_actions.size).to eq 2
+    expect(session.state['lanes']).to eq 3
+    expect(session.state['routes'].size).to eq 3
+
+    pick(session, 0, 1)
+    view = described_class.new(session).view_for(session.players.first)
+    expect(view[:my_choice]).to eq 1
+    expect(view[:players].map { |entry| entry[:chosen] }).to eq [true, false, false, false]
+    expect(view[:history]).to eq []
   end
 
-  it 'announces the routes of a round only by DM, once per player' do
-    start!
+  it 'lets two survivors win together when the field cannot shrink further' do
+    session = start!(4)
+    [[0, 1], [1, 1], [2, 2], [3, 3]].each { |index, lane| pick(session, index, lane) }
 
-    texts = Status.where(account: system).map { |status| [status.visibility, status.text] }
-    expect(texts.select { |visibility, text| visibility != 'direct' && text.include?('라운드 경로') }).to eq []
-    expect(texts.count { |visibility, text| visibility == 'direct' && text.include?('1라운드 경로') }).to eq 3
+    session.reload
+    expect(session.status).to eq 'finished'
+    expect(results(session)).to eq %w(lose lose win win)
+    expect(session.state['ranks']).to eq [{ 'rank' => 1, 'seats' => [2, 3] }, { 'rank' => 2, 'seats' => [0, 1] }]
+    expect(session.state['history'].first['results']).to eq('0' => 'crash', '1' => 'crash', '2' => 'pass', '3' => 'pass')
   end
 
-  it 'lets the only one on a free route win' do
-    start!
+  it 'keeps flying until one is left and ranks the fallen by the round they dropped' do
+    session = start!(5)
+    [[0, 1], [1, 1], [2, 2], [3, 3], [4, 4]].each { |index, lane| pick(session, index, lane) }
 
-    toot(harry, '@system [비행/1]', visibility: 'direct')
-    toot(ron, '@system [비행/1]', visibility: 'direct')
-    toot(draco, '@system [비행/2]', visibility: 'direct')
+    expect(session.reload.status).to eq 'active'
+    expect(session.state['alive']).to eq %w(2 3 4)
+    expect(session.state['lanes']).to eq 2
+    expect(session.state['round']).to eq 2
 
-    current = session.reload
-    expect(current.status).to eq 'finished'
-    expect(current.players.map { |player| [player.account.username, player.result] }).to eq [%w(harry lose), %w(ron lose), %w(draco win)]
-    expect(Status.where(account: system).map(&:text).join).to include('충돌', '통과')
+    [[2, 1], [3, 2], [4, 2]].each { |index, lane| pick(session, index, lane) }
+
+    session.reload
+    expect(session.status).to eq 'finished'
+    expect(results(session)).to eq %w(lose lose win lose lose)
+    expect(session.state['ranks']).to eq [{ 'rank' => 1, 'seats' => [2] }, { 'rank' => 2, 'seats' => [3, 4] }, { 'rank' => 3, 'seats' => [0, 1] }]
   end
 
-  it 'is a draw when everyone crashes' do
-    start!
+  it 'drops the ones who did not choose when the time is up' do
+    session = start!(4)
+    [[0, 1], [1, 2], [2, 3]].each { |index, lane| pick(session, index, lane) }
 
-    [harry, ron, draco].each { |account| toot(account, '@system [비행/1]', visibility: 'direct') }
+    expect(session.reload.status).to eq 'active'
+    described_class.new(session).timeout!
 
-    expect(session.reload.players.map(&:result)).to eq %w(draw draw draw)
+    session.reload
+    expect(session.state['out']).to eq('3' => 1)
+    expect(session.state['history'].first['results']['3']).to eq 'idle'
+    expect(session.state['alive']).to eq %w(0 1 2)
+  end
+
+  it 'is a draw when everyone crashes in the first round' do
+    session = start!(3)
+    3.times { |index| pick(session, index, 1) }
+
+    session.reload
+    expect(session.status).to eq 'finished'
+    expect(results(session)).to eq %w(draw draw draw)
+  end
+
+  it 'picks the silliest scenes for the MVP' do
+    session = start!(5)
+    [[0, 1], [1, 1], [2, 1], [3, 2], [4, 3]].each { |index, lane| pick(session, index, lane) }
+
+    mvp = session.reload.state['mvp']
+    expect(mvp.first).to include('kind' => 'pileup', 'round' => 1, 'seats' => [0, 1, 2])
+    expect(mvp.first['text']).to include('같은 길로 몰려')
+  end
+
+  it 'ignores the picks of fallen players and unknown lanes' do
+    session = start!(5)
+    pick(session, 0, 9)
+    expect(session.state['choices']).to eq({})
+    [[0, 1], [1, 1], [2, 2], [3, 3], [4, 4]].each { |index, lane| pick(session, index, lane) }
+
+    pick(session, 0, 1)
+    expect(session.state['choices']).to eq({})
   end
 end

@@ -163,7 +163,7 @@ RSpec.describe Game::Events::Opening do
 
   it 'starts a flying race for the people who joined' do
     described_class.open!(Game::Kinds::Flying, admin)
-    accounts.first(2).each { |account| toot(account, '@system [참가]') }
+    accounts.first(3).each { |account| toot(account, '@system [참가]') }
 
     expect(finish_recruiting!('flying').status).to eq 'active'
   end

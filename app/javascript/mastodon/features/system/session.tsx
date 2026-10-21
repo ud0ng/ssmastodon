@@ -26,6 +26,8 @@ import { Composer } from 'mastodon/features/messages/components/composer';
 import { DateDivider } from 'mastodon/features/messages/components/date_divider';
 
 import { sendCommand } from './board';
+import type { FlyChatMessage } from './flying';
+import { FlyingStage } from './flying';
 import type { LobbyData, LobbyMessage } from './lobby';
 import { LobbyStage } from './lobby';
 import { StageTutorial } from './stage_tutorial';
@@ -312,16 +314,18 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   }, [id]);
 
   const inLobby = data?.status === 'lobby';
+  // 비행 대결 게임방은 라운드·채팅이 빨리 보이게 대기방처럼 자주 읽는다
+  const flyingRoom = data?.kind === 'flying' && ['active', 'finished'].includes(data.status);
 
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, inLobby ? LOBBY_REFRESH_MS : REFRESH_MS);
+    const timer = window.setInterval(load, inLobby || flyingRoom ? LOBBY_REFRESH_MS : REFRESH_MS);
     const pending = timers.current;
     return () => {
       window.clearInterval(timer);
       pending.forEach((each) => { window.clearTimeout(each); });
     };
-  }, [load, inLobby]);
+  }, [load, inLobby, flyingRoom]);
 
   // 새 메시지가 오면 메시지 칸만 맨 아래로
   useLayoutEffect(() => {
@@ -420,6 +424,16 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   return (
     <Column bindToDocument={!multiColumn} label={title}>
       {data?.status === 'active' && data.player && ['maze', 'marauders_map', 'secret_chamber', 'flying'].includes(data.kind) && <StageTutorial kind={data.kind} />}
+      {data && flyingRoom && (
+        <FlyingStage
+          sessionId={data.id}
+          name={data.name}
+          chat={data.messages.filter((message) => message.chat).map((message): FlyChatMessage => ({ id: message.id, mine: message.mine, name: message.name, acct: message.acct, avatar: message.avatar, text: message.text }))}
+          staff={Boolean(data.staff)}
+          isPlayer={data.player}
+          onChanged={load}
+        />
+      )}
       {data?.lobby && (
         <LobbyStage
           sessionId={data.id}
