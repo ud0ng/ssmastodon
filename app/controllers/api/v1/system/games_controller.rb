@@ -42,6 +42,7 @@ class Api::V1::System::GamesController < Api::BaseController
       uneven_teams: @kind.uneven_teams?,
       summary: guide[:summary],
       rules_text: guide[:rules],
+      cast: guide[:cast],
       roles: guide[:roles],
       items: guide[:items],
       steps: guide[:steps],

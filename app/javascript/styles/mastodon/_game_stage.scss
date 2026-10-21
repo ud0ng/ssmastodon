@@ -126,7 +126,7 @@ $stage-ink: #07060b;
     small {
       color: $stage-gold;
       font-size: 11px;
-      letter-spacing: 0.28em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
     }
 
@@ -166,7 +166,7 @@ $stage-ink: #07060b;
     padding: 3px 14px;
     border: 1px solid rgb(232 199 106 / 55%);
     border-radius: 999px;
-    font-family: 'Roboto Mono', monospace;
+    font-family: inherit;
   }
 
   &__player {
@@ -453,9 +453,9 @@ $stage-ink: #07060b;
 
   &__overlay-label {
     color: rgb(239 233 220 / 70%);
-    font-family: 'Roboto Mono', monospace;
+    font-family: inherit;
     font-size: 12px;
-    letter-spacing: 0.6em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 }
@@ -493,9 +493,9 @@ $stage-ink: #07060b;
 
     small {
       color: rgb(239 233 220 / 55%);
-      font-family: 'Roboto Mono', monospace;
+      font-family: inherit;
       font-size: 11px;
-      letter-spacing: 0.3em;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
     }
   }
@@ -822,9 +822,9 @@ $stage-ink: #07060b;
 
   &__no {
     color: $stage-gold;
-    font-family: 'Roboto Mono', monospace;
+    font-family: inherit;
     font-size: 12px;
-    letter-spacing: 0.3em;
+    letter-spacing: 0.12em;
   }
 
   &__name {

@@ -19384,6 +19384,17 @@ body.app-body.layout-game-room.layout-single-column {
 
   &__row--win .system-role__text {
     font-weight: 700;
+
+    .system-role__notes {
+      margin-top: 6px;
+      font-weight: 400;
+    }
+  }
+
+  &__story {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.65;
   }
 
   &__notes {
@@ -19456,6 +19467,14 @@ body.app-body.layout-game-room.layout-single-column {
     flex-wrap: wrap;
     gap: 6px;
     align-items: center;
+  }
+
+  // 이름 오른쪽 끝의 개수 (예: 1개)
+  &__count {
+    margin-inline-start: auto;
+    color: var(--ct-point, #{$ui-highlight-color});
+    font-size: 13px;
+    font-weight: 700;
   }
 
   &__role {

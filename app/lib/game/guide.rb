@@ -52,34 +52,39 @@ module Game
         steps: ['[%{command}] @상대 로 신청', '라운드마다 DM 으로 [%{cmd_brew}] 재료 번호를 보냄', '아이템은 조합을 보내기 전에 [%{cmd_shield}] · [%{cmd_retry}] 로 사용'],
       },
       'flying' => {
-        summary: '겹치지 않는 경로로 날아 가장 많이 통과하는 사람이 이기는 비행 대결 (%{min_people}~%{max_people}명)',
+        summary: '방해물을 피해서 가장 멀리 날아요!',
         rules: [
           { icon: 'compass', title: '경로', text: '라운드마다 참가자보다 조금 적은 경로가 주어집니다. 혼자 고른 경로는 통과, 같은 경로를 고른 사람끼리는 충돌합니다.' },
         ],
-        roles: [{ win: '%{rounds}라운드가 끝났을 때 통과 횟수가 가장 많은 사람이 승리합니다. (여럿이면 함께 승리, 모두 같으면 무승부)' }],
-        steps: ['[%{command}] @상대 … 로 신청', '라운드마다 DM 으로 [%{cmd_fly}/번호] 경로 고르기', '모두 고르면 결과가 공개되고 다음 라운드로'],
+        roles: [{ win: '방해물을 피해 최후까지 남는 사람만이 승리합니다. (최대 2인)' }],
+        steps: ['이벤트가 열렸을 때 참가하기', '라운드가 진행되면 경로를 선택하기', '결과를 확인하기'],
       },
       'maze' => {
-        summary: '안개 속 미로에서 우승컵을 먼저 찾는 웹 전용 컨텐츠 (최대 4명)',
+        summary: '안개 속 미로에서 우승컵을 찾아라!',
         rules: [
           { icon: 'compass', title: '지도와 시야', text: '%{width}×%{height}칸 미로입니다. 내 주변 %{vision}칸만 보이고, 지나온 길은 지도에 기록됩니다. 우승컵 위치는 알 수 없습니다.' },
-          { icon: 'foot', title: '이동', text: '턴마다 시야 안에서 최대 %{steps}칸을 움직입니다. 갈 수 있는 칸이 지도에 표시되고, 누르면 DM 으로 자동 전송됩니다.' },
+          { icon: 'foot', title: '이동', text: '턴마다 시야 안에서 최대 %{steps}칸을 움직일 수 있으며, 제자리 걸음도 가능합니다.' },
           { icon: 'stun', title: '함정', text: '밟으면 1턴 쉽니다. 밟아 봐야 알 수 있고, 밟은 사람의 지도에만 표시됩니다.' },
-          { icon: 'foot', title: '마법 생물', text: '마주치면 주문 대결(공격 > 무장해제 > 방어 > 공격). 이기면 다음 턴 한 칸 더, 지면 부상으로 1턴 쉼, 비기면 그냥 지나갑니다.' },
+          { icon: 'foot', title: '마법 생물', text: '마주치면 주문 대결(공격 > 무장해제 > 방어 > 공격)을 합니다.',
+            table: { head: ['결과', '이김', '짐', '비김'], rows: [['효과', '다음 턴 한 칸 더', '부상, 1턴 쉼', '그냥 지나감']] } },
           { icon: 'hands', title: '다른 참가자', text: '같은 칸이거나 옆 칸이면 각자 몰래 %{cmd_cooperate}/%{cmd_hinder} 중 하나를 고릅니다. 결과는 아래 표와 같고, 방해한 쪽은 상대에게 적대로 표시됩니다.',
             table: { head: ['상대 선택 ↓ / 내 선택 →', '%{cmd_cooperate}', '%{cmd_hinder}'], rows: [['%{cmd_cooperate}', '서로 지도 공유', '나만 1턴 쉼'], ['%{cmd_hinder}', '상대만 1턴 쉼', '둘 다 1턴 쉼']] } },
           { icon: 'sword', title: '적대', text: '한 번 방해한 상대는 모두에게 적대로 표시됩니다. 적대자와 다시 만나면 협력/방해 대신 주문 대결(공격 > 무장해제 > 방어 > 공격)을 합니다.',
             table: { head: ['결과', '내가 이김', '내가 짐', '비김'], rows: [['효과', '상대 지도를 얻음', '부상, 2턴 쉼', '둘 다 1턴 쉼']] } },
         ],
-        roles: [{ win: '우승컵 칸에 먼저 닿으면 승리합니다. 같은 턴에 둘 이상 닿으면 공동 우승(점수는 나눔), 최대 %{max_turns}턴이 지나도록 아무도 못 닿으면 무승부입니다.' }],
+        roles: [{ win: '우승컵 칸에 먼저 닿으면 승리합니다.', win_notes: ['같은 턴에 2인 이상이 닿을 경우, 공동 우승합니다.', '최대 %{max_turns}턴이 지나도록 아무도 못 닿으면 무승부입니다.'] }],
         items: [
-          ['%{cmd_portkey}', '우승컵이 있는 방향을 한 번 알려 줍니다. (시작할 때 %{portkey}개)', 'compass'],
-          ['%{cmd_lumos}', '%{lumos_turns}턴 동안 시야가 %{lumos_bonus}칸 넓어집니다. (시작할 때 %{lumos}개)', 'bulb'],
+          ['%{cmd_portkey}', '우승컵이 있는 방향을 한 번 알려 줍니다.', 'compass', '%{portkey}개'],
+          ['%{cmd_lumos}', '%{lumos_turns}턴 동안 시야가 %{lumos_bonus}칸 넓어집니다.', 'bulb', '%{lumos}개'],
         ],
-        steps: ['[%{command}] @상대 … 로 신청 (최대 4명)', '턴마다 지도에서 이동할 칸을 눌러 보내기 (제자리는 [%{cmd_stay}])', '마주친 상황은 아래 버튼에서 주문 또는 협력/방해 고르기', '모두 고르면 그 턴의 일이 공개되고 다음 턴으로'],
+        steps: ['이벤트가 열렸을 때 참가하기', '라운드가 진행되면 지도에서 이동할 칸을 선택하기', '결과를 확인하기'],
       },
       'marauders_map' => {
-        summary: '%{student_name} 팀과 %{prefect_name} 팀의 숨바꼭질, 웹 전용',
+        summary: '호그와트에서 진행되는 숨바꼭질! 꼭꼭 숨어라.',
+        cast: [
+          { name: '%{student_name}팀', lines: ['당신은 기숙사 통금 시간에 나온 장난꾸러기 학생입니다.', '사감한테 붙잡히지 않게 목적을 달성하고 돌아가세요!'] },
+          { name: '%{prefect_name}팀', lines: ['당신은 기숙사 사감 교수님을 도와 통금을 지키지 않은 학생을 잡으러 왔습니다.', '기숙사를 탈출한 학생을 붙잡으세요!'] },
+        ],
         rules: [
           { icon: 'compass', title: '지도', text: '호그와트의 방들이 복도와 계단으로 이어진 지도입니다 (%{width}×%{height}). 일부 길은 막혀 있습니다.' },
           { icon: 'moon', title: '비밀 통로', text: '멀리 떨어진 두 방을 바로 잇는 통로로, %{student_name}만 쓸 수 있습니다. 판마다 후보 중 %{secret_passages}곳만 열리고, 통로를 쓴 턴에는 도착한 방에 발자국이 남습니다.' },
@@ -95,29 +100,35 @@ module Game
           { name: '%{prefect_name}', win: '%{student_name}{을를} 붙잡거나, 최대 턴(%{max_turns}턴)이 지날 때까지 막으면 승리합니다.', notes: ['서로의 위치는 공개되지만 %{student_name} 위치는 모릅니다. 발자국·구역 힌트로 추리합니다.', '매 턴 한 칸만 이동합니다. 팀 채팅([%{cmd_team}/내용])으로 %{prefect_name}끼리만 몰래 상의할 수 있습니다.'] },
         ],
         items: [
-          ['%{cmd_cloak}', '%{cloak_turns}턴 동안 발자국과 구역 힌트가 남지 않습니다. (%{cloaks}개, %{prefect_name}이 %{balance_prefects}명 이상이면 %{cloaks_bonus}개 추가)', 'cloak'],
-          ['%{cmd_revelio}', '주변 %{revelio_range}칸 안에 %{student_name}{이가} 있는지만 알려 줍니다. 한 사람이 %{revelio}번.', 'bulb'],
+          ['%{cmd_cloak}', '%{cloak_turns}턴 동안 발자국과 구역 힌트가 남지 않습니다. (%{prefect_name}{이가} %{balance_prefects}명 이상이면 %{cloaks_bonus}개 추가)', 'cloak', '%{cloaks}개'],
+          ['%{cmd_revelio}', '주변 %{revelio_range}칸 안에 %{student_name}{이가} 있는지만 알려 줍니다.', 'bulb', '%{revelio}개'],
         ],
-        steps: ['[%{command}/학생 수] @학생팀원 … @사감1 @사감2 … 로 신청 (신청자가 %{student_name} 팀 첫 번째, 학생 수를 안 쓰면 1명)', '지도에서 붙어 있는 방을 눌러 이동 (DM 으로 자동 전송, 제자리는 [%{cmd_hide}])', '아이템은 이동을 정하기 전에 지도 아래 버튼으로 사용'],
+        steps: ['이벤트가 열렸을 때 참가하기', '라운드가 진행되면 이동하기', '결과를 확인하기'],
       },
       'secret_chamber' => {
-        summary: '학생들 사이에 숨은 비밀의 방 주인을 찾아내는 사회적 추리 게임',
+        summary: '우리들 중에 비밀의 방을 연 사람이 있다! 방주를 찾아라!',
+        cast: [
+          { name: '%{role_traitor}', lines: ['당신은 전설로만 전해지던 비밀의 방을 열었습니다.', '들키지 않고 마음에 들지 않는 모두를 돌로 만들어버립시다!'] },
+          { name: '%{role_auror}', lines: ['당신은 호그와트 석화 사건의 범인을 찾으러 왔습니다.', '학생들 중 방주를 찾아봅시다!'] },
+          { name: '%{role_healer}', lines: ['당신은 학생들을 보호하기 위해 왔습니다.', '학생들이 석화되지 않도록 지켜주세요!'] },
+          { name: '%{role_seer}', lines: ['당신은 방주의 정체에 대한 예언을 듣습니다.', '방주를 찾는 것에 도움을 주세요!'] },
+          { name: '%{role_student}', lines: ['당신은 학생입니다.', '방주를 찾아 호그와트를 지킵시다!'] },
+        ],
         rules: [
-          { icon: 'hands', title: '인원과 시간', text: '%{min_players}~%{max_players}명이 참가합니다. 최대 %{total_minutes}분, %{max_phases}페이즈 안에 끝납니다. (낮 하나, 밤 하나가 각각 1페이즈)' },
-          { icon: 'sun', title: '낮', text: '최대 %{day_minutes}분. 공개 툿으로 토론하고 [%{cmd_accuse}] @누구 로 투표합니다. 가장 많이 고발된 사람이 퇴학되고 진영이 공개됩니다.' },
-          { icon: 'moon', title: '밤', text: '최대 %{night_minutes}분. 역할이 있는 사람이 시스템 DM 으로 능력을 씁니다. 모두 정하면(또는 시간이 되면) 아침에 결과가 공개됩니다.' },
+          { icon: 'hands', title: '인원과 시간', text: '%{event_min_players}~%{event_max_players}명이 참가합니다. 최대 %{total_minutes}분, %{max_phases}페이즈 안에 끝납니다. (낮 하나, 밤 하나가 각각 1페이즈)' },
+          { icon: 'sun', title: '낮', text: '최대 %{day_minutes}분간 방주의 정체에 토론할 수 있습니다. 가장 많이 고발된 사람은 퇴학당하며 진영이 공개됩니다.' },
+          { icon: 'moon', title: '밤', text: '최대 %{night_minutes}분간 역할이 있는 사람이 능력을 쓸 수 있습니다. 모두 정하면(또는 시간이 되면) 낮에 결과가 공개됩니다.' },
           { icon: 'sparkle', title: '예언', text: '%{role_seer}{은는} 밤마다 예언을 받습니다. 예언의 내용은 %{role_traitor}들이 상의해서 정해 전달하지만, 언제나 사실만 전할 수 있습니다.' },
-          { icon: 'stun', title: '탈락', text: '석화되거나 퇴학된 사람은 진영이 공개되고 이후 관전만 합니다. 웹 화면에서 모든 역할을 볼 수 있습니다.' },
-          { icon: 'compass', title: '웹 화면', text: '아바타가 원탁에 둘러앉고, 석화·퇴학 표시와 투표 현황, 내 역할 카드와 기록 노트가 보입니다. 아바타를 눌러 고발하거나 능력을 쓸 수 있습니다.' },
+          { icon: 'stun', title: '탈락', text: '석화되거나 퇴학된 사람은 진영이 공개되고 이후 관전만 합니다. 모든 역할을 볼 수 있습니다.' },
         ],
         roles: [
-          { name: '%{role_traitor} (%{faction_dark})', win: '%{role_traitor} 수가 남은 %{faction_light} 진영 사람 수 이상이 되면 %{faction_dark} 진영 승리. 시간·페이즈가 다 되어도 승리합니다.', notes: ['밤마다 동료와 상의해 한 사람을 석화시킵니다. (탈락)', '사실인 예언만 골라 %{role_seer}에게 전합니다. 예: [%{cmd_prophecy}/둘중] @A @B. [%{cmd_chat}/내용] 으로 방주끼리 비밀 단톡을 합니다.'] },
-          { name: '%{role_auror} (%{faction_light})', win: '%{role_traitor} 전원을 퇴학시키면 %{faction_light} 진영 승리.', notes: ['밤마다 한 사람을 조사해 어둠 진영인지 확인합니다. 결과는 기록 노트에 남습니다.'] },
-          { name: '%{role_healer} (%{faction_light})', win: '%{role_traitor} 전원을 퇴학시키면 %{faction_light} 진영 승리.', notes: ['밤마다 한 사람을 보호해 석화를 막습니다. 같은 사람을 연속으로 보호할 수 없습니다.'] },
-          { name: '%{role_seer} (%{faction_light})', win: '%{role_traitor} 전원을 퇴학시키면 %{faction_light} 진영 승리.', notes: ['직접 쓰는 능력은 없고, 밤마다 %{role_traitor}들이 전한 예언을 받습니다. 예언은 언제나 진실이며 기록 노트에 쌓입니다.'] },
-          { name: '%{role_student} (%{faction_light})', win: '%{role_traitor} 전원을 퇴학시키면 %{faction_light} 진영 승리.', notes: ['능력은 없습니다. 토론과 투표로 승부합니다.'] },
+          { name: '%{role_traitor}', win: '%{role_traitor} 수가 남은 생존자 수 이상이 되면 승리합니다. 시간·페이즈가 다 되어도 승리합니다.', notes: ['밤마다 동료와 상의해 한 사람을 석화시킵니다. (탈락)', '사실인 예언만 골라 %{role_seer}에게 전합니다.'] },
+          { name: '%{role_auror}', win: '%{role_traitor} 전원을 퇴학시키면 승리합니다.', notes: ['밤마다 한 사람을 조사해 어둠 진영인지 확인합니다. 결과는 기록 노트에 남습니다.'] },
+          { name: '%{role_healer}', win: '%{role_traitor} 전원을 퇴학시키면 승리합니다.', notes: ['밤마다 한 사람을 보호해 석화를 막습니다. 같은 사람을 연속으로 보호할 수 없습니다.'] },
+          { name: '%{role_seer}', win: '%{role_traitor} 전원을 퇴학시키면 승리합니다.', notes: ['직접 쓰는 능력은 없고, 밤마다 %{role_traitor}들이 전한 예언을 받습니다. 예언은 언제나 진실이며 기록 노트에 쌓입니다.', '예언을 공개할지 말지는 자유입니다.'] },
+          { name: '%{role_student}', win: '%{role_traitor} 전원을 퇴학시키면 승리합니다.', notes: ['능력은 없습니다. 토론과 투표로 승부합니다.'] },
         ],
-        steps: ['운영진이 [%{command}] 으로 열면 [%{cmd_join}] 으로 참가', '시작하면 시스템 DM 으로 역할이 배정됩니다 (비밀)', '낮에는 공개로 토론하고 [%{cmd_accuse}] @누구 로 투표, 밤에는 DM 으로 능력 사용', '끝날 때까지 낮과 밤을 번갈아 진행'],
+        steps: ['이벤트가 열렸을 때 참가하기', '배정된 역할을 확인하기', '낮에는 토론하고 투표하며, 밤에는 능력을 사용하기', '끝날 때까지 낮과 밤을 번갈아 진행하기'],
       },
     }.freeze
 
@@ -135,15 +146,17 @@ module Game
         # 관리 > 컨텐츠 설정의 설명을 쓰고, 비어 있으면 기본 소개
         summary: kind.config['description'].presence || fill(text[:summary], values),
         steps: text[:steps].map { |step| fill(step, values) },
+        cast: text[:cast].to_a.map { |member| { name: fill(member[:name], values), lines: member[:lines].map { |line| fill(line, values) } } },
         rules: text[:rules].to_a.map { |rule| { icon: rule[:icon], title: rule[:title], text: fill(rule[:text], values), visual: rule[:visual], nodes: rule[:nodes].to_a.map { |node| fill(node, values) }, table: rule[:table] && { head: rule[:table][:head].map { |cell| fill(cell, values) }, rows: rule[:table][:rows].map { |row| row.map { |cell| fill(cell, values) } } } } },
         roles: text[:roles].to_a.map do |role|
           {
             name: role[:name] && fill(role[:name], values),
             win: fill(role[:win], values),
+            win_notes: role[:win_notes].to_a.map { |note| fill(note, values) },
             notes: role[:notes].to_a.map { |note| fill(note, values) },
           }
         end,
-        items: items.map { |name, effect, icon| { name: fill(name, values), effect: fill(effect, values), icon: icon } },
+        items: items.map { |name, effect, icon, count| { name: fill(name, values), effect: fill(effect, values), icon: icon, count: count && fill(count, values) } },
       }
     end
 

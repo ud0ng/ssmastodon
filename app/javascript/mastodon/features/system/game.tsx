@@ -76,8 +76,9 @@ export interface GameInfo {
   recruiting?: { session_id: string; ends_at: string | null; count: number } | null;
   summary: string;
   rules_text?: { icon: string; title: string; text: string; visual?: string | null; nodes?: string[]; table?: { head: string[]; rows: string[][] } | null }[];
-  roles?: { name: string | null; win: string; notes: string[] }[];
-  items?: { name: string; effect: string; icon: string }[];
+  cast?: { name: string; lines: string[] }[];
+  roles?: { name: string | null; win: string; win_notes?: string[]; notes: string[] }[];
+  items?: { name: string; effect: string; icon: string; count?: string | null }[];
   steps: string[];
   rules: { label: string; points: number; money: number; items?: string[] }[];
   currency: string;
@@ -332,6 +333,23 @@ const SpellTriangle: React.FC<{ nodes: string[] }> = ({ nodes }) => {
 // 규칙 · 역할 · 아이템 · 진행 방법 · 보상 (일반 화면과 스테이지 화면이 같이 쓴다)
 export const RulesBody: React.FC<{ game: GameInfo }> = ({ game }) => (
   <>
+          {/* 역할 소개: 룰 위에 역할마다 이야기 한 장 (도둑 지도·비밀의 방) */}
+          {game.cast && game.cast.length > 0 && (
+            <section className='system-section'>
+              <h2 className='system-section__title'>
+                <FormattedMessage id='system.game.cast' defaultMessage='Roles' />
+              </h2>
+              <div className='system-roles'>
+                {game.cast.map((member) => (
+                  <article key={member.name} className='system-role'>
+                    <span className='system-role__badge'>{member.name}</span>
+                    {member.lines.map((line) => <p key={line} className='system-role__story'>{line}</p>)}
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* 룰: 알아야 할 규칙 (아이콘 + 제목 + 설명) */}
           {game.rules_text && game.rules_text.length > 0 && (
             <section className='system-section'>
@@ -383,7 +401,14 @@ export const RulesBody: React.FC<{ game: GameInfo }> = ({ game }) => (
                     {role.name && <span className='system-role__badge'>{role.name}</span>}
                     <div className='system-role__row system-role__row--win'>
                       <span className='system-role__label'><GameIcon name='tournament' /> <FormattedMessage id='system.game.role_win_label' defaultMessage='Win' /></span>
-                      <span className='system-role__text'><CommandText text={role.win} noEmoji /></span>
+                      <span className='system-role__text'>
+                        <CommandText text={role.win} noEmoji />
+                        {role.win_notes && role.win_notes.length > 0 && (
+                          <ul className='system-role__notes'>
+                            {role.win_notes.map((note) => <li key={note}><CommandText text={note} noEmoji /></li>)}
+                          </ul>
+                        )}
+                      </span>
                     </div>
                     {role.notes.length > 0 && (
                       <div className='system-role__row'>
@@ -412,6 +437,7 @@ export const RulesBody: React.FC<{ game: GameInfo }> = ({ game }) => (
                     <div className='system-item-card__body'>
                       <div className='system-item-card__head'>
                         <CommandText text={`[${item.name}]`} noEmoji />
+                        {item.count && <span className='system-item-card__count'>{item.count}</span>}
                       </div>
                       <p className='system-item-card__effect'>{item.effect}</p>
                     </div>
