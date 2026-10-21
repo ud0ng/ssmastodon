@@ -148,6 +148,8 @@ module Game
         delta = Game::Dice.amount(effect['value'])
         case effect['currency']
         when 'house_points'
+          raise Error, '같은 소속에는 소속 점수를 올리는 아이템을 쓸 수 없습니다.' if delta.positive? && GameCharacter.for(@account).group_id.to_i == @house.id
+
           GameHousePoint.create!(house: @house, account: @account, amount: delta, reason: "#{@name} → #{@house.name}".truncate(200)) unless delta.zero?
           "#{@house.name} 소속 점수 #{format('%+d', delta)}"
         when 'item'

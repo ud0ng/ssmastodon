@@ -31,6 +31,8 @@ module Game
       changes = Array(changes).map { |change| normalize_change(change) }
       raise Error.new('empty', '바꿀 캐릭터가 없습니다.') if changes.empty?
 
+      ensure_not_same_house!(changes) if kind == 'transfer'
+
       base_stats = GameCharacterField.stats.to_a # 스탯(저장된 값에 더함)과 상태 수치(영구 변동분을 쌓음)
       GameCharacter.transaction do
         characters = changes.map { |change| GameCharacter.for(change[:account]) }
@@ -52,6 +54,19 @@ module Game
         end
         characters
       end
+    end
+
+    # 소속 점수를 올리는 아이템은 같은 소속끼리 양도·선물할 수 없다
+    def ensure_not_same_house!(changes)
+      return unless changes.size == 2
+
+      groups = changes.map { |change| GameCharacter.for(change[:account]).group_id }
+      return if groups.any?(&:nil?) || groups.uniq.size != 1
+
+      names = changes.flat_map { |change| change[:items].select { |_, count| count.positive? }.keys }
+      return unless names.any? { |name| GameShopItem.raises_house_points?(name) }
+
+      raise Error.new('same_house', '같은 소속끼리는 소속 점수를 올리는 아이템을 양도·선물할 수 없습니다.')
     end
 
     def normalize_change(change)

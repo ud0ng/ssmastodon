@@ -133,4 +133,35 @@ RSpec.describe 'API V1 System wallet' do
     get '/api/v1/system/wallet', headers: headers
     expect(response.parsed_body['todo'].pluck('session_id')).to_not include(session.id.to_s)
   end
+  describe 'items that raise house points' do
+    let(:house) { GameHouse.create!(name: '그리핀도르', color: '#ae0001', category: 'house') }
+    let(:other_house) { GameHouse.create!(name: '슬리데린', color: '#1a472a', category: 'house') }
+    let(:ron) { Fabricate(:account, username: 'ron') }
+
+    before do
+      GameShop.create!(name: '특수').items.create!(name: '응원봉', price: 5, item_effects: [{ 'type' => 'currency', 'currency' => 'house_points', 'value' => '10' }])
+      GameCharacter.for(user.account).update!(house: house)
+      Game::Wallet.apply!([{ account: user.account, items: { '응원봉' => 2 } }], kind: 'admin')
+    end
+
+    it 'cannot be gifted to someone in the same house, but can to another house' do
+      GameCharacter.for(ron).update!(house: house)
+      expect { Game::Wallet.apply!([{ account: user.account, items: { '응원봉' => -1 } }, { account: ron, items: { '응원봉' => 1 } }], kind: 'transfer') }
+        .to raise_error(Game::Wallet::Error, /같은 소속/)
+
+      GameCharacter.for(ron).update!(house: other_house)
+      expect { Game::Wallet.apply!([{ account: user.account, items: { '응원봉' => -1 } }, { account: ron, items: { '응원봉' => 1 } }], kind: 'transfer') }.to_not raise_error
+    end
+
+    it 'cannot be used on your own house' do
+      post '/api/v1/system/items/use', params: { name: '응원봉', house_id: house.id.to_s }, headers: headers
+      expect(response).to have_http_status(422)
+      expect(GameHousePoint.count).to eq 0
+      expect(GameCharacter.for(user.account).inventory.find { |item| item['name'] == '응원봉' }['count']).to eq 2
+
+      post '/api/v1/system/items/use', params: { name: '응원봉', house_id: other_house.id.to_s }, headers: headers
+      expect(response).to have_http_status(200)
+      expect(GameHousePoint.sum(:amount)).to eq 10
+    end
+  end
 end
