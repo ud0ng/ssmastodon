@@ -228,8 +228,13 @@ export const LobbyStage: React.FC<{
         ))}
       </ul>
 
-      {(lobby.can_join || lobby.can_leave) && (
+      {(lobby.can_join || lobby.can_leave || (lobby.recruiting && lobby.can_manage)) && (
         <div className='game-stage__membership'>
+          {lobby.recruiting && lobby.can_manage && (
+            <button type='button' className='game-stage__join' disabled={busy} onClick={() => { post('start_now'); }}>
+              <FormattedMessage id='lobby.start_now' defaultMessage='Start now' />
+            </button>
+          )}
           {lobby.can_join && (
             <button type='button' className='game-stage__join' disabled={busy} onClick={() => { post('join'); }}>
               <FormattedMessage id='lobby.join' defaultMessage='Join' />

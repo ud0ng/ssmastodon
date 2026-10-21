@@ -96,6 +96,28 @@ class Api::V1::System::SessionsController < Api::BaseController
     show
   end
 
+  # 운영진: 모집 중인 이벤트의 [시작하기] — 모집을 끝내고 대기방 없이 바로 시작한다 (최소 인원이 되어야 한다)
+  def start_now
+    return render json: { error: 'forbidden' }, status: 403 unless staff?
+
+    error = nil
+    @session.with_lock do
+      session = @session.reload
+      kind = session.kind_class.new(session)
+      if !Game::Lobby.recruiting?(session)
+        error = '지금은 시작할 수 없습니다.'
+      elsif session.players.size < kind.event_min_players
+        error = "최소 #{kind.event_min_players}명이 있어야 시작할 수 있습니다."
+      else
+        kind.recruitment_over!
+        Game::Lobby.start!(session.reload)
+      end
+    end
+    return render json: { error: error }, status: 422 if error
+
+    show
+  end
+
   # 대기방 카운트다운 중 누구든 취소 (참가자·운영진)
   def cancel_start
     return render json: { error: 'forbidden' }, status: 403 unless @session.player_for(current_account) || staff?

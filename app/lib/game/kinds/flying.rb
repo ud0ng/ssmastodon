@@ -2,7 +2,7 @@
 
 module Game
   module Kinds
-    # 비행 대결 (이벤트, 웹 전용, 3~10명): 출발선에 선 토큰들이 라운드마다 앞길(참가자보다 적은 수) 중 하나를 고른다.
+    # 비행 대결 (이벤트, 웹 전용, 3~20명): 출발선에 선 토큰들이 라운드마다 앞길(참가자보다 적은 수) 중 하나를 고른다.
     # 혼자 고른 길만 통과하고, 같은 길을 고른 사람끼리는 부딪혀 떨어지며, 고르지 못한 사람도 그 자리에서 떨어진다.
     # 마지막 1인이 남을 때까지 이어가고, 2인이 남아 더 줄일 수 없으면 그 2인이 공동 우승한다.
     #
@@ -16,7 +16,7 @@ module Game
 
       FIELDS = (base_fields(name: '비행 대결', command: '비행대결', points_win: 15, points_draw: 5) + [
         F.new(key: 'min_players', type: :integer, default: 3, group: 'rules', label: '최소 인원', hint: '3~10명'),
-        F.new(key: 'max_players', type: :integer, default: 6, group: 'rules', label: '최대 인원', hint: '최대 10명'),
+        F.new(key: 'max_players', type: :integer, default: 6, group: 'rules', label: '최대 인원', hint: '최대 20명'),
         F.new(key: 'round_seconds', type: :integer, default: 30, group: 'rules', label: '라운드 제한 시간 (초)', hint: '시간이 지나면 고르지 못한 사람은 떨어집니다 (5~300)'),
         F.new(key: 'routes', type: :lines, group: 'flavors', label: '경로 이름 (줄마다 하나)',
               default: ['천문탑 우회', '검은 호수 위 저공비행', '금지된 숲 가장자리', '퀴디치 경기장 상공', '온실 지붕 위', '부엉이장 옆 바람길', '시계탑 사이', '해그리드 오두막 위', '지하 감옥 굴뚝', '그리핀도르 탑 위']),
@@ -29,7 +29,7 @@ module Game
         F.new(key: 'msg_winner', type: :text, group: 'messages', label: '우승', default: '%{winner}의 우승!'),
         F.new(key: 'msg_winners', type: :text, group: 'messages', label: '공동 우승', default: '%{winner}의 공동 우승!'),
         F.new(key: 'msg_draw', type: :text, group: 'messages', label: '무승부', default: '모두 한꺼번에 떨어져 무승부입니다.'),
-      ] + Game::Events::Recruiting.fields(min: 3, max: 10)).freeze
+      ] + Game::Events::Recruiting.fields(min: 3, max: 20)).freeze
 
       class << self
         def web?
@@ -47,7 +47,7 @@ module Game
 
         # 신청자를 포함한 인원 범위 (개인전)
         def max_total
-          config['max_players'].to_i.clamp(3, 10)
+          config['max_players'].to_i.clamp(3, 20)
         end
 
         def min_total

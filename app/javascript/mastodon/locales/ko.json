@@ -1299,6 +1299,7 @@
   "stage.closed": "끝났거나 취소된 이벤트입니다.",
   "stage.badge_recruiting": "모집중 {count}",
   "stage.badge_running": "진행중 {count}",
+  "lobby.start_now": "시작하기",
   "lobby.join": "참여하기",
   "lobby.leave": "참여 취소",
   "lobby.recruit_title": "참가자 모집 중",

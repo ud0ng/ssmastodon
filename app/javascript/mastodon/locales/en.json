@@ -1115,6 +1115,7 @@
   "stage.closed": "This event has ended or was cancelled.",
   "stage.badge_recruiting": "Recruiting {count}",
   "stage.badge_running": "In progress {count}",
+  "lobby.start_now": "Start now",
   "lobby.join": "Join",
   "lobby.leave": "Cancel joining",
   "lobby.recruit_title": "Gathering players",

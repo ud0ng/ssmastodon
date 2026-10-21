@@ -7,7 +7,7 @@ module Game
   #
   #   state['lobby'] = { 'ready' => [계정 번호], 'start_at' => 카운트다운이 끝나는 때(ISO) 또는 nil }
   module Lobby
-    COUNTDOWN_SECONDS = 10
+    COUNTDOWN_SECONDS = 5
     CHAT_LIMIT = 200
     CHAT_KEEP = 100
 
