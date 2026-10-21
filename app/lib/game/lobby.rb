@@ -33,8 +33,18 @@ module Game
       session.lobby? && start_at(session)&.future?
     end
 
+    # 초대한 이벤트: 초대받은 계정 번호와 아직 수락하지 않은(대기중) 계정 번호
+    def invite_ids(session)
+      Array(session.state['invited']).map(&:to_i)
+    end
+
+    def waiting_ids(session)
+      invite_ids(session) - session.players.map(&:account_id)
+    end
+
+    # 모두 준비했나: 참가자가 모두 준비했고, 초대받고 아직 답하지 않은 사람이 없어야 한다
     def all_ready?(session)
-      session.players.any? && session.players.all? { |player| ready_ids(session).include?(player.account_id) }
+      session.players.any? && waiting_ids(session).empty? && session.players.all? { |player| ready_ids(session).include?(player.account_id) }
     end
 
     # 준비하기 / 준비 취소. 모두 준비했으면 카운트다운을 시작하고, 한 명이라도 취소하면 카운트다운이 멈춘다
@@ -102,9 +112,38 @@ module Game
       recruiting?(session) || (session.lobby? && !counting?(session))
     end
 
-    # 웹 [참여하기]: :ok / :joined(이미 참가) / :closed / :full / :ineligible / :busy
+    # 초대받은 사람이 대기방에서 [수락] / [거절] (카운트다운 전에만)
+    def accept_invite!(session, account)
+      return :closed unless session.lobby? && !counting?(session)
+      return :not_invited unless invite_ids(session).include?(account.id)
+      return :joined if session.player_for(account)
+      return :full if session.players.size >= session.kind_class.new(session).event_max_players
+      return :busy if Game::Config.for('common')['one_game_per_person'] && busy_elsewhere?(session, account)
+
+      session.players.create!(account: account, seat: (session.players.maximum(:seat) || -1) + 1, state: { 'accepted' => true })
+      session.players.reset
+      note!(session, "#{GameCharacter.for(account).display_name}님이 수락했습니다.")
+      :ok
+    end
+
+    def decline_invite!(session, account)
+      return :closed unless session.lobby? && !counting?(session)
+      return :not_invited unless invite_ids(session).include?(account.id)
+
+      session.players.find_by(account_id: account.id)&.destroy!
+      session.players.reset
+      session.state['invited'] = invite_ids(session) - [account.id]
+      session.state['lobby'] = session.state['lobby'].merge('ready' => ready_ids(session) - [account.id])
+      session.save!
+      note!(session, "#{GameCharacter.for(account).display_name}님이 거절했습니다.")
+      begin_countdown!(session) if session.players.size >= session.kind_class.new(session).event_min_players && all_ready?(session)
+      :ok
+    end
+
+    # 웹 [참여하기]: :ok / :joined(이미 참가) / :closed / :full / :ineligible / :busy / :invite_only
     def join!(session, account)
       return :closed unless joinable?(session)
+      return :invite_only if invite_ids(session).any?
       return :joined if session.player_for(account)
       return :full if session.players.size >= session.kind_class.new(session).event_max_players
       return :ineligible unless GameCharacter.eligible_accounts.exists?(id: account.id)
@@ -119,6 +158,7 @@ module Game
     # 웹 [참여 취소]: 시작 전에만. 남은 사람이 모두 준비한 상태가 되면 바로 카운트다운
     def leave!(session, account)
       return :closed unless joinable?(session)
+      return decline_invite!(session, account) if session.lobby? && invite_ids(session).include?(account.id) # 초대한 이벤트: 취소는 거절과 같다
 
       player = session.player_for(account)
       return :absent if player.nil?
@@ -140,6 +180,14 @@ module Game
       GamePlayer.joins(:session).where(account: account, game_sessions: { kind: keys, status: %w(pending lobby active) }).where.not(game_session_id: session.id).exists?
     end
 
+    # 초대받고 아직 수락하지 않은 캐릭터: 대기방에 '대기중...'으로 보인다
+    def waiting_view(session)
+      Account.where(id: waiting_ids(session)).map do |account|
+        house = GameCharacter.for(account).group
+        { account_id: account.id.to_s, acct: account.acct, name: GameCharacter.for(account).display_name, avatar: account.avatar_static_url, house: house && { name: house.name, color: house.color }, ready: false, waiting: true }
+      end
+    end
+
     # 웹 대기방 화면: 참가자(아바타·소속·준비)와 카운트다운
     def view(session, viewer, staff:)
       kind = session.kind_class.new(session)
@@ -153,7 +201,9 @@ module Game
         now: Time.current.iso8601(3),
         can_manage: staff,
         recruiting: recruiting?(session),
-        can_join: joinable?(session) && session.player_for(viewer).nil? && session.players.size < kind.event_max_players && GameCharacter.eligible_accounts.exists?(id: viewer.id),
+        invite: invite_ids(session).any?,
+        can_respond: session.lobby? && !counting?(session) && invite_ids(session).include?(viewer.id) && session.player_for(viewer).nil?,
+        can_join: joinable?(session) && invite_ids(session).empty? && session.player_for(viewer).nil? && session.players.size < kind.event_max_players && GameCharacter.eligible_accounts.exists?(id: viewer.id),
         can_leave: joinable?(session) && session.player_for(viewer).present?,
         recruit_ends_at: recruiting?(session) ? session.deadline_at&.iso8601(3) : nil,
         me: session.player_for(viewer)&.account_id&.to_s,
@@ -168,7 +218,7 @@ module Game
             house: house && { name: house.name, color: house.color },
             ready: ready.include?(account.id),
           }
-        end,
+        end + waiting_view(session),
       }
     end
   end

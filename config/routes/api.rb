@@ -113,6 +113,8 @@ namespace :api, format: false do
           post :ready
           post :join
           post :start_now
+          post :accept
+          post :decline
           post :leave
           post :cancel_start
           post :chat

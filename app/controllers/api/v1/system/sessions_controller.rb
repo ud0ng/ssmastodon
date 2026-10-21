@@ -9,7 +9,7 @@ class Api::V1::System::SessionsController < Api::BaseController
   MESSAGE_LIMIT = 200
 
   before_action -> { doorkeeper_authorize! :read }, only: [:show, :view]
-  before_action -> { doorkeeper_authorize! :write }, only: [:move, :destroy, :ready, :cancel_start, :chat]
+  before_action -> { doorkeeper_authorize! :write }, only: [:move, :destroy, :ready, :cancel_start, :chat, :join, :leave, :start_now, :accept, :decline]
   before_action :require_user!
   before_action :require_contents_open!
   before_action :set_session
@@ -77,7 +77,7 @@ class Api::V1::System::SessionsController < Api::BaseController
 
   JOIN_ERRORS = {
     closed: '지금은 참가하거나 취소할 수 없습니다.', full: '참가 인원이 가득 찼습니다.', ineligible: '참가할 수 없는 계정입니다.',
-    busy: '이미 다른 이벤트에 참가 중입니다.', absent: '참가하지 않았습니다.'
+    busy: '이미 다른 이벤트에 참가 중입니다.', absent: '참가하지 않았습니다.', invite_only: '초대받은 사람만 참가할 수 있습니다.', not_invited: '초대받지 않았습니다.'
   }.freeze
 
   # 대기방·모집 중: 아직 참가하지 않은 사람이 [참여하기]
@@ -86,6 +86,15 @@ class Api::V1::System::SessionsController < Api::BaseController
     return render json: { error: JOIN_ERRORS.fetch(result) }, status: 422 if JOIN_ERRORS.key?(result)
 
     show
+  end
+
+  # 초대받은 사람이 대기방에서 [수락] / [거절]
+  def accept
+    respond_to_invite(Game::Lobby.method(:accept_invite!))
+  end
+
+  def decline
+    respond_to_invite(Game::Lobby.method(:decline_invite!))
   end
 
   # 대기방·모집 중: [참여 취소]
@@ -104,12 +113,18 @@ class Api::V1::System::SessionsController < Api::BaseController
     @session.with_lock do
       session = @session.reload
       kind = session.kind_class.new(session)
-      if !Game::Lobby.recruiting?(session)
+      if !Game::Lobby.recruiting?(session) && !(session.lobby? && Game::Lobby.invite_ids(session).any? && !Game::Lobby.counting?(session))
         error = '지금은 시작할 수 없습니다.'
       elsif session.players.size < kind.event_min_players
         error = "최소 #{kind.event_min_players}명이 있어야 시작할 수 있습니다."
       else
-        kind.recruitment_over!
+        if session.lobby?
+          # 초대한 이벤트: 아직 답하지 않은 사람은 빼고 지금 있는 사람들로 시작
+          session.state['invited'] = session.players.map(&:account_id)
+          session.save!
+        else
+          kind.recruitment_over!
+        end
         Game::Lobby.start!(session.reload)
       end
     end
@@ -148,6 +163,13 @@ class Api::V1::System::SessionsController < Api::BaseController
   end
 
   private
+
+  def respond_to_invite(action)
+    result = @session.with_lock { action.call(@session.reload, current_account) }
+    return render json: { error: JOIN_ERRORS.fetch(result) }, status: 422 if JOIN_ERRORS.key?(result)
+
+    show
+  end
 
   # 사람 목록(players)이 있는 화면에는 아바타·계정을 붙인다 (비밀의 방 원탁)
   def add_avatars!(view)
@@ -235,7 +257,9 @@ class Api::V1::System::SessionsController < Api::BaseController
   def set_session
     @session = GameSession.find(params[:id])
     raise ActiveRecord::RecordNotFound if @session.kind_class.nil?
+    # 테스트 플레이(DM)는 참가자·초대받은 사람·운영진에게만 보인다 (다른 캐릭터는 관전도 참여도 안 된다)
     return unless @session.visibility == 'direct' && @session.players.none? { |player| player.account_id == current_account.id }
+    return if Array(@session.state['invited']).map(&:to_i).include?(current_account.id)
     return if staff_watching?
 
     raise ActiveRecord::RecordNotFound

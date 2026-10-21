@@ -1134,3 +1134,27 @@ $stage-ink: #07060b;
   font-size: 16px;
   text-align: center;
 }
+
+// 초대받고 아직 수락하지 않은 캐릭터: 아바타 위에 '대기중...'
+.game-stage__avatar {
+  position: relative;
+}
+
+.game-stage__waiting {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgb(8 10 18 / 72%);
+  color: #f6e9bd;
+  font-size: 14px;
+  font-weight: 800;
+  animation: stage-waiting 1.4s ease-in-out infinite;
+}
+
+@keyframes stage-waiting {
+  0%, 100% { opacity: 0.65; }
+  50% { opacity: 1; }
+}

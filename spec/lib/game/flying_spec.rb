@@ -136,4 +136,26 @@ RSpec.describe Game::Kinds::Flying do
     session.update!(status: 'active')
     expect(Game::Lobby.join!(session, newcomer)).to eq :closed
   end
+  it 'opens straight into the waiting room for invited players, who accept or decline there, and keeps everyone else out' do
+    allow(GameCharacter).to receive(:eligible_accounts).and_return(Account.where(id: accounts.map(&:id)))
+    opener = Fabricate(:account, username: 'professor')
+    session = Game::Events::Opening.open!(Game::Kinds.registry['flying'], opener, mode: 'pick', players: accounts.first(4))
+
+    expect(session.reload.status).to eq 'lobby'
+    view = Game::Lobby.view(session, accounts.first, staff: false)
+    expect(view[:players].pluck(:waiting)).to eq [true, true, true, true]
+    expect(view).to include(invite: true, can_respond: true, can_join: false)
+    expect(Game::Lobby.view(session, accounts.last, staff: false)).to include(can_respond: false, can_join: false)
+    expect(Game::Lobby.join!(session, accounts.last)).to eq :invite_only
+    expect(Game::Lobby.accept_invite!(session, accounts.last)).to eq :not_invited
+
+    expect(Game::Lobby.accept_invite!(session, accounts[0])).to eq :ok
+    expect(Game::Lobby.accept_invite!(session, accounts[1])).to eq :ok
+    expect(Game::Lobby.accept_invite!(session, accounts[2])).to eq :ok
+    Game::Lobby.set_ready!(session.reload, accounts[0], true)
+    expect(Game::Lobby.all_ready?(session)).to be false # 아직 답하지 않은 사람이 있다
+
+    expect(Game::Lobby.decline_invite!(session, accounts[3])).to eq :ok
+    expect(Game::Lobby.view(session.reload, accounts.first, staff: false)[:players].pluck(:waiting)).to eq [nil, nil, nil]
+  end
 end

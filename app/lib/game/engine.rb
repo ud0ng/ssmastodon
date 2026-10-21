@@ -237,7 +237,7 @@ module Game
     # 모집 중인 이벤트 (미로·도둑 지도·비행 대결·비밀의 방)
     # 모집 중인 이벤트 중 이 참가 명령어에 맞는 것. 여럿이 열려 있으면 [참가/컨텐츠 키]로 고르거나 모집 툿에 답한 쪽, 아니면 가장 최근 것
     def pending_event(command = nil, kind_key = nil)
-      events = GameSession.where(status: 'pending').where("state->>'mode' = 'event'").order(id: :desc).to_a
+      events = GameSession.where(status: %w(pending lobby)).where("state->>'mode' = 'event'").order(id: :desc).to_a.select { |event| event.status == 'pending' || Array(event.state['invited']).any? }
       events = events.select { |event| event.kind_class&.config&.dig('cmd_join') == command } if command
       events = events.select { |event| event.kind == kind_key } if kind_key.present? && events.any? { |event| event.kind == kind_key }
       replied = events.find { |event| [event.root_status_id, event.last_status_id].compact.include?(status.in_reply_to_id) }
@@ -250,7 +250,7 @@ module Game
       return if bot_account?(actor) # 상점 봇이 모집 툿의 [참가]를 따라 읽어도 참가자로 넣지 않는다
       return reply(Game::Text.render(common['msg_busy'], player: actor)) if open_player(actor, events: true)
 
-      event.with_lock { event.kind_class.new(event).join!(actor, status) if event.status == 'pending' }
+      event.with_lock { event.kind_class.new(event).join!(actor, status) if %w(pending lobby).include?(event.status) }
     end
 
     # 시스템의 다음 툿은 방금 명령어를 보낸 툿에 답장한다 (신청 → 수락 → 시작 → 먹기 → 결과가 한 줄로 이어지게)

@@ -68,14 +68,15 @@ module Game
         Game::Engine.set_deadline!(session, config['event_join_minutes'])
       end
 
-      # 운영진이 참가자를 골라 열었을 때(고르기·테스트 플레이): 고른 사람마다 DM 툿으로 참가 수락을 묻는다 (앱에도 보인다).
-      # 모두 수락하면 바로, 아니면 모집 시간이 끝났을 때 수락한 사람들로 시작한다.
+      # 운영진이 참가자를 초대해 열었을 때(초대하기·테스트 플레이): 모집 없이 바로 대기방이 열린다.
+      # 초대받은 캐릭터는 대기방에 '대기중...'으로 보이고, 들어오면 [수락][거절]을 누른다 (수락하면 참가자). DM 툿으로도 알린다 (앱에도 보인다).
+      # 초대받지 않은 사람은 구경만 한다. 초대받은 모두가 수락·준비하면 카운트다운 뒤 시작한다.
       def open_invited!(accounts, test: false)
-        state.merge!('mode' => 'event', 'phase' => 'recruit', 'invited' => accounts.map(&:id), 'test' => test)
+        state.merge!('mode' => 'event', 'phase' => 'invite', 'invited' => accounts.map(&:id), 'test' => test)
         session.save!
         text = render(config[test ? 'msg_invite_test' : 'msg_invite'], minutes: config['event_join_minutes'], join: config['cmd_join'])
         accounts.each { |account| Game::Poster.post(text, mentions: [account], thread: nil, visibility: 'direct') }
-        Game::Engine.set_deadline!(session, config['event_join_minutes'])
+        Game::Lobby.enter!(session)
       end
 
       # 고른 참가자 번호 (모집 이벤트면 비어 있다)
@@ -86,13 +87,19 @@ module Game
       # [참가]
       def join!(account, status)
         return if players.any? { |player| player.account_id == account.id }
+
+        # 초대한 이벤트의 대기방: [참가] 멘션도 웹 [수락]과 같다
+        if session.lobby?
+          result = Game::Lobby.accept_invite!(session, account)
+          return reply_to(status, result == :ok ? render(config['msg_joined'], player: session.player_for(account), count: session.players.size) : render(config['msg_not_invited']))
+        end
         return reply_to(status, render(config['msg_not_invited'])) if invited.any? && invited.exclude?(account.id)
         return reply_to(status, render(config['msg_full'], max: event_max_players)) if players.size >= event_max_players
 
         player = session.players.create!(account: account, seat: (players.map(&:seat).max || -1) + 1, state: { 'accepted' => true })
         session.players.reset
         reply_to(status, render(config['msg_joined'], player: player, count: session.players.size))
-        recruitment_over! if invited.any? && session.players.size >= invited.size
+        recruitment_over! if invited.any? && !session.lobby? && session.players.size >= invited.size
       end
 
       # 모집 시간이 끝났을 때 (Game::TimeoutWorker, 운영진 [단계 넘기기])

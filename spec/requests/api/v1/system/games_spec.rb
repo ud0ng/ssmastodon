@@ -154,9 +154,9 @@ RSpec.describe 'API V1 System games' do
       get '/api/v1/system/games/flying', headers: admin_headers
       expect(response.parsed_body['active'].pluck('test')).to eq [true]
 
-      # 고른 사람에게만 참가 안내(DM)가 가고, 고르지 않은 사람에게는 모집 알림도 안 뜬다
+      # 초대한 사람에게만 그 방이 보인다 (바로 대기방). 고르지 않은 사람에게는 모집 알림도, 목록에도 안 뜬다
       get '/api/v1/system/games/flying', headers: harry_headers
-      expect(response.parsed_body['recruiting']).to be_present
+      expect(response.parsed_body['active'].size).to eq 1
       get '/api/v1/system/games/flying', headers: headers
       expect(response.parsed_body['recruiting']).to be_nil
       expect(response.parsed_body['active']).to eq []

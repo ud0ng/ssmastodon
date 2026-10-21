@@ -22,6 +22,8 @@ export interface LobbyPlayer {
   avatar: string;
   house: { name: string; color: string } | null;
   ready: boolean;
+  // 초대받고 아직 수락하지 않음 ('대기중...')
+  waiting?: boolean;
 }
 
 export interface LobbyData {
@@ -36,6 +38,9 @@ export interface LobbyData {
   // 아직 참가하지 않은 사람은 [참여하기], 참가한 사람은 [참여 취소] (시작 전에만)
   can_join?: boolean;
   can_leave?: boolean;
+  // 초대한 이벤트: 초대받은 사람은 대기방에서 [수락][거절]
+  invite?: boolean;
+  can_respond?: boolean;
   recruit_ends_at?: string | null;
   me: string | null;
   players: LobbyPlayer[];
@@ -101,6 +106,7 @@ const PlayerCard: React.FC<{
     <span className='game-stage__avatar'>
       <TokenAvatar accountId={player.account_id} avatar={player.avatar} size={88} />
       {player.ready && <span className='game-stage__check' aria-hidden>✓</span>}
+      {player.waiting && <span className='game-stage__waiting'><FormattedMessage id='lobby.waiting' defaultMessage='Waiting...' /></span>}
     </span>
     <span className='game-stage__who'>
       <TokenName accountId={player.account_id} name={player.name} house={player.house} />
@@ -220,7 +226,7 @@ export const LobbyStage: React.FC<{
             key={player.account_id}
             player={player}
             mine={player.account_id === lobby.me}
-            canToggle={!recruiting && (player.account_id === lobby.me || lobby.can_manage)}
+            canToggle={!recruiting && !player.waiting && (player.account_id === lobby.me || lobby.can_manage)}
             busy={busy || counting}
             bubble={bubbles[player.acct]}
             onToggle={toggle}
@@ -228,9 +234,19 @@ export const LobbyStage: React.FC<{
         ))}
       </ul>
 
-      {(lobby.can_join || lobby.can_leave || (lobby.recruiting && lobby.can_manage)) && (
+      {(lobby.can_join || lobby.can_leave || lobby.can_respond || ((lobby.recruiting || lobby.invite) && lobby.can_manage && !counting)) && (
         <div className='game-stage__membership'>
-          {lobby.recruiting && lobby.can_manage && (
+          {lobby.can_respond && (
+            <>
+              <button type='button' className='game-stage__join' disabled={busy} onClick={() => { post('accept'); }}>
+                <FormattedMessage id='lobby.accept' defaultMessage='Accept' />
+              </button>
+              <button type='button' className='game-stage__join game-stage__join--off' disabled={busy} onClick={() => { post('decline'); }}>
+                <FormattedMessage id='lobby.decline' defaultMessage='Decline' />
+              </button>
+            </>
+          )}
+          {(lobby.recruiting || lobby.invite) && lobby.can_manage && !counting && (
             <button type='button' className='game-stage__join' disabled={busy} onClick={() => { post('start_now'); }}>
               <FormattedMessage id='lobby.start_now' defaultMessage='Start now' />
             </button>

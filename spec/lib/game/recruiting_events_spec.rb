@@ -55,7 +55,7 @@ RSpec.describe Game::Events::Opening do
       picked = accounts.first(3)
       session = described_class.open!(Game::Web::Maze, admin, mode: 'pick', players: picked)
 
-      expect(session).to have_attributes(status: 'pending', visibility: 'private')
+      expect(session).to have_attributes(status: 'lobby', visibility: 'private') # 초대하면 모집 없이 바로 대기방
       expect(session.test?).to be false
       invites = Status.where(account: system, visibility: :direct).to_a
       expect(invites.flat_map { |status| status.mentions.map(&:account_id) }).to match_array(picked.map(&:id))
@@ -66,11 +66,11 @@ RSpec.describe Game::Events::Opening do
       expect(system.statuses.reorder(:id).last.text).to include('고른 참가자만')
 
       picked.first(2).each { |account| join_by_toot(account) }
-      expect(session.reload.status).to eq 'pending'
+      expect(session.reload.status).to eq 'lobby'
       before = Status.maximum(:id).to_i
       join_by_toot(picked.last)
 
-      expect(session.reload).to have_attributes(status: 'lobby') # 모두 수락하면 대기방, 준비하고 카운트다운이 끝나야 시작
+      expect(session.reload).to have_attributes(status: 'lobby') # 모두 수락해도 준비하고 카운트다운이 끝나야 시작
       expect(session.players.map(&:account_id)).to match_array(picked.map(&:id))
       Game::Lobby.start!(session)
       expect(session.reload.status).to eq 'active'
@@ -78,19 +78,15 @@ RSpec.describe Game::Events::Opening do
       expect(session.messages.count).to be_positive
     end
 
-    it 'starts with the ones who accepted when the time is up, and cancels when too few did' do
+    it 'waits for every invited player to answer; a decline lets the rest start' do
       picked = accounts.first(3)
       session = described_class.open!(Game::Web::Maze, admin, mode: 'pick', players: picked)
-      join_by_toot(picked.first)
-      session.with_lock { session.kind_class.new(session).recruitment_over! }
-      expect(session.reload.status).to eq 'cancelled'
+      picked.first(2).each { |account| Game::Lobby.accept_invite!(session.reload, account) }
+      picked.first(2).each { |account| Game::Lobby.set_ready!(session.reload, account, true) }
+      expect(Game::Lobby.counting?(session.reload)).to be_falsey # 아직 답하지 않은 사람이 있다
 
-      session = described_class.open!(Game::Web::Maze, admin, mode: 'pick', players: picked)
-      picked.first(2).each { |account| join_by_toot(account) }
-      session.with_lock { session.kind_class.new(session).recruitment_over! }
-      expect(session.reload.status).to eq 'lobby'
-      Game::Lobby.start!(session)
-      expect(session.reload.status).to eq 'active'
+      Game::Lobby.decline_invite!(session.reload, picked.last)
+      expect(Game::Lobby.counting?(session.reload)).to be true
       expect(session.players.size).to eq 2
     end
 
@@ -104,7 +100,7 @@ RSpec.describe Game::Events::Opening do
       picked = accounts.first(2)
       session = described_class.open!(Game::Web::Maze, admin, mode: 'test', players: picked)
 
-      expect(session).to have_attributes(status: 'pending', visibility: 'direct')
+      expect(session).to have_attributes(status: 'lobby', visibility: 'direct')
       expect(session.test?).to be true
       expect(GameSession.real).to_not include(session)
       invites = Status.where(account: system, visibility: :direct).to_a

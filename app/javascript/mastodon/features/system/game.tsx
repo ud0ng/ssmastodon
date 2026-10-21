@@ -302,6 +302,7 @@ const EventRoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRow)
           <li key={row.id} className='event-room-list__item'>
             <Link to={`/system/sessions/${row.id}`} className={`event-room event-room--${mode}`}>
               <span className='event-room__badge'>
+                {row.test && <span role='img' aria-label='test play' title='Test play'>🔒 </span>}
                 {recruiting
                   ? <FormattedMessage id='event.room.recruiting' defaultMessage='Recruiting' />
                   : finished
@@ -317,7 +318,6 @@ const EventRoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRow)
                 ))}
               </span>
               <span className='event-room__side'>
-                {row.test && <span role='img' aria-label='test play' title='Test play'>🔒</span>}
                 {recruiting && (row.deadline_at
                   ? <Countdown until={row.deadline_at} className='event-room__time' />
                   : <FormattedMessage id='event.room.waiting' defaultMessage='Waiting room' />)}

@@ -151,10 +151,12 @@ class Api::V1::System::GamesController < Api::BaseController
     mine = GamePlayer.where(account: current_account).select(:game_session_id)
     # 테스트 플레이는 참가자와 운영진(자물쇠)에게만 보인다
     scope = GameSession.current_kinds.where(kind: @kind.key)
+    # 초대받은 사람(아직 수락 전)에게도 그 방이 보인다
+    invited = "COALESCE(game_sessions.state->'invited', '[]'::jsonb) @> '[#{current_account.id.to_i}]'::jsonb"
     scope = if staff?
-              scope.where("game_sessions.visibility <> 'direct' OR game_sessions.id IN (?) OR COALESCE(game_sessions.state->>'test', '') = 'true'", mine)
+              scope.where("game_sessions.visibility <> 'direct' OR game_sessions.id IN (?) OR COALESCE(game_sessions.state->>'test', '') = 'true' OR #{invited}", mine)
             else
-              scope.where('game_sessions.visibility <> ? OR game_sessions.id IN (?)', 'direct', mine)
+              scope.where("game_sessions.visibility <> 'direct' OR game_sessions.id IN (?) OR #{invited}", mine)
             end
     scope.includes(players: :account)
   end
