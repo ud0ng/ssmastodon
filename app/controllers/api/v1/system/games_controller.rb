@@ -149,6 +149,18 @@ class Api::V1::System::GamesController < Api::BaseController
     { message: Game::Text.render(common['msg_busy_web'], player: current_account), session_id: session.id.to_s, name: session.kind_class&.display_name }
   end
 
+  # 초대받고 아직 수락하지 않은 캐릭터 (방 목록에 '대기중'으로 보인다)
+  def waiting_players(session)
+    # 진행 전: 대기중 / 끝난 뒤: 끝내 수락하지 않은 사람은 패자처럼
+    ids = if session.lobby? then Game::Lobby.waiting_ids(session)
+          elsif session.status == 'finished' then Array(session.state['skipped']).map(&:to_i)
+          else []
+          end
+    Account.where(id: ids).map do |account|
+      { name: GameCharacter.for(account).display_name, acct: account.acct, avatar: full_asset_url(account.avatar_static_url), result: session.lobby? ? nil : 'lose', me: account.id == current_account.id, waiting: session.lobby? }
+    end
+  end
+
   # 내가 초대받고 아직 수락하지 않았다
   def waiting_for_me?(session)
     Array(session.state['invited']).map(&:to_i).include?(current_account.id) && session.players.none? { |player| player.account_id == current_account.id }
@@ -181,7 +193,7 @@ class Api::V1::System::GamesController < Api::BaseController
       players: session.players.map do |player|
         { name: player.name, acct: player.account.acct, avatar: full_asset_url(player.account.avatar_static_url),
           result: player.result, me: player.account_id == current_account.id }
-      end,
+      end + waiting_players(session),
     }
   end
 

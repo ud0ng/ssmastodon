@@ -52,7 +52,7 @@ export interface SessionRow {
   waiting?: boolean;
   deadline_at: string | null;
   finished_at: string | null;
-  players: { name: string; acct: string; avatar: string; result: 'win' | 'lose' | 'draw' | null; me: boolean }[];
+  players: { name: string; acct: string; avatar: string; result: 'win' | 'lose' | 'draw' | null; me: boolean; waiting?: boolean }[];
 }
 
 export interface GameInfo {
@@ -328,9 +328,10 @@ const EventRoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRow)
               </span>
               <span className='event-room__players'>
                 {row.players.map((player) => (
-                  <span key={player.acct} className={['event-room__player', player.result === 'win' && 'is-winner', player.me && 'is-me'].filter(Boolean).join(' ')}>
+                  <span key={player.acct} className={['event-room__player', player.result === 'win' && 'is-winner', player.me && 'is-me', player.waiting && 'is-waiting'].filter(Boolean).join(' ')}>
                     <img src={player.avatar} alt='' />
                     <span>{player.name}</span>
+                    {player.waiting && <small><FormattedMessage id='event.room.waiting_badge' defaultMessage='Waiting' /></small>}
                   </span>
                 ))}
               </span>

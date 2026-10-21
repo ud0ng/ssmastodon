@@ -201,4 +201,18 @@ RSpec.describe 'API V1 System games' do
     session.update!(status: 'finished', finished_at: Time.now.utc)
     expect(Status.where('id > ?', before).where('text LIKE ?', '%끝났어요%')).to be_empty
   end
+  it 'lists invited players who never accepted as losers in the finished list, and as waiting before that' do
+    harry = Fabricate(:user, account: Fabricate(:account, username: 'harry'))
+    ron = Fabricate(:user, account: Fabricate(:account, username: 'ron'))
+    [harry, ron].each { |member| GameCharacter.for(member.account) }
+    session = GameSession.create!(kind: 'flying', status: 'lobby', visibility: 'private', state: { 'mode' => 'event', 'invited' => [harry.account.id, ron.account.id], 'lobby' => { 'ready' => [], 'start_at' => nil } })
+    session.players.create!(account: harry.account, seat: 0, state: { 'accepted' => true })
+
+    get '/api/v1/system/games/flying', headers: headers
+    expect(response.parsed_body['active'].first['players'].pluck('acct', 'waiting')).to eq [['harry', nil], ['ron', true]]
+
+    session.update!(status: 'finished', finished_at: Time.now.utc, state: session.state.merge('invited' => [harry.account.id], 'skipped' => [ron.account.id]))
+    get '/api/v1/system/games/flying', headers: headers
+    expect(response.parsed_body['recent'].first['players'].pluck('acct', 'result')).to eq [['harry', nil], ['ron', 'lose']]
+  end
 end

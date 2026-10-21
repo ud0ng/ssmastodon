@@ -120,6 +120,7 @@ class Api::V1::System::SessionsController < Api::BaseController
       else
         if session.lobby?
           # 초대한 이벤트: 아직 답하지 않은 사람은 빼고 지금 있는 사람들로 시작
+          session.state['skipped'] = Game::Lobby.waiting_ids(session) # 끝내 수락하지 않은 사람 (완료 목록에 패자처럼 보인다)
           session.state['invited'] = session.players.map(&:account_id)
           session.save!
         else
