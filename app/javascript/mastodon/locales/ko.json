@@ -1307,6 +1307,7 @@
   "lobby.decline": "거절",
   "lobby.join": "참여하기",
   "lobby.leave": "참여 취소",
+  "mm.chat_info": "정보",
   "mm.chat_student": "학생",
   "mm.chat_prefect": "사감",
   "lobby.recruit_title": "참가자 모집 중",
@@ -1581,7 +1582,7 @@
   "mm.spectating": "관전 중",
   "mm.exit": "나가기",
   "mm.role_ok": "알겠습니다",
-  "mm.jailed": "붙잡혀 필치의 사무실에 갇혔어요. 팀원이 구출해 줄 때까지 팀 채팅만 할 수 있어요.",
+  "mm.jailed": "붙잡혀 사감실에 갇혔어요. 팀원이 구출해 줄 때까지 팀 채팅만 할 수 있어요.",
   "mm.out": "두 번 붙잡혀 탈락했어요. 남은 게임을 관전해요.",
   "mm.pick_room": "빛나는 방을 눌러 이동하세요. 지금 있는 방을 누르면 제자리에 숨어요.",
   "mm.pick_watch": "감시할 방을 고르세요.",
@@ -1605,7 +1606,7 @@
   "mm.legend_closed": "움직이는 계단 (지금 닫힘)",
   "mm.legend_secret": "비밀 통로 (학생만)",
   "mm.legend_goal": "목표 장소",
-  "mm.legend_office": "필치의 사무실 (감옥)",
+  "mm.legend_office": "사감실 (감옥)",
   "mm.legend_tower": "탑의 방",
   "mm.legend_foot": "발자국 = 있는 곳 (리본 = 이름)"
 }

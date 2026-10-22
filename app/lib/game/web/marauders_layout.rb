@@ -21,7 +21,7 @@ module Game
         { up_to: 24, rooms: 60, cols: 8, floors: 6, targets: 9, turns: 26, towers: [4, 4, 4] },
       ].freeze
 
-      OFFICE = '필치의 사무실'
+      OFFICE = '사감실'
       TOWER_NAMES = %w(천문탑 북쪽탑 남쪽탑 시계탑).freeze
 
       # 팀이 들러야 하는 목표 장소 후보 (이름이 있는 특별한 방)

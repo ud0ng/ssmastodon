@@ -65,7 +65,7 @@ RSpec.describe Game::Web::MaraudersMap do
         expect(map['rooms'].size).to eq rooms
         expect(layout.connected?(map, 'a')).to be true
         expect(layout.connected?(map, 'b')).to be true
-        expect(map['rooms'][map['office']]['name']).to eq '필치의 사무실'
+        expect(map['rooms'][map['office']]['name']).to eq '사감실'
         expect(map['rooms'].map { |room| room['name'] }.uniq.size).to eq rooms # 방 이름은 겹치지 않는다
       end
     end
@@ -213,7 +213,7 @@ RSpec.describe Game::Web::MaraudersMap do
       expect(session.state['status_of']['0']).to eq 'jailed'
       expect(session.state['positions']['0']).to eq office
       expect(session.state['last']['arrests']).to include(include('seat' => 0, 'by' => 2, 'room' => a))
-      expect(session.state['log'].join).to include('필치의 사무실로 끌려갑니다')
+      expect(session.state['log'].join).to include('사감실로 끌려갑니다')
       expect(kind_for(session).pending_seats).not_to include(0) # 갇힌 학생은 고르지 않는다
     end
 

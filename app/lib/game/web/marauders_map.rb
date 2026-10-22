@@ -6,12 +6,12 @@ module Game
     #
     #   인원: 학생 팀은 전체의 약 1/3 (MaraudersLayout::STUDENTS), 나머지는 사감 팀. 대기실에서 무작위로 나뉘고 [팀 변경]으로 바꿀 수 있다.
     #   지도: 인원에 따라 방 25~60개, 층·탑이 늘어난다. 복도(일부는 막힘), 계단(일부는 움직이는 계단: 몇 턴마다 연결이 바뀜), 비밀 통로(학생만, 판마다 일부만 열림),
-    #         필치의 사무실(체포된 학생이 갇히는 곳).
+    #         사감실(체포된 학생이 갇히는 곳).
     #   턴: 학생과 사감 모두 동시에 고르고, 모두 고르면 결과를 반영한다 (비행 대결과 같다). 매 턴 인접한 방으로 1칸 이동하거나 제자리에 숨는다.
     #   학생: 사감 위치를 모두 본다. 팀 목표 장소(들)에 팀원 누구든 들어가면 1곳 달성. 목표 장소 도착·비밀 통로 사용은 그 턴에 발자국(정확한 방)을 남기고,
     #         3턴마다 무작위 학생 2명의 대략적인 구역(층/탑)이 공개된다. 투명 망토(팀 공용, 학생 3명당 1개): 쓴 학생은 2턴 동안 흔적도 구역 공개도 없다.
     #   사감: 서로의 위치만 본다. 역할(판당 1회 능력): 감시자(방 하나를 3턴 감시) / 정찰자(주변 2칸 안 학생 수) / 추격자(이번 턴 2칸 이동). 같은 방에 들어가면 체포.
-    #   체포: 학생은 필치의 사무실에 갇힌다 (이동 불가, 팀 채팅만). 다른 학생이 사무실에 들어가면 갇힌 학생이 전원 구출된다 (구출자는 발자국이 남는다).
+    #   체포: 학생은 사감실에 갇힌다 (이동 불가, 팀 채팅만). 다른 학생이 사무실에 들어가면 갇힌 학생이 전원 구출된다 (구출자는 발자국이 남는다).
     #         학생마다 구출은 1번까지, 두 번째로 체포되면 탈락(관전).
     #   종료: 학생 팀은 목표 장소를 모두 달성하면 승리, 사감 팀은 학생이 모두 갇히거나 탈락하거나 최대 턴이 지나면 승리.
     class MaraudersMap < Game::Kinds::Base
@@ -46,9 +46,9 @@ module Game
         F.new(key: 'msg_footprint', type: :text, group: 'messages', label: '발자국', default: '%{room}에서 %{player}의 발자국이 발견되었습니다.'),
         F.new(key: 'msg_zone', type: :text, group: 'messages', label: '구역 공개', default: '%{player}{이가} %{zone} 어딘가에 있습니다.'),
         F.new(key: 'msg_watch', type: :text, group: 'messages', label: '감시 걸림', default: '감시 중인 %{room}에 %{player}{이가} 들어왔습니다.'),
-        F.new(key: 'msg_caught', type: :text, group: 'messages', label: '체포', default: '%{prefect}{이가} %{room}에서 %{player}{을를} 붙잡았습니다. 필치의 사무실로 끌려갑니다.'),
+        F.new(key: 'msg_caught', type: :text, group: 'messages', label: '체포', default: '%{prefect}{이가} %{room}에서 %{player}{을를} 붙잡았습니다. 사감실로 끌려갑니다.'),
         F.new(key: 'msg_out', type: :text, group: 'messages', label: '탈락', default: '%{player}{은는} 두 번째로 붙잡혀 탈락했습니다.'),
-        F.new(key: 'msg_rescue', type: :text, group: 'messages', label: '구출', default: '%{player}{이가} 필치의 사무실에서 %{players}{을를} 구출했습니다!'),
+        F.new(key: 'msg_rescue', type: :text, group: 'messages', label: '구출', default: '%{player}{이가} 사감실에서 %{players}{을를} 구출했습니다!'),
         F.new(key: 'msg_stairs', type: :text, group: 'messages', label: '계단', default: '계단이 움직였습니다.'),
         F.new(key: 'msg_quiet', type: :text, group: 'messages', label: '조용한 턴', default: '복도는 조용합니다. 발소리 하나 들리지 않습니다.'),
         F.new(key: 'msg_turn', type: :text, group: 'messages', label: '턴 결과', default: "%{turn}턴\n%{lines}"),

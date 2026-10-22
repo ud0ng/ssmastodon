@@ -1353,3 +1353,20 @@ $stage-ink: #07060b;
     font-weight: 700;
   }
 }
+
+.stage-tutorial__row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.stage-tutorial__room {
+  width: min(260px, 100%);
+
+  .mm-room__shape {
+    fill: rgb(255 214 110 / 70%);
+    stroke: #a8620d;
+    stroke-width: 4.5;
+    animation: mm-glow 1.4s ease-in-out infinite;
+  }
+}

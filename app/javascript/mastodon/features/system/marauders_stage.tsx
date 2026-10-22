@@ -101,6 +101,7 @@ export interface MmChatMessage {
 const messages = defineMessages({
   chatAll: { id: 'mm.chat_all', defaultMessage: 'Everyone' },
   chatTeam: { id: 'mm.chat_team', defaultMessage: 'Team' },
+  chatInfo: { id: 'mm.chat_info', defaultMessage: 'Info' },
   chatStudent: { id: 'mm.chat_student', defaultMessage: 'Students' },
   chatPrefect: { id: 'mm.chat_prefect', defaultMessage: 'Prefects' },
   placeholder: { id: 'mm.chat_placeholder', defaultMessage: 'Say something' },
@@ -182,6 +183,9 @@ const MapSvg: React.FC<{
           <circle cx='2' cy='2' r='0.9' fill='#5a2f3a' opacity='0.55' />
           <circle cx='6.5' cy='5.5' r='0.8' fill='#5a2f3a' opacity='0.5' />
         </pattern>
+        <pattern id='mm-hatch' width='8' height='8' patternUnits='userSpaceOnUse' patternTransform='rotate(45)'>
+          <line x1='0' y1='0' x2='0' y2='8' stroke='#8a5a05' strokeWidth='2.2' opacity='0.75' />
+        </pattern>
         <linearGradient id='mm-secret' x1='0' x2='1'>
           <stop offset='0' stopColor='#b48bff' />
           <stop offset='1' stopColor='#6ad4ff' />
@@ -213,9 +217,9 @@ const MapSvg: React.FC<{
             key={`s-${link.a}-${link.b}`}
             className='mm-stairs'
             {...line(link.a, link.b)}
-            initial={draw ? { pathLength: 0 } : false}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 1.1, delay: draw ? 0.9 + ((index % 20) * 0.08) : 0 }}
+            initial={draw ? { opacity: 0 } : false}
+            animate={{ opacity: 0.85 }}
+            transition={{ duration: 0.8, delay: draw ? 0.9 + ((index % 20) * 0.08) : 0 }}
           />
         ))}
       </g>
@@ -230,7 +234,7 @@ const MapSvg: React.FC<{
               className={open ? 'mm-stairs mm-stairs--open' : 'mm-stairs mm-stairs--closed'}
               {...line(link.a, link.b)}
               initial={false}
-              animate={open ? { opacity: 1, pathLength: 1 } : { opacity: 0.28, pathLength: 1 }}
+              animate={open ? { opacity: 1 } : { opacity: 0.28 }}
               transition={{ duration: 0.9 }}
             />
           );
@@ -279,11 +283,14 @@ const MapSvg: React.FC<{
             style={{ transformOrigin: `${box.x + (box.w / 2)}px ${box.y + (box.h / 2)}px` }}
             onClick={() => { if (canGo || pickingWatch) onPick(room.id); }}
           >
+            <rect x={box.x} y={box.y} width={box.w} height={box.h} rx={8} className='mm-room__base' />
             <rect x={box.x} y={box.y} width={box.w} height={box.h} rx={8} className='mm-room__shape' filter='url(#mm-ink)' />
+            {isPlan && <rect x={box.x - 5} y={box.y - 5} width={box.w + 10} height={box.h + 10} rx={12} className='mm-room__ring' />}
             <rect x={box.x + 5} y={box.y + 5} width={box.w - 10} height={box.h - 10} rx={5} className='mm-room__inner' />
             <text x={box.x + (box.w / 2)} y={box.y + 27} textAnchor='middle' className='mm-room__name' textLength={Math.min(box.w - 24, room.name.length * 16)} lengthAdjust='spacingAndGlyphs'>{room.name}</text>
             {room.kind === 'office' && <text x={box.x + 12} y={box.y + 22} className='mm-room__icon'>🗝</text>}
-            {target !== undefined && <text x={box.x + box.w - 24} y={box.y + 24} className='mm-room__icon'>{target ? '✔' : '★'}</text>}
+            {target !== undefined && !target && <rect x={box.x + 5} y={box.y + 5} width={box.w - 10} height={box.h - 10} rx={5} className='mm-room__hatch' />}
+            {target && <text x={box.x + box.w - 24} y={box.y + 24} className='mm-room__icon'>✔</text>}
           </motion.g>
         );
       })}
@@ -334,6 +341,27 @@ const Shoe: React.FC<{ x: number; y: number; rot: number }> = ({ x, y, rot }) =>
   </g>
 );
 
+// 발자국 한 짝 (왼발·오른발)
+const StepGlyph: React.FC<{ team: 'student' | 'prefect'; side: 1 | -1 }> = ({ team, side }) => (
+  <svg className={`mm-foot mm-foot--${team} mm-foot--step`} viewBox='0 0 16 26' style={{ transform: side < 0 ? 'scaleX(-1)' : undefined }} aria-hidden>
+    <Shoe x={8} y={13} rot={0} />
+  </svg>
+);
+
+// 걸어간 자리: 길(복도·계단)을 따라 왼발·오른발이 번갈아 찍힌다
+const stepsAlong = (from: { x: number; y: number }, to: { x: number; y: number }, key: string, team: 'student' | 'prefect', delayBase: number, gap = 0.2): Stamp[] => {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.hypot(dx, dy) || 1;
+  const count = Math.max(4, Math.min(14, Math.round(length / 34)));
+  const angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+  return Array.from({ length: count }, (_, index) => {
+    const t = (index + 0.5) / count;
+    const side: 1 | -1 = index % 2 === 0 ? 1 : -1;
+    return { id: `${key}-${index}`, x: from.x + (dx * t) + ((-dy / length) * 9 * side), y: from.y + (dy * t) + ((dx / length) * 9 * side), team, delay: delayBase + (index * gap), angle, side };
+  });
+};
+
 const FootGlyph: React.FC<{ team: 'student' | 'prefect' }> = ({ team }) => (
   <svg className={`mm-foot mm-foot--${team}`} viewBox='0 0 38 26' aria-hidden>
     <Shoe x={11} y={12} rot={-8} />
@@ -341,7 +369,7 @@ const FootGlyph: React.FC<{ team: 'student' | 'prefect' }> = ({ team }) => (
   </svg>
 );
 
-interface Stamp { id: string; x: number; y: number; team: 'student' | 'prefect'; delay: number; angle: number }
+interface Stamp { id: string; x: number; y: number; team: 'student' | 'prefect'; delay: number; angle: number; side: 1 | -1 }
 
 // ── 범례: 지도에 그려진 것이 무엇인지 ──
 const LegendSample: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -365,7 +393,7 @@ const MapLegend: React.FC<{ view: MView }> = ({ view }) => {
         <li><LegendSample><line x1='3' y1='10' x2='41' y2='10' className='mm-stairs mm-stairs--open' /></LegendSample><span><FormattedMessage id='mm.legend_moving' defaultMessage='Moving stairs (open now)' /> <small><FormattedMessage id='mm.legend_moving_note' defaultMessage='Switch every {every} turns, next in {left}' values={{ every, left }} /></small></span></li>
         <li><LegendSample><line x1='3' y1='10' x2='41' y2='10' className='mm-stairs mm-stairs--closed' /></LegendSample><FormattedMessage id='mm.legend_closed' defaultMessage='Moving stairs (closed now)' /></li>
         {view.secret.length > 0 && <li><LegendSample><path d='M3 14 Q22 -4 41 14' className='mm-passage' /><text x='34' y='9' className='mm-door'>✦</text></LegendSample><FormattedMessage id='mm.legend_secret' defaultMessage='Secret passage (students only)' /></li>}
-        {view.targets.length > 0 && <li><LegendSample><rect x='6' y='2' width='32' height='16' rx='3' className='mm-room__shape is-goal-sample' /><text x='30' y='13' className='mm-legend__star'>★</text></LegendSample><FormattedMessage id='mm.legend_goal' defaultMessage='Goal place' /></li>}
+        {view.targets.length > 0 && <li><LegendSample><rect x='6' y='2' width='32' height='16' rx='3' className='mm-room__shape is-goal-sample' /><rect x='9' y='5' width='26' height='10' rx='2' className='mm-room__hatch is-sample' /></LegendSample><FormattedMessage id='mm.legend_goal' defaultMessage='Goal place' /></li>}
         <li><LegendSample><rect x='6' y='2' width='32' height='16' rx='3' className='mm-legend__office' /><text x='9' y='13' className='mm-legend__star'>🗝</text></LegendSample><FormattedMessage id='mm.legend_office' defaultMessage="Filch's office (jail)" /></li>
         <li><LegendSample><rect x='6' y='2' width='32' height='16' rx='3' className='mm-legend__tower' /></LegendSample><FormattedMessage id='mm.legend_tower' defaultMessage='Tower room' /></li>
         <li><span className='mm-legend__feet'><FootGlyph team='student' /></span><FormattedMessage id='mm.legend_foot' defaultMessage='Footprints = where someone is (ribbon = name)' /></li>
@@ -468,7 +496,7 @@ const Oath: React.FC<{ onDone: () => void }> = ({ onDone }) => {
 };
 
 // ── 채팅: 전체 / 팀 ──
-type ChatTab = 'all' | 'student' | 'prefect';
+type ChatTab = 'all' | 'info' | 'student' | 'prefect';
 
 const ChatDock: React.FC<{
   sessionId: string;
@@ -476,21 +504,24 @@ const ChatDock: React.FC<{
   team: 'student' | 'prefect' | null;
   canChat: boolean;
   jailed: boolean;
+  infos: { id: string; text: string }[];
   onSent: () => void;
-}> = ({ sessionId, chat, team, canChat, jailed, onSent }) => {
+}> = ({ sessionId, chat, team, canChat, jailed, infos, onSent }) => {
   const intl = useIntl();
   // 탭: 구경하는 사람은 전체·학생·사감, 학생은 전체·학생, 사감은 전체·사감
-  const tabs: ChatTab[] = team ? ['all', team] : ['all', 'student', 'prefect'];
+  // (정보 탭은 모든 사람에게 보인다)
+  const tabs: ChatTab[] = team ? ['all', 'info', team] : ['all', 'info', 'student', 'prefect'];
   const [channel, setChannel] = useState<ChatTab>(jailed && team ? team : 'all');
   const [text, setText] = useState('');
   const listRef = useRef<HTMLUListElement>(null);
   // 전체 탭에는 모든 채팅이 올라온다 (팀 채팅은 앞에 [학생]/[사감] 표시)
-  const shown = chat.filter((message) => (channel === 'all' ? true : message.team === channel));
-  const label = (tab: ChatTab) => (tab === 'all' ? intl.formatMessage(messages.chatAll) : intl.formatMessage(tab === 'student' ? messages.chatStudent : messages.chatPrefect));
+  const shown = channel === 'info' ? [] : chat.filter((message) => (channel === 'all' ? true : message.team === channel));
+  const shownInfos = channel === 'all' || channel === 'info' ? infos : [];
+  const label = (tab: ChatTab) => (tab === 'all' ? intl.formatMessage(messages.chatAll) : tab === 'info' ? intl.formatMessage(messages.chatInfo) : intl.formatMessage(tab === 'student' ? messages.chatStudent : messages.chatPrefect));
 
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [shown.length, channel]);
+  }, [shown.length, shownInfos.length, channel]);
 
   const submit = useCallback((event: React.FormEvent) => {
     event.preventDefault();
@@ -510,6 +541,12 @@ const ChatDock: React.FC<{
         ))}
       </div>
       <ul ref={listRef} className='mm-chat__list'>
+        {shownInfos.map((info) => (
+          <li key={info.id} className='is-info'>
+            <em className='mm-chat__tag is-info'>[{label('info')}]</em>
+            <span>{info.text}</span>
+          </li>
+        ))}
         {shown.map((message) => (
           <li key={message.id} className={message.mine ? 'is-mine' : undefined}>
             {channel === 'all' && <em className={`mm-chat__tag is-${message.team ?? 'all'}`}>[{label(message.team ?? 'all')}]</em>}
@@ -554,7 +591,7 @@ const Replay: React.FC<{ view: MView; geo: Geometry }> = ({ view, geo }) => {
       })}
       {view.map.rooms.filter((room) => view.targets.some((target) => target.room === room.id)).map((room) => {
         const point = geo.center(room.id);
-        return <text key={room.id} x={point.x} y={point.y} textAnchor='middle' className='mm-replay__goal'>★ {room.name}</text>;
+        return <text key={room.id} x={point.x} y={point.y} textAnchor='middle' className='mm-replay__goal'>{room.name}</text>;
       })}
     </svg>
   );
@@ -572,15 +609,33 @@ export const MaraudersStage: React.FC<{
   const history = useHistory();
   const [view, setView] = useState<MView | null>(null);
   const [stamps, setStamps] = useState<Stamp[]>([]);
+  // 소식(누가 어디 있는지·계단 변화 등): 지도 위에 잠깐 떴다 사라지고, 채팅의 [정보]로 남는다
+  const [infos, setInfos] = useState<{ id: string; text: string }[]>([]);
+  const [toasts, setToasts] = useState<{ id: string; text: string }[]>([]);
+  const seenInfo = useRef<Set<string> | null>(null);
   const [intro, setIntro] = useState<'oath' | 'role' | 'done'>('done');
   const [pickingWatch, setPickingWatch] = useState(false);
   const [ending, setEnding] = useState<'none' | 'over' | 'replay' | 'result'>('none');
   const [busy, setBusy] = useState(false);
   const seenLast = useRef<number>(-1);
+
+  useEffect(() => {
+    if (!view) return undefined;
+    const lines = view.log.map((text, index) => ({ id: `${view.turn}-${index}-${text}`, text }));
+    const first = seenInfo.current === null;
+    const known = seenInfo.current ?? new Set<string>();
+    const fresh = lines.filter((line) => !known.has(line.id));
+    if (fresh.length === 0) return undefined;
+    fresh.forEach((line) => known.add(line.id));
+    seenInfo.current = known;
+    setInfos((current) => [...current, ...fresh].slice(-60));
+    if (first) return undefined;
+    setToasts((current) => [...current, ...fresh]);
+    const timer = window.setTimeout(() => { setToasts((current) => current.filter((toast) => !fresh.some((line) => line.id === toast.id))); }, 6_000);
+    return () => { window.clearTimeout(timer); };
+  }, [view]);
   const introChecked = useRef(false);
   const stageRef = useRef<HTMLDivElement>(null);
-  // 검은 오버레이가 뚫려야 할 칸들 (화면에 실제로 그려진 위치를 재서 어긋나지 않게)
-  const [dimArea, setDimArea] = useState<{ x: number; y: number; w: number; h: number; holes: { x: number; y: number; w: number; h: number }[] } | null>(null);
 
   useStageLayout(true);
 
@@ -641,18 +696,12 @@ export const MaraudersStage: React.FC<{
       const player = view.players.find((each) => String(each.seat) === seat);
       const from = geo.center(move.from);
       const to = geo.center(move.to);
-      for (let index = 1; index <= 5; index += 1) {
-        const t = index / 6;
-        next.push({ id: `${last.turn}-${seat}-${index}`, x: from.x + ((to.x - from.x) * t), y: from.y + ((to.y - from.y) * t), team: player?.team ?? 'student', delay: index * 0.16, angle: (Math.atan2(to.y - from.y, to.x - from.x) * 180) / Math.PI + 90 });
-      }
+      next.push(...stepsAlong(from, to, `${last.turn}-${seat}`, player?.team ?? 'student', 0.1));
     });
     last.arrests.forEach((arrest) => {
       const from = geo.center(arrest.room);
       const to = geo.center(view.map.office);
-      for (let index = 1; index <= 8; index += 1) {
-        const t = index / 9;
-        next.push({ id: `${last.turn}-a${arrest.seat}-${index}`, x: from.x + ((to.x - from.x) * t), y: from.y + ((to.y - from.y) * t), team: 'student', delay: 0.9 + (index * 0.22), angle: (Math.atan2(to.y - from.y, to.x - from.x) * 180) / Math.PI + 90 });
-      }
+      next.push(...stepsAlong(from, to, `${last.turn}-a${arrest.seat}`, 'student', 0.9, 0.24));
     });
     setStamps(next);
     if (last.arrests.length > 0) window.setTimeout(thump, 500);
@@ -700,35 +749,7 @@ export const MaraudersStage: React.FC<{
     else send(view.commands.move, String(room));
   }, [view, pickingWatch, send]);
 
-  // 내 차례(또는 감시할 방 고르기)에는 갈 수 있는 칸만 남기고 화면 전체를 어둡게: 칸 위치를 화면에서 직접 잰다
-  const dimming = Boolean(view && (pickingWatch || (isPlayer && view.my_turn && !view.submitted && view.moves.length > 0)));
-  useEffect(() => {
-    if (!dimming) {
-      setDimArea(null);
-      return undefined;
-    }
-    const measure = () => {
-      const stage = stageRef.current;
-      if (!stage) return;
-      const base = stage.getBoundingClientRect();
-      const paper = stage.querySelector<HTMLElement>('.mm-parchment')?.getBoundingClientRect();
-      if (!paper) return;
-      // 지도(양피지) 위만 덮는다: 구멍 위치는 양피지 기준
-      const holes = Array.from(stage.querySelectorAll<SVGGElement>('.mm-room.is-go, .mm-room.is-pick')).map((node) => {
-        const box = node.getBoundingClientRect();
-        return { x: box.left - paper.left - 6, y: box.top - paper.top - 6, w: box.width + 12, h: box.height + 12 };
-      });
-      setDimArea({ x: paper.left - base.left, y: paper.top - base.top, w: paper.width, h: paper.height, holes });
-    };
-    measure();
-    // 방이 나타나는 애니메이션이 끝날 때까지와 창 크기가 바뀔 때 다시 잰다
-    const timers = [200, 700, 1500, 3000].map((delay) => window.setTimeout(measure, delay));
-    window.addEventListener('resize', measure);
-    return () => {
-      timers.forEach((timer) => { window.clearTimeout(timer); });
-      window.removeEventListener('resize', measure);
-    };
-  }, [dimming, view?.turn, view?.moves.length, pickingWatch]);
+  const selecting = Boolean(view && (pickingWatch || (isPlayer && view.my_turn && !view.submitted && view.moves.length > 0)));
 
   if (!view) return null;
 
@@ -746,22 +767,12 @@ export const MaraudersStage: React.FC<{
   const watchPending = view.role === 'watcher' && (view.items.ability ?? 0) > 0 && canAct;
 
   // 내 차례: 갈 수 있는 방(감시 고르기면 모든 방)만 남기고 나머지는 검은 오버레이로 덮는다
-  const dimMask = dimArea && dimArea.holes.length > 0 ? `url("data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${dimArea.w} ${dimArea.h}' preserveAspectRatio='none'><rect width='${dimArea.w}' height='${dimArea.h}' fill='white'/>${dimArea.holes.map((box) => `<rect x='${box.x}' y='${box.y}' width='${box.w}' height='${box.h}' rx='14' fill='black'/>`).join('')}</svg>`)}")` : null;
 
   const pct = (point: { x: number; y: number }) => ({ left: `${(point.x / geo.width) * 100}%`, top: `${(point.y / geo.height) * 100}%` });
   const dragged = new Set((view.last?.arrests ?? []).map((arrest) => arrest.seat));
 
   return createPortal(
     <div className='game-stage mm-stage' role='region' aria-label={name} ref={stageRef}>
-      {dimMask && (
-        <>
-          <motion.div key='dim' className='mm-dim' style={{ maskImage: dimMask, WebkitMaskImage: dimMask, left: dimArea?.x, top: dimArea?.y, width: dimArea?.w, height: dimArea?.h }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
-          <motion.p key='dim-text' className='mm-dim-text' style={{ top: (dimArea?.y ?? 0) + 12, left: (dimArea?.x ?? 0) + ((dimArea?.w ?? 0) / 2) }} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-            {pickingWatch ? <FormattedMessage id='mm.pick_watch' defaultMessage='Pick a room to watch.' /> : <FormattedMessage id='mm.pick_here' defaultMessage='Choose where to go!' />}
-          </motion.p>
-        </>
-      )}
-
       {/* 팀별 참여자 명단 (선택을 마친 사람에게는 ✓) */}
       <Roster view={view} />
 
@@ -783,6 +794,18 @@ export const MaraudersStage: React.FC<{
       {/* 지도 (양피지) */}
       <div className='mm-parchment'>
         <MapLegend view={view} />
+        {/* 안내글은 전부 지도 위에: 이동 선택 안내, 갇힘·탈락 안내, 소식(누가 어디에 있는지·계단 변화 등) */}
+        <ul className='mm-notice' aria-live='polite'>
+          {jailed && <li className='is-warn'><FormattedMessage id='mm.jailed' defaultMessage="You were caught and locked in the prefects' room. You can only use the team chat until a teammate rescues you." /></li>}
+          {out && <li className='is-warn'><FormattedMessage id='mm.out' defaultMessage='You were caught twice and are out. Watching the rest.' /></li>}
+        </ul>
+        <ul className='mm-toasts' aria-live='polite'>
+          <AnimatePresence>
+            {toasts.map((toast) => (
+              <motion.li key={toast.id} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.35 }}>{toast.text}</motion.li>
+            ))}
+          </AnimatePresence>
+        </ul>
         <div className='mm-board' style={{ aspectRatio: `${geo.width} / ${geo.height}` }}>
           <MapSvg view={view} geo={geo} reachable={reachable} here={here} planned={planned} pickingWatch={pickingWatch} draw={intro === 'oath' || (ending === 'none' && view.turn <= 1)} fade={ending === 'replay' || ending === 'result'} onPick={pick} />
 
@@ -816,8 +839,8 @@ export const MaraudersStage: React.FC<{
 
           {/* 발자국 찍기 (이동·끌려감) */}
           {stamps.map((stamp) => (
-            <motion.div key={stamp.id} className='mm-stamp' style={{ ...pct({ x: stamp.x, y: stamp.y }), rotate: stamp.angle }} initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: [0, 0.9, 0.9, 0], scale: [0.4, 1, 1, 1] }} transition={{ delay: stamp.delay, duration: 2.2 }}>
-              <FootGlyph team={stamp.team} />
+            <motion.div key={stamp.id} className='mm-stamp' style={{ ...pct({ x: stamp.x, y: stamp.y }), rotate: stamp.angle }} initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: [0, 0.9, 0.9, 0], scale: [0.4, 1, 1, 1] }} transition={{ delay: stamp.delay, duration: 2.6 }}>
+              <StepGlyph team={stamp.team} side={stamp.side} />
             </motion.div>
           ))}
 
@@ -859,9 +882,8 @@ export const MaraudersStage: React.FC<{
       {/* 아래: 상태 안내 + 아이템·능력 */}
       <div className='mm-dock'>
         <div className='mm-status'>
-          {jailed && <p className='is-warn'><FormattedMessage id='mm.jailed' defaultMessage="You were caught and locked in Filch's office. You can only use the team chat until a teammate rescues you." /></p>}
-          {out && <p className='is-warn'><FormattedMessage id='mm.out' defaultMessage='You were caught twice and are out. Watching the rest.' /></p>}
-          {view.log.length > 0 && <ul className='mm-log'>{view.log.slice(-4).map((line, index) => <li key={`${index}-${line}`}>{line}</li>)}</ul>}
+          {false && jailed && <p className='is-warn'><FormattedMessage id='mm.jailed' defaultMessage="You were caught and locked in Filch's office. You can only use the team chat until a teammate rescues you." /></p>}
+          {false && out && <p className='is-warn'><FormattedMessage id='mm.out' defaultMessage='You were caught twice and are out. Watching the rest.' /></p>}
         </div>
         {isPlayer && view.team === 'student' && !jailed && !out && (
           <button type='button' className='mm-button' disabled={!canAct || busy || (view.items.cloak ?? 0) <= 0 || Boolean(view.items.cloaked)} onClick={() => { send(view.commands.cloak); }}>
@@ -885,7 +907,9 @@ export const MaraudersStage: React.FC<{
       {/* 맹세(오프닝)는 메뉴 띠까지 덮는 전체 화면, 끝나면 아이콘 메뉴가 있는 지도 화면 */}
       {createPortal(<AnimatePresence>{intro === 'oath' && <Oath key='oath' onDone={() => { finishIntro(view.team ? 'role' : 'done'); }} />}</AnimatePresence>, document.body)}
 
-      <ChatDock sessionId={sessionId} chat={chat} team={view.team} canChat={isPlayer || staff} jailed={jailed} onSent={onChanged} />
+      {selecting && <p className='mm-prompt'>{pickingWatch ? <FormattedMessage id='mm.pick_watch' defaultMessage='Pick a room to watch.' /> : <FormattedMessage id='mm.pick_here' defaultMessage='Choose where to go!' />}</p>}
+
+      <ChatDock sessionId={sessionId} chat={chat} team={view.team} canChat={isPlayer || staff} jailed={jailed} infos={infos} onSent={onChanged} />
 
       {/* 맹세 → 역할 안내 */}
       <AnimatePresence>

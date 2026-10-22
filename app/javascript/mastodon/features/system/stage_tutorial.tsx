@@ -79,6 +79,27 @@ const DEMOS: Record<string, ((guide: Guide) => React.ReactNode)[]> = {
   ],
 };
 
+const RealButton: React.FC<{ className: string; children: React.ReactNode }> = ({ className, children }) => (
+  <button type='button' className={className} tabIndex={-1} onClick={NOOP}>{children}</button>
+);
+
+// 도둑 지도: 실제 화면과 같은 버튼·빛나는 방을 그대로
+const MARAUDERS_DEMOS: ((guide: Guide) => React.ReactNode)[] = [
+  () => (
+    <div className='stage-tutorial__row'>
+      <RealButton className='game-stage__join'><FormattedMessage id='lobby.accept' defaultMessage='Accept' /></RealButton>
+      <RealButton className='game-stage__join game-stage__join--off'><FormattedMessage id='lobby.change_team' defaultMessage='Change team' /></RealButton>
+    </div>
+  ),
+  () => <RealButton className='game-stage__button'><FormattedMessage id='lobby.ready' defaultMessage='Ready' /></RealButton>,
+  () => (
+    <svg className='stage-tutorial__room' viewBox='0 0 200 70' aria-hidden>
+      <g className='mm-room is-go'><rect x='60' y='10' width='80' height='46' rx='8' className='mm-room__shape' /><rect x='65' y='15' width='70' height='36' rx='5' className='mm-room__inner' /></g>
+    </svg>
+  ),
+  () => <RealButton className='mm-button'><FormattedMessage id='mm.cloak' defaultMessage='Invisibility cloak ({count})' values={{ count: 1 }} /></RealButton>,
+];
+
 export const StageTutorial: React.FC<{ kind: string; phase?: TutorialPhase }> = ({ kind, phase = 'game' }) => {
   const [guide, setGuide] = useState<Guide | null>(null);
   const [index, setIndex] = useState(0);
@@ -95,7 +116,7 @@ export const StageTutorial: React.FC<{ kind: string; phase?: TutorialPhase }> = 
 
   const pages = useMemo<Page[]>(() => {
     if (!guide) return [];
-    const demos = DEMOS[kind] ?? [];
+    const demos = kind === 'marauders_map' ? MARAUDERS_DEMOS : (DEMOS[kind] ?? []);
     const split = LOBBY_STEPS[kind] ?? 0;
     const from = phase === 'lobby' ? 0 : split;
     const to = phase === 'lobby' ? split : guide.steps.length;

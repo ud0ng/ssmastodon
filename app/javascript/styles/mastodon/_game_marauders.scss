@@ -265,7 +265,7 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
   position: absolute;
   z-index: 30;
   border-radius: 6px;
-  background: rgb(0 0 0 / 70%);
+  background: rgb(0 0 0 / 55%);
   mask-repeat: no-repeat;
   mask-size: 100% 100%;
   pointer-events: none;
@@ -378,7 +378,7 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
   }
 
   &--office &__shape {
-    fill: rgb(150 40 30 / 22%);
+    fill: #e6bdb0;
     stroke: #8a1d12;
   }
 
@@ -390,7 +390,7 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
 
   &.is-go &__shape {
     animation: mm-glow 1.4s ease-in-out infinite;
-    fill: rgb(255 214 110 / 70%);
+    fill: #f6dc92;
     stroke: #a8620d;
     stroke-width: 4.5;
   }
@@ -400,9 +400,11 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
     stroke-width: 5;
   }
 
+  // 고른 칸: 속이 비치지 않게 불투명하게 칠하고 파란 테두리가 맥동한다
   &.is-plan &__shape {
-    fill: rgb(150 205 255 / 60%);
+    fill: #bcd6f0;
     stroke: #1d3f8a;
+    stroke-width: 5;
   }
 
   &.is-pick {
@@ -506,7 +508,7 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
   }
 
   &.is-dim {
-    opacity: 0.85;
+    opacity: 1;
   }
 
   i {
@@ -1112,3 +1114,124 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
     }
   }
 }
+
+// 발자국 한 짝
+.mm-foot--step {
+  width: 16px !important;
+  height: 26px !important;
+}
+
+// 방 뒤 불투명 바탕: 복도가 방 안으로 비쳐 보이지 않게
+.mm-room__base {
+  fill: #e9d8a6;
+  stroke: none;
+}
+
+.mm-room--office .mm-room__base {
+  fill: #e6bdb0;
+}
+
+// 목표 장소: 별표 대신 방 안에 빗금
+.mm-room__hatch {
+  fill: url('#mm-hatch');
+  pointer-events: none;
+
+  &.is-sample {
+    fill: #8a5a05;
+    opacity: 0.35;
+  }
+}
+
+// 고른 칸 테두리 맥동
+.mm-room__ring {
+  fill: none;
+  stroke: #1d3f8a;
+  stroke-dasharray: 10 6;
+  stroke-width: 3;
+  animation: mm-plan-ring 1.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes mm-plan-ring {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+// 지도 위 안내글 (선택하라는 글과 같은 자리·같은 모양)
+.mm-notice {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 31;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  max-width: 80%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+  translate: -50% 0;
+
+  li {
+    color: #fff;
+    font-size: 20px;
+    font-weight: 800;
+    text-align: center;
+    text-shadow: 0 2px 10px rgb(0 0 0 / 85%), 0 0 3px rgb(0 0 0 / 90%);
+  }
+
+  .is-prompt {
+    font-size: 26px;
+  }
+
+  .is-warn {
+    color: #ffd0c0;
+  }
+}
+
+// 이동할 구역을 선택하라는 글: 지도 아래쪽, 그림자로 또렷하게 (검은 오버레이는 없다)
+.mm-prompt {
+  position: relative;
+  z-index: 31;
+  margin: 0 auto;
+  padding: 4px 0;
+  color: #fff;
+  font-size: 26px;
+  font-weight: 800;
+  text-align: center;
+  pointer-events: none;
+  text-shadow: 0 3px 14px rgb(0 0 0 / 90%), 0 0 4px rgb(0 0 0 / 95%), 0 0 22px rgb(0 0 0 / 60%);
+}
+
+// 소식 토스트: 지도 위 같은 자리에 잠깐 떴다 사라진다
+.mm-toasts {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 31;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  max-width: 80%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+  translate: -50% 0;
+
+  li {
+    color: #fff;
+    font-size: 20px;
+    font-weight: 800;
+    text-align: center;
+    text-shadow: 0 2px 10px rgb(0 0 0 / 85%), 0 0 3px rgb(0 0 0 / 90%);
+  }
+}
+
+// 채팅의 [정보]
+.mm-chat__tag.is-info { color: #ffd56a; }
+
+.mm-chat__list .is-info span { color: #ffe9a6; }
