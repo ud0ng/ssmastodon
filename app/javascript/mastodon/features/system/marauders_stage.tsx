@@ -901,12 +901,15 @@ export const MaraudersStage: React.FC<{
         </div>
       </div>
 
-      {/* 아래: 상태 안내 + 아이템·능력 */}
-      <div className='mm-dock'>
-        <div className='mm-status'>
-          {false && jailed && <p className='is-warn'><FormattedMessage id='mm.jailed' defaultMessage="You were caught and locked in Filch's office. You can only use the team chat until a teammate rescues you." /></p>}
-          {false && out && <p className='is-warn'><FormattedMessage id='mm.out' defaultMessage='You were caught twice and are out. Watching the rest.' /></p>}
-        </div>
+        <TeamSide view={view} team='prefect' />
+      </div>
+
+      {/* 맹세(오프닝)는 메뉴 띠까지 덮는 전체 화면, 끝나면 아이콘 메뉴가 있는 지도 화면 */}
+      {createPortal(<AnimatePresence>{intro === 'oath' && <Oath key='oath' onDone={() => { finishIntro(view.team ? 'role' : 'done'); }} />}</AnimatePresence>, document.body)}
+
+      {selecting && (
+        <div className='mm-prompt'>
+          <span>{pickingWatch ? <FormattedMessage id='mm.pick_watch' defaultMessage='Pick a room to watch.' /> : <FormattedMessage id='mm.pick_here' defaultMessage='Choose where to go!' />}</span>
         {isPlayer && view.team === 'student' && !jailed && !out && (
           <button type='button' className='mm-button' disabled={!canAct || busy || (view.items.cloak ?? 0) <= 0 || Boolean(view.items.cloaked)} onClick={() => { send(view.commands.cloak); }}>
             <FormattedMessage id='mm.cloak' defaultMessage='Invisibility cloak ({count})' values={{ count: view.items.cloak ?? 0 }} />
@@ -924,14 +927,8 @@ export const MaraudersStage: React.FC<{
             {view.role === 'chaser' && <FormattedMessage id='mm.ability_chase' defaultMessage='Chase: move 2 ({count})' values={{ count: view.items.ability ?? 0 }} />}
           </button>
         )}
-      </div>
-        <TeamSide view={view} team='prefect' />
-      </div>
-
-      {/* 맹세(오프닝)는 메뉴 띠까지 덮는 전체 화면, 끝나면 아이콘 메뉴가 있는 지도 화면 */}
-      {createPortal(<AnimatePresence>{intro === 'oath' && <Oath key='oath' onDone={() => { finishIntro(view.team ? 'role' : 'done'); }} />}</AnimatePresence>, document.body)}
-
-      {selecting && <p className='mm-prompt'>{pickingWatch ? <FormattedMessage id='mm.pick_watch' defaultMessage='Pick a room to watch.' /> : <FormattedMessage id='mm.pick_here' defaultMessage='Choose where to go!' />}</p>}
+        </div>
+      )}
 
       {/* 소식 토스트: 채팅창 왼쪽에서 오른쪽으로 밀려 들어온다 */}
       <ul className='mm-toasts' aria-live='polite'>
