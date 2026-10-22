@@ -828,13 +828,6 @@ export const MaraudersStage: React.FC<{
           {jailed && <li className='is-warn'><FormattedMessage id='mm.jailed' defaultMessage="You were caught and locked in the prefects' room. You can only use the team chat until a teammate rescues you." /></li>}
           {out && <li className='is-warn'><FormattedMessage id='mm.out' defaultMessage='You were caught twice and are out. Watching the rest.' /></li>}
         </ul>
-        <ul className='mm-toasts' aria-live='polite'>
-          <AnimatePresence>
-            {toasts.map((toast) => (
-              <motion.li key={toast.id} initial={{ opacity: 0, y: -14, scale: 0.94 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.96 }} transition={{ duration: 0.4 }}><TIcon name='info-circle' size={20} /><span>{toast.text}</span></motion.li>
-            ))}
-          </AnimatePresence>
-        </ul>
         <div className='mm-board' style={{ aspectRatio: `${geo.width} / ${geo.height}` }}>
           <MapSvg view={view} geo={geo} reachable={reachable} here={here} planned={planned} pickingWatch={pickingWatch} draw={intro === 'oath' || (ending === 'none' && view.turn <= 1)} fade={ending === 'replay' || ending === 'result'} onPick={pick} />
 
@@ -939,6 +932,15 @@ export const MaraudersStage: React.FC<{
       {createPortal(<AnimatePresence>{intro === 'oath' && <Oath key='oath' onDone={() => { finishIntro(view.team ? 'role' : 'done'); }} />}</AnimatePresence>, document.body)}
 
       {selecting && <p className='mm-prompt'>{pickingWatch ? <FormattedMessage id='mm.pick_watch' defaultMessage='Pick a room to watch.' /> : <FormattedMessage id='mm.pick_here' defaultMessage='Choose where to go!' />}</p>}
+
+      {/* 소식 토스트: 채팅창 왼쪽에서 오른쪽으로 밀려 들어온다 */}
+      <ul className='mm-toasts' aria-live='polite'>
+        <AnimatePresence>
+          {toasts.map((toast) => (
+            <motion.li key={toast.id} initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.4 }}><TIcon name='info-circle' size={20} /><span>{toast.text}</span></motion.li>
+          ))}
+        </AnimatePresence>
+      </ul>
 
       <ChatDock sessionId={sessionId} chat={chat} team={view.team} canChat={isPlayer || staff} jailed={jailed} infos={infos} onSent={onChanged} />
 
