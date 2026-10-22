@@ -220,6 +220,29 @@ RSpec.describe Game::Events::Opening do
     expect(Game::Lobby.view(session.reload, accounts.first, staff: false)).to include(can_join: true, join_block: '참가 인원이 가득 찼습니다.')
   end
 
+  # 대기실은 모든 이벤트(미로·도둑 지도·비행 대결·비밀의 방)가 같은 규칙과 화면을 쓴다
+  [Game::Web::Maze, Game::Web::MaraudersMap, Game::Kinds::Flying, Game::Web::SecretChamber].each do |kind|
+    it "gives the #{kind.key} waiting room the same join limits, notices and invites" do
+      Game::Config.merge!('events', 'event_daily_limit' => 1)
+      allow(GameCharacter).to receive(:eligible_accounts).and_return(Account.where(id: accounts.map(&:id)))
+      session = described_class.open!(kind, admin)
+      session = GameSession.find(session.id)
+
+      view = Game::Lobby.view(session, accounts.first, staff: false)
+      expect(view).to include(can_join: true, join_block: nil, recruiting: true)
+      expect(view.keys).to include(:can_invite, :join_block, :can_respond, :recruit_ends_at)
+
+      earlier = GameSession.create!(kind: 'maze', status: 'finished', visibility: 'private', finished_at: Time.current, state: { 'mode' => 'event' })
+      earlier.players.create!(account: accounts.first, seat: 0, result: 'win', state: {})
+      expect(Game::Lobby.join!(session, accounts.first)).to eq :limit
+      expect(Game::Lobby.view(session, accounts.first, staff: false)[:join_block]).to include('하루에 참가할 수 있는')
+
+      Game::Config.merge!('events', 'event_daily_limit' => 0)
+      expect(Game::Lobby.join!(session, accounts.first)).to eq :ok
+      expect(Game::Lobby.reward_notice(accounts.first, session)).to be_nil
+    end
+  end
+
   it 'cancels when too few people joined' do
     described_class.open!(Game::Web::Maze, admin)
     toot(accounts.first, '@system [참가]')

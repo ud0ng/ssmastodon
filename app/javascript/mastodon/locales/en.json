@@ -1427,5 +1427,6 @@
   "system.session.cancelled_title": "The event was cancelled",
   "system.session.ok": "OK",
   "lobby.no_reward_title": "No points or rewards today",
-  "lobby.cannot_join": "Cannot join"
+  "lobby.cannot_join": "Cannot join",
+  "stage.preparing": "The game room is being prepared."
 }

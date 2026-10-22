@@ -39,6 +39,9 @@ import { MaraudersMapPlay } from './marauders_map';
 import { MazePlay } from './maze';
 import { ChamberPlay } from './secret_chamber';
 
+// 무대 화면으로만 보이는 이벤트 (옛 채팅방 화면 없음)
+const EVENT_KINDS = ['flying', 'maze', 'marauders_map', 'secret_chamber'];
+
 const messages = defineMessages({
   title: { id: 'system.session.title', defaultMessage: 'Game' },
   cancelledTitle: { id: 'system.session.cancelled_title', defaultMessage: 'The event was cancelled' },
@@ -450,11 +453,12 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
     wasMyTurn.current = myTurn;
   }, [myTurn]);
 
-  // 비행 대결 방은 옛 채팅방 화면 없이 새 화면(대기방·게임방)만 보인다. 읽는 동안·취소된 방도 어두운 무대 화면으로
-  if (!data || data.kind === 'flying') {
+  // 이벤트(여럿이 하는 컨텐츠) 방은 옛 채팅방 화면 없이 무대 화면(대기방·게임방)만 보인다. 읽는 동안·취소된 방도 어두운 무대 화면으로.
+  // 비행 대결 말고는 게임방을 새로 만드는 중이라, 카운트다운이 끝나면 '준비중' 화면을 보여 준다
+  if (!data || EVENT_KINDS.includes(data.kind)) {
     return (
       <>
-        {data?.status === 'active' && data.player && <StageTutorial kind={data.kind} />}
+        {data?.status === 'active' && data.player && data.kind === 'flying' && <StageTutorial kind={data.kind} />}
         {data && flyingRoom && (
           <FlyingStage
             sessionId={data.id}
@@ -480,7 +484,9 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
               <p className='stage-notice'>
                 {failed && !data
                   ? <FormattedMessage id='system.load_failed' defaultMessage='Could not load. Try again in a moment.' />
-                  : <FormattedMessage id='stage.closed' defaultMessage='This event has ended or was cancelled.' />}
+                  : data && data.kind !== 'flying' && ['active', 'finished'].includes(data.status)
+                    ? <FormattedMessage id='stage.preparing' defaultMessage='The game room is being prepared.' />
+                    : <FormattedMessage id='stage.closed' defaultMessage='This event has ended or was cancelled.' />}
               </p>
             )}
           </StageFrame>
