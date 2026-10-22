@@ -52,8 +52,12 @@ class Api::V1::System::SessionsController < Api::BaseController
     kind = @session.kind_class.new(@session)
     # 모집 중인 이벤트(비밀의 방 제외)는 아직 판이 없다
     recruiting = %w(pending lobby).include?(@session.status)
-    view = kind.respond_to?(:view_for) && !recruiting ? kind.view_for(player) : nil
-    add_avatars!(view)
+    view = if @session.status == 'finished'
+             # 끝난 판은 더 바뀌지 않으니 사람마다 잠깐 저장해 둔다 (결과 화면을 여러 번 읽어도 계산은 한 번)
+             Rails.cache.fetch(['game/finished_view', @session.id, current_account.id, @session.updated_at.to_i], expires_in: 60.seconds) { finished_view_for(kind, player) }
+           else
+             kind.respond_to?(:view_for) && !recruiting ? build_view(kind, player) : nil
+           end
     render json: { web: @session.kind_class.web?, status: @session.status, view: view }
   end
 
@@ -203,6 +207,16 @@ class Api::V1::System::SessionsController < Api::BaseController
 
   private
 
+  def build_view(kind, player)
+    view = kind.view_for(player)
+    add_avatars!(view)
+    view
+  end
+
+  def finished_view_for(kind, player)
+    kind.respond_to?(:view_for) ? build_view(kind, player) : nil
+  end
+
   def respond_to_invite(action)
     result = @session.with_lock { action.call(@session.reload, current_account) }
     return render json: { error: JOIN_ERRORS.fetch(result) }, status: 422 if JOIN_ERRORS.key?(result)
@@ -233,7 +247,7 @@ class Api::V1::System::SessionsController < Api::BaseController
   # 방 전체가 같이 쓰는 메시지 목록(카드 없이)을 2초 동안 한 번만 만든다. 사람마다 달라지는 것(내 글·비밀 안내·팀 채팅)만 따로 거른다.
   def lean_messages
     last_id = @session.messages.maximum(:id).to_i
-    rows = Rails.cache.fetch(['game/lean_messages', @session.id, last_id, @session.status], expires_in: 2.seconds) { build_lean_rows }
+    rows = Rails.cache.fetch(['game/lean_messages', @session.id, last_id, @session.status], expires_in: 2.seconds, race_condition_ttl: 3.seconds) { build_lean_rows }
     my_team = team_of_viewer
     spectator = @session.player_for(current_account).nil?
     rows.filter_map do |row|

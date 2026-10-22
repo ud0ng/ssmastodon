@@ -70,6 +70,19 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
 - 미리보기에서 시험: `bin/rails runner /dev/stdin "owner|@system @luna [젤리빈]" "luna|@system [수락]|reply" < dev/preview/play.rb` (sidekiq 이 처리, `|dm` 은 DM). Engine 을 직접 부르면 sidekiq 과 두 번 처리된다.
 - 컨텐츠 전체 점검: `docker compose -f dev/preview/docker-compose.yml exec -T web bin/rails runner /dev/stdin < dev/preview/smoke.rb` (진짜 툿으로 컨텐츠마다 신청→끝 또는 첫 턴, 결과·보상·알림 확인, 설정은 끝나면 되돌림).
 
+## 이벤트·컨텐츠 서버 부하 줄이기 (2026-10-22, 20명 동시 접속에서 502 났던 일)
+
+본서버(GCE e2-standard-2, 2코어)에서 비행 대결 20명이 방에 들어오자 웹이 502 를 냈다. 원인은 방 정보 요청(`GET /api/v1/system/sessions/:id`) 하나가 1.2~2.4초(DB 1초 이상)씩 걸리는데 20명이 2~3초마다 보내서 puma(프로세스 2×스레드 5=동시 10개)가 밀린 것. 아래 규칙으로 요청당 비용을 10배 이상 줄였다 (11명 기준 방 정보 30~55ms, /view 40~57ms, 웹 CPU 145%→10~30%). **새 이벤트·컨텐츠 화면을 만들 때 지킬 것:**
+
+- **자주 읽는(폴링) 요청은 가볍게**: 대기방·게임방은 2.5초마다 읽는다. 요청 하나에서 툿·카드·사람별 조회를 하지 않는다. 이벤트 방은 `SessionsController#show` 가 `event_stage?` 면 툿·GameEvent 조회를 건너뛰고(`lean`) 채팅·안내 메시지만 준다.
+- **방 전체가 같이 쓰는 값은 한 번만 계산해 잠깐 저장**: `lean_messages` 는 `Rails.cache` 에 [방, 마지막 메시지 번호, 상태] 키로 2초 저장하고 `race_condition_ttl` 로 만료 순간 여러 요청이 동시에 다시 만들지 않게 한다. 사람마다 달라지는 것(내 글·비밀 안내·팀 채팅 가림)만 요청마다 거른다. 끝난 판의 `/view` 는 사람별로 60초 저장.
+- **N+1 금지**: 참가자 목록은 계정·캐릭터·소속을 한 번에 읽는다 (`Lobby.preload_characters`, `GamePlayer#preload_character`). 20명이면 사람마다 조회하는 코드가 수십 번 쿼리가 된다. 새 목록을 만들 때 `includes` 와 `index_by` 를 쓴다.
+- **설정 읽기**: `Game::Config.for` 는 저장된 값을 프로세스에서 2초 기억한다 (저장하면 바로 비움, 다른 웹 프로세스에는 최대 2초 늦게 반영, 시험 환경은 기억 안 함). 한 요청이 설정을 수십 번 읽어도 DB 는 한 번.
+- **무거운 합계는 저장**: 툿 전체를 세는 `Game::Activity.overview`(재화 화면의 툿 합계 5분, 소속 점수 화면 합계 2분)처럼 테이블 전체를 훑는 값은 요청마다 계산하지 않는다. 재화 화면은 자주 읽힌다.
+- **읽는 간격**: 방 정보·게임 화면 2.5초 (`session.tsx` LOBBY_REFRESH_MS, `flying.tsx`·`marauders_stage.tsx` REFRESH_MS). 줄이지 말 것. 즉시 반영이 필요한 건 스트리밍 알림(`game.alert`)을 쓴다.
+- **확인 방법**: 미리보기에서 `ActionDispatch::Integration::Session` 으로 요청해 쿼리 수·시간을 센다(예: 방 정보 76→31 쿼리). 본서버는 `docker compose logs --tail=60 web | grep "sessions/"` 의 duration/db 와 `docker stats --no-stream` 의 웹 CPU 로 본다. 기준: 방 정보·/view 요청 200ms 아래, 20명에서 웹 CPU 100% 아래.
+- **서버 쪽 여유**: 본서버는 e2-standard-4(4코어, 16GB) + `.env.production` 의 `WEB_CONCURRENCY=4` 로 쓰는 중. 코어 수와 프로세스 수는 같이 바꾼다 (코어 2개에 프로세스 4개는 오히려 느림). 사양을 내리면 `WEB_CONCURRENCY` 도 내린다.
+
 ## 로컬에서 확인하기
 
 Docker Desktop, Node.js, Chrome 이 있으면 된다 (PC 에 Ruby/Python 없음).
