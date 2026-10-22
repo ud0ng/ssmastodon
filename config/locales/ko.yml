@@ -108,13 +108,17 @@ ko:
           chars: 글자
           toots: 툿
         give: 지급
+        give_counter: 누적 수치
         give_items: 아이템
         give_money: '재화 (%{currency})'
-        give_nothing: 받을 캐릭터와 재화 수나 아이템을 골라 주세요.
+        give_nothing: 받을 캐릭터와 재화 수·아이템·누적 수치를 골라 주세요.
         give_to: 지급할 캐릭터
         given: '%{count}명에게 지급했습니다.'
         hint: '각 툿은 툿 수 / 툿 글자수이며, 답 횟수는 다른 사람의 툿에 답 툿을 단 횟수입니다. 같은 툿에는 몇 번을 달아도 1회로 세고, 답 툿에 단 답과 DM은 세지 않습니다.'
         item_count: 아이템 수
+        counter_amount: 더할 수 (빼려면 -)
+        counter_hint: 상쇄하기 전 누적치에 더합니다. 누적 효과도 규칙대로 붙거나 거둬지고, 누적 수치 기록에 남습니다. DM 은 가지 않습니다.
+        counter_name: 누적 수치
         item_kinds: 아이템 종류
         money_amount: '재화 수 (%{currency})'
         no_match: 맞는 아이템이 없습니다.
@@ -600,6 +604,10 @@ ko:
           add_item: 아이템 추가
           back: 명단으로
           content: 컨텐츠
+          counter_net: "%{opposite} 상쇄 후 결과값: %{net}"
+          counter_reason: 운영진 수정
+          counters: 누적 수치
+          counters_hint: 상쇄하기 전 누적치입니다. 바꾸면 누적 효과(칭호·데코 등)도 규칙대로 붙거나 거둬지고, 누적 수치 기록에 남습니다.
           currency_records: 최근 재화 기록
           games: 최근 전적
           inventory: 인벤토리

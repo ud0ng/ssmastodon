@@ -55,6 +55,7 @@ module Admin
       @character.assign_attributes(character_params.slice(:name, :game_house_id, :game_faction_id, :note))
       @character.stats = stat_values if GameCharacterField.stats.exists? # 스탯이 하나도 없으면 화면에 칸이 없으니 저장된 값을 그대로 둔다
       if @character.save
+        update_counters!
         redirect_to edit_admin_game_character_path(@character, filter_params), notice: t('generic.changes_saved_msg')
       else
         render :edit
@@ -171,6 +172,18 @@ module Admin
       end
     end
 
+    # 누적 수치: 바뀐 누적치만 add! 로 (누적 효과·기록이 함께 맞춰진다)
+    def update_counters!
+      given = character_params[:counter_values].to_h
+      @counters.each do |counter|
+        value = given[counter.id.to_s].to_s.strip
+        next if value.blank?
+
+        delta = [value.to_i, 0].max - counter.raw_for(@character.reload)
+        counter.add!(@character, delta, reason: helpers.game_t('admin.games.manage.detail.counter_reason'), actor: current_account.username) unless delta.zero?
+      end
+    end
+
     # 인벤토리 아이템 한 개: 이름, 개수(1 이상), 메모
     def item_params
       item = params.expect(item: [:name, :count, :note])
@@ -205,7 +218,7 @@ module Admin
     end
 
     def character_params
-      params.require(:game_character).permit(:name, :game_house_id, :game_faction_id, :note, stat_values: {})
+      params.require(:game_character).permit(:name, :game_house_id, :game_faction_id, :note, stat_values: {}, counter_values: {})
     end
   end
 end

@@ -97,6 +97,7 @@ en:
           chars: characters
           toots: posts
         give: Give
+        give_counter: Counter
         give_items: Items
         give_money: "Currency (%{currency})"
         give_nothing: Choose characters and an amount or items.
@@ -104,6 +105,9 @@ en:
         given: "Given to %{count} characters."
         hint: Posts are toots that are not replies (even with mentions); replies are replies. DMs, boosts and deleted toots are not counted. Click a row for details.
         item_count: Count
+        counter_amount: Amount (use - to subtract)
+        counter_hint: Added to the raw count. Count rules apply or are removed and it is logged in the counter records. No DM is sent.
+        counter_name: Counter
         item_kinds: Items
         money_amount: "Amount (%{currency})"
         no_match: No matching item.
@@ -585,6 +589,10 @@ en:
           add_item: Add item
           back: Back to roster
           content: Content
+          counter_net: "Net after %{opposite}: %{net}"
+          counter_reason: Edited by staff
+          counters: Counters
+          counters_hint: Raw counts before offsetting. Changing them applies or removes count rules (titles, decos) and is logged in the counter records.
           currency_records: Recent currency records
           games: Recent games
           inventory: Inventory

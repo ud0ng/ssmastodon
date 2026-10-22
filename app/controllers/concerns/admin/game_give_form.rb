@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# 지급 모달(admin/game_activities/_give_modal)에 필요한 것: 받을 캐릭터 목록, 상점 아이템(이름·그림), 재화 이름.
+# 지급 모달(admin/game_activities/_give_modal)에 필요한 것: 받을 캐릭터 목록, 상점 아이템(이름·그림), 누적 수치, 재화 이름.
 # 활동 탭과 상점 탭이 같이 쓴다. 지급 뒤에는 return_to(관리 화면 주소)로 돌아간다.
 module Admin::GameGiveForm
   extend ActiveSupport::Concern
@@ -10,6 +10,7 @@ module Admin::GameGiveForm
   def load_give_form
     @currency = Game::Config.for('common')['currency_name']
     @give_characters = GameCharacter.visible.includes(:account).joins(:account).order(Arel.sql('accounts.username')).to_a
+    @give_counters = GameCounter.all.to_a
     @shop_items = GameShopItem.order(:name).map { |item| [item.name, item.image.present? ? item.image.url(:small) : nil] }
   end
 

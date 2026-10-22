@@ -46,6 +46,22 @@ RSpec.describe 'Admin character activity' do
     expect(ron.money).to eq 0
   end
 
+  it 'adds or takes away a counter for the chosen characters, logging it without a DM' do
+    GameCounter.ensure_defaults!
+    demerit = GameCounter.find_by(name: '벌점')
+
+    post give_admin_game_activities_path, params: { give_kind: 'counter', character_ids: [harry.id, ron.id], counter_id: demerit.id, counter_amount: '2', reason: '지각', return_to: admin_game_shops_path }
+    post give_admin_game_activities_path, params: { give_kind: 'counter', character_ids: [ron.id], counter_id: demerit.id, counter_amount: '-1' }
+
+    expect(response).to redirect_to(admin_game_activities_path)
+    expect([demerit.raw_for(harry.reload), demerit.raw_for(ron.reload)]).to eq [2, 1]
+    expect(GameCounterLog.where(reason: '지각').count).to eq 2
+    expect(Status.where(visibility: :direct)).to be_empty
+
+    post give_admin_game_activities_path, params: { give_kind: 'counter', character_ids: [ron.id], counter_id: demerit.id, counter_amount: '0' }
+    expect(response).to redirect_to(admin_game_activities_path(modal: 'activity-give'))
+  end
+
   it 'goes back to the shop tab when given from there, but never to another site' do
     post give_admin_game_activities_path, params: { give_kind: 'money', character_ids: [harry.id], money: '1', return_to: admin_game_shops_path }
     expect(response).to redirect_to(admin_game_shops_path)

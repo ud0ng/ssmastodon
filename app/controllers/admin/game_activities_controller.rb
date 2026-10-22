@@ -54,6 +54,8 @@ module Admin
       authorize :settings, :update?
 
       accounts = GameCharacter.visible.where(id: Array(params[:character_ids])).includes(:account).map(&:account)
+      return give_counter(accounts) if params[:give_kind] == 'counter'
+
       money = params[:give_kind] == 'money' ? [params[:money].to_i, 0].max : 0
       items = params[:give_kind] == 'items' ? picked_items : {}
       if accounts.empty? || (money.zero? && items.empty?)
@@ -68,6 +70,17 @@ module Admin
     end
 
     private
+
+    # 누적 수치 지급: 고른 캐릭터마다 +/- 만큼 (누적 효과·누적 수치 기록이 함께 맞춰진다). DM 은 보내지 않는다
+    def give_counter(accounts)
+      counter = GameCounter.find_by(id: params[:counter_id])
+      amount = params[:counter_amount].to_i
+      return redirect_to(give_return_path(modal: 'activity-give'), alert: t('admin.games.activity.give_nothing')) if accounts.empty? || counter.nil? || amount.zero?
+
+      reason = params[:reason].to_s.strip.presence || t('admin.games.activity.give')
+      accounts.each { |account| counter.add!(GameCharacter.for(account), amount, reason: reason, actor: current_account.username) }
+      redirect_to give_return_path, notice: t('admin.games.activity.given', count: accounts.size)
+    end
 
     # 받은 캐릭터마다 시스템 계정이 DM 으로 알린다 (여러 명이면 한 명씩 따로). 하나가 실패해도 나머지는 보낸다.
     # 지급은 이미 끝난 뒤라(트랜잭션 밖) 멘션 알림이 바로 간다.

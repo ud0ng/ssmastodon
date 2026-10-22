@@ -70,6 +70,16 @@
                 %strong= @character.status_value(status, @base_stats) || '-'
                 %small= status.formula.gsub(/\{\{\s*([^{}]+?)\s*\}\}/, '\1')
 
+    - if @counters.any?
+      %section.gd-card
+        %h2.gd-card__title= game_t('admin.games.manage.detail.counters')
+        = render layout: 'admin/ui/fields' do
+          - @counters.each do |counter|
+            - hint = counter.opposite ? game_t('admin.games.manage.detail.counter_net', opposite: counter.opposite.name, net: counter.net_for(@character)) : nil
+            = render 'admin/ui/field', label: counter.name, name: "game_character[counter_values][#{counter.id}]", id: "counter_#{counter.id}", value: counter.raw_for(@character), type: :number,
+                                       hint: hint, html: { min: 0 }
+        %p.hint= game_t('admin.games.manage.detail.counters_hint')
+
     .gd-actions
       = button_tag t('generic.save_changes'), type: :submit, class: 'gd-button'
 

@@ -83,6 +83,24 @@ RSpec.describe 'Admin character roster' do
     )
   end
 
+  it 'changes the counters from the detail page, logging only the ones that changed' do
+    GameCounter.ensure_defaults!
+    demerit = GameCounter.find_by(name: '벌점')
+    merit = GameCounter.find_by(name: '상점')
+    demerit.add!(character, 3)
+
+    patch admin_game_character_path(character), params: { game_character: { name: '', counter_values: { demerit.id => '1', merit.id => '2' } } }
+
+    expect(response).to redirect_to(edit_admin_game_character_path(character))
+    character.reload
+    expect([demerit.raw_for(character), merit.raw_for(character)]).to eq [1, 2]
+    expect(merit.net_for(character)).to eq 1
+    expect(GameCounterLog.where(reason: '운영진 수정').pluck(:delta)).to contain_exactly(-2, 2)
+
+    patch admin_game_character_path(character), params: { game_character: { name: '', counter_values: { demerit.id => '1', merit.id => '2' } } }
+    expect(GameCounterLog.where(reason: '운영진 수정').count).to eq 2
+  end
+
   describe 'inventory cards' do
     before { character.update!(inventory: [{ 'name' => '투명 망토', 'count' => 1, 'note' => '' }]) }
 
