@@ -9,7 +9,7 @@ class Api::V1::System::SessionsController < Api::BaseController
   MESSAGE_LIMIT = 200
 
   before_action -> { doorkeeper_authorize! :read }, only: [:show, :view]
-  before_action -> { doorkeeper_authorize! :write }, only: [:move, :destroy, :ready, :cancel_start, :chat, :join, :leave, :start_now, :accept, :decline, :invite_more]
+  before_action -> { doorkeeper_authorize! :write }, only: [:move, :destroy, :ready, :cancel_start, :chat, :join, :leave, :start_now, :accept, :decline, :invite_more, :team]
   before_action :require_user!
   before_action :require_contents_open!
   before_action :set_session
@@ -153,6 +153,18 @@ class Api::V1::System::SessionsController < Api::BaseController
     show
   end
 
+  # 도둑 지도 대기방: 반대 팀으로 [팀 변경] (반대 팀 정원이 차면 안 된다)
+  def team
+    player = @session.player_for(current_account)
+    kind = @session.kind_class
+    return render json: { error: 'forbidden' }, status: 403 if player.nil? || !(kind.respond_to?(:lobby_teams?) && kind.lobby_teams?)
+
+    result = @session.with_lock { kind.new(@session.reload).change_team!(@session.player_for(current_account)) }
+    return render json: { error: { full: '바꾸려는 팀의 정원이 가득 찼습니다.', closed: '지금은 팀을 바꿀 수 없습니다.' }.fetch(result) }, status: 422 unless result == :ok
+
+    show
+  end
+
   # 대기방 카운트다운 중 누구든 취소 (참가자·운영진)
   def cancel_start
     return render json: { error: 'forbidden' }, status: 403 unless @session.player_for(current_account) || staff?
@@ -163,10 +175,15 @@ class Api::V1::System::SessionsController < Api::BaseController
 
   # 채팅 (대기방): 참가자·운영진
   def chat
-    return render json: { error: 'forbidden' }, status: 403 unless @session.player_for(current_account) || staff?
+    player = @session.player_for(current_account)
+    return render json: { error: 'forbidden' }, status: 403 unless player || staff?
 
     # 대기방과 웹 전용 컨텐츠 방은 끝난 뒤에도 채팅할 수 있다
-    Game::Lobby.chat!(@session, current_account, params[:text]) if @session.lobby? || Game::Lobby.recruiting?(@session) || (@session.web_channel? && @session.status != 'cancelled')
+    if @session.lobby? || Game::Lobby.recruiting?(@session) || (@session.web_channel? && @session.status != 'cancelled')
+      # channel=team: 같은 팀끼리만 보이는 팀 채팅 (도둑 지도, 참가자만)
+      team = params[:channel] == 'team' && player ? @session.kind_class.new(@session).try(:team_of, player) : nil
+      Game::Lobby.chat!(@session, current_account, params[:text], team: team)
+    end
     show
   end
 
@@ -214,6 +231,8 @@ class Api::V1::System::SessionsController < Api::BaseController
   def web_messages
     system = Game::System.account
     scope = @session.messages.where(account_id: [nil, current_account.id]).order(:id).last(MESSAGE_LIMIT)
+    my_team = team_of_viewer
+    scope = scope.reject { |message| message.chat? && message.payload.is_a?(Hash) && message.payload['team'].present? && message.payload['team'] != my_team && @session.status != 'finished' }
     scope.map do |message|
       speaker = message.chat? ? message.author : system
       {
@@ -228,7 +247,8 @@ class Api::V1::System::SessionsController < Api::BaseController
         account_id: speaker&.id&.to_s,
         text: message.text,
         created_at: message.created_at.iso8601,
-        card: message.secret? || message.payload.blank? ? nil : message.current_payload,
+        team: message.chat? && message.payload.is_a?(Hash) ? message.payload['team'] : nil,
+        card: message.chat? || message.secret? || message.payload.blank? ? nil : message.current_payload,
       }
     end
   end
@@ -269,6 +289,12 @@ class Api::V1::System::SessionsController < Api::BaseController
     return [] if thread.nil?
 
     Status.where(conversation_id: thread.conversation_id, visibility: :direct).includes(:account).to_a
+  end
+
+  # 이 사람의 팀 ('student'/'prefect'), 팀이 없는 이벤트·관전자면 nil
+  def team_of_viewer
+    player = @session.player_for(current_account)
+    player && @session.kind_class.new(@session).try(:team_of, player)
   end
 
   def my_player!

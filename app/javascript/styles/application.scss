@@ -5,6 +5,7 @@
 @use 'fonts/roboto-mono';     // fallback 폰트를 먼저
 @use 'fonts/roboto';         // 로보토 폰트
 @use 'fonts/kopubworld-dotum'; // 코펍월드 도툼 폰트
+@use 'fonts/marauders';      // 도둑 지도 손글씨 폰트 (나눔 펜 스크립트·개구·동해 독도)
 
 @use 'mastodon/reset';
 @use 'mastodon/basics';
@@ -19,6 +20,7 @@
 @use 'mastodon/game_fx';
 @use 'mastodon/game_stage';
 @use 'mastodon/game_flying';
+@use 'mastodon/game_marauders';
 @use 'mastodon/polls';
 @use 'mastodon/modal';
 @use 'mastodon/emoji_picker';

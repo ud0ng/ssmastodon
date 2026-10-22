@@ -27,6 +27,18 @@ export interface LobbyPlayer {
   ready: boolean;
   // 초대받고 아직 수락하지 않음 ('대기중...')
   waiting?: boolean;
+  // 팀이 있는 이벤트(도둑 지도)의 팀
+  team?: 'student' | 'prefect' | null;
+}
+
+// 팀이 있는 이벤트의 대기실: 위·아래 영역으로 나뉜 팀과 [팀 변경]
+export interface LobbyTeams {
+  names: Record<'student' | 'prefect', string>;
+  caps: Record<'student' | 'prefect', number>;
+  counts: Record<'student' | 'prefect', number>;
+  mine: 'student' | 'prefect' | null;
+  can_change: boolean;
+  change_blocked: boolean;
 }
 
 export interface LobbyData {
@@ -43,6 +55,7 @@ export interface LobbyData {
   can_leave?: boolean;
   // 초대한 이벤트: 운영진·연 사람은 캐릭터를 더 초대할 수 있다
   can_invite?: boolean;
+  teams?: LobbyTeams | null;
   // 정원 초과·동시 진행·하루 제한으로 참가할 수 없을 때의 이유 (버튼이 '참가 불가'로 보이고 누르면 모달)
   join_block?: string | null;
   // 초대한 이벤트: 초대받은 사람은 대기방에서 [수락][거절]
@@ -192,7 +205,7 @@ export const LobbyStage: React.FC<{
           onChanged();
           // 참가·수락이 막히면 (정원 초과·하루 제한 등) 서버가 보낸 이유를 모달로 알린다
           const message = apiErrorMessage(reason);
-          if (message && ['join', 'accept'].includes(action)) {
+          if (message && ['join', 'accept', 'team'].includes(action)) {
             dispatch(openModal({ modalType: 'CONFIRM', modalProps: { title: intl.formatMessage(messages.joinFailed), message, confirm: intl.formatMessage(messages.ok), hideCancel: true, onConfirm: () => undefined } }));
           }
         })
@@ -245,19 +258,68 @@ export const LobbyStage: React.FC<{
         </p>
       </header>
 
-      <ul className='game-stage__players'>
-        {lobby.players.map((player) => (
-          <PlayerCard
-            key={player.account_id}
-            player={player}
-            mine={player.account_id === lobby.me}
-            canToggle={!recruiting && !player.waiting && (player.account_id === lobby.me || lobby.can_manage)}
-            busy={busy || counting}
-            bubble={bubbles[player.acct]}
-            onToggle={toggle}
-          />
-        ))}
-      </ul>
+      {lobby.teams ? (
+        <div className='lobby-teams'>
+          {(['student', 'prefect'] as const).map((team) => (
+            <section key={team} className={`lobby-team lobby-team--${team}`}>
+              <header className='lobby-team__head'>
+                <strong>{lobby.teams?.names[team]} <FormattedMessage id='lobby.team_suffix' defaultMessage='Team' /></strong>
+                <span>{lobby.teams?.counts[team]}/{lobby.teams?.caps[team]}</span>
+                {lobby.teams?.mine === team && <em><FormattedMessage id='lobby.my_team' defaultMessage='My team' /></em>}
+              </header>
+              <ul className='game-stage__players'>
+                {lobby.players.filter((player) => player.team === team && !player.waiting).map((player: LobbyPlayer) => (
+                <PlayerCard
+                  key={player.account_id}
+                  player={player}
+                  mine={player.account_id === lobby.me}
+                  canToggle={!recruiting && !player.waiting && (player.account_id === lobby.me || lobby.can_manage)}
+                  busy={busy || counting}
+                  bubble={bubbles[player.acct]}
+                  onToggle={toggle}
+                />
+              ))}
+              </ul>
+            </section>
+          ))}
+          {lobby.players.some((player) => !player.team || player.waiting) && (
+            <ul className='game-stage__players'>
+              {lobby.players.filter((player) => !player.team || player.waiting).map((player: LobbyPlayer) => (
+                <PlayerCard
+                  key={player.account_id}
+                  player={player}
+                  mine={player.account_id === lobby.me}
+                  canToggle={!recruiting && !player.waiting && (player.account_id === lobby.me || lobby.can_manage)}
+                  busy={busy || counting}
+                  bubble={bubbles[player.acct]}
+                  onToggle={toggle}
+                />
+              ))}
+            </ul>
+          )}
+          {lobby.teams.can_change && !counting && (
+            <button type='button' className='game-stage__join game-stage__join--off lobby-team-change' disabled={busy || lobby.teams.change_blocked} onClick={() => { post('team'); }}>
+              {lobby.teams.change_blocked
+                ? <FormattedMessage id='lobby.team_full' defaultMessage='The other team is full' />
+                : <FormattedMessage id='lobby.change_team' defaultMessage='Change team' />}
+            </button>
+          )}
+        </div>
+      ) : (
+        <ul className='game-stage__players'>
+          {lobby.players.map((player) => (
+            <PlayerCard
+              key={player.account_id}
+              player={player}
+              mine={player.account_id === lobby.me}
+              canToggle={!recruiting && !player.waiting && (player.account_id === lobby.me || lobby.can_manage)}
+              busy={busy || counting}
+              bubble={bubbles[player.acct]}
+              onToggle={toggle}
+            />
+          ))}
+        </ul>
+      )}
 
       {(lobby.can_join || lobby.can_leave || lobby.can_respond || (lobby.can_invite && !counting) || ((lobby.recruiting || lobby.invite) && lobby.can_manage && !counting)) && (
         <div className='game-stage__membership'>

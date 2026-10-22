@@ -13,7 +13,6 @@ import { ContentCardView } from 'mastodon/components/content_card';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 
-import { MaraudersMapPlay } from './marauders_map';
 import { MazePlay } from './maze';
 
 const messages = defineMessages({
@@ -125,7 +124,6 @@ export const GameBoard: React.FC<{ sessionId: string; onChanged?: () => void; sh
   return (
     <div className='system-board'>
       {data.kind === 'maze' && data.status === 'active' && <MazePlay sessionId={data.id} onMoved={load} />}
-      {data.kind === 'marauders_map' && data.status === 'active' && <MaraudersMapPlay sessionId={data.id} onMoved={load} />}
 
       {last && <ContentCardView card={last.card} onAction={busy ? undefined : handleAction} />}
 

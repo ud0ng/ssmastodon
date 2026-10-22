@@ -35,7 +35,8 @@ import type { LobbyData, LobbyMessage } from './lobby';
 import { LobbyStage } from './lobby';
 import { StageFrame } from './stage_page';
 import { StageTutorial } from './stage_tutorial';
-import { MaraudersMapPlay } from './marauders_map';
+import type { MmChatMessage } from './marauders_stage';
+import { MaraudersStage } from './marauders_stage';
 import { MazePlay } from './maze';
 import { ChamberPlay } from './secret_chamber';
 
@@ -63,6 +64,8 @@ interface RoomMessage {
   mine: boolean;
   secret: boolean;
   chat?: boolean;
+  // 팀 채팅이면 그 팀 (도둑 지도)
+  team?: 'student' | 'prefect' | null;
   name: string;
   acct: string;
   avatar: string;
@@ -348,16 +351,18 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   const inLobby = data?.status === 'lobby' || Boolean(data?.lobby?.recruiting);
   // 비행 대결 게임방은 라운드·채팅이 빨리 보이게 대기방처럼 자주 읽는다
   const flyingRoom = data?.kind === 'flying' && ['active', 'finished'].includes(data.status);
+  // 도둑 지도 게임방 (양피지 지도 화면)
+  const mapRoom = data?.kind === 'marauders_map' && ['active', 'finished'].includes(data.status);
 
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, inLobby || flyingRoom ? LOBBY_REFRESH_MS : REFRESH_MS);
+    const timer = window.setInterval(load, inLobby || flyingRoom || mapRoom ? LOBBY_REFRESH_MS : REFRESH_MS);
     const pending = timers.current;
     return () => {
       window.clearInterval(timer);
       pending.forEach((each) => { window.clearTimeout(each); });
     };
-  }, [load, inLobby, flyingRoom]);
+  }, [load, inLobby, flyingRoom, mapRoom]);
 
   // 새 메시지가 오면 메시지 칸만 맨 아래로
   useLayoutEffect(() => {
@@ -478,7 +483,17 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
             onChanged={load}
           />
         )}
-        {(!data || (!flyingRoom && !data.lobby)) && (
+        {data && mapRoom && (
+          <MaraudersStage
+            sessionId={data.id}
+            name={data.name}
+            chat={data.messages.filter((message) => message.chat).map((message): MmChatMessage => ({ id: message.id, mine: message.mine, name: message.name, acct: message.acct, avatar: message.avatar, text: message.text, team: message.team ?? null }))}
+            staff={Boolean(data.staff)}
+            isPlayer={data.player}
+            onChanged={load}
+          />
+        )}
+        {(!data || (!flyingRoom && !mapRoom && !data.lobby)) && (
           <StageFrame back='/system/group' label={title}>
             {(data || failed) && (
               <p className='stage-notice'>
@@ -542,7 +557,6 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
           {current && !boardShown && <ContentCardView card={current} variant='room' />}
           {boardShown && data.kind === 'secret_chamber' && <ChamberPlay sessionId={data.id} onMoved={load} />}
           {boardShown && data.kind === 'maze' && <MazePlay sessionId={data.id} onMoved={load} />}
-          {boardShown && data.kind === 'marauders_map' && <MaraudersMapPlay sessionId={data.id} onMoved={load} />}
         </div>
       )}
 

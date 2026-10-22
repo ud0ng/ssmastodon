@@ -87,11 +87,12 @@ module Game
       kind.start!
     end
 
-    def chat!(session, account, text)
+    # team: 'student'/'prefect' 처럼 팀을 주면 그 팀끼리만 보이는 팀 채팅 (도둑 지도)
+    def chat!(session, account, text, team: nil)
       text = text.to_s.strip[0, CHAT_LIMIT]
       return if text.blank?
 
-      message = GameMessage.create!(session: session, kind: 'chat', author: account, text: text)
+      message = GameMessage.create!(session: session, kind: 'chat', author: account, text: text, payload: team ? { 'team' => team } : {})
       old = session.messages.where(kind: 'chat').order(id: :desc).offset(CHAT_KEEP).pluck(:id)
       GameMessage.where(id: old).delete_all if old.any?
       message
@@ -252,6 +253,19 @@ module Game
       end
     end
 
+    # 팀이 있는 이벤트(도둑 지도)의 대기방: 팀 이름·정원·인원과 내 [팀 변경] 가능 여부 (반대 팀 정원이 차면 변경 불가)
+    def teams_view(session, kind, viewer)
+      return nil unless kind.class.respond_to?(:lobby_teams?) && kind.class.lobby_teams?
+
+      mine = session.player_for(viewer)
+      other = mine && (mine.state['team'] == 'student' ? 'prefect' : 'student')
+      {
+        names: kind.team_names, caps: kind.team_caps, counts: kind.team_counts, mine: mine&.state&.dig('team'),
+        can_change: mine.present? && session.lobby? && !counting?(session),
+        change_blocked: mine.present? && other.present? && kind.team_full?(other),
+      }
+    end
+
     # 웹 대기방 화면: 참가자(아바타·소속·준비)와 카운트다운
     def view(session, viewer, staff:)
       kind = session.kind_class.new(session)
@@ -274,6 +288,7 @@ module Game
         can_invite: session.lobby? && !counting?(session) && invite_ids(session).any? && (staff || session.state['opened_by'].to_i == viewer.id),
         recruit_ends_at: recruiting?(session) ? session.deadline_at&.iso8601(3) : nil,
         me: session.player_for(viewer)&.account_id&.to_s,
+        teams: teams_view(session, kind, viewer),
         players: session.players.map do |player|
           account = player.account
           house = player.character.group
@@ -284,6 +299,7 @@ module Game
             avatar: account.avatar_static_url,
             house: house && { name: house.name, color: house.color },
             ready: ready.include?(account.id),
+            team: player.state['team'],
           }
         end + waiting_view(session),
       }
