@@ -133,15 +133,18 @@ RSpec.describe 'API V1 System wallet' do
     get '/api/v1/system/wallet', headers: headers
     expect(response.parsed_body['todo'].pluck('session_id')).to_not include(session.id.to_s)
   end
-  describe 'items that raise house points' do
+  describe 'the "cannot be used on the same house" option' do
     let(:house) { GameHouse.create!(name: '그리핀도르', color: '#ae0001', category: 'house') }
     let(:other_house) { GameHouse.create!(name: '슬리데린', color: '#1a472a', category: 'house') }
     let(:ron) { Fabricate(:account, username: 'ron') }
+    let(:effects) { [{ 'type' => 'currency', 'currency' => 'house_points', 'value' => '10' }] }
 
     before do
-      GameShop.create!(name: '특수').items.create!(name: '응원봉', price: 5, item_effects: [{ 'type' => 'currency', 'currency' => 'house_points', 'value' => '10' }])
+      shop = GameShop.create!(name: '특수')
+      shop.items.create!(name: '응원봉', price: 5, block_same_house: true, item_effects: effects)
+      shop.items.create!(name: '자유봉', price: 5, item_effects: effects)
       GameCharacter.for(user.account).update!(house: house)
-      Game::Wallet.apply!([{ account: user.account, items: { '응원봉' => 2 } }], kind: 'admin')
+      Game::Wallet.apply!([{ account: user.account, items: { '응원봉' => 2, '자유봉' => 2 } }], kind: 'admin')
     end
 
     it 'cannot be gifted to someone in the same house, but can to another house' do
@@ -153,13 +156,22 @@ RSpec.describe 'API V1 System wallet' do
       expect { Game::Wallet.apply!([{ account: user.account, items: { '응원봉' => -1 } }, { account: ron, items: { '응원봉' => 1 } }], kind: 'transfer') }.to_not raise_error
     end
 
-    it 'cannot be used on your own house' do
+    it 'cannot be used on your own house, but can on another house' do
       post '/api/v1/system/items/use', params: { name: '응원봉', house_id: house.id.to_s }, headers: headers
       expect(response).to have_http_status(422)
       expect(GameHousePoint.count).to eq 0
       expect(GameCharacter.for(user.account).inventory.find { |item| item['name'] == '응원봉' }['count']).to eq 2
 
       post '/api/v1/system/items/use', params: { name: '응원봉', house_id: other_house.id.to_s }, headers: headers
+      expect(response).to have_http_status(200)
+      expect(GameHousePoint.sum(:amount)).to eq 10
+    end
+
+    it 'does not limit items without the option, even when they raise house points' do
+      GameCharacter.for(ron).update!(house: house)
+      expect { Game::Wallet.apply!([{ account: user.account, items: { '자유봉' => -1 } }, { account: ron, items: { '자유봉' => 1 } }], kind: 'transfer') }.to_not raise_error
+
+      post '/api/v1/system/items/use', params: { name: '자유봉', house_id: house.id.to_s }, headers: headers
       expect(response).to have_http_status(200)
       expect(GameHousePoint.sum(:amount)).to eq 10
     end

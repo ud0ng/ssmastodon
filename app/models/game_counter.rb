@@ -6,7 +6,7 @@
 #   상성 수치(opposite)는 서로 상쇄한다: 결과값 = 내 누적치 - 상성 누적치 (0 아래로는 안 내려감)
 #   예) 벌점 5회·상점 2회 → 벌점 3회, 상점 0회
 # 소속 점수에 영향(affects_house)을 켜면 house_interval_minutes 마다 소속 캐릭터의 결과값 × house_amount 만큼 소속 점수가 바뀐다 (예: 1시간, -2 → 벌점 4회면 시간마다 -8).
-#   상성 수치가 켜져 있으면 이 수치도 반드시 켜진다 (간격·점수는 수치마다 따로).
+#   수치마다 따로 켜고 끈다 (상성 수치와 상관없이, 간격·점수도 수치마다 따로).
 class GameCounter < ApplicationRecord
   DEFAULTS = [%w(벌점 상점), %w(상점 벌점)].freeze
   DEFAULT_MAX = 5
@@ -22,12 +22,9 @@ class GameCounter < ApplicationRecord
   validates :house_amount, numericality: { only_integer: true }
   validate :opposite_is_another
 
-  before_save :follow_opposite_house
-
   default_scope { order(:position, :id) }
 
   after_save :pair_opposite
-  after_save :force_opposite_house
   after_destroy { GameCounter.unscoped.where(opposite_id: id).update_all(opposite_id: nil) } # rubocop:disable Rails/SkipsModelValidations
 
   def self.ensure_defaults!
@@ -92,18 +89,6 @@ class GameCounter < ApplicationRecord
   end
 
   private
-
-  # 상성 수치가 소속 점수에 영향을 주면 이 수치도 반드시 준다
-  def follow_opposite_house
-    self.affects_house = true if opposite&.affects_house
-  end
-
-  # 이 수치를 켜면 상성 수치도 켠다 (간격·점수는 상성 수치의 것을 그대로 둔다)
-  def force_opposite_house
-    return unless affects_house && opposite && !opposite.affects_house
-
-    opposite.update_columns(affects_house: true) # rubocop:disable Rails/SkipsModelValidations
-  end
 
   def opposite_is_another
     errors.add(:opposite_id, :invalid) if opposite_id.present? && opposite_id == id

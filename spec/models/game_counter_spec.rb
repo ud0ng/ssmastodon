@@ -81,14 +81,13 @@ RSpec.describe GameCounter do
       GameCharacter.for(ron).update!(house: house)
     end
 
-    it 'turns the opposite counter on as well and keeps their own interval and amount' do
+    it 'does not turn the opposite counter on and keeps their own interval and amount' do
       report.update!(affects_house: true, house_interval_minutes: 60, house_amount: -2)
 
-      expect(praise.reload.affects_house).to be true
-      praise.update!(affects_house: false)
-      expect(praise.reload.affects_house).to be true
+      expect(praise.reload.affects_house).to be false
       praise.update!(house_interval_minutes: 120, house_amount: 3)
-      expect(report.reload).to have_attributes(house_interval_minutes: 60, house_amount: -2)
+      expect(report.reload).to have_attributes(affects_house: true, house_interval_minutes: 60, house_amount: -2)
+      expect(praise.reload.affects_house).to be false
     end
 
     it 'takes house points every interval by the result value times the amount, never twice for the same interval' do

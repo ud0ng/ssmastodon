@@ -152,31 +152,29 @@ const TopCell: React.FC<{ kind: 'gain' | 'loss'; person: Person | null }> = ({ k
   </span>
 );
 
-const RecordRow: React.FC<{ record: PointRecord; counterTab?: boolean }> = ({ record, counterTab = false }) => (
+// 누적 수치 내역 줄: 준 사람(아이템을 쓴 사람) 아바타 | 이름, 내용은 '아이템 → 받은 사람 이름'. 준 사람이 없으면 받은 사람이 앞에 선다
+const RecordRow: React.FC<{ record: PointRecord; counterTab?: boolean }> = ({ record, counterTab = false }) => {
+  const who = counterTab && record.source ? record.source : record.character;
+  return (
   <li className={record.amount < 0 ? 'wallet-record wallet-record--spend' : 'wallet-record wallet-record--gain'}>
     <span className='wallet-record__icon house-page__icon'>
-      {record.character ? <img src={record.character.avatar} alt='' /> : null}
+      {who ? <img src={who.avatar} alt='' /> : null}
     </span>
     <div className='wallet-record__main'>
-      <span className='wallet-record__title'>{record.character?.name ?? record.reason}</span>
+      <span className='wallet-record__title'>{who?.name ?? record.reason}</span>
       <span className='wallet-record__meta'>
         {record.reason ? `${record.reason} · ` : ''}
         {counterTab && record.result !== undefined ? `${record.counter} ${record.result} · ` : ''}
         <FormattedTime value={record.created_at} hour='2-digit' minute='2-digit' />
       </span>
-      {counterTab && record.source && (
-        <span className='wallet-record__other'>
-          <img src={record.source.avatar} alt='' />
-          <span><FormattedMessage id='house.given_by' defaultMessage='From {name}' values={{ name: record.source.name }} /></span>
-        </span>
-      )}
     </div>
     <span className='wallet-record__amount'>
       <strong>{signed(record.amount)}</strong>
       <span>{counterTab ? record.counter : <FormattedMessage id='house.unit' defaultMessage='pts' />}</span>
     </span>
   </li>
-);
+  );
+};
 
 const HousePage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
   const intl = useIntl();
@@ -237,7 +235,9 @@ const HousePage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
     [records],
   );
 
-  const title = intl.formatMessage(messages.title);
+  // 헤더: '{소속 이름} 점수' (소속을 부르는 말은 공통 설정의 소속 이름)
+  const term = data?.house.term ?? wallet?.house_term;
+  const title = term ? intl.formatMessage({ id: 'system.houses', defaultMessage: '{term} points' }, { term }) : intl.formatMessage(messages.title);
 
   return (
     <Column bindToDocument={!multiColumn} label={title}>

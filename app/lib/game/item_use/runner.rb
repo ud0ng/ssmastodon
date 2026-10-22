@@ -42,6 +42,8 @@ module Game
         @house = Game::ItemEffects.needs_house?(effects) ? pick_house! : nil
         raise Error, '소문내기는 시스템 계정에 DM 으로 [사용/아이템/소문 내용] 을 보내 주세요. (보낸 사람이 드러나지 않게)' if Game::ItemEffects.needs_text?(effects) && @via == :bot
 
+        ensure_not_same_house!(shop_item)
+
         @howler = Game::ItemEffects.rumor_text(effects)
         @rumor = Game::ItemEffects.needs_text?(effects) ? pick_rumor! : nil
 
@@ -89,6 +91,17 @@ module Game
         raise Error, "'#{query}' 캐릭터를 찾을 수 없습니다." if target.nil?
 
         target
+      end
+
+      # '같은 소속에 사용 불가능' 옵션: 내 소속과 같은 소속(소속을 고른 경우)이나 같은 소속 캐릭터(본인 포함)에게는 쓸 수 없다
+      def ensure_not_same_house!(shop_item)
+        return unless shop_item&.block_same_house
+
+        mine = GameCharacter.for(@account).group_id
+        return if mine.nil?
+
+        same = (@house && @house.id == mine) || (@target && GameCharacter.for(@target).group_id == mine)
+        raise Error, '같은 소속에는 쓸 수 없는 아이템입니다.' if same
       end
 
       def pick_rumor!
@@ -148,8 +161,6 @@ module Game
         delta = Game::Dice.amount(effect['value'])
         case effect['currency']
         when 'house_points'
-          raise Error, '같은 소속에는 소속 점수를 올리는 아이템을 쓸 수 없습니다.' if delta.positive? && GameCharacter.for(@account).group_id.to_i == @house.id
-
           GameHousePoint.create!(house: @house, account: @account, amount: delta, reason: "#{@name} → #{@house.name}".truncate(200)) unless delta.zero?
           "#{@house.name} 소속 점수 #{format('%+d', delta)}"
         when 'item'

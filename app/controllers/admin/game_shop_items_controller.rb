@@ -33,7 +33,7 @@ module Admin
 
     # 가격을 비우면 비매품. 효과 상자는 item_effects[번호][칸] (상자를 다 지웠으면 빈 목록, item_effects_sent 로 안다)
     def item_params
-      permitted = params.expect(game_shop_item: [:game_shop_id, :name, :price, :description, :usable, :giftable, :permanent, :effect, :position, :image, :remove_image, :item_effects_sent])
+      permitted = params.expect(game_shop_item: [:game_shop_id, :name, :price, :description, :usable, :giftable, :permanent, :block_same_house, :effect, :position, :image, :remove_image, :item_effects_sent])
       permitted[:image] = nil if permitted.delete(:remove_image) == '1'
       permitted[:price] = permitted[:price].presence
       permitted[:item_effects] = params.dig(:game_shop_item, :item_effects)&.to_unsafe_h || {} if permitted.delete(:item_effects_sent) == '1'

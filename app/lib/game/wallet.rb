@@ -56,7 +56,7 @@ module Game
       end
     end
 
-    # 소속 점수를 올리는 아이템은 같은 소속끼리 양도·선물할 수 없다
+    # '같은 소속에 사용 불가능' 옵션을 켠 아이템은 같은 소속끼리 양도·선물할 수 없다
     def ensure_not_same_house!(changes)
       return unless changes.size == 2
 
@@ -64,9 +64,9 @@ module Game
       return if groups.any?(&:nil?) || groups.uniq.size != 1
 
       names = changes.flat_map { |change| change[:items].select { |_, count| count.positive? }.keys }
-      return unless names.any? { |name| GameShopItem.raises_house_points?(name) }
+      return unless names.any? { |name| GameShopItem.blocks_same_house?(name) }
 
-      raise Error.new('same_house', '같은 소속끼리는 소속 점수를 올리는 아이템을 양도·선물할 수 없습니다.')
+      raise Error.new('same_house', '같은 소속끼리는 양도·선물할 수 없는 아이템입니다.')
     end
 
     def normalize_change(change)

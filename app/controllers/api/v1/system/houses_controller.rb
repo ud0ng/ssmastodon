@@ -79,9 +79,9 @@ class Api::V1::System::HousesController < Api::BaseController
     }
   end
 
-  # 내역 탭: 소속 점수에 영향을 주는 수치 + 그 상성 수치 (벌점이면 상점도 '상점 내역' 탭으로)
+  # 내역 탭: 소속 점수에 영향을 주는지와 상관없이 모든 누적 수치 (벌점 내역·상점 내역 …)
   def tab_counters
-    @tab_counters ||= (house_counters + house_counters.filter_map(&:opposite)).uniq(&:id).sort_by(&:position)
+    @tab_counters ||= GameCounter.includes(:opposite).to_a
   end
 
   # 소속 점수 카드 아래 합계 카드: 이 소속 캐릭터들의 재화·전적·툿(DM 포함 전체 툿 수 / 글자 수) 합계
@@ -101,9 +101,9 @@ class Api::V1::System::HousesController < Api::BaseController
     @house_members ||= GameCharacter.visible.includes(:account).select { |character| character.group == @house }
   end
 
-  # 소속 점수에 영향을 주는 누적 수치 (소속 점수 화면의 탭·배지)
+  # 소속 캐릭터 배지에 보여 줄 누적 수치 (소속 점수에 영향을 주지 않아도 보인다)
   def house_counters
-    @house_counters ||= GameCounter.where(affects_house: true).includes(:opposite).to_a
+    @house_counters ||= tab_counters
   end
 
   # 이 소속 캐릭터들: 아바타·이름(데코·칭호는 웹이 계정 번호로 입힌다)과 누적 수치 결과값.
@@ -124,7 +124,9 @@ class Api::V1::System::HousesController < Api::BaseController
     value = counter.net_for(character)
     return if value <= 0
 
-    { id: counter.id.to_s, name: counter.name, value: value, points: value * counter.house_amount, next_at: next_house_tick(counter).iso8601 }
+    # 소속 점수에 영향을 줄 때만 '다음 반영'을 알린다 (points 0 이면 화면이 안 보여 준다)
+    points = counter.affects_house ? value * counter.house_amount : 0
+    { id: counter.id.to_s, name: counter.name, value: value, points: points, next_at: next_house_tick(counter).iso8601 }
   end
 
   # 소속 점수에 다음으로 반영되는 때 (아직 한 번도 반영하지 않았으면 지금부터 한 간격 뒤)

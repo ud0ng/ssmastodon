@@ -39,15 +39,10 @@ class GameShopItem < ApplicationRecord
     !price.nil?
   end
 
-  # 소속 점수를 올리는 아이템인가 (같은 소속끼리는 사용·양도·선물이 안 된다)
-  def raises_house_points?
-    effects_list.any? { |effect| effect['type'] == 'currency' && effect['currency'] == 'house_points' && !effect['value'].to_s.strip.start_with?('-') && effect['value'].to_s.match?(/[1-9]/) }
-  end
-
-  # 이름(공백·대소문자 무시)으로 찾아서 위와 같은지
-  def self.raises_house_points?(name)
+  # 이름(공백·대소문자 무시)으로 찾은 아이템이 '같은 소속에 사용 불가능' 옵션인가 (켜면 같은 소속에 사용·양도·선물이 안 된다)
+  def self.blocks_same_house?(name)
     key = Game::Wallet.key(name)
-    all.any? { |item| Game::Wallet.key(item.name) == key && item.raises_house_points? }
+    all.any? { |item| item.block_same_house && Game::Wallet.key(item.name) == key }
   end
 
   def item_effects=(value)

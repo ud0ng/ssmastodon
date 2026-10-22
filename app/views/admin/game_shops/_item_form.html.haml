@@ -23,7 +23,8 @@
   %h5.ui-subtitle= game_t('admin.games.item_fx.section_options')
   = render 'admin/ui/checks', id_suffix: prefix, items: [[game_t('admin.games.item_fx.usable'), 'game_shop_item[usable]', item.usable],
                                                         [game_t('admin.games.item_fx.giftable'), 'game_shop_item[giftable]', item.giftable],
-                                                        [game_t('admin.games.item_fx.permanent'), 'game_shop_item[permanent]', item.permanent]]
+                                                        [game_t('admin.games.item_fx.permanent'), 'game_shop_item[permanent]', item.permanent],
+                                                        [game_t('admin.games.item_fx.block_same_house'), 'game_shop_item[block_same_house]', item.block_same_house]]
 
   %h5.ui-subtitle= game_t('admin.games.item_fx.section_effects')
   %p.hint= game_t('admin.games.item_fx.hint')
