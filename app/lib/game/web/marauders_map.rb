@@ -584,12 +584,16 @@ module Game
           tokens: tokens_for(prefect_view && !full),
           clues: state['clues'].last(40).map { |clue| clue_view(clue) },
           last: last_view(prefect_view && !full),
+          # 학생 팀이 함께 쓰는 투명 망토 남은 개수 (학생 팀과 구경하는 사람에게만)
+          cloaks_left: !prefect_view || full ? state['cloaks_left'].to_i : nil,
           players: players.map do |other|
             { seat: other.seat, name: other.name, account_id: other.account_id, team: student?(other) ? 'student' : 'prefect',
               status: student?(other) ? status_of(other) : nil, rescued: state.dig('rescued_count', other.seat.to_s).to_i,
               chosen: acting?(other) && state['moves'].key?(other.seat.to_s),
               # 투명 망토를 쓰고 있다 (학생 팀과 끝난 뒤에만 보인다)
-              cloaked: student?(other) && (!prefect_view || full) && cloaked?(other.seat) }
+              cloaked: student?(other) && (!prefect_view || full) && cloaked?(other.seat),
+              # 사감의 능력(감시·정찰·추격) 남은 횟수: 사감 팀과 구경하는 사람에게만
+              ability: !student?(other) && (team != 'student' || full) ? { role: state.dig('roles', other.seat.to_s), left: state.dig('ability_left', other.seat.to_s).to_i } : nil }
           end,
           bubbles: bubbles_for(viewer, prefect_view && !full),
           log: state['log'] || [],

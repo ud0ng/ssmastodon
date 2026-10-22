@@ -34,7 +34,7 @@ interface MapData {
 interface MToken { seat: number; room: number; team: 'student' | 'prefect'; status: string | null }
 interface MZone { kind: 'floor' | 'tower'; y?: number; x?: number; name: string }
 interface MClue { turn: number; kind: 'footprint' | 'zone' | 'watch' | 'scout'; seat: number; room?: number; zone?: MZone; count?: number; range?: number; age: number; room_name?: string }
-interface MPlayer { seat: number; name: string; account_id: string; acct?: string; avatar?: string | null; team: 'student' | 'prefect'; status: string | null; rescued: number; chosen?: boolean; cloaked?: boolean }
+interface MPlayer { seat: number; name: string; account_id: string; acct?: string; avatar?: string | null; team: 'student' | 'prefect'; status: string | null; rescued: number; chosen?: boolean; cloaked?: boolean; ability?: { role: string | null; left: number } | null }
 interface MLast {
   turn: number;
   moves: Record<string, { from: number; to: number; secret: boolean }>;
@@ -61,6 +61,7 @@ interface MView {
   targets_done: number;
   targets_total: number;
   cloak_turns: number;
+  cloaks_left?: number | null;
   tokens: MToken[];
   clues: MClue[];
   last: MLast | null;
@@ -307,6 +308,7 @@ const TABLER: Record<string, string[]> = {
   x: ['M18 6l-12 12', 'M6 6l12 12'],
   search: ['M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0', 'M21 21l-6 -6'],
   walk: ['M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0', 'M7 21l3 -4', 'M16 21l-2 -4l-3 -3l1 -6', 'M6 12l2 -3l4 -1l3 3l3 1'],
+  eye: ['M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0', 'M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6'],
   'info-circle': ['M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0', 'M12 9h.01', 'M11 12h1v4h1'],
   users: ['M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0', 'M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2', 'M16 3.13a4 4 0 0 1 0 7.75', 'M21 21v-2a4 4 0 0 0 -3 -3.85'],
 };
@@ -419,10 +421,23 @@ const MapLegend: React.FC<{ view: MView }> = ({ view }) => {
         {teamsOpen && (
           <div className='mm-teams'>
             {(['student', 'prefect'] as const).map((team) => (
-              <p key={team} className={`mm-teams__row mm-teams__row--${team}`}>
-                <b>{team === 'student' ? view.student_name : view.prefect_name}</b>
-                <span>{view.players.filter((player) => player.team === team).map((player) => player.name).join(', ')}</span>
-              </p>
+              <div key={team} className={`mm-teams__team mm-teams__team--${team}`}>
+                <p className='mm-teams__head'>
+                  <b>{team === 'student' ? view.student_name : view.prefect_name}</b>
+                  {team === 'student' && view.cloaks_left != null && <span className='mm-teams__item'><TIcon name='eye-off' size={13} /> ×{view.cloaks_left}</span>}
+                </p>
+                <ul>
+                  {view.players.filter((player) => player.team === team).map((player) => (
+                    <li key={player.seat} className={[player.chosen && 'is-chosen', player.status === 'out' && 'is-out'].filter(Boolean).join(' ')}>
+                      <span className='mm-teams__name'>{player.name}</span>
+                      {player.chosen && view.status === 'active' && <i title='choice done'><TIcon name='check' size={13} /></i>}
+                      {player.cloaked && <i title='invisible'><TIcon name='eye-off' size={13} /></i>}
+                      {player.status === 'jailed' && <i><TIcon name='lock' size={13} /></i>}
+                      {player.ability && <em className='mm-teams__item' title={player.role ?? ''}><TIcon name={player.role === 'watcher' ? 'eye' : player.role === 'scout' ? 'search' : 'walk'} size={13} /> ×{player.ability.left}</em>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
           </div>
         )}

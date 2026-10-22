@@ -1362,3 +1362,72 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
   font-size: 18px;
   box-shadow: 0 0 0 4px rgb(190 50 30 / 12%);
 }
+
+// 팀 명단 칸: 이름·선택 완료·남은 아이템/능력
+.mm-teams {
+  gap: 8px;
+
+  &__team ul {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__head {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin: 0;
+
+    b {
+      padding: 0 8px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 11px;
+    }
+  }
+
+  &__team--student b { background: #3b6fc4; }
+
+  &__team--prefect b { background: #a8325e; }
+
+  li {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    font-size: 12px;
+
+    &.is-out { text-decoration: line-through; opacity: 0.5; }
+
+    i {
+      color: #2d6b3f;
+      font-style: normal;
+    }
+  }
+
+  &__name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__item {
+    margin-inline-start: auto;
+    padding: 0 6px;
+    border: 1px solid rgb(75 36 23 / 40%);
+    border-radius: 999px;
+    color: $mm-ink;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 800;
+  }
+
+  .is-chosen .mm-teams__name {
+    font-weight: 800;
+  }
+}
