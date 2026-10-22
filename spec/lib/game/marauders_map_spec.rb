@@ -394,4 +394,21 @@ RSpec.describe Game::Web::MaraudersMap do
       expect(student_view[:bubbles].first[:room]).to eq session.state['positions']['0']
     end
   end
+  describe 'team chat visibility and who has chosen' do
+    it 'shows every team message to spectators, only the own team to players, and marks who already chose' do
+      session = start!(6)
+      kind = kind_for(session)
+      student = session.players.find { |player| kind.team_of(player) == 'student' }
+      prefect = session.players.find { |player| kind.team_of(player) == 'prefect' }
+      Game::Lobby.chat!(session, student.account, '학생끼리', team: 'student')
+      Game::Lobby.chat!(session, prefect.account, '사감끼리', team: 'prefect')
+      Game::Lobby.chat!(session, student.account, '다 같이')
+
+      view = kind.view_for(student)
+      expect(view[:players].map { |entry| entry[:chosen] }).to all(be(false).or(be(true)))
+
+      move!(session, student.seat, kind_for(session).view_for(student)[:moves].first)
+      expect(kind_for(session).view_for(prefect)[:players].find { |entry| entry[:seat] == student.seat }[:chosen]).to be true
+    end
+  end
 end

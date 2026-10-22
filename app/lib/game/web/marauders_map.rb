@@ -586,7 +586,8 @@ module Game
           last: last_view(prefect_view && !full),
           players: players.map do |other|
             { seat: other.seat, name: other.name, account_id: other.account_id, team: student?(other) ? 'student' : 'prefect',
-              status: student?(other) ? status_of(other) : nil, rescued: state.dig('rescued_count', other.seat.to_s).to_i }
+              status: student?(other) ? status_of(other) : nil, rescued: state.dig('rescued_count', other.seat.to_s).to_i,
+              chosen: acting?(other) && state['moves'].key?(other.seat.to_s) }
           end,
           bubbles: bubbles_for(viewer, prefect_view && !full),
           log: state['log'] || [],

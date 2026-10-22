@@ -297,13 +297,6 @@ export const LobbyStage: React.FC<{
               ))}
             </ul>
           )}
-          {lobby.teams.can_change && !counting && (
-            <button type='button' className='game-stage__join game-stage__join--off lobby-team-change' disabled={busy || lobby.teams.change_blocked} onClick={() => { post('team'); }}>
-              {lobby.teams.change_blocked
-                ? <FormattedMessage id='lobby.team_full' defaultMessage='The other team is full' />
-                : <FormattedMessage id='lobby.change_team' defaultMessage='Change team' />}
-            </button>
-          )}
         </div>
       ) : (
         <ul className='game-stage__players'>
@@ -321,8 +314,15 @@ export const LobbyStage: React.FC<{
         </ul>
       )}
 
-      {(lobby.can_join || lobby.can_leave || lobby.can_respond || (lobby.can_invite && !counting) || ((lobby.recruiting || lobby.invite) && lobby.can_manage && !counting)) && (
+      {(lobby.can_join || lobby.can_leave || lobby.can_respond || (lobby.teams?.can_change && !counting) || (lobby.can_invite && !counting) || ((lobby.recruiting || lobby.invite) && lobby.can_manage && !counting)) && (
         <div className='game-stage__membership'>
+          {lobby.teams?.can_change && !counting && (
+            <button type='button' className='game-stage__join game-stage__join--off lobby-team-change' disabled={busy || lobby.teams?.change_blocked} onClick={() => { post('team'); }}>
+              {lobby.teams?.change_blocked
+                ? <FormattedMessage id='lobby.team_full' defaultMessage='The other team is full' />
+                : <FormattedMessage id='lobby.change_team' defaultMessage='Change team' />}
+            </button>
+          )}
           {lobby.can_respond && (
             <>
               <button type='button' className={lobby.join_block ? 'game-stage__join game-stage__join--off' : 'game-stage__join'} disabled={busy} onClick={() => { if (lobby.join_block) blocked(lobby.join_block); else post('accept'); }}>

@@ -232,7 +232,8 @@ class Api::V1::System::SessionsController < Api::BaseController
     system = Game::System.account
     scope = @session.messages.where(account_id: [nil, current_account.id]).order(:id).last(MESSAGE_LIMIT)
     my_team = team_of_viewer
-    scope = scope.reject { |message| message.chat? && message.payload.is_a?(Hash) && message.payload['team'].present? && message.payload['team'] != my_team && @session.status != 'finished' }
+    spectator = @session.player_for(current_account).nil? # 구경하는 사람은 모든 팀 채팅이 보인다
+    scope = scope.reject { |message| message.chat? && message.payload.is_a?(Hash) && message.payload['team'].present? && message.payload['team'] != my_team && !spectator && @session.status != 'finished' }
     scope.map do |message|
       speaker = message.chat? ? message.author : system
       {

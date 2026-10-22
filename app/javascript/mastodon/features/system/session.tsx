@@ -195,13 +195,14 @@ const ROOM_BODY_CLASS = 'layout-game-room';
 // 웹 전용 컨텐츠(미로·도둑 지도)는 메뉴·작성 패널을 잠시 숨기고 지도 | 메시지 두 칸으로 쓴다
 const SPLIT_BODY_CLASS = 'layout-game-split';
 
-const useRoomLayout = (split: boolean) => {
+const useRoomLayout = (split: boolean, enabled = true) => {
   useEffect(() => {
+    if (!enabled) return undefined;
     document.body.classList.add(ROOM_BODY_CLASS);
     return () => {
       document.body.classList.remove(ROOM_BODY_CLASS);
     };
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
     if (!split) return undefined;
@@ -316,7 +317,8 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   const wasMyTurn = useRef(false);
 
   // 대기방은 전체 화면이라 판 화면용 두 칸 배치는 쓰지 않는다
-  useRoomLayout(['maze', 'marauders_map', 'secret_chamber'].includes(data?.kind ?? '') && data?.status !== 'lobby');
+  // (이벤트 화면은 어두운 무대 전체를 쓰므로 옛 방 배치를 쓰지 않는다: 왼쪽에 마스토돈 아이콘 메뉴가 남는다)
+  useRoomLayout(false, !EVENT_KINDS.includes(data?.kind ?? ''));
 
   const load = useCallback(() => {
     apiRequestGet<RoomData>(`v1/system/sessions/${id}`)
@@ -463,7 +465,9 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   if (!data || EVENT_KINDS.includes(data.kind)) {
     return (
       <>
-        {data?.status === 'active' && data.player && data.kind === 'flying' && <StageTutorial kind={data.kind} />}
+        {/* 안내는 둘로 나뉜다: 대기방에 들어오면 수락·준비 완료, 게임방에 들어오면 경로 선택 등 */}
+        {data?.lobby && (data.player || data.lobby.can_respond) && <StageTutorial key='lobby-tutorial' kind={data.kind} phase='lobby' />}
+        {data?.status === 'active' && data.player && ['flying', 'marauders_map'].includes(data.kind) && <StageTutorial key='game-tutorial' kind={data.kind} phase='game' />}
         {data && flyingRoom && (
           <FlyingStage
             sessionId={data.id}

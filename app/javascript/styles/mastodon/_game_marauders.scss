@@ -263,8 +263,8 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
 
 .mm-dim {
   position: absolute;
-  inset: 0;
-  z-index: 8;
+  z-index: 30;
+  border-radius: 6px;
   background: rgb(0 0 0 / 70%);
   mask-repeat: no-repeat;
   mask-size: 100% 100%;
@@ -275,9 +275,9 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
 
 .mm-dim-text {
   position: absolute;
-  top: 12px;
+  top: 96px;
   left: 50%;
-  z-index: 9;
+  z-index: 31;
   margin: 0;
   color: #fff;
   font-size: 26px;
@@ -717,9 +717,9 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
 
 // ── 맹세 (오프닝: 양피지가 페이드인되고 명조 글씨가 쓰이며 잉크가 번진다) ──
 .mm-oath {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 200;
   display: grid;
   place-items: center;
   background:
@@ -962,4 +962,153 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
 
 .lobby-team-change {
   align-self: center;
+}
+
+// 지도 안내: 접었다 펼 수 있다
+.mm-legend {
+  pointer-events: auto;
+
+  &__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin: 0 0 4px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+
+    h4 {
+      margin: 0;
+    }
+  }
+
+  &.is-closed {
+    width: auto;
+    min-width: 120px;
+  }
+
+  &.is-closed .mm-legend__toggle {
+    margin: 0;
+  }
+}
+
+// 채팅 탭과 말머리: 전체(회색) · 학생(파랑) · 사감(자주)
+.mm-chat__tabs button {
+  &.is-student.is-on {
+    background: #3b6fc4;
+    color: #fff;
+  }
+
+  &.is-prefect.is-on {
+    background: #a8325e;
+    color: #fff;
+  }
+}
+
+.mm-chat__tag {
+  flex: 0 0 auto;
+  margin-inline-end: 6px;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+
+  &.is-all { color: #b9b2a0; }
+
+  &.is-student { color: #7fb0ff; }
+
+  &.is-prefect { color: #ff8fb4; }
+}
+
+// 안내창 버튼은 가운데
+.mm-modal__actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+// 맨 위 팀별 참여자 명단
+.mm-roster {
+  position: relative;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  justify-content: center;
+  padding: 6px 16px 0;
+  font-size: 12px;
+
+  &__team {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    align-items: center;
+
+    > b {
+      padding: 1px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    ul {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    li {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+      padding: 2px 8px 2px 3px;
+      border: 1px solid rgb(243 231 200 / 25%);
+      border-radius: 999px;
+      background: rgb(243 231 200 / 8%);
+      color: #f3e7c8;
+      opacity: 0.8;
+
+      img {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+
+      i {
+        color: #9fe08a;
+        font-style: normal;
+        font-weight: 800;
+      }
+
+      &.is-chosen {
+        border-color: #9fe08a;
+        opacity: 1;
+      }
+
+      &.is-me {
+        border-color: $mm-gold;
+      }
+
+      &.is-out {
+        text-decoration: line-through;
+        opacity: 0.45;
+      }
+    }
+
+    &--student > b {
+      background: #3b6fc4;
+      color: #fff;
+    }
+
+    &--prefect > b {
+      background: #a8325e;
+      color: #fff;
+    }
+  }
 }

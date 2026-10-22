@@ -22,19 +22,24 @@ interface Page {
   demo: React.ReactNode;
 }
 
-const seenKey = (kind: string) => `ssm:stage-tutorial:${kind}`;
+// 안내는 둘로 나뉜다: 대기방에 들어왔을 때(수락·준비 완료)와 게임방에 들어왔을 때(경로 선택 등). 앞의 몇 단계가 대기방 몫이다.
+export type TutorialPhase = 'lobby' | 'game';
 
-const wasSeen = (kind: string) => {
+const LOBBY_STEPS: Record<string, number> = { flying: 2, marauders_map: 2 };
+
+const seenKey = (kind: string, phase: TutorialPhase) => `ssm:stage-tutorial:${kind}:${phase}`;
+
+const wasSeen = (kind: string, phase: TutorialPhase) => {
   try {
-    return window.localStorage.getItem(seenKey(kind)) === '1';
+    return window.localStorage.getItem(seenKey(kind, phase)) === '1';
   } catch {
     return false;
   }
 };
 
-const markSeen = (kind: string) => {
+const markSeen = (kind: string, phase: TutorialPhase) => {
   try {
-    window.localStorage.setItem(seenKey(kind), '1');
+    window.localStorage.setItem(seenKey(kind, phase), '1');
   } catch {
     // 저장이 막힌 브라우저에서는 이번 방문 동안만
   }
@@ -74,10 +79,10 @@ const DEMOS: Record<string, ((guide: Guide) => React.ReactNode)[]> = {
   ],
 };
 
-export const StageTutorial: React.FC<{ kind: string }> = ({ kind }) => {
+export const StageTutorial: React.FC<{ kind: string; phase?: TutorialPhase }> = ({ kind, phase = 'game' }) => {
   const [guide, setGuide] = useState<Guide | null>(null);
   const [index, setIndex] = useState(0);
-  const [closed, setClosed] = useState(() => wasSeen(kind));
+  const [closed, setClosed] = useState(() => wasSeen(kind, phase) || (phase === 'lobby' && !LOBBY_STEPS[kind]));
 
   useEffect(() => {
     if (closed) return;
@@ -91,13 +96,16 @@ export const StageTutorial: React.FC<{ kind: string }> = ({ kind }) => {
   const pages = useMemo<Page[]>(() => {
     if (!guide) return [];
     const demos = DEMOS[kind] ?? [];
-    return guide.steps.map((step, index) => ({ key: `step-${index}`, text: step, demo: demos[index]?.(guide) ?? null }));
-  }, [guide, kind]);
+    const split = LOBBY_STEPS[kind] ?? 0;
+    const from = phase === 'lobby' ? 0 : split;
+    const to = phase === 'lobby' ? split : guide.steps.length;
+    return guide.steps.slice(from, to).map((step, offset) => ({ key: `step-${from + offset}`, text: step, demo: demos[from + offset]?.(guide) ?? null }));
+  }, [guide, kind, phase]);
 
   const close = useCallback(() => {
-    markSeen(kind);
+    markSeen(kind, phase);
     setClosed(true);
-  }, [kind]);
+  }, [kind, phase]);
 
   if (closed || !guide || pages.length === 0) return null;
 
