@@ -26,9 +26,28 @@ module Game
 
     class << self
       # key 의 설정 (기본값 + 저장된 값), 문자열 키 Hash
+      # 저장된 설정은 이 프로세스에서 2초 동안 기억한다 (한 요청이 설정을 수십 번 읽어도 DB 는 한 번만). 저장하면 바로 비운다.
+      STORED_TTL = 2.seconds
+
+      def stored_data(key)
+        return GameConfig.find_by(key: key)&.data || {} if Rails.env.test?
+
+        @stored ||= Concurrent::Map.new
+        entry = @stored[key]
+        return entry[1] if entry && (Process.clock_gettime(Process::CLOCK_MONOTONIC) - entry[0]) < STORED_TTL
+
+        data = GameConfig.find_by(key: key)&.data || {}
+        @stored[key] = [Process.clock_gettime(Process::CLOCK_MONOTONIC), data]
+        data
+      end
+
+      def forget_stored
+        @stored&.clear
+      end
+
       def for(key)
         fields = schema(key)
-        stored = GameConfig.find_by(key: key)&.data || {}
+        stored = stored_data(key)
         values = fields.to_h { |field| [field.key, stored.key?(field.key) ? stored[field.key] : field.default] }
         # 문구의 {소속 이름}: 지금 점수 단위의 이름
         values['house_term'] = values['group_mode'] == 'faction' ? values['faction_label'] : values['house_label'] if key == 'common'
@@ -91,6 +110,7 @@ module Game
           end
         end
         GameConfig.find_or_initialize_by(key: key).update!(data: data)
+        forget_stored
       end
 
       # 일부 값만 바꾼다 (나머지 저장된 값은 그대로)

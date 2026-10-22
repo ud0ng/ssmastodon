@@ -15,6 +15,11 @@ class GamePlayer < ApplicationRecord
     @character ||= GameCharacter.for(account)
   end
 
+  # 미리 읽어 둔 캐릭터를 넣는다 (목록을 만들 때 사람마다 다시 조회하지 않게)
+  def preload_character(record)
+    @character = record if record
+  end
+
   def name
     character.display_name
   end

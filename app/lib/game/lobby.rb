@@ -266,8 +266,17 @@ module Game
       }
     end
 
+    # 참가자 캐릭터·계정·소속을 한 번에 읽어 둔다 (사람마다 따로 조회하면 20명일 때 수십 번)
+    def preload_characters(session)
+      players = session.players.includes(:account).to_a
+      characters = GameCharacter.where(account_id: players.map(&:account_id)).includes(:house, :faction).index_by(&:account_id)
+      players.each { |player| player.preload_character(characters[player.account_id]) }
+      session.association(:players).target = players
+    end
+
     # 웹 대기방 화면: 참가자(아바타·소속·준비)와 카운트다운
     def view(session, viewer, staff:)
+      preload_characters(session)
       kind = session.kind_class.new(session)
       at = start_at(session)
       ready = ready_ids(session)
