@@ -119,6 +119,7 @@ module Game
       return :joined if session.player_for(account)
       return :full if session.players.size >= session.kind_class.new(session).event_max_players
       return :busy if busy_elsewhere?(session, account) # 멤버는 한 번에 이벤트 하나만 (끝나야 다른 이벤트)
+      return :limit if over_daily_limit?(account)
 
       session.players.create!(account: account, seat: (session.players.maximum(:seat) || -1) + 1, state: { 'accepted' => true })
       session.players.reset
@@ -140,6 +141,42 @@ module Game
       :ok
     end
 
+    # 초대한 이벤트의 대기방에 사람을 더 초대한다 (카운트다운 전에만). 이미 초대받은 사람은 건너뛴다. :ok / :closed / :full
+    def invite_more!(session, accounts)
+      return :closed unless session.lobby? && !counting?(session) && invite_ids(session).any?
+
+      fresh = accounts.reject { |account| invite_ids(session).include?(account.id) }
+      return :ok if fresh.empty?
+      return :full if invite_ids(session).size + fresh.size > session.kind_class.new(session).event_max_players
+
+      session.state['invited'] = invite_ids(session) + fresh.map(&:id)
+      session.state['lobby'] = session.state['lobby'].merge('start_at' => nil)
+      session.save!
+      note!(session, "#{fresh.map { |account| GameCharacter.for(account).display_name }.join(', ')}님을 초대했습니다.")
+      Game::EventNotice.alert!(fresh.map(&:id))
+      :ok
+    end
+
+    # 오늘 이미 점수·보상을 받은 이벤트 판 수가 하루 최대 보상 획득 횟수(이벤트 설정 > 제한)에 닿았는가. 닿으면 참가는 되지만 점수와 보상이 없다.
+    # 오늘(00시 기준) 끝난 진짜(테스트가 아닌) 이벤트에 참가한 판 수로 센다 (session 은 지금 판이라 뺀다)
+    def reward_capped?(account, session = nil)
+      limit = Game::Events::Settings.daily_reward_limit
+      return false unless limit.positive?
+
+      keys = Game::Kinds.group_games.map(&:key)
+      scope = GamePlayer.joins(:session).merge(GameSession.real).where(account: account, game_sessions: { kind: keys, status: 'finished' })
+                        .where('game_sessions.finished_at >= ?', Time.now.in_time_zone('Asia/Seoul').beginning_of_day)
+      scope = scope.where.not(game_session_id: session.id) if session
+      scope.count >= limit
+    end
+
+    # 참가는 됐지만 점수·보상을 받지 못할 때 웹이 모달로 보여 줄 안내 (아니면 nil)
+    def reward_notice(account, session)
+      return if session.test? || !reward_capped?(account, session)
+
+      '오늘 받을 수 있는 이벤트 보상 횟수를 모두 채워서, 이 이벤트는 참가할 수 있지만 점수와 보상을 받을 수 없습니다.'
+    end
+
     # 웹 [참여하기]: :ok / :joined(이미 참가) / :closed / :full / :ineligible / :busy / :invite_only
     def join!(session, account)
       return :closed unless joinable?(session)
@@ -148,6 +185,7 @@ module Game
       return :full if session.players.size >= session.kind_class.new(session).event_max_players
       return :ineligible unless GameCharacter.eligible_accounts.exists?(id: account.id)
       return :busy if busy_elsewhere?(session, account) # 멤버는 한 번에 이벤트 하나만 (끝나야 다른 이벤트)
+      return :limit if over_daily_limit?(account)
 
       session.players.create!(account: account, seat: (session.players.maximum(:seat) || -1) + 1, state: { 'accepted' => true })
       session.players.reset
@@ -174,10 +212,23 @@ module Game
       :ok
     end
 
-    # 다른 이벤트에 이미 끼어 있는가 (이벤트는 한 번에 하나)
+    # 다른 이벤트에 이미 끼어 있는가 (이벤트는 한 번에 하나: 이벤트 설정 > 동시 진행 제한). session 이 nil 이면 모든 이벤트
     def busy_elsewhere?(session, account)
+      return false unless Game::Events::Settings.concurrent_limit?
+
       keys = Game::Kinds.group_games.map(&:key)
-      GamePlayer.joins(:session).where(account: account, game_sessions: { kind: keys, status: %w(pending lobby active) }).where.not(game_session_id: session.id).exists?
+      scope = GamePlayer.joins(:session).where(account: account, game_sessions: { kind: keys, status: %w(pending lobby active) })
+      scope = scope.where.not(game_session_id: session.id) if session
+      scope.exists?
+    end
+
+    # 오늘(00시 기준) 이미 참가한 이벤트 수가 하루 제한 횟수(이벤트 설정 > 제한)에 닿았는가. 테스트 플레이는 세지 않는다
+    def over_daily_limit?(account)
+      limit = Game::Events::Settings.daily_limit
+      return false unless limit.positive?
+
+      keys = Game::Kinds.group_games.map(&:key)
+      GamePlayer.joins(:session).merge(GameSession.real).where(account: account, game_sessions: { kind: keys }).where('game_sessions.created_at >= ?', Time.now.in_time_zone('Asia/Seoul').beginning_of_day).count >= limit
     end
 
     # 초대받고 아직 수락하지 않은 캐릭터: 대기방에 '대기중...'으로 보인다
@@ -197,7 +248,7 @@ module Game
         min: kind.event_min_players,
         max: kind.event_max_players,
         countdown_seconds: COUNTDOWN_SECONDS,
-        start_at: at&.future? ? at.iso8601(3) : nil,
+        start_at: at&.iso8601(3), # 카운트다운이 끝난 뒤에도 게임이 시작될 때까지 남겨 둔다 (화면이 대기방으로 되돌아가지 않게)
         now: Time.current.iso8601(3),
         can_manage: staff,
         recruiting: recruiting?(session),
@@ -205,6 +256,7 @@ module Game
         can_respond: session.lobby? && !counting?(session) && invite_ids(session).include?(viewer.id) && session.player_for(viewer).nil?,
         can_join: joinable?(session) && invite_ids(session).empty? && session.player_for(viewer).nil? && session.players.size < kind.event_max_players && GameCharacter.eligible_accounts.exists?(id: viewer.id),
         can_leave: joinable?(session) && session.player_for(viewer).present?,
+        can_invite: session.lobby? && !counting?(session) && invite_ids(session).any? && (staff || session.state['opened_by'].to_i == viewer.id),
         recruit_ends_at: recruiting?(session) ? session.deadline_at&.iso8601(3) : nil,
         me: session.player_for(viewer)&.account_id&.to_s,
         players: session.players.map do |player|

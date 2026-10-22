@@ -1,0 +1,62 @@
+- content_for :page_title do
+  = game_t('admin.games.event_tabs.records')
+
+- content_for :heading do
+  = render 'admin/game_settings/heading', event: true
+
+-# 검색: 이벤트 종류 · 상태 · 기간
+= form_tag admin_game_event_records_path, method: :get, class: 'simple_form game-table__filter' do
+  .filters
+    .filter-subset.filter-subset--with-select
+      %strong= game_t('admin.games.event_records.kind')
+      .input.select.optional
+        = select_tag :kind, options_for_select([[game_t('admin.games.manage.roster.all'), '']] + Game::Kinds.group_games.map { |kind| [kind.display_name, kind.key] }, params[:kind])
+    .filter-subset.filter-subset--with-select
+      %strong= game_t('admin.games.event_records.state')
+      .input.select.optional
+        = select_tag :status, options_for_select([[game_t('admin.games.manage.roster.all'), '']] + Admin::GameEventsController::STATUSES.keys.map { |key| [game_t("admin.games.event_records.states.#{key}"), key] }, params[:status])
+    .filter-subset
+      %strong= game_t('admin.games.shop.records_ui.period')
+      = date_field_tag :from, params[:from], class: 'ui-input', 'aria-label': game_t('admin.games.shop.records_ui.from')
+      %span ~
+      = date_field_tag :to, params[:to], class: 'ui-input', 'aria-label': game_t('admin.games.shop.records_ui.to')
+    = button_tag game_t('admin.games.shop.records_ui.search'), type: :submit, class: 'button'
+
+- count = capture do
+  %span.game-table__count= game_t('admin.games.activity_log.count', count: number_with_delimiter(@sessions.total_count))
+= render layout: 'admin/ui/section', locals: { title: safe_join([game_t('admin.games.event_tabs.records'), ' ', count]), hint: game_t('admin.games.event_records.hint') } do
+  .bot-sheet-table.game-table
+    %table.table
+      %thead
+        %tr
+          %th= game_t('admin.games.houses.when')
+          %th= game_t('admin.games.event_records.kind')
+          %th= game_t('admin.games.event_records.players')
+          %th= game_t('admin.games.event_records.state')
+      %tbody
+        - @sessions.each do |session|
+          - state = { 'finished' => 'done', 'cancelled' => 'cancelled', 'active' => 'running' }.fetch(session.status, 'waiting')
+          %tr
+            %td.bot-sheet-table__text.game-table__time= l((session.finished_at || session.created_at).in_time_zone('Asia/Seoul'), format: '%m/%d %H:%M')
+            %td.bot-sheet-table__text
+              %span.game-table__icon{ 'aria-hidden': 'true' }= game_kind_icon(session.kind)
+              %strong= session.kind_class&.display_name || session.kind
+              - if session.test?
+                %span.game-badge= game_t('admin.games.event_records.test')
+            %td.bot-sheet-table__text
+              -# 참여자: 완료된 판은 승리자를 강조한다
+              .game-event-players
+                - session.players.each do |player|
+                  - character = @characters_by_account[player.account_id]
+                  %span{ class: ['game-event-player', ('game-event-player--win' if player.result == 'win')] }
+                    = image_tag full_asset_url(player.account.avatar_static_url), alt: '', class: 'game-table__avatar'
+                    %strong= character&.display_name || player.account.username
+                    - if player.result == 'win'
+                      %span.game-badge.game-badge--win= game_t('admin.games.event_records.win')
+            %td.bot-sheet-table__text
+              %span{ class: ['game-badge', ('game-badge--win' if state == 'done'), ('game-badge--tournament-running' if state == 'running')] }= game_t("admin.games.event_records.states.#{state}")
+        - if @sessions.empty?
+          %tr
+            %td.bot-sheet-table__text{ colspan: 4 }= game_t('admin.games.event_records.none')
+
+= paginate @sessions

@@ -63,7 +63,7 @@ class Api::V1::System::CommandsController < Api::BaseController
     return if kind.nil? || !kind.enabled?
 
     # 참가: 비공개 테스트 플레이는 DM 으로 (다른 사람 눈에 안 띄게)
-    return ["#{system_mention} [#{kind.config['cmd_join']}]", nil, join_visibility(kind)] if ActiveModel::Type::Boolean.new.cast(params[:join]) && kind.config['cmd_join'].present?
+    return ["#{system_mention} [#{Game::Events::Settings.cmd_join}]", nil, join_visibility(kind)] if ActiveModel::Type::Boolean.new.cast(params[:join]) && Game::Events::Settings.cmd_join.present?
 
     usernames = Array(params[:opponents]).map { |acct| clean(acct).delete_prefix('@') }
     # 고른 순서를 지킨다: 팀전은 앞에서부터 우리 팀(팀원 → 상대 팀)이다

@@ -154,6 +154,10 @@ export function EventOpenModal() {
   return import('../../system/event_open_modal');
 }
 
+export function EventInviteModal() {
+  return import('../../system/event_invite_modal');
+}
+
 export function MoneyGiftModal() {
   return import('../../system/money_gift_modal');
 }

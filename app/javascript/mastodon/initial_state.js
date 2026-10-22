@@ -14,6 +14,7 @@
  * @property {boolean} dm_chat_enabled
  * @property {boolean} shop_enabled
  * @property {boolean} contents_enabled
+ * @property {boolean} events_enabled
  * @property {string=} system_acct
  * @property {string=} system_account_id
  * @property {string} admin
@@ -96,6 +97,7 @@ export const boostModal = getMeta('boost_modal');
 export const dmChatEnabled = getMeta('dm_chat_enabled');
 export const shopEnabled = getMeta('shop_enabled') !== false;
 export const contentsEnabled = getMeta('contents_enabled') !== false;
+export const eventsEnabled = getMeta('events_enabled') !== false;
 export const systemAcct = getMeta('system_acct');
 export const systemAccountId = getMeta('system_account_id');
 export const deleteModal = getMeta('delete_modal');

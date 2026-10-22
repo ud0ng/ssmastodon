@@ -18,7 +18,7 @@
               %span.game-table__icon{ 'aria-hidden': 'true' }= game_kind_icon(kind.key)
               %strong= kind.display_name
             %td.bot-sheet-table__text
-              = game_t('admin.games.events.summary', minutes: kind.config['event_join_minutes'], min: kind.config['event_min_players'], max: kind.config['event_max_players'])
+              = game_t('admin.games.events.summary', minutes: Game::Events::Settings.join_minutes, min: kind.config['event_min_players'], max: kind.config['event_max_players'])
             %td.bot-sheet-table__actions
               = button_tag game_t('admin.games.events.open'), type: :button, class: 'button', disabled: !kind.enabled? || open_kinds.include?(kind.key), data: { modal_open: "event-open-#{kind.key}" }
 
@@ -31,7 +31,7 @@
           = button_tag game_t('admin.games.events.pick'), type: :button, class: 'button button-secondary', data: { event_mode: 'pick' }
           = button_tag game_t('admin.games.events.test'), type: :button, class: 'button button-secondary', data: { event_mode: 'test' }
           = button_tag t('generic.cancel'), type: :button, class: 'button button-tertiary', data: { modal_close: true }
-        %p.hint= game_t('admin.games.events.recruit_hint', minutes: kind.config['event_join_minutes'], min: kind.config['event_min_players'], max: kind.config['event_max_players'])
+        %p.hint= game_t('admin.games.events.recruit_hint', minutes: Game::Events::Settings.join_minutes, min: kind.config['event_min_players'], max: kind.config['event_max_players'])
         - %w(pick test).each do |mode|
           = form_tag admin_game_event_path, method: :post, class: 'simple_form event-open__picker', hidden: true, data: { event_panel: mode } do
             = hidden_field_tag :kind, kind.key, id: nil

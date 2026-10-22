@@ -26,8 +26,9 @@ module Admin
       kind = Game::Kinds.registry[@key]
       if @page == 'settings'
         # 설정 탭: 컨텐츠마다 승리·무승부·패배 점수를 한 표에서 고친다
-        @points_kinds = Game::Kinds.all
-        @scoring_mode = @values['scoring_mode']
+        # 컨텐츠 설정은 1:1 컨텐츠, 이벤트 설정은 이벤트(여럿이 하는 컨텐츠)의 점수·보상
+        @points_kinds = @key == 'events' ? Game::Kinds.group_games : Game::Kinds.duels
+        @scoring_mode = Game::Config.for('common')['scoring_mode']
       elsif kind
         # 컨텐츠 화면에서는 점수 칸을 빼고 설정 탭의 표에서만 고친다
         @sections = @sections.reject { |section, _| %w(points rewards).include?(section) }
@@ -70,7 +71,8 @@ module Admin
 
     # 공통 설정은 '설정'(common) / '명령어'(commands), 도움말은 상점봇(help) / 시스템봇(help_system) 화면으로 나눠 보여 준다
     def set_key
-      @key, @page = { 'common' => %w(common settings), 'commands' => %w(common commands), 'help' => %w(help shop_bot), 'help_system' => %w(help system_bot) }.fetch(params[:id]) { [params[:id], nil] }
+      @key, @page = { 'common' => %w(common settings), 'commands' => %w(common commands), 'help' => %w(help shop_bot), 'help_system' => %w(help system_bot),
+                      'events' => %w(events settings), 'event_messages' => %w(events messages) }.fetch(params[:id]) { [params[:id], nil] }
       raise ActiveRecord::RecordNotFound unless Game::Config.keys.include?(@key)
     end
   end

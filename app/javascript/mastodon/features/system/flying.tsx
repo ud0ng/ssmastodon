@@ -29,6 +29,8 @@ interface FlyPlayer {
   alive: boolean;
   out_round: number | null;
   chosen: boolean;
+  // 지금 빗자루 내구도
+  hp: number;
   result: 'win' | 'lose' | 'draw' | null;
 }
 
@@ -41,6 +43,13 @@ interface RoundEntry {
   alive_before: string[];
   choices: Record<string, number | undefined>;
   results: Record<string, Outcome>;
+  // 금빛 고리 길 번호, 라운드 앞뒤 내구도, 고리로 +1 한 자리, 추락한 자리, 모두 추락해 무효가 된 라운드
+  ring?: number | null;
+  hp_before?: Record<string, number>;
+  hp_after?: Record<string, number>;
+  ring_gain?: string[];
+  fell?: string[];
+  void?: boolean;
 }
 
 interface Scene {
@@ -80,6 +89,8 @@ interface FlyView {
   spectator: boolean;
   commands: { fly: string };
   my_choice: number | null;
+  durability: number;
+  ring: number | null;
   players: FlyPlayer[];
   history: RoundEntry[];
   finish: FinishView | null;
@@ -134,13 +145,22 @@ const laneX = (lane: number, lanes: number) => 10 + (((lane - 0.5) * 80) / lanes
 const LANE_W = (lanes: number) => (80 / lanes) - Math.min(3.2, 14 / lanes);
 const wait = (ms: number) => new Promise<void>((resolve) => { window.setTimeout(resolve, ms); });
 
-// 한 라운드를 틀어 주는 장치: 출발선에서 고른 길로 날아가 → 부딪힘 → 떨어짐 → 살아남은 토큰이 출발선으로 돌아온다
+// 추락한 자리 / 이번 라운드를 버틴 자리 (내구도가 없던 옛 기록은 통과한 자리만 버틴 것으로)
+const fellOf = (entry: RoundEntry): string[] => entry.fell ?? entry.alive_before.filter((seat) => entry.results[seat] !== 'pass');
+const survivorsOf = (entry: RoundEntry): string[] => entry.alive_before.filter((seat) => !fellOf(entry).includes(seat));
+
+// 한 라운드를 틀어 주는 장치: 출발선에서 고른 길로 날아가 → 부딪힘(깃털·잔가지, 내구도 -1) → 내구도가 0이면 떨어짐 → 살아남은 토큰이 출발선으로 돌아온다
 const useRoundPlayer = () => {
   const [pos, setPos] = useState<Record<string, TokenPos>>({});
   const [bursts, setBursts] = useState<Burst[]>([]);
   const [flying, setFlying] = useState(false);
   // 살아남은 토큰이 출발선으로 돌아오는 동안 (배경이 반대로 흐른다)
   const [returning, setReturning] = useState(false);
+  // 자리 → 지금 보여 줄 내구도, 이번 라운드에 내구도가 깎여 휘청이는 자리, 금빛 고리로 +1 한 자리, 무효가 된 라운드
+  const [hp, setHp] = useState<Record<string, number>>({});
+  const [wobble, setWobble] = useState<string[]>([]);
+  const [gains, setGains] = useState<string[]>([]);
+  const [voided, setVoided] = useState(false);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -159,12 +179,14 @@ const useRoundPlayer = () => {
 
   const play = useCallback(async (entry: RoundEntry, options: { returnToLine: boolean }) => {
     const before = entry.alive_before;
+    const fell = fellOf(entry);
     const groups: Record<number, string[]> = {};
     before.forEach((seat) => {
       const lane = entry.choices[seat];
       if (lane) (groups[lane] ??= []).push(seat);
     });
     setFlying(true);
+    if (entry.hp_before) setHp((prev) => ({ ...prev, ...entry.hp_before }));
 
     // 1) 고른 길로 날아간다 (같은 길의 토큰은 나란히 겹친다)
     setPos((prev) => {
@@ -186,8 +208,9 @@ const useRoundPlayer = () => {
     await wait(1_500);
     if (!mounted.current) return;
 
-    // 2) 부딪힌다
+    // 2) 부딪힌다: 깃털과 잔가지가 터지고 내구도가 깎인다 (빗자루가 휘청). 금빛 고리를 혼자 지난 사람은 내구도 +1
     const crashed = Object.entries(groups).filter(([, group]) => group.length > 1);
+    const idle = before.filter((seat) => !entry.choices[seat]);
     setBursts(crashed.map(([lane]) => ({ id: `${entry.round}-${lane}-${Date.now()}`, x: laneX(Number(lane), entry.lanes), y: LANE_Y })));
     setPos((prev) => {
       const next = { ...prev };
@@ -197,25 +220,37 @@ const useRoundPlayer = () => {
       }));
       return next;
     });
-    await wait(650);
+    const hurt = [...crashed.flatMap(([, group]) => group), ...idle];
+    setWobble(hurt);
+    setGains(entry.ring_gain ?? []);
+    if (entry.hp_after) setHp((prev) => ({ ...prev, ...entry.hp_after }));
+    setVoided(Boolean(entry.void));
+    await wait(entry.void ? 1_400 : 650);
     if (!mounted.current) return;
 
-    // 3) 부딪힌 토큰과 길을 고르지 못한 토큰이 떨어진다
+    // 3) 내구도가 0이 된 토큰이 떨어진다
     setPos((prev) => {
       const next = { ...prev };
       before.forEach((seat) => {
-        if (entry.results[seat] === 'pass') return;
         const base = prev[seat];
-        if (base) next[seat] = { ...base, y: 128, rot: (seat.charCodeAt(0) % 2 ? 1 : -1) * (110 + (Number(seat) * 37 % 90)), scale: 0.55, opacity: 0, dur: 1.1, ease: 'easeIn', shake: false };
+        if (!base) return;
+        if (!fell.includes(seat)) {
+          next[seat] = { ...base, rot: 0, scale: 1, dur: 0.3, ease: 'easeOut', shake: false };
+          return;
+        }
+        next[seat] = { ...base, y: 128, rot: (seat.charCodeAt(0) % 2 ? 1 : -1) * (110 + (Number(seat) * 37 % 90)), scale: 0.55, opacity: 0, dur: 1.1, ease: 'easeIn', shake: false };
       });
       return next;
     });
-    await wait(1_150);
+    await wait(fell.length > 0 ? 1_150 : 500);
     if (!mounted.current) return;
     setBursts([]);
+    setWobble([]);
+    setGains([]);
+    setVoided(false);
 
     // 4) 살아남은 토큰이 환호하고 출발선으로 돌아온다
-    const survivors = before.filter((seat) => entry.results[seat] === 'pass');
+    const survivors = survivorsOf(entry);
     setPos((prev) => {
       const next = { ...prev };
       survivors.forEach((seat) => {
@@ -236,7 +271,7 @@ const useRoundPlayer = () => {
     setFlying(false);
   }, [settle]);
 
-  return { pos, bursts, flying, returning, settle, play };
+  return { pos, bursts, flying, returning, hp, setHp, wobble, gains, voided, settle, play };
 };
 
 // ── 서버 시계 기준 남은 초 ──
@@ -484,6 +519,12 @@ interface SkyProps {
   mine: number | null;
   showChosen: boolean;
   highlight?: number[];
+  // 처음 내구도, 자리 → 지금 내구도, 휘청이는·고리로 회복한 자리, 금빛 고리 길 번호
+  durability?: number;
+  hp?: Record<string, number>;
+  wobble?: string[];
+  gains?: string[];
+  ring?: number | null;
   // 날아가는 동안: 길 표시는 사라지고 배경이 함께 흘러간다
   moving?: boolean;
   returning?: boolean;
@@ -493,9 +534,38 @@ interface SkyProps {
   size?: number;
 }
 
+// 아바타 밑 빗자루: 내구도가 깎이면 휘청이고, 0이면 부러져 함께 추락한다
+export const Broom: React.FC<{ hp: number; base: number; wobble: boolean; size: number }> = ({ hp, base, wobble, size }) => (
+  <motion.span
+    className={['fl-broom', hp <= 1 && base > 1 && 'is-low', hp <= 0 && 'is-broken'].filter(Boolean).join(' ')}
+    style={{ width: size * 1.35 }}
+    animate={wobble ? { rotate: [0, -14, 11, -8, 5, 0], y: [0, 3, -2, 2, 0, 0] } : { rotate: 0, y: 0 }}
+    transition={{ duration: 0.9, ease: 'easeInOut' }}
+    aria-hidden
+  >
+    <svg viewBox='0 0 100 22'>
+      <rect x='2' y='9' width='62' height='4' rx='2' className='fl-broom__stick' />
+      <path d='M62 11 C72 2 90 1 98 4 C94 8 94 14 98 18 C90 21 72 20 62 11 Z' className='fl-broom__bristle' />
+      <path d='M70 8 L92 6 M70 14 L92 16 M70 11 L94 11' className='fl-broom__line' />
+    </svg>
+  </motion.span>
+);
+
+// 이름 밑 배지: 빗자루 아이콘 | 지금 내구도/처음 내구도
+export const HpBadge: React.FC<{ hp: number; base: number; gained: boolean }> = ({ hp, base, gained }) => (
+  <span className={['fl-hp', hp <= 1 && base > 1 && 'is-low', gained && 'is-gain'].filter(Boolean).join(' ')}>
+    <svg viewBox='0 0 100 22' aria-hidden>
+      <rect x='2' y='9' width='62' height='4' rx='2' />
+      <path d='M62 11 C72 2 90 1 98 4 C94 8 94 14 98 18 C90 21 72 20 62 11 Z' />
+    </svg>
+    <b>{Math.max(hp, 0)}/{base}</b>
+    {gained && <motion.em initial={{ opacity: 0, y: 4 }} animate={{ opacity: [0, 1, 1, 0], y: [4, -10, -14, -22] }} transition={{ duration: 1.5 }}>+1</motion.em>}
+  </span>
+);
+
 const STREAKS = Array.from({ length: 14 }, (_, index) => ({ left: 4 + ((index * 37) % 92), delay: ((index * 17) % 10) / 10, length: 8 + ((index * 5) % 12) }));
 
-const Sky: React.FC<SkyProps> = ({ players, pos, bursts, lanes, routes, selectable, mine, showChosen, highlight, moving = false, returning = false, scene = 'castle', onPick, children, size = 64 }) => (
+const Sky: React.FC<SkyProps> = ({ players, pos, bursts, lanes, routes, selectable, mine, showChosen, highlight, durability = 2, hp = {}, wobble = [], gains = [], ring = null, moving = false, returning = false, scene = 'castle', onPick, children, size = 64 }) => (
   <div className={['fl-sky', moving && 'is-moving', returning && 'is-returning'].filter(Boolean).join(' ')} style={{ '--fl-size': `${size}px` } as React.CSSProperties}>
     <Backdrop scene={scene} />
     <div className='fl-streaks' aria-hidden>
@@ -508,13 +578,15 @@ const Sky: React.FC<SkyProps> = ({ players, pos, bursts, lanes, routes, selectab
           <button
             key={lane}
             type='button'
-            className={['fl-lane', mine === lane && 'is-mine', selectable && 'is-open'].filter(Boolean).join(' ')}
-            style={{ left: `${laneX(lane, lanes) - (LANE_W(lanes) / 2)}%`, width: `${LANE_W(lanes)}%` }}
+            className={['fl-lane', mine === lane && 'is-mine', selectable && 'is-open', ring === lane && 'is-ring'].filter(Boolean).join(' ')}
+            style={{ left: `${laneX(lane, lanes) - (LANE_W(lanes) / 2)}%`, width: `${LANE_W(lanes)}%`, '--fl-i': lane } as React.CSSProperties}
             disabled={!selectable}
             onClick={() => { onPick?.(lane); }}
           >
             <b>{lane}</b>
             <small>{routes[lane - 1]}</small>
+            {ring === lane && <i className='fl-lane__ring' aria-hidden />}
+            {ring === lane && <em className='fl-lane__tag'><FormattedMessage id='flying.ring' defaultMessage='Golden ring +1' /></em>}
           </button>
         ))}
       </div>
@@ -526,7 +598,7 @@ const Sky: React.FC<SkyProps> = ({ players, pos, bursts, lanes, routes, selectab
       return (
         <motion.div
           key={player.seat}
-          className={['fl-token', highlight?.includes(player.seat) && 'is-hot', at.shake && 'is-shake'].filter(Boolean).join(' ')}
+          className={['fl-token', highlight?.includes(player.seat) && 'is-hot', at.shake && 'is-shake', wobble.includes(String(player.seat)) && 'is-wobble'].filter(Boolean).join(' ')}
           initial={false}
           animate={{ left: `${at.x}%`, top: `${at.y}%`, rotate: at.rot, scale: at.scale, opacity: at.opacity }}
           transition={{ duration: at.dur, ease: at.ease }}
@@ -536,7 +608,15 @@ const Sky: React.FC<SkyProps> = ({ players, pos, bursts, lanes, routes, selectab
               animate={at.y === LINE_Y || at.y === LANE_Y ? { y: [0, -5, 0] } : { y: 0 }}
               transition={{ duration: 2.2 + ((player.seat % 4) * 0.3), repeat: Infinity, ease: 'easeInOut' }}
             >
-              <GameToken accountId={player.account_id} avatar={player.avatar} name={player.name} house={player.house} size={size}>
+              <GameToken
+                accountId={player.account_id}
+                avatar={player.avatar}
+                name={player.name}
+                house={player.house}
+                size={size}
+                footer={<HpBadge hp={hp[String(player.seat)] ?? player.hp} base={durability} gained={gains.includes(String(player.seat))} />}
+              >
+                <Broom hp={hp[String(player.seat)] ?? player.hp} base={durability} wobble={wobble.includes(String(player.seat))} size={size} />
                 {showChosen && player.chosen && player.alive && <span className='fl-token__done'>✓ <FormattedMessage id='flying.chosen' defaultMessage='Ready' /></span>}
               </GameToken>
             </motion.div>
@@ -557,6 +637,17 @@ const Sky: React.FC<SkyProps> = ({ players, pos, bursts, lanes, routes, selectab
           transition={{ duration: 1.1, ease: 'easeOut' }}
         >
           💥
+          {Array.from({ length: 10 }, (_, index) => (
+            <motion.b
+              key={index}
+              className='fl-burst__bit'
+              initial={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
+              animate={{ x: Math.cos(index * 0.63) * (60 + ((index * 17) % 40)), y: (Math.sin(index * 0.63) * (50 + ((index * 13) % 30))) - 26, opacity: 0, rotate: (index % 2 ? 1 : -1) * 220 }}
+              transition={{ duration: 1.1, ease: 'easeOut' }}
+            >
+              {index % 3 === 0 ? '🌿' : '🪶'}
+            </motion.b>
+          ))}
         </motion.span>
       ))}
     </AnimatePresence>
@@ -568,12 +659,13 @@ const Sky: React.FC<SkyProps> = ({ players, pos, bursts, lanes, routes, selectab
 const Replay: React.FC<{ view: FlyView; entry: RoundEntry; highlight?: number[]; size?: number; scene?: SceneKey }> = ({ view, entry, highlight, size = 52, scene = 'castle' }) => {
   const player = useRoundPlayer();
   const [run, setRun] = useState(0);
-  const { settle, play } = player;
+  const { settle, play, setHp } = player;
   const seatsKey = entry.alive_before.join(',');
 
   useEffect(() => {
     let active = true;
     settle(entry.alive_before, 0.01);
+    if (entry.hp_before) setHp(entry.hp_before);
     let again = 0;
     const timer = window.setTimeout(() => {
       // 끝나면 잠깐 쉬었다가 처음부터 계속 되풀이한다
@@ -600,6 +692,10 @@ const Replay: React.FC<{ view: FlyView; entry: RoundEntry; highlight?: number[];
         mine={null}
         showChosen={false}
         highlight={highlight}
+        durability={view.durability}
+        hp={player.hp}
+        wobble={player.wobble}
+        gains={player.gains}
         moving={player.flying}
         scene={scene}
         size={size}
@@ -900,7 +996,7 @@ export const FlyingStage: React.FC<{
   const [flightEntry, setFlightEntry] = useState<RoundEntry | null>(null);
   const [scene, setScene] = useState<SceneKey>('castle');
   const player = useRoundPlayer();
-  const { settle, play } = player;
+  const { settle, play, setHp } = player;
   const playing = useRef(false);
   const remaining = useRemaining(view);
 
@@ -937,7 +1033,7 @@ export const FlyingStage: React.FC<{
     if (count === 0) return current.players.map((each) => String(each.seat));
     if (current.finish && count >= current.history.length) return (current.finish.ranks[0]?.seats ?? []).map(String);
     const entry = current.history[count - 1];
-    return entry ? entry.alive_before.filter((seat) => entry.results[seat] === 'pass') : [];
+    return entry ? survivorsOf(entry) : [];
   }, []);
 
   // 처음 들어왔을 때는 지금 상태 그대로, 새 라운드 기록이 생기면 그 라운드를 틀어 준다
@@ -946,6 +1042,7 @@ export const FlyingStage: React.FC<{
     if (shown === null) {
       setShown(view.history.length);
       settle(standing(view, view.history.length), 0.01);
+      setHp(Object.fromEntries(view.players.map((each) => [String(each.seat), each.hp])));
       if (view.finish) setEnding('closed');
       return;
     }
@@ -969,7 +1066,7 @@ export const FlyingStage: React.FC<{
         playing.current = false;
         setFlightEntry(null);
       });
-  }, [view, shown, play, settle, standing]);
+  }, [view, shown, play, settle, setHp, standing]);
 
   // 끝난 방: 고른 라운드를 메인 화면에서 처음부터 다시 틀어 준다
   useEffect(() => {
@@ -977,6 +1074,7 @@ export const FlyingStage: React.FC<{
     let active = true;
     playing.current = true;
     settle(review.alive_before, 0.01);
+    if (review.hp_before) setHp(review.hp_before);
     const timer = window.setTimeout(() => {
       if (!active) return;
       play(review, { returnToLine: false })
@@ -988,13 +1086,16 @@ export const FlyingStage: React.FC<{
       window.clearTimeout(timer);
       playing.current = false;
     };
-  }, [review, reviewRun, settle, play]);
+  }, [review, reviewRun, settle, setHp, play]);
 
   // 다시보기를 마치면 우승자가 선 모습으로
   const stopReview = useCallback(() => {
     setReview(null);
-    if (view) settle(standing(view, view.history.length), 0.6);
-  }, [view, settle, standing]);
+    if (view) {
+      settle(standing(view, view.history.length), 0.6);
+      setHp(Object.fromEntries(view.players.map((each) => [String(each.seat), each.hp])));
+    }
+  }, [view, settle, setHp, standing]);
 
   // 끝났다 → 검은 막에 '종료!!' → 시상대
   useEffect(() => {
@@ -1061,12 +1162,22 @@ export const FlyingStage: React.FC<{
         selectable={canPick}
         mine={review ?? flightEntry ? ((review ?? flightEntry)?.choices[String(view.me)] ?? null) : choosing ? myLane : (shownEntry?.choices[String(view.me)] ?? null)}
         showChosen={choosing}
+        durability={view.durability}
+        hp={player.hp}
+        wobble={player.wobble}
+        gains={player.gains}
+        ring={review ?? flightEntry ? (review ?? flightEntry)?.ring ?? null : choosing ? view.ring : (shownEntry?.ring ?? null)}
         moving={player.flying}
         returning={player.returning}
         scene={scene}
         onPick={pick}
       >
         <AnimatePresence>
+          {player.voided && (
+            <motion.p key='void' className='fl-void' initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ type: 'spring', stiffness: 180, damping: 14 }}>
+              <FormattedMessage id='flying.void' defaultMessage='Everyone would fall — this round is void!' />
+            </motion.p>
+          )}
           {choosing && (
             <motion.p
               key={view.round}

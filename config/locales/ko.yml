@@ -71,6 +71,7 @@ ko:
         title_for: '%{name}의 컨텐츠 기록'
         view_record: 컨텐츠 기록 보기
       rewards_table:
+        event_title: 이벤트별 보상
         hint: '컨텐츠가 끝났을 때 참가자에게 주는 돈과 아이템입니다. 돈은 결과(승리·무승부·패배)마다, 아이템은 이긴 사람에게 줍니다. 아이템의 확률을 비우면 반드시 줍니다.'
         items_win: 승리 아이템
         money_draw: 무승부 돈
@@ -78,6 +79,7 @@ ko:
         money_win: 승리 돈
         title: 컨텐츠별 보상
       points_table:
+        event_title: 이벤트별 점수
         content: 컨텐츠
         draw: 무승부
         hint_games: '지금은 판수제라서 컨텐츠에서 승리한 판 수로 소속 순위를 정하고, 아래 점수는 쓰지 않습니다. (점수 방식은 캐릭터 관리 > 소속 > 시즌)'
@@ -175,7 +177,30 @@ ko:
         list: 목록
         matches: 매치
         settings: 설정
+      event_tabs:
+        list: 목록
+        messages: 문구
+        records: 이벤트 내역
+        settings: 설정
+      event_records:
+        hint: '여럿이 하는 컨텐츠(이벤트)의 판 기록입니다. 완료된 판은 승리한 캐릭터가 강조됩니다.'
+        kind: 종류
+        none: 이벤트 내역이 없습니다.
+        players: 참여자
+        state: 상태
+        states:
+          cancelled: 취소
+          done: 완료
+          running: 진행
+          waiting: 대기
+        test: 테스트
+        win: 승리
       sections:
+        unlock: 이벤트 해금
+        event_commands: 이벤트 명령어
+        event_messages: 이벤트 문구
+        opening: 이벤트 오픈
+        limits: 제한
         lesson_commands: "명령어"
         lesson_rules: "기본룰 설정"
         grades: "소속 점수 및 보상"

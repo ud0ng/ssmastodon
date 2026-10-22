@@ -115,6 +115,7 @@ namespace :api, format: false do
           post :start_now
           post :accept
           post :decline
+          post :invite_more
           post :leave
           post :cancel_start
           post :chat

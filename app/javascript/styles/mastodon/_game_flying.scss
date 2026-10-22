@@ -330,6 +330,7 @@ $fl-ink: #07060b;
   to { transform: translateY(140vh); }
 }
 
+// 경로: 하늘에 빛나는 선으로 펼쳐진다 (위의 번호표에서 출발선 쪽으로 빛줄기가 내려온다)
 .fl-lane {
   position: absolute;
   top: 0;
@@ -339,14 +340,16 @@ $fl-ink: #07060b;
   gap: 2px;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgb(232 199 106 / 55%);
-  border-radius: 18px;
-  background: radial-gradient(ellipse 80% 70% at 50% 0%, rgb(232 199 106 / 26%), rgb(18 14 44 / 62%) 72%);
-  box-shadow: inset 0 0 18px rgb(232 199 106 / 14%), 0 0 16px rgb(232 199 106 / 18%);
+  border: 0;
+  border-radius: 14px;
+  background: radial-gradient(ellipse 80% 70% at 50% 0%, rgb(232 199 106 / 22%), rgb(18 14 44 / 34%) 78%);
+  box-shadow: 0 0 18px rgb(232 199 106 / 14%);
   color: #f6e9bd;
   text-shadow: 0 1px 6px rgb(0 0 0 / 60%);
   backdrop-filter: blur(2px);
-  transition: background 150ms, border-color 150ms, transform 150ms;
+  transition: background 150ms, transform 150ms, box-shadow 150ms;
+  animation: fl-lane-in 0.7s ease-out both;
+  animation-delay: calc(var(--fl-i, 1) * 90ms);
 
   // 길 포인트: 가운데 위쪽에 떠 있는 빛 구슬
   &::before {
@@ -361,6 +364,24 @@ $fl-ink: #07060b;
     box-shadow: 0 0 14px 4px rgb(246 217 120 / 70%);
     transform: translateX(-50%);
     animation: fl-orb 2.2s ease-in-out infinite;
+  }
+
+  // 아래로 길게 뻗은 빛줄기
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 3px;
+    height: 190%;
+    border-radius: 3px;
+    background: linear-gradient(180deg, rgb(246 217 120 / 85%), rgb(246 217 120 / 26%) 60%, transparent);
+    box-shadow: 0 0 10px 2px rgb(246 217 120 / 45%);
+    pointer-events: none;
+    transform: translateX(-50%);
+    transform-origin: top;
+    animation: fl-beam 0.9s ease-out both;
+    animation-delay: calc(var(--fl-i, 1) * 90ms + 200ms);
   }
 
   b {
@@ -380,22 +401,196 @@ $fl-ink: #07060b;
     cursor: pointer;
 
     &:hover {
-      border-color: $fl-gold;
-      background: rgb(60 44 100 / 62%);
+      background: rgb(60 44 100 / 55%);
       box-shadow: 0 0 22px rgb(232 199 106 / 35%);
       transform: translateY(-4px);
     }
   }
 
   &.is-mine {
-    border: 2px solid $fl-gold;
-    background: rgb(232 199 106 / 38%);
-    box-shadow: 0 0 24px rgb(232 199 106 / 70%);
+    background: rgb(232 199 106 / 34%);
+    box-shadow: 0 0 26px rgb(232 199 106 / 70%), inset 0 0 0 2px $fl-gold;
+
+    &::after {
+      width: 5px;
+      background: linear-gradient(180deg, #fff3b0, rgb(246 217 120 / 55%) 60%, transparent);
+    }
+  }
+
+  // 금빛 고리 (특수 경로): 혼자 통과하면 내구도 +1
+  &.is-ring {
+    background: radial-gradient(ellipse 80% 70% at 50% 0%, rgb(255 214 90 / 38%), rgb(60 38 8 / 46%) 78%);
+    box-shadow: 0 0 26px rgb(255 205 70 / 45%);
+
+    &::after {
+      background: linear-gradient(180deg, rgb(255 224 120), rgb(255 190 60 / 40%) 60%, transparent);
+      box-shadow: 0 0 14px 3px rgb(255 200 80 / 65%);
+    }
+  }
+
+  &__ring {
+    position: absolute;
+    top: calc(100% + 90%);
+    left: 50%;
+    width: 46px;
+    height: 56px;
+    border: 4px solid #ffd666;
+    border-radius: 50%;
+    box-shadow: 0 0 18px 4px rgb(255 205 70 / 70%), inset 0 0 12px rgb(255 205 70 / 55%);
+    pointer-events: none;
+    transform: translateX(-50%) perspective(90px) rotateX(58deg);
+    animation: fl-ring-glow 1.8s ease-in-out infinite;
+  }
+
+  &__tag {
+    position: absolute;
+    top: calc(100% + 170%);
+    left: 50%;
+    padding: 1px 9px;
+    border-radius: 999px;
+    background: rgb(255 214 102 / 92%);
+    color: $fl-ink;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 800;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translateX(-50%);
   }
 
   &:disabled {
     cursor: default;
   }
+}
+
+@keyframes fl-lane-in {
+  from { opacity: 0; transform: translateY(-18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fl-beam {
+  from { opacity: 0; transform: translateX(-50%) scaleY(0); }
+  to { opacity: 1; transform: translateX(-50%) scaleY(1); }
+}
+
+@keyframes fl-ring-glow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.45); }
+}
+
+// ── 빗자루(아바타 밑)와 내구도 배지(이름 밑) ──
+.fl-broom {
+  display: block;
+  margin: -12px auto -2px;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 3px 4px rgb(0 0 0 / 50%));
+  }
+
+  &__stick {
+    fill: #8a5a2b;
+  }
+
+  &__bristle {
+    fill: #d9a441;
+  }
+
+  &__line {
+    stroke: #8a5a2b;
+    stroke-width: 1.4;
+    fill: none;
+  }
+
+  &.is-low {
+    .fl-broom__bristle {
+      fill: #c46a3c;
+    }
+  }
+
+  &.is-broken {
+    opacity: 0.5;
+  }
+}
+
+.fl-hp {
+  position: relative;
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 1px 8px 1px 6px;
+  border-radius: 999px;
+  background: rgb(10 12 24 / 72%);
+  box-shadow: 0 0 0 1px rgb(246 233 189 / 45%);
+  color: #f6e9bd;
+  font-size: 11px;
+  line-height: 1.5;
+
+  svg {
+    width: 18px;
+    height: 4px;
+    fill: #d9a441;
+  }
+
+  b {
+    font-weight: 800;
+  }
+
+  &.is-low {
+    box-shadow: 0 0 0 1px #ff8a6b;
+    color: #ffb59f;
+
+    svg {
+      fill: #ff8a6b;
+    }
+  }
+
+  &.is-gain {
+    box-shadow: 0 0 0 1px #ffd666, 0 0 12px rgb(255 205 70 / 80%);
+  }
+
+  em {
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    color: #ffd666;
+    font-size: 13px;
+    font-style: normal;
+    font-weight: 800;
+    text-shadow: 0 0 8px rgb(255 205 70 / 90%);
+    translate: -50% 0;
+  }
+}
+
+// 부딪힐 때 터지는 깃털과 잔가지
+.fl-burst__bit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: 0.34em;
+  pointer-events: none;
+}
+
+// 모두 추락해 무효가 된 라운드
+.fl-void {
+  position: absolute;
+  top: 22%;
+  left: 50%;
+  z-index: 6;
+  margin: 0;
+  padding: 8px 22px;
+  border-radius: 999px;
+  background: rgb(10 12 24 / 78%);
+  box-shadow: 0 0 0 2px #ff8a6b, 0 0 24px rgb(255 138 107 / 55%);
+  color: #ffd2c4;
+  font-size: clamp(16px, 2.2vw, 24px);
+  font-weight: 800;
+  white-space: nowrap;
+  translate: -50% 0;
 }
 
 .fl-token {

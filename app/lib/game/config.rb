@@ -284,7 +284,7 @@ module Game
       ['cmd_stat_change', '[힘 %{cmd}/+3/캐릭터명] 스탯을 바꿉니다. (캐릭터 관리 > 스탯)'],
     ].freeze
 
-    SCHEMAS = { 'common' => COMMON, 'currency' => CURRENCY }.freeze
+    SCHEMAS = { 'common' => COMMON, 'currency' => CURRENCY, 'events' => Game::Events::Settings::FIELDS }.freeze
 
     # 관리 화면 묶음: [[묶음 이름, group 들], ...]. 키는 설정 키 또는 [설정 키, 화면]
     LAYOUT = {
@@ -299,6 +299,16 @@ module Game
         ['messages_invalid', %w(messages_invalid)],
         ['messages_score', %w(messages_score)],
         ['messages_gift', %w(messages_gift)],
+      ],
+      # 이벤트 설정 > 설정 / 문구
+      ['events', 'settings'] => [
+        ['unlock', %w(unlock)],
+        ['opening', %w(opening)],
+        ['limits', %w(limits)],
+      ],
+      ['events', 'messages'] => [
+        ['event_commands', %w(commands)],
+        ['event_messages', %w(messages)],
       ],
       ['common', 'season'] => [
         ['season', %w(season)],

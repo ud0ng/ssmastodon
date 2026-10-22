@@ -170,7 +170,7 @@ module Game
 
         # 이벤트는 한 번에 1개만 (진행 중인 다른 이벤트가 있으면 수락할 수 없다)
         other = open_player(actor, events: true)
-        if Game::Kinds.group_games.map(&:key).include?(session.kind) && other && other.game_session_id != session.id
+        if Game::Events::Settings.concurrent_limit? && Game::Kinds.group_games.map(&:key).include?(session.kind) && other && other.game_session_id != session.id
           reply(Game::Text.render(common['msg_busy'], player: actor))
           next
         end
@@ -238,7 +238,7 @@ module Game
     # 모집 중인 이벤트 중 이 참가 명령어에 맞는 것. 여럿이 열려 있으면 [참가/컨텐츠 키]로 고르거나 모집 툿에 답한 쪽, 아니면 가장 최근 것
     def pending_event(command = nil, kind_key = nil)
       events = GameSession.where(status: %w(pending lobby)).where("state->>'mode' = 'event'").order(id: :desc).to_a.select { |event| event.status == 'pending' || Array(event.state['invited']).any? }
-      events = events.select { |event| event.kind_class&.config&.dig('cmd_join') == command } if command
+      events = events.select { |event| Game::Events::Settings.cmd_join == command } if command
       events = events.select { |event| event.kind == kind_key } if kind_key.present? && events.any? { |event| event.kind == kind_key }
       replied = events.find { |event| [event.root_status_id, event.last_status_id].compact.include?(status.in_reply_to_id) }
       replied || events.first
@@ -248,7 +248,7 @@ module Game
     def join(event)
       return if event.nil? || event.players.exists?(account_id: actor.id)
       return if bot_account?(actor) # 상점 봇이 모집 툿의 [참가]를 따라 읽어도 참가자로 넣지 않는다
-      return reply(Game::Text.render(common['msg_busy'], player: actor)) if open_player(actor, events: true)
+      return reply(Game::Text.render(common['msg_busy'], player: actor)) if Game::Events::Settings.concurrent_limit? && open_player(actor, events: true)
 
       event.with_lock { event.kind_class.new(event).join!(actor, status) if %w(pending lobby).include?(event.status) }
     end

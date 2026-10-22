@@ -1,7 +1,7 @@
 -# 설정 탭 > 컨텐츠별 보상: 컨텐츠마다 승리·무승부·패배 돈, 승리 아이템 (예전에는 각 컨텐츠 화면의 '보상 설정')
 -# 점수 표처럼 한 표에 모으고, 아이템은 작은 카드(이미지만)로 칸 안에 넣는다
 -# local: kinds
-= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.rewards_table.title'), hint: game_t('admin.games.rewards_table.hint') } do
+= render layout: 'admin/ui/section', locals: { title: game_t(@key == 'events' ? 'admin.games.rewards_table.event_title' : 'admin.games.rewards_table.title'), hint: game_t('admin.games.rewards_table.hint') } do
   .bot-sheet-table.game-table.game-table--centered.game-reward-table
     %table.table
       %thead

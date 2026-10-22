@@ -21,11 +21,13 @@ module Game
       def open!(kind, account, mode: 'recruit', players: [])
         mode = MODES.include?(mode.to_s) ? mode.to_s : 'recruit'
         raise Error, '시스템 계정이 설정되지 않았습니다.' if Game::System.account.nil?
+        raise Error, '이벤트를 열 수 있는 사람이 아닙니다.' unless Game::Events::Settings.open_modes(account.user).include?(mode)
         raise Error, "#{kind.display_name}#{Game::Text.particle(kind.display_name.to_s.strip[-1], '은는')} 이벤트로 열 수 없습니다." unless kinds.include?(kind)
         raise Error, "#{kind.display_name}#{Game::Text.particle(kind.display_name.to_s.strip[-1], '은는')} 꺼져 있습니다. 먼저 켜 주세요." unless kind.enabled?
+        raise Error, '이미 다른 이벤트에 참가 중입니다.' if !Game::Staff.web?(account.user) && Game::Lobby.busy_elsewhere?(nil, account)
         return open_invited!(kind, account, players, test: mode == 'test') unless mode == 'recruit'
 
-        session = GameSession.create!(kind: kind.key, status: 'pending', visibility: 'private', state: { 'mode' => 'event', 'opened_by' => account.id })
+        session = GameSession.create!(kind: kind.key, status: 'pending', visibility: 'private', state: { 'mode' => 'event', 'opened_by' => account.id, 'staff_open' => Game::Staff.web?(account.user) })
         kind.new(session).open!
         session.update!(root_status_id: session.last_status_id) if session.root_status_id.nil?
         session
@@ -42,7 +44,7 @@ module Game
         raise Error, "참가자를 #{min}명 이상 골라 주세요." if players.size < min
         raise Error, "참가자는 #{max}명까지 고를 수 있습니다." if players.size > max
 
-        session = GameSession.create!(kind: kind.key, status: 'pending', visibility: test ? 'direct' : 'private', state: { 'mode' => 'event', 'opened_by' => account.id })
+        session = GameSession.create!(kind: kind.key, status: 'pending', visibility: test ? 'direct' : 'private', state: { 'mode' => 'event', 'opened_by' => account.id, 'staff_open' => Game::Staff.web?(account.user) })
         kind.new(session).open_invited!(players, test: test)
         session
       end

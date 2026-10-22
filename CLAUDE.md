@@ -61,6 +61,10 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
 - 소속: `GameHouse.category` house/faction. 공통 설정 `group_mode` 로 점수를 모을 쪽을 고른다 (`GameHouse.active`, `GameCharacter#group`). {소속 이름}(house_term)은 그 이름.
 - 컨텐츠 보상: `Game::Rewards` (돈·아이템, game_rewards). 시스템 툿은 판 잠금 트랜잭션 안에서 올라가므로 `Game::Poster` 가 커밋 뒤 DistributionWorker 를 다시 넣는다 (안 그러면 멘션 알림이 빠짐).
 - 웹 전용 컨텐츠(미로·도둑 지도·비밀의 방, `Game::Web::*`): 운영진이 이벤트로 연다(웹 [이벤트 열기] 모달·관리 화면: 모집 / 고르기 / 테스트 플레이). 모집·참가 수락 DM 만 툿(앱에도 보임), 시작한 뒤의 진행·결과·비밀 안내는 툿 없이 `GameMessage`(웹 전용 채널, `GameSession#web_channel?`) 로만 가고, 행동은 웹에서 `v1/system/commands` 로 보내면 `Game::WebCommand` 가 툿 없이 처리한다. 테스트 플레이는 목록에 안 보이고(운영진은 자물쇠로 관전) 점수·보상·전적에 안 들어간다 (`GameSession.real`). 서버 이벤트라는 구분은 없앴다.
+- 이벤트 설정 (관리 > 시스템 > 이벤트 설정): 탭 설정 / 문구 / 목록 / 이벤트 내역. 공통 값은 `Game::Events::Settings`(설정 키 'events': 해금·열 수 있는 사람과 유형·모집 시간·동시 진행 제한·하루 제한·하루 보상 횟수·참가 명령어·공통 문구),
+  이벤트별 인원은 각 컨텐츠 설정, 점수·보상은 설정 탭의 표. 이벤트 알림은 툿 대신 웹 알림 배지·소리(`Game::EventNotice.alert!` → 스트리밍 `game.alert`): 모집은 모두에게, 초대는 초대받은 사람에게.
+  툿: 운영진이 연 모집의 팔로워 공개 모집 툿 하나뿐 (문구도 이것만 설정). 시작·종료·참가 확인·정원 초과·하루 제한·인원 부족 취소는 멘션 없이 웹으로 안내(참가 막힘은 모달, 인원 부족 취소는 방에 있던 사람에게 모달 → 확인하면 이벤트 메인). 캐릭터가 연 모집과 초대(초대하기·테스트 플레이)는 툿·DM 없음. 초대한 대기방에는 운영진·연 사람이 캐릭터를 더 초대할 수 있다 (`invite_more`).
+- 비행 대결 규칙: 내구도(기본 2, 충돌·미선택 -1, 0이면 추락), 매 라운드 금빛 고리 경로(혼자 통과하면 +1, 처음 값까지), 전원 추락이면 라운드 무효, 생존자 2명 이하면 종료(남은 사람은 내구도 순 공동 순위, 나머지는 추락 라운드 역순).
 - PC 웹 카드: 시스템 툿마다 `GameEvent`(payload = `Game::Card.build`) → `REST::StatusSerializer#game_card` → `components/content_card.tsx`. 새 컨텐츠는 Kinds 에 `card_data`·`card_actions` 를 만든다 (공개된 것만, 정답·비밀 선택은 끝난 뒤).
 - 미리보기에서 시험: `bin/rails runner /dev/stdin "owner|@system @luna [젤리빈]" "luna|@system [수락]|reply" < dev/preview/play.rb` (sidekiq 이 처리, `|dm` 은 DM). Engine 을 직접 부르면 sidekiq 과 두 번 처리된다.
 - 컨텐츠 전체 점검: `docker compose -f dev/preview/docker-compose.yml exec -T web bin/rails runner /dev/stdin < dev/preview/smoke.rb` (진짜 툿으로 컨텐츠마다 신청→끝 또는 첫 턴, 결과·보상·알림 확인, 설정은 끝나면 되돌림).

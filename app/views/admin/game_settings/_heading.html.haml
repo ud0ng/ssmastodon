@@ -1,4 +1,4 @@
--# 컨텐츠 설정 제목 + 탭 (설정 · 명령어 · 도움말 · 컨텐츠). 상점은 상점 설정 메뉴로 옮겼다. 컨텐츠별 화면은 컨텐츠 탭에서 들어간다.
+-# 컨텐츠 설정 제목 + 탭 (설정 · 명령어 · 도움말 · 컨텐츠). 이벤트 설정(event: true)은 설정 · 문구 · 목록 · 이벤트 내역. 상점은 상점 설정 메뉴로 옮겼다. 컨텐츠별 화면은 컨텐츠 탭에서 들어간다.
 -# save_form: 저장 버튼이 제출할 폼 id
 - content_keys = Game::Kinds.duels.map(&:key)
 .content__heading__row
@@ -8,7 +8,16 @@
     .content__heading__actions
       = button_tag t('generic.save_changes'), class: 'button', form: save_form
 
-- unless local_assigns[:event]
+- if local_assigns[:event]
+  .content__heading__tabs
+    = render_navigation renderer: :links do |primary|
+      :ruby
+        group_keys = Game::Kinds.group_games.map(&:key).join('|')
+        primary.item :event_settings, safe_join([material_symbol('tune'), game_t('admin.games.event_tabs.settings')]), admin_game_setting_path('events'), highlights_on: %r{/admin/games/eventsz}
+        primary.item :event_messages, safe_join([material_symbol('chat_bubble'), game_t('admin.games.event_tabs.messages')]), admin_game_setting_path('event_messages'), highlights_on: %r{/admin/games/event_messages}
+        primary.item :event_list, safe_join([material_symbol('list'), game_t('admin.games.event_tabs.list')]), admin_game_events_settings_path, highlights_on: %r{/admin/eventsz|/admin/games/(#{group_keys})z}
+        primary.item :event_records, safe_join([material_symbol('history'), game_t('admin.games.event_tabs.records')]), admin_game_event_records_path, highlights_on: %r{/admin/events/records}
+- else
   .content__heading__tabs
     = render_navigation renderer: :links do |primary|
       :ruby

@@ -9,11 +9,14 @@ import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
 import { createPortal } from 'react-dom';
 
+import { openModal } from 'mastodon/actions/modal';
 import { apiRequestPost } from 'mastodon/api';
 
 import { Countdown } from 'mastodon/components/countdown';
+import { useAppDispatch } from 'mastodon/store';
 
 import { TokenAvatar, TokenName } from './game_token';
+import { apiErrorMessage } from './use_wallet';
 
 export interface LobbyPlayer {
   account_id: string;
@@ -38,6 +41,8 @@ export interface LobbyData {
   // 아직 참가하지 않은 사람은 [참여하기], 참가한 사람은 [참여 취소] (시작 전에만)
   can_join?: boolean;
   can_leave?: boolean;
+  // 초대한 이벤트: 운영진·연 사람은 캐릭터를 더 초대할 수 있다
+  can_invite?: boolean;
   // 초대한 이벤트: 초대받은 사람은 대기방에서 [수락][거절]
   invite?: boolean;
   can_respond?: boolean;
@@ -60,6 +65,9 @@ export interface LobbyMessage {
 const messages = defineMessages({
   placeholder: { id: 'lobby.placeholder', defaultMessage: 'Say something to the room' },
   send: { id: 'lobby.send', defaultMessage: 'Send' },
+  joinFailed: { id: 'lobby.join_failed', defaultMessage: 'Could not join' },
+  ok: { id: 'lobby.ok', defaultMessage: 'OK' },
+  noRewardTitle: { id: 'lobby.no_reward_title', defaultMessage: 'No points or rewards today' },
 });
 
 const STAGE_BODY_CLASS = 'layout-game-stage';
@@ -129,6 +137,7 @@ export const LobbyStage: React.FC<{
   onChanged: () => void;
 }> = ({ sessionId, name, lobby, messages: log, onChanged }) => {
   const intl = useIntl();
+  const dispatch = useAppDispatch();
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const logRef = useRef<HTMLUListElement>(null);
@@ -168,19 +177,28 @@ export const LobbyStage: React.FC<{
   const post = useCallback(
     (action: string, params: Record<string, unknown> = {}) => {
       setBusy(true);
-      apiRequestPost(`v1/system/sessions/${sessionId}/${action}`, params)
-        .then(() => {
+      apiRequestPost<{ notice?: string | null }>(`v1/system/sessions/${sessionId}/${action}`, params)
+        .then((response) => {
           onChanged();
+          // 참가는 됐지만 오늘 받을 수 있는 보상 횟수를 채워서 점수·보상이 없다는 안내
+          if (response?.notice && ['join', 'accept'].includes(action)) {
+            dispatch(openModal({ modalType: 'CONFIRM', modalProps: { title: intl.formatMessage(messages.noRewardTitle), message: response.notice, confirm: intl.formatMessage(messages.ok), hideCancel: true, onConfirm: () => undefined } }));
+          }
           return true;
         })
-        .catch(() => {
+        .catch((reason: unknown) => {
           onChanged();
+          // 참가·수락이 막히면 (정원 초과·하루 제한 등) 서버가 보낸 이유를 모달로 알린다
+          const message = apiErrorMessage(reason);
+          if (message && ['join', 'accept'].includes(action)) {
+            dispatch(openModal({ modalType: 'CONFIRM', modalProps: { title: intl.formatMessage(messages.joinFailed), message, confirm: intl.formatMessage(messages.ok), hideCancel: true, onConfirm: () => undefined } }));
+          }
         })
         .finally(() => {
           setBusy(false);
         });
     },
-    [sessionId, onChanged],
+    [sessionId, onChanged, dispatch, intl],
   );
 
   const toggle = useCallback(
@@ -234,7 +252,7 @@ export const LobbyStage: React.FC<{
         ))}
       </ul>
 
-      {(lobby.can_join || lobby.can_leave || lobby.can_respond || ((lobby.recruiting || lobby.invite) && lobby.can_manage && !counting)) && (
+      {(lobby.can_join || lobby.can_leave || lobby.can_respond || (lobby.can_invite && !counting) || ((lobby.recruiting || lobby.invite) && lobby.can_manage && !counting)) && (
         <div className='game-stage__membership'>
           {lobby.can_respond && (
             <>
@@ -249,6 +267,16 @@ export const LobbyStage: React.FC<{
           {(lobby.recruiting || lobby.invite) && lobby.can_manage && !counting && (
             <button type='button' className='game-stage__join' disabled={busy} onClick={() => { post('start_now'); }}>
               <FormattedMessage id='lobby.start_now' defaultMessage='Start now' />
+            </button>
+          )}
+          {lobby.can_invite && !counting && (
+            <button
+              type='button'
+              className='game-stage__join'
+              disabled={busy}
+              onClick={() => { dispatch(openModal({ modalType: 'EVENT_INVITE', modalProps: { sessionId, exclude: lobby.players.map((player) => player.acct), onInvited: onChanged } })); }}
+            >
+              <FormattedMessage id='lobby.invite_more' defaultMessage='Add characters' />
             </button>
           )}
           {lobby.can_join && (
@@ -300,8 +328,8 @@ export const LobbyStage: React.FC<{
           <p className='game-stage__overlay-text'>
             <FormattedMessage id='lobby.starting' defaultMessage='Everyone is ready. The game starts soon!' />
           </p>
-          <strong className='game-stage__count'>{remaining}</strong>
-          {(participant || lobby.can_manage) && (
+          <strong className='game-stage__count'>{(remaining ?? 0) > 0 ? remaining : '…'}</strong>
+          {(participant || lobby.can_manage) && (remaining ?? 0) > 0 && (
             <button type='button' className='game-stage__cancel' disabled={busy} onClick={() => { post('cancel_start'); }}>
               <FormattedMessage id='lobby.cancel' defaultMessage='Cancel' />
             </button>

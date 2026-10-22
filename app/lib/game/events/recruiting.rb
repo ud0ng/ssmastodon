@@ -14,32 +14,11 @@ module Game
     module Recruiting
       F = Game::Config::Field
 
-      MESSAGES = {
-        recruit: "%{game}{이가} 열렸습니다.\n%{minutes}분 동안 [%{join}] 명령어로 참가해 주세요. (%{min}~%{max}명)",
-        joined: '%{player}{이가} 참가했습니다. (지금 %{count}명)',
-        full: '%{game}은 %{max}명까지 참가할 수 있어 더 참가할 수 없습니다.',
-        cancel: '참가자가 %{min}명이 되지 않아 %{game}{이가} 닫혔습니다.',
-        invite: "%{game}의 참가자로 뽑혔습니다!\n%{minutes}분 안에 [%{join}] 로 답해 참가해 주세요. 시작한 뒤의 진행과 결과는 웹 컨텐츠 화면에서만 볼 수 있습니다.",
-        invite_test: "[테스트 플레이] %{game}의 참가자로 뽑혔습니다. 비공개로 진행되며 보상이 존재하지 않습니다.\n%{minutes}분 안에 [%{join}] 로 답해 참가해 주세요. 진행은 웹 컨텐츠 화면에서만 볼 수 있습니다.",
-        not_invited: '이번 %{game}은 고른 참가자만 참가할 수 있습니다.',
-      }.freeze
-
-      # 이벤트로 열 때의 설정: 모집 시간·인원·참가 명령어·문구 (group 'event')
+      # 이벤트로 열 때의 인원 설정 (컨텐츠마다 다르다). 모집 시간·참가 명령어·문구는 이벤트 설정의 공통 값 (Game::Events::Settings)
       def self.fields(min:, max:)
         [
-          F.new(key: 'event_join_minutes', type: :integer, default: 30, group: 'event', label: '이벤트 참가 모집 (분)', hint: '운영진이 이벤트를 열면 이 시간 동안 모두의 컨텐츠 메뉴에 알림 배지가 뜹니다'),
           F.new(key: 'event_min_players', type: :integer, default: min, group: 'event', label: '이벤트 최소 인원', hint: '모집이 끝났을 때 이보다 적으면 닫힙니다'),
           F.new(key: 'event_max_players', type: :integer, default: max, group: 'event', label: '이벤트 최대 인원'),
-          F.new(key: 'cmd_join', type: :string, default: '참가', group: 'event', label: '이벤트 참가 명령어', hint: '[참가] 로 답하거나 컨텐츠 메뉴에서 참가 버튼'),
-          F.new(key: 'msg_recruit', type: :text, group: 'messages', label: '이벤트 모집', default: MESSAGES[:recruit]),
-          F.new(key: 'msg_joined', type: :text, group: 'messages', label: '이벤트 참가 확인', default: MESSAGES[:joined]),
-          F.new(key: 'msg_full', type: :text, group: 'messages', label: '이벤트 정원 초과', default: MESSAGES[:full]),
-          F.new(key: 'msg_cancel', type: :text, group: 'messages', label: '이벤트 인원 부족', default: MESSAGES[:cancel]),
-          F.new(key: 'msg_invite', type: :text, group: 'messages', label: '이벤트 참가자 초대하기: 참가 수락 DM', default: MESSAGES[:invite]),
-          F.new(key: 'msg_invite_test', type: :text, group: 'messages', label: '이벤트 테스트 플레이: 참가 수락 DM', default: MESSAGES[:invite_test]),
-          F.new(key: 'msg_event_started', type: :text, group: 'messages', label: '이벤트 시작 알림 (앱용 툿·초대한 이벤트는 DM)', default: Game::EventNotice::DEFAULTS[:started]),
-          F.new(key: 'msg_event_finished', type: :text, group: 'messages', label: '이벤트 종료 알림 (앱용 툿·초대한 이벤트는 DM)', default: Game::EventNotice::DEFAULTS[:finished]),
-          F.new(key: 'msg_not_invited', type: :text, group: 'messages', label: '이벤트 고른 참가자가 아님', default: MESSAGES[:not_invited]),
         ]
       end
 
@@ -62,23 +41,28 @@ module Game
         [config['event_max_players'].to_i, event_min_players].max
       end
 
-      # 모집 시작: 모두에게 모집 툿 (Game::Poster 가 전체를 멘션한다) + 시간 제한
+      # 모집 시작: 운영진이 열면 모두에게 팔로워 공개 모집 툿 (Game::Poster 가 전체를 멘션한다), 캐릭터가 열면 툿 없음.
+      # 어느 쪽이든 모두의 이벤트 메뉴에 알림 배지·소리 (Game::EventNotice.alert!) + 시간 제한
       def open!
         state.merge!('mode' => 'event', 'phase' => 'recruit')
         session.save!
-        post(render(config['msg_recruit'], minutes: config['event_join_minutes'], join: config['cmd_join'], min: event_min_players, max: event_max_players))
-        Game::Engine.set_deadline!(session, config['event_join_minutes'])
+        post(render(event_settings['msg_recruit'], minutes: Game::Events::Settings.join_minutes, join: Game::Events::Settings.cmd_join, min: event_min_players, max: event_max_players)) if state['staff_open']
+        Game::Engine.set_deadline!(session, Game::Events::Settings.join_minutes)
+        Game::EventNotice.alert!(GameCharacter.eligible_accounts.where.not(id: state['opened_by']).pluck(:id).uniq)
       end
 
-      # 운영진이 참가자를 초대해 열었을 때(초대하기·테스트 플레이): 모집 없이 바로 대기방이 열린다.
-      # 초대받은 캐릭터는 대기방에 '대기중...'으로 보이고, 들어오면 [수락][거절]을 누른다 (수락하면 참가자). DM 툿으로도 알린다 (앱에도 보인다).
+      # 초대해 열었을 때(초대하기·테스트 플레이): 모집 없이 바로 대기방이 열린다. 툿·DM 은 보내지 않고, 초대받은 사람의 이벤트 메뉴에만 알림 배지·소리가 뜬다.
+      # 초대받은 캐릭터는 대기방에 '대기중...'으로 보이고, 들어오면 [수락][거절]을 누른다 (수락하면 참가자).
       # 초대받지 않은 사람은 구경만 한다. 초대받은 모두가 수락·준비하면 카운트다운 뒤 시작한다.
       def open_invited!(accounts, test: false)
         state.merge!('mode' => 'event', 'phase' => 'invite', 'invited' => accounts.map(&:id), 'test' => test)
         session.save!
-        text = render(config[test ? 'msg_invite_test' : 'msg_invite'], minutes: config['event_join_minutes'], join: config['cmd_join'])
-        accounts.each { |account| Game::Poster.post(text, mentions: [account], thread: nil, visibility: 'direct') }
         Game::Lobby.enter!(session)
+        Game::EventNotice.alert!(accounts.map(&:id) - [state['opened_by']])
+      end
+
+      def event_settings
+        Game::Events::Settings.config
       end
 
       # 고른 참가자 번호 (모집 이벤트면 비어 있다)
@@ -86,29 +70,26 @@ module Game
         Array(state['invited'])
       end
 
-      # [참가]
-      def join!(account, status)
+      # [참가] 멘션: 조용히 참가만 시킨다 (정원 초과·하루 제한·고른 참가자가 아님이면 아무 답도 하지 않는다. 웹에서는 모달로 안내한다)
+      def join!(account, _status)
         return if players.any? { |player| player.account_id == account.id }
 
         # 초대한 이벤트의 대기방: [참가] 멘션도 웹 [수락]과 같다
-        if session.lobby?
-          result = Game::Lobby.accept_invite!(session, account)
-          return reply_to(status, result == :ok ? render(config['msg_joined'], player: session.player_for(account), count: session.players.size) : render(config['msg_not_invited']))
-        end
-        return reply_to(status, render(config['msg_not_invited'])) if invited.any? && invited.exclude?(account.id)
-        return reply_to(status, render(config['msg_full'], max: event_max_players)) if players.size >= event_max_players
+        return Game::Lobby.accept_invite!(session, account) if session.lobby?
+        return if invited.any? && invited.exclude?(account.id)
+        return if players.size >= event_max_players || Game::Lobby.over_daily_limit?(account)
 
-        player = session.players.create!(account: account, seat: (players.map(&:seat).max || -1) + 1, state: { 'accepted' => true })
+        session.players.create!(account: account, seat: (players.map(&:seat).max || -1) + 1, state: { 'accepted' => true })
         session.players.reset
-        reply_to(status, render(config['msg_joined'], player: player, count: session.players.size))
         recruitment_over! if invited.any? && !session.lobby? && session.players.size >= invited.size
       end
 
       # 모집 시간이 끝났을 때 (Game::TimeoutWorker, 운영진 [단계 넘기기])
       def recruitment_over!
         if players.size < event_min_players
-          session.update!(status: 'cancelled', finished_at: Time.now.utc, deadline_at: nil)
-          post_toot(render(config['msg_cancel'], min: event_min_players))
+          # 인원 부족: 멘션 없이 닫고, 방에 있던 사람에게는 웹에서 모달로 알린다
+          state['cancel_reason'] = "참가자가 #{event_min_players}명이 되지 않아 #{self.class.display_name}#{Game::Text.particle(self.class.display_name.to_s.strip[-1], '이가')} 취소되었습니다."
+          session.update!(status: 'cancelled', finished_at: Time.now.utc, deadline_at: nil, state: state)
           return
         end
 
@@ -118,12 +99,6 @@ module Game
 
       # 시작 전에 역할을 섞는다. 개인전(미로·비행)은 할 일이 없다.
       def prepare_event_players!; end
-
-      protected
-
-      def reply_to(status, text)
-        Game::Poster.post(text, mentions: [status.account], thread: status, visibility: status.direct_visibility? ? 'direct' : session.visibility)
-      end
     end
   end
 end

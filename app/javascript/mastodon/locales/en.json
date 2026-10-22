@@ -1413,5 +1413,18 @@
   "map.wait_turn": "Waiting for: {names}",
   "item.use_self": "Use it on myself",
   "item.use_on_house": "Pick the house.",
-  "item.rumor_placeholder": "Rumor everyone will hear"
+  "item.rumor_placeholder": "Rumor everyone will hear",
+  "event_invite.title": "Invite more characters",
+  "event_invite.hint": "Pick the characters to invite to this waiting room. Only they are notified.",
+  "event_invite.count": "{count} picked",
+  "event_invite.send": "Invite",
+  "lobby.invite_more": "Add characters",
+  "system.game.join_event_plain": "Join the event",
+  "flying.ring": "Golden ring +1",
+  "flying.void": "Everyone would fall — this round is void!",
+  "lobby.join_failed": "Could not join",
+  "lobby.ok": "OK",
+  "system.session.cancelled_title": "The event was cancelled",
+  "system.session.ok": "OK",
+  "lobby.no_reward_title": "No points or rewards today"
 }

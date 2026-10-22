@@ -26,10 +26,11 @@ class Api::V1::System::GamesController < Api::BaseController
       # 여럿이 하는 컨텐츠는 운영진이 연다: event 면 [이벤트 열기] (운영진) / 모집 알림을 기다리기 (일반). 이벤트로 열 수 없는 여럿이 컨텐츠(퀴디치)는 운영진만 시작
       event: event_kind?,
       can_open: can_open?,
+      open_modes: Game::Events::Settings.open_modes(current_user),
       web_open: @kind.event_capable?,
       event_min_players: @kind.config['event_min_players'],
       event_max_players: @kind.config['event_max_players'],
-      event_join_minutes: @kind.config['event_join_minutes'],
+      event_join_minutes: Game::Events::Settings.join_minutes,
       staff: current_user.can?(:manage_settings),
       # 하루 신청 횟수를 이미 넘었으면 [시작하기]를 누를 때 바로 보여 주는 안내 (같은 상대 제한은 상대를 고른 뒤 신청할 때)
       daily_limit_message: Game::DailyLimits.check(current_account, [], kind: @kind),
@@ -46,11 +47,13 @@ class Api::V1::System::GamesController < Api::BaseController
       roles: guide[:roles],
       items: guide[:items],
       steps: guide[:steps],
+      durability: (@kind.config['durability'].to_i.clamp(1, 9) if @kind.key == 'flying'),
       rules: rules,
       currency: common['currency_name'],
       record: record,
       my_session_id: my_session&.id&.to_s,
       recruiting: recruiting,
+      join_target: join_target,
       busy: busy(common),
       active: visible_sessions.where(status: GameSession::OPEN_STATUSES).order(updated_at: :desc).limit(LIST_LIMIT).map { |session| session_json(session) },
       recent: visible_sessions.where(status: 'finished').order(finished_at: :desc).limit(LIST_LIMIT).map { |session| session_json(session) },
@@ -64,7 +67,7 @@ class Api::V1::System::GamesController < Api::BaseController
     return render json: { error: '이벤트를 열 수 있는 사람이 아닙니다.' }, status: 403 unless can_open?
 
     mode = params[:mode].presence || 'recruit'
-    return render json: { error: '운영진만 할 수 있습니다.' }, status: 403 if mode != 'recruit' && !staff?
+    return render json: { error: '이 유형으로는 열 수 없습니다.' }, status: 403 unless Game::Events::Settings.open_modes(current_user).include?(mode)
 
     Game::Events::Opening.open!(@kind, current_account, mode: mode, players: picked_accounts(mode))
     render json: { ok: true }
@@ -93,15 +96,15 @@ class Api::V1::System::GamesController < Api::BaseController
     current_user.can?(:manage_settings)
   end
 
+  # 이벤트를 열 수 있는 사람: 운영진, 또는 이벤트 설정에서 '모두'로 한 경우 (열 수 있는 유형은 open_modes)
   def can_open?
-    return false unless event_kind?
-
-    staff?
+    event_kind? && Game::Events::Settings.open_modes(current_user).any?
   end
 
   def set_kind
     @kind = Game::Kinds.registry[params[:id]]
     not_found if @kind.nil?
+    require_events_open!(@kind)
   end
 
   # 점수·보상 한눈에
@@ -131,6 +134,19 @@ class Api::V1::System::GamesController < Api::BaseController
     { session_id: session.id.to_s, ends_at: session.deadline_at&.iso8601, count: session.players.size }
   end
 
+  # [이벤트 참가하기]가 데려갈 곳: 내가 초대받았거나 참여 중인 방이 하나면 그 방, 여럿이면 진행중 탭('tab').
+  # 없으면 모집 중인 방(초대받지 않은 사람): 하나면 그 방, 여럿이면 진행중 탭. 아무것도 없으면 nil
+  def join_target
+    return unless @kind.event_capable?
+
+    open = GameSession.current_kinds.where(kind: @kind.key, status: %w(pending lobby active)).where("state->>'mode' = 'event'").order(id: :desc).to_a
+    mine = open.select { |each| waiting_for_me?(each) || each.players.any? { |player| player.account_id == current_account.id } }
+    rooms = mine.presence || open.select { |each| each.status == 'pending' && Array(each.state['invited']).empty? }
+    return if rooms.empty?
+
+    rooms.one? ? { session_id: rooms.first.id.to_s } : { tab: 'active' }
+  end
+
   def my_session
     GameSession.current_kinds.joins(:players).where(kind: @kind.key, status: GameSession::OPEN_STATUSES, game_players: { account_id: current_account.id })
                .order(updated_at: :desc).first
@@ -139,6 +155,7 @@ class Api::V1::System::GamesController < Api::BaseController
   # 동시 진행을 막았는데 다른 컨텐츠를 하고 있으면 [시작하기] 대신 바로 안내 (문구는 명령어 탭 '이미 진행 중 (웹 시작하기)')
   def busy(common)
     event = @kind.max_opponents > 1
+    return if event && !Game::Events::Settings.concurrent_limit?
     return unless event || common['one_game_per_person'] # 이벤트는 설정과 상관없이 이벤트끼리 1개까지, 컨텐츠는 컨텐츠끼리
 
     keys = Game::Kinds.group_games.map(&:key)

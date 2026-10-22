@@ -19,19 +19,24 @@ module Admin
 
     def decide
       player = @session.players.find_by(id: params[:player_id])
-      return redirect_to(admin_game_settings_path, alert: t('admin.games.running.no_player')) if player.nil?
+      return redirect_to(back_path, alert: t('admin.games.running.no_player')) if player.nil?
 
       run { Game::SessionControl.decide!(@session, player) }
     end
 
     private
 
+    # 판을 다룬 뒤에는 그 판이 있던 목록으로: 이벤트(여럿이 하는 컨텐츠)는 이벤트 설정 > 목록, 그 밖에는 컨텐츠 설정 > 목록
+    def back_path
+      Game::Kinds.group_games.map(&:key).include?(@session.kind) ? admin_game_events_settings_path : admin_game_settings_path
+    end
+
     def run
       yield
-      redirect_to admin_game_settings_path, notice: t('admin.games.running.done')
+      redirect_to back_path, notice: t('admin.games.running.done')
     rescue StandardError => e
       Rails.logger.warn { "Admin::GameSessionsController: #{e.class} #{e.message}" }
-      redirect_to admin_game_settings_path, alert: t('admin.games.running.failed', message: e.message)
+      redirect_to back_path, alert: t('admin.games.running.failed', message: e.message)
     end
 
     def set_session

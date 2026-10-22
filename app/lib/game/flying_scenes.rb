@@ -19,13 +19,16 @@ module Game
         results = entry['results'] || {}
         choices = entry['choices'] || {}
         round = entry['round'].to_i
-        crashed = entry['alive_before'].to_a.select { |seat| results[seat] == 'crash' }.group_by { |seat| choices[seat] }
+        next if entry['void']
+
+        fell = entry['fell'] || entry['alive_before'].to_a.reject { |seat| results[seat] == 'pass' } # 내구도가 없던 옛 기록은 부딪히면 추락
+        crashed = entry['alive_before'].to_a.select { |seat| results[seat] == 'crash' }.group_by { |seat| choices[seat] }.select { |_, seats| (seats & fell).any? }
         empty = (1..entry['lanes'].to_i).count { |lane| choices.values.exclude?(lane) }
 
         crashed.each do |lane, seats|
           list = people(seats, names)
           if seats.size >= 3
-            scenes << scene('pileup', round, lane, seats, '단체 추락 사고', "#{list}#{ga(list)} 같은 길로 몰려 한꺼번에 추락했습니다!", 100 + (20 * seats.size))
+            scenes << scene('pileup', round, lane, seats, '단체 추락 사고', "#{list}#{ga(list)} 같은 길로 몰려 크게 부딪혀 추락했습니다!", 100 + (20 * seats.size))
           elsif empty.positive?
             scenes << scene('empty_lane', round, lane, seats, '빈 길이 있었는데!', "텅 빈 길이 #{empty}개나 있었는데 #{list}#{ga(list)} 하필 같은 길로 날다 부딪혔습니다.", 50 + (15 * empty) + (10 * seats.size))
           end
@@ -33,7 +36,7 @@ module Game
           pairs[seats.sort] << round if seats.size == 2
         end
 
-        idle = entry['alive_before'].to_a.select { |seat| results[seat] == 'idle' }
+        idle = entry['alive_before'].to_a.select { |seat| results[seat] == 'idle' && fell.include?(seat) }
         next if idle.empty?
 
         list = people(idle, names)

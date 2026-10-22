@@ -13,6 +13,23 @@ module Admin
       @running = GameSession.open.current_kinds.where(kind: kinds.map(&:key)).includes(players: :account).order(updated_at: :desc).limit(50)
     end
 
+    # 이벤트 내역: 시간 · 종류 · 참여자(끝난 판은 승리자 강조) · 상태(대기·진행·완료). 상점 설정의 기록 화면과 같은 틀
+    PER_PAGE = 30
+    STATUSES = { 'waiting' => %w(pending lobby), 'running' => %w(active), 'done' => %w(finished cancelled) }.freeze
+
+    def records
+      authorize :settings, :show?
+
+      keys = Game::Kinds.group_games.map(&:key)
+      scope = GameSession.current_kinds.where(kind: keys).includes(players: :account).order(id: :desc)
+      scope = scope.where(kind: params[:kind]) if keys.include?(params[:kind])
+      scope = scope.where(status: STATUSES[params[:status]]) if STATUSES.key?(params[:status])
+      scope = scope.where(created_at: Time.zone.parse(params[:from].to_s).beginning_of_day..) if params[:from].present? && Time.zone.parse(params[:from].to_s)
+      scope = scope.where(created_at: ..Time.zone.parse(params[:to].to_s).end_of_day) if params[:to].present? && Time.zone.parse(params[:to].to_s)
+      @sessions = scope.page(params[:page]).per(PER_PAGE)
+      @characters_by_account = GameCharacter.where(account_id: @sessions.flat_map { |session| session.players.map(&:account_id) }).index_by(&:account_id)
+    end
+
     def create
       authorize :settings, :update?
 

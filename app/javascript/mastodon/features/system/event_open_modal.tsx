@@ -31,9 +31,11 @@ const EventOpenModal: React.FC<{
   minPlayers?: number;
   maxPlayers?: number;
   joinMinutes?: number;
+  // 열 수 있는 유형 (운영진은 모두, 그 밖에는 이벤트 설정에서 허용한 것만)
+  modes?: string[];
   onOpened: () => void;
   onClose: () => void;
-}> = ({ gameKey, name, minPlayers = 2, maxPlayers = 4, joinMinutes = 30, onOpened, onClose }) => {
+}> = ({ gameKey, name, minPlayers = 2, maxPlayers = 4, joinMinutes = 30, modes = ['recruit', 'pick', 'test'], onOpened, onClose }) => {
   const intl = useIntl();
   const [mode, setMode] = useState<Mode>('menu');
   const [members, setMembers] = useState<Member[]>([]);
@@ -97,18 +99,18 @@ const EventOpenModal: React.FC<{
 
         {mode === 'menu' ? (
           <div className='event-open-modal__choices'>
-            <button type='button' className='event-open-modal__choice' disabled={busy} onClick={() => { send('recruit'); }}>
+            {modes.includes('recruit') && <button type='button' className='event-open-modal__choice' disabled={busy} onClick={() => { send('recruit'); }}>
               <strong><FormattedMessage id='event_open.recruit' defaultMessage='Recruit players' /></strong>
               <span><FormattedMessage id='event_open.recruit_hint' defaultMessage='Recruits {min}–{max} players for {minutes} minutes.' values={{ minutes: joinMinutes, min: minPlayers, max: maxPlayers }} /></span>
-            </button>
-            <button type='button' className='event-open-modal__choice' disabled={busy} onClick={() => { setMode('pick'); }}>
+            </button>}
+            {modes.includes('pick') && <button type='button' className='event-open-modal__choice' disabled={busy} onClick={() => { setMode('pick'); }}>
               <strong><FormattedMessage id='event_open.pick' defaultMessage='Pick players' /></strong>
               <span><FormattedMessage id='event_open.pick_hint' defaultMessage='Pick {min}–{max} players.' values={{ min: minPlayers, max: maxPlayers }} /></span>
-            </button>
-            <button type='button' className='event-open-modal__choice' disabled={busy} onClick={() => { setMode('test'); }}>
+            </button>}
+            {modes.includes('test') && <button type='button' className='event-open-modal__choice' disabled={busy} onClick={() => { setMode('test'); }}>
               <strong><FormattedMessage id='event_open.test' defaultMessage='Test play' /></strong>
               <span><FormattedMessage id='event_open.test_hint' defaultMessage='Played in private, with no rewards.' /></span>
-            </button>
+            </button>}
           </div>
         ) : (
           <>

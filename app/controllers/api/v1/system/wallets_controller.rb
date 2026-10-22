@@ -129,7 +129,7 @@ class Api::V1::System::WalletsController < Api::BaseController
   end
 
   def open_recruitments
-    GameSession.current_kinds.where(status: 'pending').where("state->>'mode' = 'event'").reject { |session| session.players.any? { |player| player.account_id == current_account.id } || (Array(session.state['invited']).any? && Array(session.state['invited']).exclude?(current_account.id)) }
+    GameSession.current_kinds.where(status: 'pending').where("state->>'mode' = 'event'").reject { |session| session.state['opened_by'].to_i == current_account.id || session.players.any? { |player| player.account_id == current_account.id } || (Array(session.state['invited']).any? && Array(session.state['invited']).exclude?(current_account.id)) }
   end
 
   def currency

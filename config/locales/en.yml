@@ -69,6 +69,7 @@ en:
         title_for: 'Game records of %{name}'
         view_record: View game records
       rewards_table:
+        event_title: Rewards per event
         hint: 'Money and items given to players when a content ends. Money per result (win, draw, loss); items go to the winner. Leave the chance empty to always give it.'
         items_win: Winner items
         money_draw: Draw money
@@ -76,6 +77,7 @@ en:
         money_win: Win money
         title: Rewards per content
       points_table:
+        event_title: Points per event
         content: Content
         draw: Draw
         hint_games: 'Scoring is by games won right now, so each win counts 1 point and these numbers are not used. (Change it in Characters > Groups > Season)'
@@ -164,7 +166,30 @@ en:
         list: List
         matches: Matches
         settings: Settings
+      event_tabs:
+        list: List
+        messages: Messages
+        records: Event history
+        settings: Settings
+      event_records:
+        hint: Records of events (contents played by many). The winners of finished events are highlighted.
+        kind: Event
+        none: No events yet.
+        players: Players
+        state: Status
+        states:
+          cancelled: Cancelled
+          done: Done
+          running: Running
+          waiting: Waiting
+        test: Test
+        win: Win
       sections:
+        unlock: Event unlock
+        event_commands: Event command
+        event_messages: Event messages
+        opening: Opening events
+        limits: Limits
         lesson_commands: "Commands"
         lesson_rules: "Basic rules"
         grades: "Group points and rewards"

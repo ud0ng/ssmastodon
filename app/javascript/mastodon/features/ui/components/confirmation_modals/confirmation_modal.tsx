@@ -17,6 +17,8 @@ export const ConfirmationModal: React.FC<
     onSecondary?: () => void;
     onConfirm: () => void;
     closeWhenConfirm?: boolean;
+    // 안내만 하는 창: [확인] 하나만 보인다
+    hideCancel?: boolean;
 
     dangerous?: boolean;
   } & BaseConfirmationModalProps
@@ -29,6 +31,7 @@ export const ConfirmationModal: React.FC<
   secondary,
   onSecondary,
   closeWhenConfirm = true,
+  hideCancel = false,
   dangerous = false,
 }) => {
   const handleClick = useCallback(() => {
@@ -59,12 +62,12 @@ export const ConfirmationModal: React.FC<
 
       <div className='safety-action-modal__bottom'>
         <div className='safety-action-modal__actions'>
-          <button onClick={handleCancel} className='link-button'>
+          {!hideCancel && <button onClick={handleCancel} className='link-button'>
             <FormattedMessage
               id='confirmation_modal.cancel'
               defaultMessage='Cancel'
             />
-          </button>
+          </button>}
 
           {secondary && (
             <>

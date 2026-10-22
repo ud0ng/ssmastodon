@@ -9,7 +9,7 @@ class Api::V1::System::SessionsController < Api::BaseController
   MESSAGE_LIMIT = 200
 
   before_action -> { doorkeeper_authorize! :read }, only: [:show, :view]
-  before_action -> { doorkeeper_authorize! :write }, only: [:move, :destroy, :ready, :cancel_start, :chat, :join, :leave, :start_now, :accept, :decline]
+  before_action -> { doorkeeper_authorize! :write }, only: [:move, :destroy, :ready, :cancel_start, :chat, :join, :leave, :start_now, :accept, :decline, :invite_more]
   before_action :require_user!
   before_action :require_contents_open!
   before_action :set_session
@@ -21,6 +21,8 @@ class Api::V1::System::SessionsController < Api::BaseController
       kind: @session.kind,
       name: @session.kind_class&.display_name || @session.kind,
       status: @session.status,
+      notice: @notice,
+      cancel_reason: @session.status == 'cancelled' ? @session.state['cancel_reason'] : nil,
       system_acct: Game::System.username,
       root_status_id: @session.root_status_id&.to_s,
       last_status_id: @session.last_status_id&.to_s,
@@ -77,14 +79,17 @@ class Api::V1::System::SessionsController < Api::BaseController
 
   JOIN_ERRORS = {
     closed: '지금은 참가하거나 취소할 수 없습니다.', full: '참가 인원이 가득 찼습니다.', ineligible: '참가할 수 없는 계정입니다.',
-    busy: '이미 다른 이벤트에 참가 중입니다.', absent: '참가하지 않았습니다.', invite_only: '초대받은 사람만 참가할 수 있습니다.', not_invited: '초대받지 않았습니다.'
+    busy: '이미 다른 이벤트에 참가 중입니다.', limit: '하루에 참가할 수 있는 이벤트 횟수를 넘었습니다.', absent: '참가하지 않았습니다.', invite_only: '초대받은 사람만 참가할 수 있습니다.', not_invited: '초대받지 않았습니다.'
   }.freeze
+
+  INVITE_ERRORS = { closed: '지금은 초대할 수 없습니다.', full: '참가 인원보다 많이 초대할 수 없습니다.' }.freeze
 
   # 대기방·모집 중: 아직 참가하지 않은 사람이 [참여하기]
   def join
     result = @session.with_lock { Game::Lobby.join!(@session.reload, current_account) }
     return render json: { error: JOIN_ERRORS.fetch(result) }, status: 422 if JOIN_ERRORS.key?(result)
 
+    @notice = Game::Lobby.reward_notice(current_account, @session) if result == :ok
     show
   end
 
@@ -134,6 +139,20 @@ class Api::V1::System::SessionsController < Api::BaseController
     show
   end
 
+  # 초대한 이벤트(초대하기·테스트 플레이)의 대기방에 캐릭터를 더 초대한다 (실수로 거절한 사람·나중에 더해지는 사람). 운영진과 연 사람만
+  def invite_more
+    return render json: { error: 'forbidden' }, status: 403 unless can_invite_more?
+
+    names = Array(params[:accts]).map { |name| name.to_s.delete_prefix('@') }.uniq
+    accounts = GameCharacter.eligible_accounts.where(username: names).to_a
+    return render json: { error: '초대할 수 없는 사람이 있습니다.' }, status: 422 if accounts.size != names.size || accounts.empty?
+
+    result = @session.with_lock { Game::Lobby.invite_more!(@session.reload, accounts) }
+    return render json: { error: INVITE_ERRORS.fetch(result) }, status: 422 if INVITE_ERRORS.key?(result)
+
+    show
+  end
+
   # 대기방 카운트다운 중 누구든 취소 (참가자·운영진)
   def cancel_start
     return render json: { error: 'forbidden' }, status: 403 unless @session.player_for(current_account) || staff?
@@ -169,6 +188,7 @@ class Api::V1::System::SessionsController < Api::BaseController
     result = @session.with_lock { action.call(@session.reload, current_account) }
     return render json: { error: JOIN_ERRORS.fetch(result) }, status: 422 if JOIN_ERRORS.key?(result)
 
+    @notice = Game::Lobby.reward_notice(current_account, @session) if result == :ok
     show
   end
 
@@ -258,6 +278,7 @@ class Api::V1::System::SessionsController < Api::BaseController
   def set_session
     @session = GameSession.find(params[:id])
     raise ActiveRecord::RecordNotFound if @session.kind_class.nil?
+    return if require_events_open!(@session.kind_class) # 이벤트 해금이 꺼져 있으면 막는다
     # 테스트 플레이(DM)는 참가자·초대받은 사람·운영진에게만 보인다 (다른 캐릭터는 관전도 참여도 안 된다)
     return unless @session.visibility == 'direct' && @session.players.none? { |player| player.account_id == current_account.id }
     return if Array(@session.state['invited']).map(&:to_i).include?(current_account.id)
@@ -273,5 +294,14 @@ class Api::V1::System::SessionsController < Api::BaseController
 
   def staff?
     current_user.can?(:manage_settings)
+  end
+
+  # 초대한 이벤트를 연 사람 (운영진이 아니어도 자기가 연 초대는 관리한다)
+  def opener?
+    @session.state['opened_by'].to_i == current_account.id
+  end
+
+  def can_invite_more?
+    staff? || opener?
   end
 end

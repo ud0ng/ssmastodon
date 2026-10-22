@@ -7,10 +7,11 @@ import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } f
 
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
-import { useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 
 import LockIcon from '@/material-icons/400-24px/lock.svg?react';
 import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
+import { openModal } from 'mastodon/actions/modal';
 import { apiRequestGet } from 'mastodon/api';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
@@ -25,6 +26,8 @@ import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 import { Composer } from 'mastodon/features/messages/components/composer';
 import { DateDivider } from 'mastodon/features/messages/components/date_divider';
 
+import { useAppDispatch } from 'mastodon/store';
+
 import { sendCommand } from './board';
 import type { FlyChatMessage } from './flying';
 import { FlyingStage } from './flying';
@@ -38,6 +41,8 @@ import { ChamberPlay } from './secret_chamber';
 
 const messages = defineMessages({
   title: { id: 'system.session.title', defaultMessage: 'Game' },
+  cancelledTitle: { id: 'system.session.cancelled_title', defaultMessage: 'The event was cancelled' },
+  ok: { id: 'system.session.ok', defaultMessage: 'OK' },
   placeholder: { id: 'system.room.placeholder', defaultMessage: 'Message or [command], e.g. [eat]' },
   withCommand: { id: 'system.room.with_command', defaultMessage: 'Add a line (optional)' },
   removeCommand: { id: 'system.room.remove_command', defaultMessage: 'Remove command' },
@@ -68,6 +73,8 @@ interface RoomData {
   kind: string;
   name: string;
   status: GameCard['phase'];
+  // 인원 부족으로 이벤트가 취소됐을 때 모달에 보여 줄 문구
+  cancel_reason?: string | null;
   system_acct: string;
   player: boolean;
   staff?: boolean;
@@ -286,6 +293,9 @@ const TurnPanel: React.FC<{
 
 const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
   const intl = useIntl();
+  const dispatch = useAppDispatch();
+  const history = useHistory();
+  const lastStatus = useRef<string | null>(null);
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<RoomData | null>(null);
   const [failed, setFailed] = useState(false);
@@ -313,6 +323,24 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
         setFailed(true);
       });
   }, [id]);
+
+  // 방에 있는 동안 모집이 인원 부족으로 취소되면 모달로 알리고, 확인하면 이벤트 메인 화면으로
+  useEffect(() => {
+    if (!data) return;
+    if (lastStatus.current && lastStatus.current !== 'cancelled' && data.status === 'cancelled' && data.cancel_reason) {
+      dispatch(openModal({
+        modalType: 'CONFIRM',
+        modalProps: {
+          title: intl.formatMessage(messages.cancelledTitle),
+          message: data.cancel_reason,
+          confirm: intl.formatMessage(messages.ok),
+          hideCancel: true,
+          onConfirm: () => { history.push('/system/group'); },
+        },
+      }));
+    }
+    lastStatus.current = data.status;
+  }, [data, dispatch, history, intl]);
 
   const inLobby = data?.status === 'lobby' || Boolean(data?.lobby?.recruiting);
   // 비행 대결 게임방은 라운드·채팅이 빨리 보이게 대기방처럼 자주 읽는다

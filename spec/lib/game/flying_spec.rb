@@ -39,24 +39,35 @@ RSpec.describe Game::Kinds::Flying do
     expect(view[:history]).to eq []
   end
 
-  it 'lets two survivors win together when the field cannot shrink further' do
+  # 내구도 2: 충돌 한 번은 내구도 -1, 두 번째에 추락. 금빛 고리 없이 시험하려고 고리는 끈다
+  before { Game::Config.merge!('flying', 'ring_route' => false) }
+
+  it 'takes one durability per crash and drops a flyer at zero' do
     session = start!(4)
     [[0, 1], [1, 1], [2, 2], [3, 3]].each { |index, lane| pick(session, index, lane) }
 
     session.reload
+    expect(session.status).to eq 'active'
+    expect(session.state['hp']).to eq('0' => 1, '1' => 1, '2' => 2, '3' => 2)
+    expect(session.state['history'].first).to include('results' => { '0' => 'crash', '1' => 'crash', '2' => 'pass', '3' => 'pass' }, 'fell' => [], 'void' => false)
+
+    # 3개 길 중 2개 (2라운드): 0·1이 또 부딪혀 둘 다 추락 → 남은 2·3은 내구도가 같아 공동 우승
+    [[0, 1], [1, 1], [2, 2], [3, 3]].each { |index, lane| pick(session, index, lane) }
+    session.reload
     expect(session.status).to eq 'finished'
     expect(results(session)).to eq %w(lose lose win win)
     expect(session.state['ranks']).to eq [{ 'rank' => 1, 'seats' => [2, 3] }, { 'rank' => 2, 'seats' => [0, 1] }]
-    expect(session.state['history'].first['results']).to eq('0' => 'crash', '1' => 'crash', '2' => 'pass', '3' => 'pass')
   end
 
-  it 'keeps flying until one is left and ranks the fallen by the round they dropped' do
+  it 'ranks the survivors by durability and the fallen by the round they dropped' do
     session = start!(5)
+    session.state['hp'] = { '0' => 1, '1' => 1, '2' => 2, '3' => 2, '4' => 1 }
+    session.save!
     [[0, 1], [1, 1], [2, 2], [3, 3], [4, 4]].each { |index, lane| pick(session, index, lane) }
 
-    expect(session.reload.status).to eq 'active'
+    session.reload
+    expect(session.state['out']).to eq('0' => 1, '1' => 1)
     expect(session.state['alive']).to eq %w(2 3 4)
-    expect(session.state['lanes']).to eq 2
     expect(session.state['round']).to eq 2
 
     [[2, 1], [3, 2], [4, 2]].each { |index, lane| pick(session, index, lane) }
@@ -64,10 +75,10 @@ RSpec.describe Game::Kinds::Flying do
     session.reload
     expect(session.status).to eq 'finished'
     expect(results(session)).to eq %w(lose lose win lose lose)
-    expect(session.state['ranks']).to eq [{ 'rank' => 1, 'seats' => [2] }, { 'rank' => 2, 'seats' => [3, 4] }, { 'rank' => 3, 'seats' => [0, 1] }]
+    expect(session.state['ranks']).to eq [{ 'rank' => 1, 'seats' => [2] }, { 'rank' => 2, 'seats' => [3] }, { 'rank' => 3, 'seats' => [4] }, { 'rank' => 4, 'seats' => [0, 1] }]
   end
 
-  it 'drops the ones who did not choose when the time is up' do
+  it 'drops no one who keeps durability, and the ones who did not choose lose one' do
     session = start!(4)
     [[0, 1], [1, 2], [2, 3]].each { |index, lane| pick(session, index, lane) }
 
@@ -75,22 +86,44 @@ RSpec.describe Game::Kinds::Flying do
     described_class.new(session).timeout!
 
     session.reload
-    expect(session.state['out']).to eq('3' => 1)
+    expect(session.state['out']).to eq({})
+    expect(session.state['hp']['3']).to eq 1
     expect(session.state['history'].first['results']['3']).to eq 'idle'
-    expect(session.state['alive']).to eq %w(0 1 2)
+    expect(session.state['alive']).to eq %w(0 1 2 3)
   end
 
-  it 'is a draw when everyone crashes in the first round' do
+  it 'voids a round in which everybody would fall and picks the routes again' do
     session = start!(3)
+    session.state['hp'] = { '0' => 1, '1' => 1, '2' => 1 }
+    session.save!
     3.times { |index| pick(session, index, 1) }
 
     session.reload
-    expect(session.status).to eq 'finished'
-    expect(results(session)).to eq %w(draw draw draw)
+    expect(session.status).to eq 'active'
+    expect(session.state['history'].first).to include('void' => true, 'fell' => [])
+    expect(session.state['hp']).to eq('0' => 1, '1' => 1, '2' => 1)
+    expect(session.state['alive']).to eq %w(0 1 2)
+    expect(session.state['round']).to eq 2
+    expect(session.state['choices']).to eq({})
+  end
+
+  it 'gives one durability back to whoever flies the golden ring alone, up to the starting value' do
+    Game::Config.merge!('flying', 'ring_route' => true)
+    session = start!(4)
+    session.state['hp'] = { '0' => 1, '1' => 2, '2' => 2, '3' => 2 }
+    session.state['ring'] = 2
+    session.save!
+    [[0, 2], [1, 1], [2, 1], [3, 3]].each { |index, lane| pick(session, index, lane) }
+
+    session.reload
+    expect(session.state['history'].first['ring_gain']).to eq ['0']
+    expect(session.state['hp']).to eq('0' => 2, '1' => 1, '2' => 1, '3' => 2)
   end
 
   it 'picks the silliest scenes for the MVP' do
     session = start!(5)
+    session.state['hp'] = session.state['hp'].transform_values { 1 }
+    session.save!
     [[0, 1], [1, 1], [2, 1], [3, 2], [4, 3]].each { |index, lane| pick(session, index, lane) }
 
     mvp = session.reload.state['mvp']
@@ -102,6 +135,8 @@ RSpec.describe Game::Kinds::Flying do
     session = start!(5)
     pick(session, 0, 9)
     expect(session.state['choices']).to eq({})
+    session.state['hp'] = session.state['hp'].merge('0' => 1, '1' => 1)
+    session.save!
     [[0, 1], [1, 1], [2, 2], [3, 3], [4, 4]].each { |index, lane| pick(session, index, lane) }
 
     pick(session, 0, 1)
@@ -138,7 +173,7 @@ RSpec.describe Game::Kinds::Flying do
   end
   it 'opens straight into the waiting room for invited players, who accept or decline there, and keeps everyone else out' do
     allow(GameCharacter).to receive(:eligible_accounts).and_return(Account.where(id: accounts.map(&:id)))
-    opener = Fabricate(:account, username: 'professor')
+    opener = Fabricate(:admin_user, account: Fabricate(:account, username: 'professor')).account
     session = Game::Events::Opening.open!(Game::Kinds.registry['flying'], opener, mode: 'pick', players: accounts.first(4))
 
     expect(session.reload.status).to eq 'lobby'

@@ -16,6 +16,7 @@ RSpec.describe 'Web-only content commands' do
   before do
     allow(Game::System).to receive(:account).and_return(system)
     [harry, ron, outsider].each { |member| GameCharacter.for(member.account) }
+    Game::Config.merge!('events', 'event_open_by' => 'everyone')
     Game::Events::Opening.open!(Game::Web::Maze, harry.account, mode: 'pick', players: [harry.account, ron.account])
     [harry, ron].each do |member|
       status = PostStatusService.new.call(member.account, text: '@system [참가]', visibility: 'private')

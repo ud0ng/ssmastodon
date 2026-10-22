@@ -1,10 +1,10 @@
 - kind = Game::Kinds.registry[@key]
-- title = { 'common' => game_t("admin.games.tabs.#{@page}"), 'help' => game_t('admin.games.tabs.help') }.fetch(@key) { kind.display_name }
+- title = { 'common' => game_t("admin.games.tabs.#{@page}"), 'help' => game_t('admin.games.tabs.help'), 'events' => game_t("admin.games.event_tabs.#{@page}") }.fetch(@key) { kind.display_name }
 - content_for :page_title do
   = title
 
 - content_for :heading do
-  = render 'admin/game_settings/heading', save_form: 'edit_game_config', event: kind.present? && Game::Kinds.group_games.include?(kind)
+  = render 'admin/game_settings/heading', save_form: 'edit_game_config', event: @key == 'events' || (kind.present? && Game::Kinds.group_games.include?(kind))
 
 - if @key == 'help'
   -# 도움말: 상점봇 | 시스템봇 (탭 안의 탭)
@@ -49,7 +49,7 @@
 
   -# 설정 탭: 컨텐츠마다 승리·무승부·패배 점수를 한 표에서
   - if @points_kinds
-    = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.points_table.title'), hint: game_t("admin.games.points_table.hint_#{@scoring_mode}") } do
+    = render layout: 'admin/ui/section', locals: { title: game_t(@key == 'events' ? 'admin.games.points_table.event_title' : 'admin.games.points_table.title'), hint: game_t("admin.games.points_table.hint_#{@scoring_mode}") } do
       .bot-sheet-table.game-table.game-table--centered
         %table.table
           %thead

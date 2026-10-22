@@ -10,21 +10,51 @@ RSpec.describe 'Admin open event' do
     sign_in Fabricate(:admin_user)
   end
 
-  it 'opens recruiting events, one per content' do
+  it 'opens recruiting events, several at once even for the same content' do
     post admin_game_event_path, params: { kind: 'maze' }
 
     expect(response).to redirect_to(admin_game_events_settings_path)
     expect(GameSession.where(kind: 'maze', status: 'pending').count).to eq 1
 
     post admin_game_event_path, params: { kind: 'maze' }
-    expect(flash[:alert]).to include('이미 진행 중')
-    expect(GameSession.where(kind: 'maze').count).to eq 1
+    expect(GameSession.where(kind: 'maze').count).to eq 2
 
     post admin_game_event_path, params: { kind: 'flying' }
     expect(GameSession.where(kind: 'flying', status: 'pending').count).to eq 1
   end
 
+  it 'shows the event settings, messages, list and history tabs' do
+    session = Game::Events::Opening.open!(Game::Kinds::Flying, Fabricate(:admin_user).account)
+    harry = Fabricate(:account, username: 'harry')
+    session.players.create!(account: harry, seat: 0, result: 'win', state: {})
+    session.update!(status: 'finished', finished_at: Time.current)
+
+    # 화면을 그리는 요청 테스트는 Vite 빌드가 없는 컨테이너에서 못 돌려서(CLAUDE.md), 화면에 쓰는 설정 묶음만 확인한다
+    expect(Game::Config.sections('events', 'settings').map(&:first)).to eq %w(unlock opening limits)
+    expect(Game::Config.sections('events', 'messages').map(&:first)).to eq %w(event_commands event_messages)
+    expect(session.reload.status).to eq 'finished'
+  end
+
+  it 'saves the event settings' do
+    patch admin_game_setting_path('events'), params: { config: { event_open_by: 'everyone', event_daily_limit: '3', event_unlock: '0' } }
+
+    config = Game::Events::Settings.config
+    expect(config).to include('event_open_by' => 'everyone', 'event_daily_limit' => 3, 'event_unlock' => false)
+    expect(Game::Events::Settings.open_modes(Fabricate(:user))).to eq []
+  end
+
+  it 'goes back to the event list after handling a running event, and to the content list for 1:1 contents' do
+    event = GameSession.create!(kind: 'flying', status: 'active', visibility: 'private', state: { 'mode' => 'event' })
+    post draw_admin_game_session_path(event)
+    expect(response).to redirect_to(admin_game_events_settings_path)
+
+    duel = GameSession.create!(kind: 'jellybean', status: 'active', visibility: 'private', state: {})
+    post draw_admin_game_session_path(duel)
+    expect(response).to redirect_to(admin_game_settings_path)
+  end
+
   it 'shows a badge to members who have not joined and a join button state on the content page' do
+    Game::Config.merge!('events', 'event_open_by' => 'everyone')
     member = Fabricate(:user, account: Fabricate(:account, username: 'harry'))
     GameCharacter.for(member.account)
     Game::Events::Opening.open!(Game::Web::Maze, member.account)

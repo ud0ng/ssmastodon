@@ -5,7 +5,8 @@ require 'rails_helper'
 # 운영진이 여는 모집형 이벤트 (미로·도둑 지도·비행 대결, 비밀의 방): 모집 툿(전체 멘션) → [참가] → 시간이 끝나면 시작
 RSpec.describe Game::Events::Opening do
   let!(:system) { Fabricate(:account, username: 'system') }
-  let(:admin) { Fabricate(:account, username: 'professor') }
+  let(:admin) { Fabricate(:admin_user, account: Fabricate(:account, username: 'professor')).account }
+  let(:member) { accounts.last }
   let(:accounts) { %w(harry ron hermione draco).map { |name| Fabricate(:user, account: Fabricate(:account, username: name)).account } }
 
   before do
@@ -45,25 +46,49 @@ RSpec.describe Game::Events::Opening do
     expect(root.mentions.map(&:account_id)).to include(*accounts.map(&:id))
   end
 
+  it 'lets only staff open events unless the event settings let everyone, and then only the allowed kinds of opening' do
+    expect { described_class.open!(Game::Web::Maze, member) }.to raise_error(described_class::Error, /열 수 있는 사람이 아닙니다/)
+
+    Game::Config.merge!('events', 'event_open_by' => 'everyone', 'event_open_invite' => false)
+    expect { described_class.open!(Game::Web::Maze, member, mode: 'pick', players: accounts.first(2)) }.to raise_error(described_class::Error, /열 수 있는 사람이 아닙니다/)
+    expect { described_class.open!(Game::Web::Maze, member, mode: 'test', players: accounts.first(2)) }.to raise_error(described_class::Error, /열 수 있는 사람이 아닙니다/)
+    expect { described_class.open!(Game::Web::Maze, member) }.to_not raise_error
+  end
+
+  it 'posts no toot when a character (not staff) opens a recruitment, but still rings every other character' do
+    Game::Config.merge!('events', 'event_open_by' => 'everyone')
+    expect(Game::EventNotice).to receive(:alert!).with(match_array(accounts.first(3).map(&:id)))
+
+    session = described_class.open!(Game::Web::Maze, member)
+
+    expect(session.root_status_id).to be_nil
+    expect(Status.where(account: system)).to be_empty
+  end
+
+  it 'rings the badge of every other character when staff opens a recruitment' do
+    expect(Game::EventNotice).to receive(:alert!).with(match_array(accounts.map(&:id)))
+
+    described_class.open!(Game::Web::Maze, admin)
+  end
+
   describe 'picking the players' do
     def join_by_toot(account, visibility: 'private')
       status = PostStatusService.new.call(account, text: '@system [참가]', visibility: visibility)
       Game::Engine.new(status).call
     end
 
-    it 'sends a participation DM to each picked player only and starts when they all accept, with progress on the web only' do
+    it 'rings only the picked players, sends no toot or DM and starts when they all accept, with progress on the web only' do
       picked = accounts.first(3)
+      expect(Game::EventNotice).to receive(:alert!).with(match_array(picked.map(&:id))).and_call_original
       session = described_class.open!(Game::Web::Maze, admin, mode: 'pick', players: picked)
 
       expect(session).to have_attributes(status: 'lobby', visibility: 'private') # 초대하면 모집 없이 바로 대기방
       expect(session.test?).to be false
-      invites = Status.where(account: system, visibility: :direct).to_a
-      expect(invites.flat_map { |status| status.mentions.map(&:account_id) }).to match_array(picked.map(&:id))
-      expect(invites.first.text).to include('참가자로 뽑혔습니다', '[참가]')
+      expect(Status.where(account: system)).to be_empty # 초대는 툿도 DM 도 없다 (이벤트 메뉴 알림 배지만)
 
       join_by_toot(accounts.last) # 고르지 않은 사람은 못 낀다
       expect(session.reload.players).to be_empty
-      expect(system.statuses.reorder(:id).last.text).to include('고른 참가자만')
+      expect(Status.where(account: system)).to be_empty # 답장도 없다 (웹에서는 모달로 안내)
 
       picked.first(2).each { |account| join_by_toot(account) }
       expect(session.reload.status).to eq 'lobby'
@@ -74,7 +99,7 @@ RSpec.describe Game::Events::Opening do
       expect(session.players.map(&:account_id)).to match_array(picked.map(&:id))
       Game::Lobby.start!(session)
       expect(session.reload.status).to eq 'active'
-      expect(Status.where(account: system).where('id > ?', before).where.not(visibility: :direct).count).to be <= 1 # 마지막 참가 확인 답장뿐 (진행은 웹 메시지)
+      expect(Status.where(account: system).where('id > ?', before).where.not(visibility: :direct).count).to eq 0 # 참가 확인 답장도 없다 (진행은 웹 메시지)
       expect(session.messages.count).to be_positive
     end
 
@@ -103,9 +128,7 @@ RSpec.describe Game::Events::Opening do
       expect(session).to have_attributes(status: 'lobby', visibility: 'direct')
       expect(session.test?).to be true
       expect(GameSession.real).to_not include(session)
-      invites = Status.where(account: system, visibility: :direct).to_a
-      expect(invites.flat_map { |status| status.mentions.map(&:account_id) }).to match_array(picked.map(&:id))
-      expect(invites.first.text).to include('테스트 플레이', '보상이 존재하지 않습니다')
+      expect(Status.where(account: system)).to be_empty
 
       picked.each { |account| join_by_toot(account, visibility: 'direct') }
       expect(session.reload.status).to eq 'lobby'
@@ -128,6 +151,19 @@ RSpec.describe Game::Events::Opening do
     expect(GameSession.where(kind: 'maze').count).to eq 2
   end
 
+  it 'lets one person join several events at a time when the concurrent limit is off, and caps the joins per day' do
+    Game::Config.merge!('events', 'event_concurrent_limit' => false, 'event_daily_limit' => 2)
+    described_class.open!(Game::Web::Maze, admin)
+    described_class.open!(Game::Kinds::Flying, admin)
+    described_class.open!(Game::Web::MaraudersMap, admin)
+    toot(accounts.first, '@system [참가/maze]')
+    toot(accounts.first, '@system [참가/flying]')
+    toot(accounts.first, '@system [참가/marauders_map]')
+
+    expect(GamePlayer.where(account: accounts.first).count).to eq 2
+    expect(Status.where(account: system).count).to eq 3 # 모집 툿 3개뿐, 한도에 걸려도 답장은 없다
+  end
+
   it 'limits a person to one event at a time but does not count 1:1 contents' do
     described_class.open!(Game::Web::Maze, admin)
     described_class.open!(Game::Kinds::Flying, admin)
@@ -137,6 +173,30 @@ RSpec.describe Game::Events::Opening do
     toot(accounts.first, '@system [참가/flying]')
     expect(GamePlayer.where(account: accounts.first).count).to eq 1
     expect(GamePlayer.joins(:session).where(account: accounts.first, game_sessions: { kind: 'maze' }).count).to eq 1
+  end
+
+  it 'still lets a person join once the daily reward limit is reached, but tells them and gives no points or rewards' do
+    Game::Config.merge!('events', 'event_daily_reward_limit' => 1)
+    Game::Config.merge!('maze', 'event_min_players' => '2', 'points_win' => '5', 'reward_money_win' => '10')
+    house = GameHouse.houses.first || GameHouse.create!(name: '그리핀도르', color: '#ae0001', category: 'house')
+    accounts.each { |account| GameCharacter.for(account).update!(house: house) }
+    earlier = GameSession.create!(kind: 'flying', status: 'finished', visibility: 'private', finished_at: Time.current, state: { 'mode' => 'event' })
+    earlier.players.create!(account: accounts.first, seat: 0, result: 'win', state: {})
+
+    described_class.open!(Game::Web::Maze, admin)
+    session = event_session('maze')
+    expect(Game::Lobby.reward_notice(accounts.first, session)).to include('점수와 보상을 받을 수 없습니다')
+    expect(Game::Lobby.reward_notice(accounts.second, session)).to be_nil
+
+    accounts.first(2).each { |account| session.players.create!(account: account, seat: session.players.count, state: { 'accepted' => true }) }
+    Game::Lobby.enter!(session)
+    Game::Lobby.start!(session.reload)
+    Game::Web::Maze.new(session.reload).send(:finish!, winners: session.players.to_a, split_points: false)
+
+    expect(GameCharacter.for(accounts.first).reload.money).to eq 0 # 보상 없음
+    expect(GameCharacter.for(accounts.second).reload.money).to eq 10
+    expect(GameHousePoint.where(account: accounts.first)).to be_empty
+    expect(GameHousePoint.where(account: accounts.second).sum(:amount)).to eq 5
   end
 
   it 'cancels when too few people joined' do
@@ -185,12 +245,28 @@ RSpec.describe Game::Events::Opening do
 
     expect(event_session('maze').players.size).to eq 2
   end
-  describe 'start and end notices for the app' do
+  describe 'notices' do
     def system_toots_since(id)
       Status.where(account: system).where('id > ?', id).order(:id).to_a
     end
 
-    it 'mentions the participants for a recruited event and DMs only the invited ones for an invited event' do
+    it 'sends no start, end, cancel or reply toots: only the staff recruiting toot exists, the rest is shown on the web' do
+      Game::Config.merge!('maze', 'event_min_players' => '3')
+      described_class.open!(Game::Web::Maze, admin)
+      recruited = event_session('maze')
+      expect(system_toots_since(0).size).to eq 1 # 모집 툿
+      before = Status.maximum(:id).to_i
+
+      toot(accounts.first, '@system [참가]') # 참가 확인 답장도 없다
+      expect(recruited.reload.players.size).to eq 1
+      recruited.with_lock { recruited.kind_class.new(recruited).recruitment_over! }
+
+      expect(recruited.reload.status).to eq 'cancelled'
+      expect(recruited.state['cancel_reason']).to include('3명이 되지 않아', '트라이위저드 미로')
+      expect(system_toots_since(before)).to be_empty
+    end
+
+    it 'sends nothing when a recruited event starts or ends, or when an invited one starts' do
       Game::Config.merge!('maze', 'event_min_players' => '2')
       described_class.open!(Game::Web::Maze, admin)
       recruited = event_session('maze')
@@ -198,22 +274,11 @@ RSpec.describe Game::Events::Opening do
       recruited.with_lock { recruited.kind_class.new(recruited).recruitment_over! }
       before = Status.maximum(:id).to_i
       Game::Lobby.start!(recruited.reload)
-
-      started = system_toots_since(before).find { |status| status.text.include?('시작됐어요') }
-      expect(started).to be_present
-      expect(started.visibility).to eq 'private'
-      expect(started.mentions.map(&:account_id)).to match_array(accounts.first(2).map(&:id))
-
-      before = Status.maximum(:id).to_i
       recruited.reload.update!(status: 'finished', finished_at: Time.now.utc)
-      expect(system_toots_since(before).map(&:text).join).to include('끝났어요')
 
       invited = described_class.open!(Game::Kinds::Flying, admin, mode: 'pick', players: accounts.first(3))
-      before = Status.maximum(:id).to_i
       invited.reload.update!(status: 'active')
-      dms = system_toots_since(before).select { |status| status.text.include?('시작됐어요') }
-      expect(dms.map(&:visibility).uniq).to eq ['direct']
-      expect(dms.flat_map { |status| status.mentions.map(&:account_id) }).to match_array(accounts.first(3).map(&:id))
+      expect(system_toots_since(before)).to be_empty
     end
   end
 end

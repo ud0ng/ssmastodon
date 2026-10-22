@@ -157,6 +157,10 @@ export const connectTimelineStream = (timelineId, channelName, params = {}, opti
         case 'wallet.changed':
           refreshWallet();
           break;
+        // 이벤트가 열렸다(모집은 모두에게, 초대는 초대받은 사람에게): 이벤트 메뉴 배지를 새로 읽고 소리를 낸다 (툿 없이)
+        case 'game.alert':
+          dispatch(notifyGameTurn());
+          break;
         }
       },
     };

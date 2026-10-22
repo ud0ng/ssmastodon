@@ -1550,5 +1550,18 @@
   "map.wait_turn": "기다리는 중: {names}",
   "item.use_self": "나에게 쓰기",
   "item.use_on_house": "효과를 줄 소속을 골라 주세요.",
-  "item.rumor_placeholder": "모두에게 퍼질 소문"
+  "item.rumor_placeholder": "모두에게 퍼질 소문",
+  "event_invite.title": "캐릭터 더 초대하기",
+  "event_invite.hint": "이 대기방에 초대할 캐릭터를 고르세요. 고른 사람에게만 알림이 갑니다.",
+  "event_invite.count": "{count}명 선택",
+  "event_invite.send": "초대하기",
+  "lobby.invite_more": "캐릭터 추가",
+  "system.game.join_event_plain": "이벤트 참가하기",
+  "flying.ring": "금빛 고리 +1",
+  "flying.void": "모두 추락하게 되어 이 라운드는 무효예요!",
+  "lobby.join_failed": "참가할 수 없어요",
+  "lobby.ok": "확인",
+  "system.session.cancelled_title": "이벤트가 취소됐어요",
+  "system.session.ok": "확인",
+  "lobby.no_reward_title": "오늘은 점수와 보상이 없어요"
 }

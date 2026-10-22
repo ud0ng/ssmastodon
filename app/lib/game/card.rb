@@ -118,7 +118,7 @@ module Game
       actions =
         if session.status == 'pending'
           if session.state['mode'] == 'event'
-            [action(session.kind_class.config['cmd_join'], seats: 'others')]
+            [action(Game::Events::Settings.cmd_join, seats: 'others')]
           else
             waiting = session.players.reject { |player| player.state['accepted'] }.map(&:seat)
             waiting.empty? ? [] : [action(common['cmd_accept'], seats: waiting), action(common['cmd_decline'], seats: waiting, style: 'secondary')]

@@ -45,7 +45,7 @@ RSpec.describe Game::Web::SecretChamber do
   end
 
   def open_event!
-    Game::Events::Opening.open!(described_class, accounts.first)
+    Game::Events::Opening.open!(described_class, Fabricate(:admin_user, account: Fabricate(:account, username: 'professor')).account) # 운영진이 열어야 모집 툿이 나간다
   end
 
   def start_game!
@@ -70,13 +70,14 @@ RSpec.describe Game::Web::SecretChamber do
     expect(Status.find(session.root_status_id).text).to include('[참가]') # 모집은 툿
   end
 
-  it 'cancels when too few join, with a toot' do
+  it 'cancels when too few join, telling it on the web only' do
     open_event!
     toot(accounts.second, '@system [참가]')
     session.with_lock { kind.recruitment_over! }
 
     expect(session.status).to eq 'cancelled'
-    expect(system.statuses.reorder(:id).last.text).to include('닫혔습니다')
+    expect(session.state['cancel_reason']).to include('7명이 되지 않아')
+    expect(system.statuses.reorder(:id).last.text).to include('열렸습니다') # 취소 툿은 없다
   end
 
   it 'expels the most accused player and ends when the traitor is gone' do
@@ -139,7 +140,7 @@ RSpec.describe Game::Web::SecretChamber do
     toot(extra, '@system [참가]') # 정원이 차서 안 들어간다 (시작은 모집이 끝난 뒤)
 
     expect(session.reload.players.size).to eq 7
-    expect(system.statuses.reorder(:id).last.text).to include('7명까지')
+    expect(system.statuses.reorder(:id).last.text).to include('열렸습니다') # 정원 초과 답장은 없다 (웹에서는 모달)
   end
 
   it 'only lets the traitor pass on true prophecies and delivers them to the seer and her notes' do

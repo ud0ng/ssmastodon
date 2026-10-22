@@ -153,7 +153,7 @@ module Game
 
     def event_row(kind)
       name = kind.display_name.to_s.strip
-      "#{kind.config['cmd_join']}#{SEP}운영진이 연 #{name}에 참가합니다. (웹 컨텐츠 화면에서도 참가할 수 있습니다)"
+      "#{Game::Events::Settings.cmd_join}#{SEP}운영진이 연 #{name}에 참가합니다. (웹 컨텐츠 화면에서도 참가할 수 있습니다)"
     end
   end
 end

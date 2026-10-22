@@ -250,7 +250,7 @@ module Game
 
         point_lines = players.map do |player|
           outcome = player.result
-          points = config["points_#{outcome}"]
+          points = reward_capped?(player) ? 0 : config["points_#{outcome}"]
           # 공동 우승은 승리 점수를 나눈다
           points = (points.to_f / winners.size).round if split_points && outcome == 'win' && winners.size > 1
           Game::Points.award(session, player, points, outcome: outcome)
@@ -258,10 +258,15 @@ module Game
         post([message, *point_lines.compact, *reward_lines].compact.join("\n\n"))
       end
 
+      # 이벤트의 하루 최대 보상 획득 횟수(이벤트 설정 > 제한)를 이미 채운 사람인가: 점수와 보상을 받지 못한다 (참가는 된다)
+      def reward_capped?(player)
+        Game::Kinds.group_games.include?(self.class) && Game::Lobby.reward_capped?(player.account, session)
+      end
+
       # 결과(player.result)에 따른 돈·아이템 (Game::Rewards). 안내를 한 문단으로 묶어 [문단] 또는 [] 를 돌려준다.
       def give_rewards!
         lines = players.filter_map do |player|
-          next if player.result.blank?
+          next if player.result.blank? || reward_capped?(player)
 
           Game::Rewards.for_outcome(session, player, config, player.result, reason: "game:#{self.class.key}")
         end

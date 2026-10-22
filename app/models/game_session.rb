@@ -14,8 +14,6 @@ class GameSession < ApplicationRecord
 
   validates :status, inclusion: { in: STATUSES }
 
-  # 이벤트가 시작·종료되면 앱에서도 알 수 있게 시스템 계정이 알린다 (Game::EventNotice)
-  after_update_commit :notify_event_change, if: :saved_change_to_status?
   validates :visibility, inclusion: { in: %w(private direct) }
 
   scope :open, -> { where(status: OPEN_STATUSES) }
@@ -60,15 +58,5 @@ class GameSession < ApplicationRecord
   # 시간 제한 작업이 아직 유효한지 (새 단계로 넘어가면 예전 작업은 무시)
   def deadline_token
     "#{status}:#{turn}:#{deadline_at&.to_i}"
-  end
-
-  private
-
-  def notify_event_change
-    before = status_before_last_save
-    event = if status == 'active' && %w(pending lobby).include?(before) then :started
-            elsif status == 'finished' && before == 'active' then :finished
-            end
-    Game::EventNotice.call(self, event) if event
   end
 end

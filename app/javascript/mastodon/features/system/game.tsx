@@ -61,6 +61,8 @@ export interface GameInfo {
   group: 'duel' | 'group';
   event: boolean;
   can_open?: boolean;
+  // 내가 열 수 있는 이벤트 유형 (recruit·pick·test)
+  open_modes?: string[];
   // 운영진이 웹에서 바로 여는 모집형 이벤트 (아니면 멘션 명령어로 연다)
   web_open?: boolean;
   event_min_players?: number;
@@ -78,6 +80,8 @@ export interface GameInfo {
   uneven_teams?: boolean;
   // 운영진이 연 이벤트 모집 중이고 내가 아직 참가하지 않았다
   recruiting?: { session_id: string; ends_at: string | null; count: number } | null;
+  // [이벤트 참가하기]가 데려갈 곳: 초대받았거나 참여 중인 방, 없으면 모집 중인 방. 여러 곳이면 진행중 탭
+  join_target?: { session_id?: string; tab?: 'active' } | null;
   summary: string;
   rules_text?: { icon: string; title: string; text: string; visual?: string | null; nodes?: string[]; table?: { head: string[]; rows: string[][] } | null }[];
   cast?: { name: string; lines: string[] }[];
@@ -155,7 +159,7 @@ export const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy:
       return;
     }
     if (!join && game.web_open) {
-      dispatch(openModal({ modalType: 'EVENT_OPEN', modalProps: { gameKey: game.key, name: game.name, minPlayers: game.event_min_players, maxPlayers: game.event_max_players, joinMinutes: game.event_join_minutes, onOpened: afterOpened } }));
+      dispatch(openModal({ modalType: 'EVENT_OPEN', modalProps: { gameKey: game.key, name: game.name, minPlayers: game.event_min_players, maxPlayers: game.event_max_players, joinMinutes: game.event_join_minutes, modes: game.open_modes, onOpened: afterOpened } }));
       return;
     }
     setBusy(true);
@@ -164,10 +168,11 @@ export const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy:
       .catch(() => {
         setBusy(false);
       });
-  }, [dispatch, game.key, game.name, game.busy, game.web_open, game.event_min_players, game.event_max_players, game.event_join_minutes, afterOpened, onBusy]);
+  }, [dispatch, game.key, game.name, game.busy, game.web_open, game.event_min_players, game.event_max_players, game.event_join_minutes, game.open_modes, afterOpened, onBusy]);
 
-  // 운영진은 언제나 [이벤트 열기]가 보인다 (모집 중이어도, 내가 다른 방에 있어도): 여러 이벤트를 동시에 열 수 있다
-  if (game.event && game.can_open && game.enabled) {
+  // 운영진은 언제나 [이벤트 열기]가 보인다 (모집 중이어도, 내가 다른 방에 있어도): 여러 이벤트를 동시에 열 수 있다.
+  // 이벤트를 모두가 열 수 있게 한 경우 일반 캐릭터는 참가할 방이 없을 때만 [이벤트 열기]가 보인다
+  if (game.event && game.can_open && game.enabled && (game.staff || !game.join_target)) {
     return sent ? (
       <span className='system-start system-start--off'>
         <FormattedMessage id='system.game.sent' defaultMessage='Sent. The system will answer in a moment.' />
@@ -175,6 +180,23 @@ export const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy:
     ) : (
       <button type='button' className='system-start' disabled={busy} onClick={() => { openEvent(); }}>
         <FormattedMessage id='system.game.open_event' defaultMessage='Open the event' />
+      </button>
+    );
+  }
+
+  // 이벤트 참가하기: 내가 초대받은·참여 중인 방(하나면 그 방, 여럿이면 진행중 탭) → 없으면 모집 중인 방
+  if (game.event && game.enabled && game.join_target) {
+    const target = game.join_target;
+    return (
+      <button
+        type='button'
+        className='system-start'
+        onClick={() => {
+          if (target.session_id) history.push(`/system/sessions/${target.session_id}`);
+          else onRooms?.();
+        }}
+      >
+        <FormattedMessage id='system.game.join_event_plain' defaultMessage='Join the event' />
       </button>
     );
   }
@@ -646,7 +668,7 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
         name={game.name}
         summary={game.summary}
         record={game.record}
-        action={<StartButton game={game} onSent={load} onBusy={showBusy} />}
+        action={<StartButton game={game} onSent={load} onBusy={showBusy} onRooms={() => { setTab('active'); }} />}
         notice={busyShown && game.busy && !game.my_session_id ? (
           <div className='system-busy' role='alert'>
             <span className='system-busy__text'><CommandText text={game.busy.message} noEmoji /></span>
@@ -703,7 +725,7 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
                   </span>
                 </div>
               </div>
-              <StartButton game={game} onSent={load} onBusy={showBusy} />
+              <StartButton game={game} onSent={load} onBusy={showBusy} onRooms={() => { setTab('active'); }} />
             </header>
 
             {/* 동시 진행을 막았을 때: [시작하기]를 누르면 신청하지 않고 바로 안내 */}

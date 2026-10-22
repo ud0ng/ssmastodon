@@ -51,11 +51,15 @@ export const GameToken: React.FC<{
   house?: TokenHouse | null;
   size?: number;
   className?: string;
+  // 아바타 바로 아래(이름 위)에 붙는 것: 비행 대결의 빗자루
   children?: React.ReactNode;
-}> = ({ accountId, avatar, name, house, size = 64, className, children }) => (
+  // 이름 아래에 붙는 것: 비행 대결의 내구도 배지
+  footer?: React.ReactNode;
+}> = ({ accountId, avatar, name, house, size = 64, className, children, footer }) => (
   <span className={['gtoken', className].filter(Boolean).join(' ')}>
     <TokenAvatar accountId={accountId} avatar={avatar} size={size} />
     {children}
     <TokenName accountId={accountId} name={name} house={house} />
+    {footer}
   </span>
 );
