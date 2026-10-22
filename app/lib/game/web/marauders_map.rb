@@ -587,7 +587,9 @@ module Game
           players: players.map do |other|
             { seat: other.seat, name: other.name, account_id: other.account_id, team: student?(other) ? 'student' : 'prefect',
               status: student?(other) ? status_of(other) : nil, rescued: state.dig('rescued_count', other.seat.to_s).to_i,
-              chosen: acting?(other) && state['moves'].key?(other.seat.to_s) }
+              chosen: acting?(other) && state['moves'].key?(other.seat.to_s),
+              # 투명 망토를 쓰고 있다 (학생 팀과 끝난 뒤에만 보인다)
+              cloaked: student?(other) && (!prefect_view || full) && cloaked?(other.seat) }
           end,
           bubbles: bubbles_for(viewer, prefect_view && !full),
           log: state['log'] || [],

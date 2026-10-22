@@ -1124,6 +1124,8 @@
   "lobby.join": "Join",
   "lobby.leave": "Cancel joining",
   "mm.chat_info": "Info",
+  "mm.cloaked": "Invisible",
+  "mm.teams": "Teams",
   "mm.chat_student": "Students",
   "mm.chat_prefect": "Prefects",
   "lobby.recruit_title": "Gathering players",

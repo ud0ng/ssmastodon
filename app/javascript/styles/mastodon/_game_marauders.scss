@@ -1235,3 +1235,130 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
 .mm-chat__tag.is-info { color: #ffd56a; }
 
 .mm-chat__list .is-info span { color: #ffe9a6; }
+
+// 지도 안내 위에 팀 명단 (둘 다 접었다 펼 수 있다)
+.mm-legends {
+  position: absolute;
+  bottom: 26px;
+  left: 26px;
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 236px;
+
+  .mm-legend {
+    position: static;
+    width: 100%;
+  }
+
+  .mm-legend.is-closed {
+    width: auto;
+    min-width: 120px;
+  }
+}
+
+.mm-teams {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &__row {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+
+    b {
+      display: inline-block;
+      margin-inline-end: 6px;
+      padding: 0 8px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 11px;
+    }
+
+    &--student b { background: #3b6fc4; }
+
+    &--prefect b { background: #a8325e; }
+  }
+}
+
+.mm-ti {
+  display: inline-block;
+  vertical-align: -3px;
+}
+
+.mm-chip--cloak {
+  border-color: #9fe08a;
+  color: #cff5c2;
+}
+
+.mm-tag__cloak {
+  display: inline-flex;
+  align-items: center;
+  color: #cde7ff;
+}
+
+// 지도 안 아이콘 (사감실 열쇠·목표 완료 체크)
+.mm-room__icon {
+  color: $mm-ink;
+
+  &.is-done {
+    color: #2d6b3f;
+  }
+}
+
+// 이동 안내는 조금 더 위, 소식 토스트는 더 꾸미고 조금 아래
+.mm-prompt {
+  top: -26px;
+}
+
+.mm-toasts {
+  top: 64px;
+  gap: 8px;
+
+  li {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    padding: 9px 18px 9px 14px;
+    border: 1px solid rgb(201 162 74 / 70%);
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgb(58 38 22 / 94%), rgb(32 20 12 / 94%));
+    box-shadow: 0 6px 20px rgb(0 0 0 / 55%), inset 0 0 0 1px rgb(255 232 170 / 14%);
+    color: #f6e3a1;
+    font-size: 17px;
+    font-weight: 700;
+    text-shadow: none;
+
+    .mm-ti {
+      flex: 0 0 auto;
+      color: #ffd56a;
+    }
+  }
+}
+
+// 발자국 흔적의 이름표는 흐리지 않게, 더 크고 또렷하게
+.mm-mark .mm-tag,
+.mm-token .mm-tag {
+  --tag: #2a1a10;
+
+  padding-block: 4px;
+  font-size: 17px;
+  opacity: 1 !important;
+  filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 3px 4px rgb(0 0 0 / 55%));
+
+  img {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+// 정찰 구역: 사감에게만 보이는 붉은 표시
+.mm-scout {
+  border: 3px dashed #8a1d12;
+  background: rgb(190 50 30 / 18%);
+  color: #6f130a;
+  font-size: 18px;
+  box-shadow: 0 0 0 4px rgb(190 50 30 / 12%);
+}

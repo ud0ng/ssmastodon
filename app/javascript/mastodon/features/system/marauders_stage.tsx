@@ -34,7 +34,7 @@ interface MapData {
 interface MToken { seat: number; room: number; team: 'student' | 'prefect'; status: string | null }
 interface MZone { kind: 'floor' | 'tower'; y?: number; x?: number; name: string }
 interface MClue { turn: number; kind: 'footprint' | 'zone' | 'watch' | 'scout'; seat: number; room?: number; zone?: MZone; count?: number; range?: number; age: number; room_name?: string }
-interface MPlayer { seat: number; name: string; account_id: string; acct?: string; avatar?: string | null; team: 'student' | 'prefect'; status: string | null; rescued: number; chosen?: boolean }
+interface MPlayer { seat: number; name: string; account_id: string; acct?: string; avatar?: string | null; team: 'student' | 'prefect'; status: string | null; rescued: number; chosen?: boolean; cloaked?: boolean }
 interface MLast {
   turn: number;
   moves: Record<string, { from: number; to: number; secret: boolean }>;
@@ -288,15 +288,41 @@ const MapSvg: React.FC<{
             {isPlan && <rect x={box.x - 5} y={box.y - 5} width={box.w + 10} height={box.h + 10} rx={12} className='mm-room__ring' />}
             <rect x={box.x + 5} y={box.y + 5} width={box.w - 10} height={box.h - 10} rx={5} className='mm-room__inner' />
             <text x={box.x + (box.w / 2)} y={box.y + 27} textAnchor='middle' className='mm-room__name' textLength={Math.min(box.w - 24, room.name.length * 16)} lengthAdjust='spacingAndGlyphs'>{room.name}</text>
-            {room.kind === 'office' && <text x={box.x + 12} y={box.y + 22} className='mm-room__icon'>🗝</text>}
+            {room.kind === 'office' && <SvgTIcon name='key' x={box.x + 10} y={box.y + 6} size={22} className='mm-room__icon' />}
             {target !== undefined && !target && <rect x={box.x + 5} y={box.y + 5} width={box.w - 10} height={box.h - 10} rx={5} className='mm-room__hatch' />}
-            {target && <text x={box.x + box.w - 24} y={box.y + 24} className='mm-room__icon'>✔</text>}
+            {target && <SvgTIcon name='check' x={box.x + box.w - 30} y={box.y + 6} size={22} className='mm-room__icon is-done' />}
           </motion.g>
         );
       })}
     </motion.svg>
   );
 };
+
+// ── Tabler 아이콘 (https://tabler.io/icons, MIT): 이모티콘 대신 쓰는 선 아이콘 ──
+const TABLER: Record<string, string[]> = {
+  'eye-off': ['M10.585 10.587a2 2 0 0 0 2.829 2.828', 'M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87', 'M3 3l18 18'],
+  lock: ['M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z', 'M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0', 'M8 11v-4a4 4 0 1 1 8 0v4'],
+  key: ['M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0z'],
+  check: ['M5 12l5 5l10 -10'],
+  x: ['M18 6l-12 12', 'M6 6l12 12'],
+  search: ['M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0', 'M21 21l-6 -6'],
+  walk: ['M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0', 'M7 21l3 -4', 'M16 21l-2 -4l-3 -3l1 -6', 'M6 12l2 -3l4 -1l3 3l3 1'],
+  'info-circle': ['M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0', 'M12 9h.01', 'M11 12h1v4h1'],
+  users: ['M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0', 'M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2', 'M16 3.13a4 4 0 0 1 0 7.75', 'M21 21v-2a4 4 0 0 0 -3 -3.85'],
+};
+
+const TIcon: React.FC<{ name: string; size?: number; className?: string }> = ({ name, size = 16, className }) => (
+  <svg className={['mm-ti', className].filter(Boolean).join(' ')} width={size} height={size} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' aria-hidden>
+    {(TABLER[name] ?? []).map((d) => <path key={d} d={d} />)}
+  </svg>
+);
+
+// SVG 안(지도)에 그리는 아이콘
+const SvgTIcon: React.FC<{ name: string; x: number; y: number; size?: number; className?: string }> = ({ name, x, y, size = 20, className }) => (
+  <g transform={`translate(${x} ${y}) scale(${size / 24})`} className={className} fill='none' stroke='currentColor' strokeWidth='2.2' strokeLinecap='round' strokeLinejoin='round'>
+    {(TABLER[name] ?? []).map((d) => <path key={d} d={d} />)}
+  </g>
+);
 
 // ── 맨 위 팀별 참여자 명단: 학생 | 사감, 이름 옆에 선택 완료 표시 ──
 const Roster: React.FC<{ view: MView }> = ({ view }) => (
@@ -309,9 +335,9 @@ const Roster: React.FC<{ view: MView }> = ({ view }) => (
             <li key={player.seat} className={[player.chosen && 'is-chosen', player.status === 'jailed' && 'is-jailed', player.status === 'out' && 'is-out', player.seat === view.me && 'is-me'].filter(Boolean).join(' ')}>
               {player.avatar && <img src={player.avatar} alt='' />}
               <span>{player.name}</span>
-              {view.status === 'active' && player.chosen && <i title='choice done'>✓</i>}
-              {player.status === 'jailed' && <i>🔒</i>}
-              {player.status === 'out' && <i>✕</i>}
+              {view.status === 'active' && player.chosen && <i title='choice done'><TIcon name='check' size={13} /></i>}
+              {player.status === 'jailed' && <i><TIcon name='lock' size={13} /></i>}
+              {player.status === 'out' && <i><TIcon name='x' size={13} /></i>}
             </li>
           ))}
         </ul>
@@ -321,7 +347,7 @@ const Roster: React.FC<{ view: MView }> = ({ view }) => (
 );
 
 // ── 이름표 달린 발자국 토큰 ──
-const NameTag: React.FC<{ player: MPlayer | undefined; team: 'student' | 'prefect'; me: boolean; dim?: boolean; label?: string }> = ({ player, team, me, dim, label }) => (
+const NameTag: React.FC<{ player: MPlayer | undefined; team: 'student' | 'prefect'; me: boolean; dim?: boolean; label?: React.ReactNode; cloaked?: boolean }> = ({ player, team, me, dim, label, cloaked }) => (
   <motion.span
     className={['mm-tag', `mm-tag--${(player?.seat ?? 0) % 6}`, team === 'prefect' && 'is-prefect', me && 'is-me', dim && 'is-dim'].filter(Boolean).join(' ')}
     animate={{ y: [0, -5, 0] }}
@@ -329,6 +355,7 @@ const NameTag: React.FC<{ player: MPlayer | undefined; team: 'student' | 'prefec
   >
     {player?.avatar && <img src={player.avatar} alt='' />}
     <b>{player?.name ?? '?'}</b>
+    {cloaked && <i className='mm-tag__cloak' title='invisible'><TIcon name='eye-off' size={15} /></i>}
     {label && <i>{label}</i>}
   </motion.span>
 );
@@ -381,7 +408,25 @@ const MapLegend: React.FC<{ view: MView }> = ({ view }) => {
   const left = every - ((view.turn - 1) % every);
   // 지도 안내는 접었다 펼 수 있다
   const [open, setOpen] = useState(true);
+  const [teamsOpen, setTeamsOpen] = useState(true);
   return (
+    <div className='mm-legends'>
+      <aside className={teamsOpen ? 'mm-legend mm-legend--teams' : 'mm-legend mm-legend--teams is-closed'} aria-label='teams'>
+        <button type='button' className='mm-legend__toggle' aria-expanded={teamsOpen} onClick={() => { setTeamsOpen((value) => !value); }}>
+          <h4><TIcon name='users' size={15} /> <FormattedMessage id='mm.teams' defaultMessage='Teams' /></h4>
+          <span aria-hidden>{teamsOpen ? '▾' : '▸'}</span>
+        </button>
+        {teamsOpen && (
+          <div className='mm-teams'>
+            {(['student', 'prefect'] as const).map((team) => (
+              <p key={team} className={`mm-teams__row mm-teams__row--${team}`}>
+                <b>{team === 'student' ? view.student_name : view.prefect_name}</b>
+                <span>{view.players.filter((player) => player.team === team).map((player) => player.name).join(', ')}</span>
+              </p>
+            ))}
+          </div>
+        )}
+      </aside>
     <aside className={open ? 'mm-legend' : 'mm-legend is-closed'} aria-label='legend'>
       <button type='button' className='mm-legend__toggle' aria-expanded={open} onClick={() => { setOpen((value) => !value); }}>
         <h4><FormattedMessage id='mm.legend' defaultMessage='Map key' /></h4>
@@ -394,11 +439,12 @@ const MapLegend: React.FC<{ view: MView }> = ({ view }) => {
         <li><LegendSample><line x1='3' y1='10' x2='41' y2='10' className='mm-stairs mm-stairs--closed' /></LegendSample><FormattedMessage id='mm.legend_closed' defaultMessage='Moving stairs (closed now)' /></li>
         {view.secret.length > 0 && <li><LegendSample><path d='M3 14 Q22 -4 41 14' className='mm-passage' /><text x='34' y='9' className='mm-door'>✦</text></LegendSample><FormattedMessage id='mm.legend_secret' defaultMessage='Secret passage (students only)' /></li>}
         {view.targets.length > 0 && <li><LegendSample><rect x='6' y='2' width='32' height='16' rx='3' className='mm-room__shape is-goal-sample' /><rect x='9' y='5' width='26' height='10' rx='2' className='mm-room__hatch is-sample' /></LegendSample><FormattedMessage id='mm.legend_goal' defaultMessage='Goal place' /></li>}
-        <li><LegendSample><rect x='6' y='2' width='32' height='16' rx='3' className='mm-legend__office' /><text x='9' y='13' className='mm-legend__star'>🗝</text></LegendSample><FormattedMessage id='mm.legend_office' defaultMessage="Filch's office (jail)" /></li>
+        <li><LegendSample><rect x='6' y='2' width='32' height='16' rx='3' className='mm-legend__office' /><SvgTIcon name='key' x={8} y={3} size={14} className='mm-room__icon' /></LegendSample><FormattedMessage id='mm.legend_office' defaultMessage="Filch's office (jail)" /></li>
         <li><LegendSample><rect x='6' y='2' width='32' height='16' rx='3' className='mm-legend__tower' /></LegendSample><FormattedMessage id='mm.legend_tower' defaultMessage='Tower room' /></li>
         <li><span className='mm-legend__feet'><FootGlyph team='student' /></span><FormattedMessage id='mm.legend_foot' defaultMessage='Footprints = where someone is (ribbon = name)' /></li>
       </ul>}
     </aside>
+    </div>
   );
 };
 
@@ -785,6 +831,7 @@ export const MaraudersStage: React.FC<{
             <b>{remaining}</b>
           </span>
         )}
+        {view.items.cloaked && <span className='mm-chip mm-chip--cloak'><TIcon name='eye-off' size={15} /> <FormattedMessage id='mm.cloaked' defaultMessage='Invisible' /></span>}
         <span className='mm-chip'><FormattedMessage id='mm.goals' defaultMessage='Goals {done}/{total}' values={{ done: view.targets_done, total: view.targets_total }} /></span>
         {view.team && <span className={`mm-chip mm-chip--${view.team}`}>{names}</span>}
         {view.spectator && <span className='mm-chip mm-chip--dim'><FormattedMessage id='mm.spectating' defaultMessage='Spectating' /></span>}
@@ -802,7 +849,7 @@ export const MaraudersStage: React.FC<{
         <ul className='mm-toasts' aria-live='polite'>
           <AnimatePresence>
             {toasts.map((toast) => (
-              <motion.li key={toast.id} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.35 }}>{toast.text}</motion.li>
+              <motion.li key={toast.id} initial={{ opacity: 0, y: -14, scale: 0.94 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.96 }} transition={{ duration: 0.4 }}><TIcon name='info-circle' size={20} /><span>{toast.text}</span></motion.li>
             ))}
           </AnimatePresence>
         </ul>
@@ -833,7 +880,7 @@ export const MaraudersStage: React.FC<{
 
           {view.clues.filter((clue) => clue.kind === 'scout' && clue.room !== undefined && clue.age <= 2).map((clue) => (
             <motion.div key={`scout-${clue.turn}-${clue.seat}`} className='mm-scout' style={pct(geo.center(clue.room ?? 0))} initial={{ scale: 0.2, opacity: 0.9 }} animate={{ scale: [0.2, 1, 1.15], opacity: [0.9, 0.7, Math.max(0.1, 0.6 - (clue.age * 0.25))] }} transition={{ duration: 1.4 }}>
-              <span>👣 ×{clue.count}</span>
+              <span><TIcon name='search' size={18} /> <TIcon name='walk' size={18} /> ×{clue.count}</span>
             </motion.div>
           ))}
 
@@ -859,7 +906,7 @@ export const MaraudersStage: React.FC<{
                 transition={{ left: { duration: arrested ? 2.4 : 1.1, delay: arrested ? 0.8 : 0.2 }, top: { duration: arrested ? 2.4 : 1.1, delay: arrested ? 0.8 : 0.2 }, opacity: { duration: 1.4 }, rotate: { duration: 0.7 } }}
               >
                 <FootGlyph team={token.team} />
-                <NameTag player={player} team={token.team} me={token.seat === view.me} label={token.status === 'jailed' ? '🔒' : token.status === 'out' ? '탈락' : undefined} />
+                <NameTag player={player} team={token.team} me={token.seat === view.me} label={token.status === 'jailed' ? <TIcon name='lock' size={14} /> : token.status === 'out' ? '탈락' : undefined} cloaked={Boolean(player?.cloaked)} />
               </motion.div>
             );
           })}

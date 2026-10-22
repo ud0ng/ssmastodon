@@ -1308,6 +1308,8 @@
   "lobby.join": "참여하기",
   "lobby.leave": "참여 취소",
   "mm.chat_info": "정보",
+  "mm.cloaked": "투명 상태",
+  "mm.teams": "팀",
   "mm.chat_student": "학생",
   "mm.chat_prefect": "사감",
   "lobby.recruit_title": "참가자 모집 중",
