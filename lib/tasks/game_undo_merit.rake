@@ -41,19 +41,24 @@ namespace :game do
 
     # ② 기준 시각 이후 구입한 해당 아이템
     refunded = GameReward.where(kind: 'admin', actor: 'undo_merit').pluck(:reason).join("\n")
-    purchases = GameReward.where(kind: 'purchase', created_at: since..).order(:id).select do |reward|
-      reward.items.any? { |item| item['count'].to_i.positive? && items.key?(Game::Wallet.key(item['name'])) } && refunded.exclude?("환불(구매 ##{reward.id})")
+    bought = GameReward.where(kind: 'purchase', created_at: since..).order(:id).select do |reward|
+      reward.items.any? { |item| item['count'].to_i.positive? && items.key?(Game::Wallet.key(item['name'])) }
     end
+    purchases = bought.select { |reward| refunded.exclude?("환불(구매 ##{reward.id})") }
     puts "\n[환불] 기준 시각 이후 구입 #{purchases.size}건"
     purchases.each do |reward|
       list = reward.items.select { |item| items.key?(Game::Wallet.key(item['name'])) }.map { |item| "#{item['name']} ×#{item['count']}" }.join(', ')
       puts "  구입 ##{reward.id} #{reward.created_at.in_time_zone('Asia/Seoul').strftime('%m/%d %H:%M')} #{name_of.call(reward.account_id)}: #{list}, #{-reward.money} 환불"
     end
 
-    # ③ 환불하는 구입으로 쓴 아이템: 구입자가 기준 시각 이후에 써서 올린 상점 횟수 (구입한 개수만큼, 최근 사용부터)
+    # ③ 기준 시각 이후 구입(이미 환불한 것도)으로 쓴 아이템: 구입자가 기준 시각 이후에 써서 올린 상점 횟수 (구입한 개수만큼, 최근 사용부터)
+    #   '준 사람'(source_account_id)은 10-21 에 생긴 칸이라 그 전 기록에는 비어 있다 → 같은 때 남은 사용 기록(재화 기록 kind 'use')의 계정으로 찾는다
     done = GameCounterLog.where(actor: 'undo_merit').pluck(:reason).join("\n")
+    source_of = lambda do |log|
+      log.source_account_id || GameReward.where(kind: 'use', reason: log.reason, created_at: (log.created_at - 10.seconds)..(log.created_at + 10.seconds)).pick(:account_id)
+    end
     need = Hash.new(0)
-    purchases.each do |reward|
+    bought.each do |reward|
       reward.items.each do |item|
         key = Game::Wallet.key(item['name'])
         need[[reward.account_id, key]] += item['count'].to_i if items.key?(key) && item['count'].to_i.positive?
@@ -61,14 +66,17 @@ namespace :game do
     end
     rollbacks = need.flat_map do |(account_id, key), count|
       item = items[key]
-      logs = GameCounterLog.where(game_counter_id: counter.id, source_account_id: account_id, created_at: since..)
+      logs = GameCounterLog.where(game_counter_id: counter.id, source_account_id: [account_id, nil], created_at: since..)
                            .where('delta > 0').where('reason LIKE ?', "#{GameCounterLog.sanitize_sql_like(item.name)}%").order(id: :desc).to_a
-      logs.reject { |log| done.include?("롤백(기록 ##{log.id})") }.first(count)
+                           .select { |log| source_of.call(log) == account_id }
+      # 이미 되돌린 기록도 구입한 개수에 넣는다 (다시 실행해도 더 되돌리지 않게)
+      rolled, left = logs.partition { |log| done.include?("롤백(기록 ##{log.id})") }
+      left.first([count - rolled.size, 0].max)
     end
     puts "\n[상점 횟수 되돌리기] 아이템을 써서 올린 기록 #{rollbacks.size}건"
     rollbacks.each do |log|
       character = GameCharacter.for(Account.find(log.account_id))
-      puts "  기록 ##{log.id} #{name_of.call(log.source_account_id)} → #{name_of.call(log.account_id)}: #{counter.name} #{log.delta} 되돌림 (지금 누적 #{counter.raw_for(character)}회)"
+      puts "  기록 ##{log.id} #{name_of.call(source_of.call(log))} → #{name_of.call(log.account_id)}: #{counter.name} #{log.delta} 되돌림 (지금 누적 #{counter.raw_for(character)}회)"
     end
 
     unless apply
@@ -99,7 +107,7 @@ namespace :game do
       rollbacks.each do |log|
         character = GameCharacter.for(Account.find(log.account_id))
         counter.add!(character, -log.delta, reason: "롤백(기록 ##{log.id}) #{log.reason}".truncate(200), actor: 'undo_merit')
-        backup[:counter_rollbacks] << { log_id: log.id, account_id: log.account_id, source_account_id: log.source_account_id, delta: log.delta }
+        backup[:counter_rollbacks] << { log_id: log.id, account_id: log.account_id, source_account_id: source_of.call(log), delta: log.delta }
       end
     end
 

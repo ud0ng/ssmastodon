@@ -89,6 +89,27 @@ RSpec.describe 'game:undo_merit' do
     expect(praise.raw_for(GameCharacter.for(ron).reload)).to eq 1
   end
 
+  it 'rolls back uses logged before the source column existed, even after the purchases were already refunded' do
+    ron = Fabricate(:account, username: 'ron')
+    GameCharacter.for(ron).update!(house: house)
+    run(apply: true) # 예전 명령으로 환불만 된 상태
+
+    travel_to(Time.zone.parse('2026-10-21 13:00')) do
+      2.times do
+        Game::Wallet.apply!([{ account: harry, items: { '칭찬권' => 0 } }], kind: 'use', detail: '칭찬권 → 론', actor: 'web')
+        praise.add!(GameCharacter.for(ron), 1, item: '칭찬권', reason: '칭찬권 → 론', actor: 'web')
+      end
+    end
+    expect(praise.raw_for(GameCharacter.for(ron).reload)).to eq 2
+
+    run(apply: true)
+    expect(praise.raw_for(GameCharacter.for(ron).reload)).to eq 0
+    expect(character.money).to eq 80
+
+    run(apply: true)
+    expect(GameCounterLog.where(actor: 'undo_merit').count).to eq 2
+  end
+
   it 'refunds in full even when the items were already used, deleting only what is left' do
     Game::Wallet.apply!([{ account: harry, items: { '칭찬권' => -2 } }], kind: 'use')
 
