@@ -15,7 +15,9 @@ class Api::V1::System::SessionsController < Api::BaseController
   before_action :set_session
 
   def show
-    events = @session.events.includes(:status).order(:id)
+    # 이벤트(비행 대결·도둑 지도 등) 방은 툿·카드 없이 대기방/게임방 화면만 쓴다: 무거운 툿·카드 조회를 건너뛰고 메시지는 방 전체가 함께 쓰게 잠깐 저장해 둔다
+    lean = event_stage?
+    events = lean ? [] : @session.events.includes(:status).order(:id)
     render json: {
       id: @session.id.to_s,
       kind: @session.kind,
@@ -29,7 +31,7 @@ class Api::V1::System::SessionsController < Api::BaseController
       player: @session.player_for(current_account).present?,
       lobby: @session.lobby? || Game::Lobby.recruiting?(@session) ? Game::Lobby.view(@session, current_account, staff: staff?) : nil,
       staff: staff?,
-      messages: messages(events),
+      messages: lean ? lean_messages : messages(events),
       events: events.map do |event|
         {
           id: event.id.to_s,
@@ -223,6 +225,43 @@ class Api::V1::System::SessionsController < Api::BaseController
 
   # 컨텐츠 방(채팅) 메시지: 판 스레드의 툿 전부(신청·명령어·시스템 진행) + 내가 낀 판이면 그 사이 시스템과 주고받은 DM(비밀 선택).
   # 관전하는 사람은 스레드만 본다.
+  # 이벤트 방인가 (새 무대 화면을 쓰는 컨텐츠)
+  def event_stage?
+    Game::Kinds.group_games.map(&:key).include?(@session.kind)
+  end
+
+  # 방 전체가 같이 쓰는 메시지 목록(카드 없이)을 2초 동안 한 번만 만든다. 사람마다 달라지는 것(내 글·비밀 안내·팀 채팅)만 따로 거른다.
+  def lean_messages
+    last_id = @session.messages.maximum(:id).to_i
+    rows = Rails.cache.fetch(['game/lean_messages', @session.id, last_id, @session.status], expires_in: 2.seconds) { build_lean_rows }
+    my_team = team_of_viewer
+    spectator = @session.player_for(current_account).nil?
+    rows.filter_map do |row|
+      next if row[:recipient_id] && row[:recipient_id] != current_account.id
+      next if row[:chat] && row[:team].present? && row[:team] != my_team && !spectator && @session.status != 'finished'
+
+      row.except(:recipient_id, :author_id).merge(mine: row[:chat] && row[:author_id] == current_account.id)
+    end
+  end
+
+  def build_lean_rows
+    system = Game::System.account
+    messages = @session.messages.includes(:author).order(:id).last(MESSAGE_LIMIT)
+    authors = messages.filter_map(&:author).uniq
+    names = GameCharacter.where(account_id: authors.map(&:id)).index_by(&:account_id)
+    messages.map do |message|
+      speaker = message.chat? ? message.author : system
+      {
+        id: "m#{message.id}", system: !message.chat?, chat: message.chat?, mine: false, secret: message.secret?,
+        name: speaker ? (names[speaker.id]&.display_name || speaker.display_name.presence || speaker.username) : '',
+        acct: speaker&.acct.to_s, avatar: speaker ? full_asset_url(speaker.avatar_static_url) : '', account_id: speaker&.id&.to_s,
+        text: message.text, created_at: message.created_at.iso8601,
+        team: message.chat? && message.payload.is_a?(Hash) ? message.payload['team'] : nil, card: nil,
+        recipient_id: message.account_id, author_id: message.author_id
+      }
+    end
+  end
+
   def messages(events)
     (status_messages(events) + web_messages).sort_by { |message| message[:created_at] }.last(MESSAGE_LIMIT)
   end

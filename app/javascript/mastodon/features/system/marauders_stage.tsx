@@ -109,7 +109,7 @@ const messages = defineMessages({
   send: { id: 'mm.chat_send', defaultMessage: 'Send' },
 });
 
-const REFRESH_MS = 1_500;
+const REFRESH_MS = 2_500;
 const CELL_W = 138;
 const CELL_H = 70;
 const GAP_X = 40;

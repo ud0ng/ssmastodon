@@ -18,7 +18,8 @@ class Api::V1::System::WalletsController < Api::BaseController
     shop_items = GameShopItem.includes(:shop).index_by { |item| Game::Wallet.key(item.name) }
     results = GamePlayer.joins(:session).merge(GameSession.real).where(account: current_account, game_sessions: { status: 'finished' }).group(:result).count
     rewards = GameReward.where(account: current_account)
-    activity = Game::Activity.overview([current_account.id])[current_account.id]
+    # 툿 합계는 툿 전체를 세는 무거운 조회라 5분 동안 저장해 둔다 (재화 화면은 자주 읽는다)
+    activity = Rails.cache.fetch(['game/toot_totals', current_account.id], expires_in: 5.minutes) { Game::Activity.overview([current_account.id])[current_account.id].to_h }
 
     render json: {
       currency: currency,
@@ -30,8 +31,8 @@ class Api::V1::System::WalletsController < Api::BaseController
       gained: rewards.gained.sum(:money),
       spent: rewards.spent.sum(:money),
       # 내 툿 합계 (DM 포함 전체 툿 수 / 글자 수): 재화 화면 누적 사용 옆
-      posts: activity.posts + activity.dms,
-      post_chars: activity.chars + activity.dm_chars,
+      posts: activity[:posts].to_i + activity[:dms].to_i,
+      post_chars: activity[:chars].to_i + activity[:dm_chars].to_i,
       item_count: character.item_count,
       record: { win: results['win'].to_i, lose: results['lose'].to_i, draw: results['draw'].to_i },
       # 왼쪽 컨텐츠 메뉴 배지: 받고 아직 수락하지 않은 신청 수

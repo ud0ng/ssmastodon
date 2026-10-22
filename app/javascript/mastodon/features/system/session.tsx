@@ -54,7 +54,7 @@ const messages = defineMessages({
 
 const REFRESH_MS = 5_000;
 // 대기방은 준비·채팅·카운트다운이 빨리 보이게 자주 읽는다
-const LOBBY_REFRESH_MS = 1_500;
+const LOBBY_REFRESH_MS = 2_500;
 // 툿을 올리고 시스템이 처리할 때까지 잠깐 기다렸다 다시 읽는다
 const AFTER_SEND_MS = [1_200, 3_500];
 

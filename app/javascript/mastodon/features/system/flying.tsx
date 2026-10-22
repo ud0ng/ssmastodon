@@ -117,7 +117,7 @@ const messages = defineMessages({
 
 const LINE_Y = 80;
 const LANE_Y = 36;
-const REFRESH_MS = 1_500;
+const REFRESH_MS = 2_500;
 const FINISHED_REFRESH_MS = 6_000;
 const BUBBLE_MS = 6_000;
 

@@ -86,6 +86,11 @@ class Api::V1::System::HousesController < Api::BaseController
 
   # 소속 점수 카드 아래 합계 카드: 이 소속 캐릭터들의 재화·전적·툿(DM 포함 전체 툿 수 / 글자 수) 합계
   def summary_json
+    # 툿 전체를 세는 무거운 합계라 소속마다 2분 동안 저장해 둔다 (재화·전적은 같이 저장되어 잠깐 늦을 수 있다)
+    Rails.cache.fetch(['game/house_summary', @house.id], expires_in: 2.minutes) { build_summary }
+  end
+
+  def build_summary
     ids = house_members.map(&:account_id)
     results = GamePlayer.joins(:session).merge(GameSession.real).where(account_id: ids, game_sessions: { status: 'finished' }).group(:result).count
     activity = Game::Activity.overview(ids).values_at(*ids)
