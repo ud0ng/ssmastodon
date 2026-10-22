@@ -326,26 +326,24 @@ const SvgTIcon: React.FC<{ name: string; x: number; y: number; size?: number; cl
   </g>
 );
 
-// ── 맨 위 팀별 참여자 명단: 학생 | 사감, 이름 옆에 선택 완료 표시 ──
-const Roster: React.FC<{ view: MView }> = ({ view }) => (
-  <div className='mm-roster'>
-    {(['student', 'prefect'] as const).map((team) => (
-      <div key={team} className={`mm-roster__team mm-roster__team--${team}`}>
-        <b>{team === 'student' ? view.student_name : view.prefect_name}</b>
-        <ul>
-          {view.players.filter((player) => player.team === team).map((player) => (
-            <li key={player.seat} className={[player.chosen && 'is-chosen', player.status === 'jailed' && 'is-jailed', player.status === 'out' && 'is-out', player.seat === view.me && 'is-me'].filter(Boolean).join(' ')}>
-              {player.avatar && <img src={player.avatar} alt='' />}
-              <span>{player.name}</span>
-              {view.status === 'active' && player.chosen && <i title='choice done'><TIcon name='check' size={13} /></i>}
-              {player.status === 'jailed' && <i><TIcon name='lock' size={13} /></i>}
-              {player.status === 'out' && <i><TIcon name='x' size={13} /></i>}
-            </li>
-          ))}
-        </ul>
-      </div>
+// ── 지도 양 옆 팀 열: 아바타 · 이름 · 배지(선택 완료·갇힘·망토·남은 능력) ──
+const TeamSide: React.FC<{ view: MView; team: 'student' | 'prefect' }> = ({ view, team }) => (
+  <ul className={`mm-side mm-side--${team}`}>
+    {team === 'student' && view.cloaks_left != null && <li className='mm-side__cloaks' title='cloaks'><TIcon name='eye-off' size={14} /> ×{view.cloaks_left}</li>}
+    {view.players.filter((player) => player.team === team).map((player) => (
+      <li key={player.seat} className={['mm-side__player', player.chosen && 'is-chosen', player.status === 'jailed' && 'is-jailed', player.status === 'out' && 'is-out', player.seat === view.me && 'is-me'].filter(Boolean).join(' ')}>
+        {player.avatar ? <img src={player.avatar} alt='' /> : <span className='mm-side__noimg' />}
+        <b>{player.name}</b>
+        <span className='mm-side__badges'>
+          {view.status === 'active' && player.chosen && <i title='choice done'><TIcon name='check' size={12} /></i>}
+          {player.cloaked && <i title='invisible'><TIcon name='eye-off' size={12} /></i>}
+          {player.status === 'jailed' && <i><TIcon name='lock' size={12} /></i>}
+          {player.status === 'out' && <i><TIcon name='x' size={12} /></i>}
+          {player.ability && <i title={player.role ?? ''}><TIcon name={player.role === 'watcher' ? 'eye' : player.role === 'scout' ? 'search' : 'walk'} size={12} />×{player.ability.left}</i>}
+        </span>
+      </li>
     ))}
-  </div>
+  </ul>
 );
 
 // ── 이름표 달린 발자국 토큰 ──
@@ -410,38 +408,8 @@ const MapLegend: React.FC<{ view: MView }> = ({ view }) => {
   const left = every - ((view.turn - 1) % every);
   // 지도 안내는 접었다 펼 수 있다
   const [open, setOpen] = useState(true);
-  const [teamsOpen, setTeamsOpen] = useState(true);
   return (
     <div className='mm-legends'>
-      <aside className={teamsOpen ? 'mm-legend mm-legend--teams' : 'mm-legend mm-legend--teams is-closed'} aria-label='teams'>
-        <button type='button' className='mm-legend__toggle' aria-expanded={teamsOpen} onClick={() => { setTeamsOpen((value) => !value); }}>
-          <h4><TIcon name='users' size={15} /> <FormattedMessage id='mm.teams' defaultMessage='Teams' /></h4>
-          <span aria-hidden>{teamsOpen ? '▾' : '▸'}</span>
-        </button>
-        {teamsOpen && (
-          <div className='mm-teams'>
-            {(['student', 'prefect'] as const).map((team) => (
-              <div key={team} className={`mm-teams__team mm-teams__team--${team}`}>
-                <p className='mm-teams__head'>
-                  <b>{team === 'student' ? view.student_name : view.prefect_name}</b>
-                  {team === 'student' && view.cloaks_left != null && <span className='mm-teams__item'><TIcon name='eye-off' size={13} /> ×{view.cloaks_left}</span>}
-                </p>
-                <ul>
-                  {view.players.filter((player) => player.team === team).map((player) => (
-                    <li key={player.seat} className={[player.chosen && 'is-chosen', player.status === 'out' && 'is-out'].filter(Boolean).join(' ')}>
-                      <span className='mm-teams__name'>{player.name}</span>
-                      {player.chosen && view.status === 'active' && <i title='choice done'><TIcon name='check' size={13} /></i>}
-                      {player.cloaked && <i title='invisible'><TIcon name='eye-off' size={13} /></i>}
-                      {player.status === 'jailed' && <i><TIcon name='lock' size={13} /></i>}
-                      {player.ability && <em className='mm-teams__item' title={player.role ?? ''}><TIcon name={player.role === 'watcher' ? 'eye' : player.role === 'scout' ? 'search' : 'walk'} size={13} /> ×{player.ability.left}</em>}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        )}
-      </aside>
     <aside className={open ? 'mm-legend' : 'mm-legend is-closed'} aria-label='legend'>
       <button type='button' className='mm-legend__toggle' aria-expanded={open} onClick={() => { setOpen((value) => !value); }}>
         <h4><FormattedMessage id='mm.legend' defaultMessage='Map key' /></h4>
@@ -834,9 +802,6 @@ export const MaraudersStage: React.FC<{
 
   return createPortal(
     <div className='game-stage mm-stage' role='region' aria-label={name} ref={stageRef}>
-      {/* 팀별 참여자 명단 (선택을 마친 사람에게는 ✓) */}
-      <Roster view={view} />
-
       {/* 맨 위: 턴 · 제한 시간 · 목표 · 내 팀 */}
       <header className='mm-top'>
         <span className='mm-chip'><FormattedMessage id='mm.turn' defaultMessage='Turn {turn}/{max}' values={{ turn: view.turn, max: view.max_turns }} /></span>
@@ -853,8 +818,10 @@ export const MaraudersStage: React.FC<{
         <button type='button' className='mm-exit' onClick={() => { history.push('/system/group'); }}><FormattedMessage id='mm.exit' defaultMessage='Exit' /></button>
       </header>
 
-      {/* 지도 (양피지) */}
-      <div className='mm-parchment'>
+      {/* 지도 (양피지) + 양 옆 팀 열 */}
+      <div className='mm-arena'>
+        <TeamSide view={view} team='student' />
+      <div className='mm-parchment' style={{ '--mm-k': Math.max(0.5, Math.min(1, 1000 / geo.width)) } as React.CSSProperties}>
         <MapLegend view={view} />
         {/* 안내글은 전부 지도 위에: 이동 선택 안내, 갇힘·탈락 안내, 소식(누가 어디에 있는지·계단 변화 등) */}
         <ul className='mm-notice' aria-live='polite'>
@@ -887,7 +854,7 @@ export const MaraudersStage: React.FC<{
 
           {/* 공개된 발자국(사감 팀)·내 흔적(학생 팀): 이름표와 함께 잉크 자국으로 남았다가 서서히 흐려진다 */}
           {view.clues.filter((clue) => (clue.kind === 'footprint' || clue.kind === 'watch') && clue.room !== undefined && clue.age <= 4).map((clue) => (
-            <motion.div key={`mark-${clue.turn}-${clue.seat}-${clue.kind}`} className='mm-mark' style={pct(geo.center(clue.room ?? 0))} initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: Math.max(0.15, 1 - (clue.age * 0.28)), scale: 1 }}>
+            <motion.div key={`mark-${clue.turn}-${clue.seat}-${clue.kind}`} className='mm-mark' style={pct(geo.center(clue.room ?? 0))} initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: Math.max(0.55, 1 - (clue.age * 0.15)), scale: 1 }}>
               <FootGlyph team='student' />
               <NameTag player={byseat.get(clue.seat)} team='student' me={clue.seat === view.me} dim={clue.age > 0} />
             </motion.div>
@@ -901,7 +868,7 @@ export const MaraudersStage: React.FC<{
 
           {/* 발자국 찍기 (이동·끌려감) */}
           {stamps.map((stamp) => (
-            <motion.div key={stamp.id} className='mm-stamp' style={{ ...pct({ x: stamp.x, y: stamp.y }), rotate: stamp.angle }} initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: [0, 0.9, 0.9, 0], scale: [0.4, 1, 1, 1] }} transition={{ delay: stamp.delay, duration: 2.6 }}>
+            <motion.div key={stamp.id} className='mm-stamp' style={{ ...pct({ x: stamp.x, y: stamp.y }), rotate: stamp.angle }} initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: [0, 1, 1, 0], scale: [0.4, 1, 1, 1] }} transition={{ delay: stamp.delay, duration: 2.6 }}>
               <StepGlyph team={stamp.team} side={stamp.side} />
             </motion.div>
           ))}
@@ -964,6 +931,8 @@ export const MaraudersStage: React.FC<{
             {view.role === 'chaser' && <FormattedMessage id='mm.ability_chase' defaultMessage='Chase: move 2 ({count})' values={{ count: view.items.ability ?? 0 }} />}
           </button>
         )}
+      </div>
+        <TeamSide view={view} team='prefect' />
       </div>
 
       {/* 맹세(오프닝)는 메뉴 띠까지 덮는 전체 화면, 끝나면 아이콘 메뉴가 있는 지도 화면 */}
