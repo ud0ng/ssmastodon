@@ -199,6 +199,27 @@ RSpec.describe Game::Events::Opening do
     expect(GameHousePoint.where(account: accounts.second).sum(:amount)).to eq 5
   end
 
+  it 'tells the waiting room why a person cannot join (full, busy elsewhere, daily limit) while the button stays' do
+    Game::Config.merge!('events', 'event_daily_limit' => 1)
+    described_class.open!(Game::Web::Maze, admin)
+    session = event_session('maze')
+    allow(GameCharacter).to receive(:eligible_accounts).and_return(Account.where(id: accounts.map(&:id)))
+
+    expect(Game::Lobby.view(session, accounts.first, staff: false)).to include(can_join: true, join_block: nil)
+
+    earlier = GameSession.create!(kind: 'flying', status: 'finished', visibility: 'private', finished_at: Time.current, state: { 'mode' => 'event' })
+    earlier.players.create!(account: accounts.first, seat: 0, result: 'win', state: {})
+    expect(Game::Lobby.view(session, accounts.first, staff: false)).to include(can_join: true, join_block: '하루에 참가할 수 있는 이벤트 횟수를 넘었습니다.')
+
+    Game::Config.merge!('events', 'event_daily_limit' => 0)
+    earlier.update!(status: 'active')
+    expect(Game::Lobby.view(session, accounts.first, staff: false)).to include(join_block: '이미 다른 이벤트에 참가 중입니다.')
+
+    Game::Config.merge!('maze', 'event_max_players' => '2', 'event_min_players' => '2')
+    accounts.last(2).each { |account| session.players.create!(account: account, seat: session.players.count, state: { 'accepted' => true }) }
+    expect(Game::Lobby.view(session.reload, accounts.first, staff: false)).to include(can_join: true, join_block: '참가 인원이 가득 찼습니다.')
+  end
+
   it 'cancels when too few people joined' do
     described_class.open!(Game::Web::Maze, admin)
     toot(accounts.first, '@system [참가]')

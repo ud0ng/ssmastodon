@@ -170,6 +170,19 @@ module Game
       scope.count >= limit
     end
 
+    BLOCK_MESSAGES = { full: '참가 인원이 가득 찼습니다.', busy: '이미 다른 이벤트에 참가 중입니다.', limit: '하루에 참가할 수 있는 이벤트 횟수를 넘었습니다.' }.freeze
+
+    # 지금 이 사람이 참가·수락할 수 없는 이유 문구 (참가할 수 있으면 nil)
+    def join_block(session, account)
+      return if session.player_for(account)
+
+      reason = if session.players.size >= session.kind_class.new(session).event_max_players then :full
+               elsif busy_elsewhere?(session, account) then :busy
+               elsif over_daily_limit?(account) then :limit
+               end
+      BLOCK_MESSAGES[reason]
+    end
+
     # 참가는 됐지만 점수·보상을 받지 못할 때 웹이 모달로 보여 줄 안내 (아니면 nil)
     def reward_notice(account, session)
       return if session.test? || !reward_capped?(account, session)
@@ -222,13 +235,13 @@ module Game
       scope.exists?
     end
 
-    # 오늘(00시 기준) 이미 참가한 이벤트 수가 하루 제한 횟수(이벤트 설정 > 제한)에 닿았는가. 테스트 플레이는 세지 않는다
+    # 오늘(00시 기준) 이미 참가한 이벤트 수가 하루 제한 횟수(이벤트 설정 > 제한)에 닿았는가. 테스트 플레이와 취소된 이벤트는 세지 않는다
     def over_daily_limit?(account)
       limit = Game::Events::Settings.daily_limit
       return false unless limit.positive?
 
       keys = Game::Kinds.group_games.map(&:key)
-      GamePlayer.joins(:session).merge(GameSession.real).where(account: account, game_sessions: { kind: keys }).where('game_sessions.created_at >= ?', Time.now.in_time_zone('Asia/Seoul').beginning_of_day).count >= limit
+      GamePlayer.joins(:session).merge(GameSession.real).where(account: account, game_sessions: { kind: keys }).where.not(game_sessions: { status: 'cancelled' }).where('game_sessions.created_at >= ?', Time.now.in_time_zone('Asia/Seoul').beginning_of_day).count >= limit
     end
 
     # 초대받고 아직 수락하지 않은 캐릭터: 대기방에 '대기중...'으로 보인다
@@ -254,7 +267,9 @@ module Game
         recruiting: recruiting?(session),
         invite: invite_ids(session).any?,
         can_respond: session.lobby? && !counting?(session) && invite_ids(session).include?(viewer.id) && session.player_for(viewer).nil?,
-        can_join: joinable?(session) && invite_ids(session).empty? && session.player_for(viewer).nil? && session.players.size < kind.event_max_players && GameCharacter.eligible_accounts.exists?(id: viewer.id),
+        can_join: joinable?(session) && invite_ids(session).empty? && session.player_for(viewer).nil? && GameCharacter.eligible_accounts.exists?(id: viewer.id),
+        # 정원 초과·동시 진행·하루 제한에 걸려 참가할 수 없을 때의 이유 (참가·수락 버튼이 '참가 불가'로 보이고 누르면 이 이유를 모달로 보여 준다)
+        join_block: join_block(session, viewer),
         can_leave: joinable?(session) && session.player_for(viewer).present?,
         can_invite: session.lobby? && !counting?(session) && invite_ids(session).any? && (staff || session.state['opened_by'].to_i == viewer.id),
         recruit_ends_at: recruiting?(session) ? session.deadline_at&.iso8601(3) : nil,

@@ -43,6 +43,8 @@ export interface LobbyData {
   can_leave?: boolean;
   // 초대한 이벤트: 운영진·연 사람은 캐릭터를 더 초대할 수 있다
   can_invite?: boolean;
+  // 정원 초과·동시 진행·하루 제한으로 참가할 수 없을 때의 이유 (버튼이 '참가 불가'로 보이고 누르면 모달)
+  join_block?: string | null;
   // 초대한 이벤트: 초대받은 사람은 대기방에서 [수락][거절]
   invite?: boolean;
   can_respond?: boolean;
@@ -201,6 +203,11 @@ export const LobbyStage: React.FC<{
     [sessionId, onChanged, dispatch, intl],
   );
 
+  // 참가 불가 버튼을 누르면 이유를 모달로
+  const blocked = useCallback((message: string) => {
+    dispatch(openModal({ modalType: 'CONFIRM', modalProps: { title: intl.formatMessage(messages.joinFailed), message, confirm: intl.formatMessage(messages.ok), hideCancel: true, onConfirm: () => undefined } }));
+  }, [dispatch, intl]);
+
   const toggle = useCallback(
     (player: LobbyPlayer) => {
       post('ready', { ready: !player.ready, ...(player.account_id === lobby.me ? {} : { acct: player.acct }) });
@@ -256,8 +263,8 @@ export const LobbyStage: React.FC<{
         <div className='game-stage__membership'>
           {lobby.can_respond && (
             <>
-              <button type='button' className='game-stage__join' disabled={busy} onClick={() => { post('accept'); }}>
-                <FormattedMessage id='lobby.accept' defaultMessage='Accept' />
+              <button type='button' className={lobby.join_block ? 'game-stage__join game-stage__join--off' : 'game-stage__join'} disabled={busy} onClick={() => { if (lobby.join_block) blocked(lobby.join_block); else post('accept'); }}>
+                {lobby.join_block ? <FormattedMessage id='lobby.cannot_join' defaultMessage='Cannot join' /> : <FormattedMessage id='lobby.accept' defaultMessage='Accept' />}
               </button>
               <button type='button' className='game-stage__join game-stage__join--off' disabled={busy} onClick={() => { post('decline'); }}>
                 <FormattedMessage id='lobby.decline' defaultMessage='Decline' />
@@ -280,8 +287,8 @@ export const LobbyStage: React.FC<{
             </button>
           )}
           {lobby.can_join && (
-            <button type='button' className='game-stage__join' disabled={busy} onClick={() => { post('join'); }}>
-              <FormattedMessage id='lobby.join' defaultMessage='Join' />
+            <button type='button' className={lobby.join_block ? 'game-stage__join game-stage__join--off' : 'game-stage__join'} disabled={busy} onClick={() => { if (lobby.join_block) blocked(lobby.join_block); else post('join'); }}>
+              {lobby.join_block ? <FormattedMessage id='lobby.cannot_join' defaultMessage='Cannot join' /> : <FormattedMessage id='lobby.join' defaultMessage='Join' />}
             </button>
           )}
           {lobby.can_leave && !counting && (

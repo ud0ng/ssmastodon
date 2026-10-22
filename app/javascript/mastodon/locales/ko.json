@@ -1563,5 +1563,6 @@
   "lobby.ok": "확인",
   "system.session.cancelled_title": "이벤트가 취소됐어요",
   "system.session.ok": "확인",
-  "lobby.no_reward_title": "오늘은 점수와 보상이 없어요"
+  "lobby.no_reward_title": "오늘은 점수와 보상이 없어요",
+  "lobby.cannot_join": "참가 불가"
 }
