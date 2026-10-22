@@ -208,6 +208,8 @@ class Api::V1::System::SessionsController < Api::BaseController
   private
 
   def build_view(kind, player)
+    # 참가자(최대 24명)의 계정·캐릭터를 한 번에 읽어 둔다 (사람마다 조회하면 쿼리가 수십 개)
+    Game::Lobby.preload_characters(@session)
     view = kind.view_for(player)
     add_avatars!(view)
     view

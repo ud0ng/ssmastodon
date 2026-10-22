@@ -59,12 +59,11 @@ module Game
       status
     end
 
-    # 보통은 참가자 모두. 운영진이 연 모집(아직 아무 툿도 없는 이벤트)은 등록된 모든 캐릭터에게 멘션이 가게 한다.
+    # 보통은 참가자 모두. 운영진이 연 모집(아직 아무 툿도 없는 이벤트)은 아무도 태그하지 않는다 (모집 알림은 웹 이벤트 메뉴 배지·소리로 간다).
     def default_mentions(session)
       return session.players.map(&:account) unless session.root_status_id.nil? && session.status == 'pending' && session.state['mode'] == 'event'
 
-      bots = Game::Config.for('common')['bot_usernames'].to_s.split(/[,s]+/).map { |name| name.delete_prefix('@').downcase }
-      GameCharacter.eligible_accounts.to_a.reject { |account| bots.include?(account.username.downcase) }
+      []
     end
 
     # PC 웹 카드용으로 그 순간의 상태를 남긴다 (Game::Card)

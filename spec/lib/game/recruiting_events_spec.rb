@@ -34,7 +34,7 @@ RSpec.describe Game::Events::Opening do
     event_session(key)
   end
 
-  it 'opens a recruiting event that mentions every character' do
+  it 'opens a recruiting event with a recruiting toot that tags nobody' do
     session = described_class.open!(Game::Web::Maze, admin)
 
     expect(session).to have_attributes(status: 'pending', visibility: 'private')
@@ -43,7 +43,8 @@ RSpec.describe Game::Events::Opening do
     root = Status.find(session.root_status_id)
     expect(root.account).to eq system
     expect(root.text).to include('트라이위저드 미로가 열렸습니다', '[참가]')
-    expect(root.mentions.map(&:account_id)).to include(*accounts.map(&:id))
+    expect(root.mentions).to be_empty # 모집 툿은 아무도 태그하지 않는다 (알림은 웹 이벤트 메뉴 배지)
+    expect(root.text).to_not include('@')
   end
 
   it 'lets only staff open events unless the event settings let everyone, and then only the allowed kinds of opening' do

@@ -41,7 +41,7 @@ module Game
         [config['event_max_players'].to_i, event_min_players].max
       end
 
-      # 모집 시작: 운영진이 열면 모두에게 팔로워 공개 모집 툿 (Game::Poster 가 전체를 멘션한다), 캐릭터가 열면 툿 없음.
+      # 모집 시작: 운영진이 열면 팔로워 공개 모집 툿 하나 (아무도 태그하지 않는다), 캐릭터가 열면 툿 없음.
       # 어느 쪽이든 모두의 이벤트 메뉴에 알림 배지·소리 (Game::EventNotice.alert!) + 시간 제한
       def open!
         state.merge!('mode' => 'event', 'phase' => 'recruit')

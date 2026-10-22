@@ -247,36 +247,46 @@ RSpec.describe Game::Web::MaraudersMap do
   describe 'clues and abilities' do
     let(:session) { start!(6) }
 
+    # 학생 팀은 무작위로 정해지니 첫 학생 자리를 쓴다 (0번이 사감일 수 있다)
+    def student_seat(target = session)
+      kind = kind_for(target)
+      target.players.find { |player| kind.team_of(player) == 'student' }.seat
+    end
+
     def goal_next_to_a_student!
       goal = session.state['targets'].first
       start = layout.neighbors(links(session), goal).first
-      far = (0...session.state['map']['rooms'].size).to_a - [goal, start, session.state['map']['office']] - layout.within(links(session), goal, 4)
-      place!(session, { '0' => start, '1' => far.first, '2' => far.second, '3' => far.third, '4' => far.fourth, '5' => far.fifth })
+      far = (0...session.state['map']['rooms'].size).to_a - [goal, start, session.state['map']['office']] - session.state['targets'] - layout.within(links(session), goal, 4)
+      others = (0..5).to_a - [student_seat]
+      place!(session, { student_seat.to_s => start }.merge(others.each_with_index.to_h { |seat, index| [seat.to_s, far[index]] }))
       [goal, start]
     end
 
     it 'leaves a footprint at a target and counts it once, and the cloak hides the trace' do
       goal, = goal_next_to_a_student!
-      move!(session, 0, goal)
-      everyone_hides!(session, except: [0])
+      me = student_seat
+      move!(session, me, goal)
+      everyone_hides!(session, except: [me])
 
       session.reload
       expect(session.state['done']).to eq [goal]
-      expect(session.state['clues']).to include(include('kind' => 'footprint', 'seat' => 0, 'room' => goal))
+      expect(session.state['clues']).to include(include('kind' => 'footprint', 'seat' => me, 'room' => goal))
 
       cloak_session = start!(6)
       goal = cloak_session.state['targets'].first
       start = layout.neighbors(layout.edges(cloak_session.state['map'], 'a'), goal).first
-      far = (0...cloak_session.state['map']['rooms'].size).to_a - [goal, start, cloak_session.state['map']['office']] - layout.within(layout.edges(cloak_session.state['map'], 'a'), goal, 4)
-      cloak_session.state['positions'].merge!('0' => start, '1' => far.first, '2' => far.second, '3' => far.third, '4' => far.fourth, '5' => far.fifth)
+      far = (0...cloak_session.state['map']['rooms'].size).to_a - [goal, start, cloak_session.state['map']['office']] - cloak_session.state['targets'] - layout.within(layout.edges(cloak_session.state['map'], 'a'), goal, 4)
+      cloaker = student_seat(cloak_session)
+      cloak_session.state['positions'].merge!(cloaker.to_s => start)
+      ((0..5).to_a - [cloaker]).each_with_index { |seat, index| cloak_session.state['positions'][seat.to_s] = far[index] }
       cloak_session.save!
-      Game::WebCommand.play(cloak_session.reload, cloak_session.players.find_by!(seat: 0).account, '투명망토')
+      Game::WebCommand.play(cloak_session.reload, cloak_session.players.find_by!(seat: cloaker).account, '투명망토')
       expect(cloak_session.reload.state['cloaks_left']).to eq 0
-      Game::WebCommand.play(cloak_session, cloak_session.players.find_by!(seat: 0).account, '이동', [goal.to_s])
-      everyone_hides!(cloak_session, except: [0])
+      Game::WebCommand.play(cloak_session, cloak_session.players.find_by!(seat: cloaker).account, '이동', [goal.to_s])
+      everyone_hides!(cloak_session, except: [cloaker])
 
       expect(cloak_session.reload.state['done']).to eq [goal] # 목표는 달성하지만
-      expect(cloak_session.state['clues'].select { |clue| clue['seat'] == 0 }).to be_empty # 흔적은 없다
+      expect(cloak_session.state['clues'].select { |clue| clue['seat'] == cloaker }).to be_empty # 흔적은 없다
     end
 
     it 'leaves a footprint when a student uses a secret passage, which only students can see' do
@@ -304,19 +314,22 @@ RSpec.describe Game::Web::MaraudersMap do
     it 'lets the watcher spot a student entering the watched room, once per game' do
       session = start!(6)
       watcher_seat = session.state['roles'].key('watcher').to_i
-      room = (0...session.state['map']['rooms'].size).find { |candidate| candidate != session.state['map']['office'] }
+      # 학생 팀은 무작위: 학생 한 명을 골라 목표가 아닌 방을 감시한다 (목표 방이면 발자국이 남아 감시 단서와 섞인다)
+      student = session.players.find { |player| kind_for(session).team_of(player) == 'student' }.seat
+      room = (0...session.state['map']['rooms'].size).find { |candidate| candidate != session.state['map']['office'] && !session.state['targets'].include?(candidate) && layout.neighbors(links(session), candidate).any? }
       next_room = layout.neighbors(links(session), room).first
-      far = (0...session.state['map']['rooms'].size).to_a - [room, next_room, session.state['map']['office']] - layout.within(links(session), room, 3)
-      place!(session, { '0' => next_room, '1' => far.first, '2' => far.second, '3' => far.third, '4' => far.fourth, '5' => far.fifth })
+      far = (0...session.state['map']['rooms'].size).to_a - [room, next_room, session.state['map']['office']] - session.state['targets'] - layout.within(links(session), room, 3)
+      others = (0..5).to_a - [student]
+      place!(session, { student.to_s => next_room }.merge(others.each_with_index.to_h { |seat, index| [seat.to_s, far[index]] }))
       account = session.players.find_by!(seat: watcher_seat).account
 
       Game::WebCommand.play(session, account, '능력', [room.to_s])
       Game::WebCommand.play(session.reload, account, '능력', [room.to_s]) # 두 번째는 안 된다
       expect(session.reload.state['ability_left'][watcher_seat.to_s]).to eq 0
-      move!(session, 0, room)
-      everyone_hides!(session, except: [0])
+      move!(session, student, room)
+      everyone_hides!(session, except: [student])
 
-      expect(session.reload.state['clues']).to include(include('kind' => 'watch', 'seat' => 0, 'room' => room))
+      expect(session.reload.state['clues']).to include(include('kind' => 'watch', 'seat' => student, 'room' => room))
     end
 
     it 'lets a chaser move two rooms and a scout count the students nearby' do
