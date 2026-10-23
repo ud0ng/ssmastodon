@@ -89,6 +89,7 @@
             %th.game-table__number= game_sort_header(game_t('admin.games.activity.partners'), 'partners', sort_column, sort_direction)
             %th.game-table__number= game_sort_header(game_t('admin.games.activity.last_reply'), 'last_reply', sort_column, sort_direction)
             %th.game-table__number= game_sort_header(game_t('admin.games.activity.media'), 'media', sort_column, sort_direction)
+            %th.game-table__number= game_sort_header(game_t('admin.games.activity.skipped'), 'skipped', sort_column, sort_direction)
         %tbody
           - @characters.each do |character|
             - totals = @totals[character.account_id]
@@ -102,8 +103,9 @@
               %td.game-table__number{ class: ('game-alert' if alert.partners < @criteria[:min_partners]) }= game_t('admin.games.activity.partners_value', count: alert.partners)
               %td.game-table__number{ class: ('game-alert' if late) }= game_ago(alert.last_reply_at)
               %td.game-table__number= number_with_delimiter(totals.media)
+              %td.game-table__number= number_with_delimiter(totals.skipped)
           - if @characters.empty?
             %tr
-              %td.bot-sheet-table__text{ colspan: 10 }= game_t('admin.games.manage.roster.empty')
+              %td.bot-sheet-table__text{ colspan: 11 }= game_t('admin.games.manage.roster.empty')
 
 = render 'admin/game_activities/give_modal', return_to: admin_game_activities_path

@@ -87,6 +87,7 @@ en:
         win: Win
       activity:
         back: Back to activity
+        skipped: Skipped
         backfill: Load past records
         backfill_confirm: Recount every past toot and rebuild the daily activity snapshots? This can take a few minutes.
         backfill_started: Loading past records. Reload in a moment.

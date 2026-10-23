@@ -29,7 +29,7 @@
             = render 'admin/game_activities/totals_cells', totals: totals
         - if @daily.empty?
           %tr
-            %td.bot-sheet-table__text{ colspan: 7 }= game_t('admin.games.activity.no_data')
+            %td.bot-sheet-table__text{ colspan: 8 }= game_t('admin.games.activity.no_data')
 
 = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.activity.pairs_title'), hint: game_t('admin.games.activity.pairs_hint') } do
   .bot-sheet-table.game-table.game-table--scroll
@@ -43,6 +43,7 @@
           %th.game-table__number= game_t('admin.games.activity.reply_count')
           %th.game-table__number= game_t('admin.games.activity.dm_posts')
           %th.game-table__number= game_t('admin.games.activity.pair_dm_chars')
+          %th.game-table__number= game_t('admin.games.activity.skipped')
       %tbody
         - @pairs.each do |other, row|
           - path = stats_admin_game_activity_path(@character, opponent: other.account_id, range: range_name, from: params[:from], to: params[:to])
@@ -54,9 +55,10 @@
             %td.game-table__number= number_with_delimiter(row.reply_turns)
             %td.game-table__number= number_with_delimiter(row.dms)
             %td.game-table__number= number_with_delimiter(row.dm_chars)
+            %td.game-table__number= number_with_delimiter(row.skipped)
         - if @pairs.empty?
           %tr
-            %td.bot-sheet-table__text{ colspan: 7 }= game_t('admin.games.activity.no_data')
+            %td.bot-sheet-table__text{ colspan: 8 }= game_t('admin.games.activity.no_data')
 
 - if @opponent
   = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.activity.pair_daily', name: @character.display_name, other: @opponent.display_name) } do
@@ -71,6 +73,7 @@
             %th.game-table__number= game_t('admin.games.activity.reply_count')
             %th.game-table__number= game_t('admin.games.activity.dm_posts')
             %th.game-table__number= game_t('admin.games.activity.pair_dm_chars')
+            %th.game-table__number= game_t('admin.games.activity.skipped')
         %tbody
           - @pair_daily.each do |day, row|
             %tr
@@ -81,6 +84,7 @@
               %td.game-table__number= number_with_delimiter(row.reply_turns)
               %td.game-table__number= number_with_delimiter(row.dms)
               %td.game-table__number= number_with_delimiter(row.dm_chars)
+              %td.game-table__number= number_with_delimiter(row.skipped)
           - if @pair_daily.empty?
             %tr
-              %td.bot-sheet-table__text{ colspan: 7 }= game_t('admin.games.activity.no_data')
+              %td.bot-sheet-table__text{ colspan: 8 }= game_t('admin.games.activity.no_data')

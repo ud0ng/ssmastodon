@@ -11,10 +11,10 @@ module Admin
     RECORDS = 30
     VIEWS = %w(character house total).freeze
     RANGES = %w(all today yesterday week month custom).freeze
-    SORTS = %w(name posts chars dms dm_chars replies media last_reply partners public_posts public_chars reply_posts reply_chars).freeze
+    SORTS = %w(name posts chars dms dm_chars replies media last_reply partners public_posts public_chars reply_posts reply_chars skipped).freeze
     # 표 칸 → 스냅샷 열
     SORT_FIELDS = { 'posts' => :posts, 'chars' => :post_chars, 'dms' => :dms, 'dm_chars' => :dm_chars, 'replies' => :reply_turns, 'media' => :media,
-                    'public_posts' => :public_posts, 'public_chars' => :public_chars, 'reply_posts' => :reply_posts, 'reply_chars' => :reply_chars }.freeze
+                    'public_posts' => :public_posts, 'public_chars' => :public_chars, 'reply_posts' => :reply_posts, 'reply_chars' => :reply_chars, 'skipped' => :skipped }.freeze
     helper_method :sort_column, :sort_direction, :view_name, :range_name, :range_from, :range_to
 
     def index

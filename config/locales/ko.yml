@@ -131,6 +131,7 @@ ko:
         hours: '%{count}시간'
         hours_hint: 1~24시간 (기본 24)
         last_reply: 최근 활동
+        skipped: 스루
         partners: 교류수
         partners_value: '%{count}명'
         all_posts: 전체 툿

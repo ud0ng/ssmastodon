@@ -5,7 +5,11 @@ module Game
   # 캐릭터 관리 > 활동·활동 기록과 재화 화면·소속 점수 화면의 툿 합계가 이 표만 읽게 한다 (툿 전체를 매번 세지 않게).
   #
   #   game_activity_days   캐릭터×날짜: 전체(퍼블+답, DM 제외)·DM·퍼블·답 툿 수·글자 수, 답 횟수, 미디어 툿 수
-  #   game_activity_pairs  캐릭터×상대 캐릭터×날짜: 답 툿 수·글자 수·미디어·답 횟수, DM 툿 수·글자 수
+  #   game_activity_pairs  캐릭터×상대 캐릭터×날짜: 답 툿 수·글자 수·미디어·답 횟수, DM 툿 수·글자 수, 스루 수
+  #
+  # 스루 수(skipped): 상대 캐릭터가 이 캐릭터 한 명만 태그해서 쓴 툿(팔로워 공개·조용한 공개, DM 제외)에 이 캐릭터가 답 툿을 달지 않은 수.
+  # 하트를 눌러도 답이 아니니 센다. 시스템·상점봇 계정이 쓰거나 태그된 툿, 태그가 둘 이상(셋 이상이 함께하는 툿)인 툿은 뺀다 (웹 '답장할 멘션'과 비슷한 조건).
+  # 날짜는 태그받은 툿을 쓴 날이고, 나중에 답을 달면 그 날 것에서 하나 줄인다.
   #
   # 세는 법은 예전 활동 화면과 같다 (Game::Activity): 부스트·지운 툿은 빼고, 퍼블은 답이 아닌 툿, 답 툿은 답글, 글자 수는 본문 길이,
   # 답 횟수는 다른 사람의 (답이 아닌 퍼블) 툿에 답을 단 것을 같은 툿에는 1회로 센다 (날짜마다 따로), 미디어는 사진 등을 붙인 툿 (DM 제외).
@@ -97,6 +101,10 @@ module Game
       replies.where(id: media_ids).group(:account_id, :in_reply_to_account_id).count.each { |(id, other), count| pairs[[id, other]][:reply_media] = count }
       turn_scope.where('statuses.in_reply_to_account_id <> statuses.account_id').group('statuses.account_id', 'statuses.in_reply_to_account_id')
                 .pluck(Arel.sql('statuses.account_id'), Arel.sql('statuses.in_reply_to_account_id'), Arel.sql('COUNT(DISTINCT statuses.in_reply_to_id)')).each { |id, other, count| pairs[[id, other]][:reply_turns] = count }
+      skipped_scope(date).group('mentions.account_id', 'statuses.account_id').count.each do |(id, author), count|
+        days[id][:skipped] += count
+        pairs[[id, author]][:skipped] = count
+      end
       low = id_range(date)
       Mention.joins(:status).where(statuses: { id: low, visibility: :direct, reblog_of_id: nil, local: true }).where('mentions.account_id <> statuses.account_id')
              .group('statuses.account_id', 'mentions.account_id')
@@ -110,6 +118,33 @@ module Game
         GameActivityPair.insert_all(pairs.map { |(id, other), values| { day: date, account_id: id, other_account_id: other, **values } }) if pairs.any?
       end
       date
+    end
+
+    # 그 날 스루된 태그: 멘션 줄 (받은 사람 mentions.account_id, 쓴 사람 statuses.account_id)
+    def skipped_scope(date)
+      excluded = excluded_account_ids
+      scope = Mention.joins(:status).where(silent: false)
+                     .where(statuses: { id: id_range(date), visibility: %i(unlisted private), reblog_of_id: nil, local: true })
+                     .where('mentions.account_id <> statuses.account_id')
+                     .where('(SELECT COUNT(*) FROM mentions others WHERE others.status_id = statuses.id AND others.account_id <> statuses.account_id AND others.silent = FALSE) = 1')
+                     .where('NOT EXISTS (SELECT 1 FROM statuses answers WHERE answers.in_reply_to_id = statuses.id AND answers.account_id = mentions.account_id AND answers.deleted_at IS NULL)')
+      excluded.any? ? scope.where.not(account_id: excluded).where.not(statuses: { account_id: excluded }) : scope
+    end
+
+    # 스루에서 뺄 계정: 시스템 계정, 상점봇 계정
+    def excluded_account_ids
+      [Game::System.account, *Game::Gift.bot_accounts].compact.map(&:id)
+    end
+
+    # 이 툿이 스루 후보면 받은 사람의 계정 번호 (한 명만 태그한 팔로워 공개·조용한 공개 툿)
+    def skip_target(status)
+      return if status.reblog_of_id.present? || !status.local? || status.direct_visibility? || status.public_visibility?
+
+      mentions = status.mentions.reject { |mention| mention.silent? || mention.account_id == status.account_id }
+      return unless mentions.size == 1
+
+      target = mentions.first.account_id
+      (excluded_account_ids & [target, status.account_id]).empty? ? target : nil
     end
 
     # ── 툿이 저장될 때 오늘 것에 쌓는다 ──
@@ -145,7 +180,25 @@ module Game
       end
 
       bump!(GameActivityDay, %i(day account_id), [{ day: date, account_id: status.account_id, **day }], day.keys)
+      record_skips!(status, date)
       pairs.each { |other, values| bump!(GameActivityPair, :index_game_activity_pairs_on_day_and_accounts, [{ day: date, account_id: status.account_id, other_account_id: other, **values }], values.keys) }
+    end
+
+    # 새 툿이 한 사람만 태그했으면 그 사람의 스루 +1, 이 툿이 스루 후보 툿에 처음 단 답이면 그 날 것에서 -1
+    def record_skips!(status, date)
+      target = skip_target(status)
+      if target
+        bump!(GameActivityDay, %i(day account_id), [{ day: date, account_id: target, skipped: 1 }], %i(skipped))
+        bump!(GameActivityPair, :index_game_activity_pairs_on_day_and_accounts, [{ day: date, account_id: target, other_account_id: status.account_id, skipped: 1 }], %i(skipped))
+      end
+
+      parent = status.in_reply_to_id && Status.find_by(id: status.in_reply_to_id)
+      return if parent.nil? || skip_target(parent) != status.account_id
+      return if Status.where(id: parent.id..status.id, account_id: status.account_id, in_reply_to_id: parent.id).where.not(id: status.id).exists? # 이미 먼저 답했다
+
+      parent_date = parent.created_at.in_time_zone(ZONE).to_date
+      bump!(GameActivityDay, %i(day account_id), [{ day: parent_date, account_id: status.account_id, skipped: -1 }], %i(skipped))
+      bump!(GameActivityPair, :index_game_activity_pairs_on_day_and_accounts, [{ day: parent_date, account_id: status.account_id, other_account_id: parent.account_id, skipped: -1 }], %i(skipped))
     end
 
     # 이 답 툿이 그 날 처음으로 그 툿에 단 답인가 (다른 사람의 답이 아닌 퍼블 툿에 단 답만 센다)

@@ -100,4 +100,47 @@ RSpec.describe Game::ActivitySnapshot do
     expect(described_class.pairs(account.id)[other.id].reply_posts).to eq 4
     expect(described_class.pair_daily(account.id, other.id).map(&:first)).to eq [day]
   end
+  describe "skipped (스루)" do
+    let(:third) { Fabricate(:user).account }
+    let(:system_account) { Fabricate(:user, account: Fabricate(:account, username: "system")).account }
+
+    before { allow(Game::System).to receive(:account).and_return(system_account) }
+
+    def tag(text, from:, to:, visibility: :private, thread: nil)
+      status = Fabricate(:status, account: from, text: text, visibility: visibility, thread: thread, created_at: noon)
+      Array(to).each { |target| Mention.create!(status: status, account: target) }
+      status
+    end
+
+    it "counts followers-only and unlisted one-to-one tags that were not answered, even if hearted, and leaves out the rest" do
+      tag("안 답함", from: other, to: account)
+      tag("조용한 공개", from: other, to: account, visibility: :unlisted)
+      answered = tag("답함", from: other, to: account)
+      Fabricate(:status, account: account, thread: answered, created_at: noon)
+      tag("DM", from: other, to: account, visibility: :direct)
+      tag("공개", from: other, to: account, visibility: :public)
+      tag("셋이서", from: other, to: [account, third])
+      tag("시스템에게", from: other, to: [account, system_account])
+      tag("시스템이 보냄", from: system_account, to: account)
+      Favourite.create!(account: account, status: tag("하트만 누름", from: other, to: account))
+
+      described_class.rebuild!(day)
+
+      expect(GameActivityDay.find_by!(day: day, account_id: account.id).skipped).to eq 3
+      expect(GameActivityPair.find_by!(day: day, account_id: account.id, other_account_id: other.id).skipped).to eq 3
+    end
+
+    it "adds a tag as it is written and takes it back when the tagged character answers, matching a rebuild" do
+      tagged = tag("태그", from: other, to: account)
+      described_class.record!(tagged.id)
+      expect(GameActivityDay.find_by!(day: day, account_id: account.id).skipped).to eq 1
+
+      reply = Fabricate(:status, account: account, thread: tagged, created_at: noon + 1.minute)
+      described_class.record!(reply.id)
+      expect(GameActivityDay.find_by!(day: day, account_id: account.id).skipped).to eq 0
+
+      described_class.rebuild!(day)
+      expect(GameActivityDay.find_by(day: day, account_id: account.id)&.skipped.to_i).to eq 0
+    end
+  end
 end
