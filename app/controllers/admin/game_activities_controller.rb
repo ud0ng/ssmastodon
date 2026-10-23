@@ -65,6 +65,7 @@ module Admin
       by_account = @characters.index_by(&:account_id)
       @pairs = Game::ActivitySnapshot.pairs(@character.account_id, from: range_from, to: range_to).filter_map { |other, row| [by_account[other], row] if by_account[other] }
       @pairs.sort_by! { |other, row| [-(row.reply_posts + row.dms), other.display_name.downcase] }
+      @pairs_back = Game::ActivitySnapshot.pairs_to(@character.account_id, from: range_from, to: range_to) # 상대 → 이 캐릭터
       @opponent = by_account[params[:opponent].to_i]
       @chart_days = chart_days(@daily)
       @daily = sort_table(:days, @daily, DAY_SORTS, default: 'date', default_dir: 'desc') { |(day, row), key| key == 'date' ? day : [row[SORT_FIELDS.fetch(key)].to_i, day] }

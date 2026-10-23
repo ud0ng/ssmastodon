@@ -47,6 +47,8 @@ RSpec.describe Game::ActivitySnapshot do
 
     pair = GameActivityPair.find_by!(day: day, account_id: account.id, other_account_id: other.id)
     expect(pair).to have_attributes(reply_posts: 4, reply_media: 1, reply_turns: 2, dms: 1, dm_chars: 'DM 하나'.size)
+    expect(described_class.pairs_to(account.id)).to eq({}) # 상대가 이 캐릭터에게 쓴 것은 이 날 없다
+    expect(described_class.pairs_to(other.id)[account.id]).to have_attributes(reply_posts: 4, reply_turns: 2) # 이 캐릭터 → 상대
     expect(GameActivityDay.where(day: day - 1, account_id: account.id)).to be_empty # 이 날만 다시 계산했다
     described_class.rebuild!(day - 1)
     expect(GameActivityDay.find_by!(day: day - 1, account_id: account.id).posts).to eq 1 # 한국 시간으로 어제 23:59
@@ -131,7 +133,7 @@ RSpec.describe Game::ActivitySnapshot do
     before { allow(Game::System).to receive(:account).and_return(system_account) }
 
     def tag(text, from:, to:, visibility: :private, thread: nil)
-      status = Fabricate(:status, account: from, text: text, visibility: visibility, thread: thread, created_at: noon)
+      status = Fabricate(:status, account: from, text: text, visibility: visibility, thread: thread, created_at: noon + ((@tick = (@tick || 0) + 1).seconds))
       Array(to).each { |target| Mention.create!(status: status, account: target) }
       status
     end

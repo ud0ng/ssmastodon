@@ -337,6 +337,15 @@ module Game
       result
     end
 
+    # 상대 캐릭터 id => PairTotals (상대들이 이 캐릭터에게 한 것: 상대 → 이 캐릭터, 기간 합계)
+    def pairs_to(account_id, from: nil, to: nil)
+      result = {}
+      range_scope(GameActivityPair.where(other_account_id: account_id), from, to).group(:account_id)
+                                                                                  .pluck(:account_id, *PAIR_COLUMNS.map { |column| Arel.sql("SUM(#{column})") })
+                                                                                  .each { |other, *values| result[other] = PairTotals.new(**PAIR_COLUMNS.zip(values.map(&:to_i)).to_h) }
+      result
+    end
+
     # 날짜 => PairTotals (캐릭터와 상대 캐릭터 사이, 최근 날짜가 위)
     def pair_daily(account_id, other_id, from: nil, to: nil)
       rows = range_scope(GameActivityPair.where(account_id: account_id, other_account_id: other_id), from, to).order(day: :desc)

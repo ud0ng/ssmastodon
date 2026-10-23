@@ -45,4 +45,20 @@ RSpec.describe Notification, '.without_game' do
     expect(Game::System.hidden_notification?(notice_for(game_reply_mention))).to be true
     expect(Game::System.hidden_notification?(game_notice)).to be true
   end
+
+  it 'also hides what characters say to each other inside a game conversation, but not in a basic-command or plain conversation' do
+    game_status, = mention('@system @luna [젤리빈]', from: harry, to: luna)
+    Mention.create!(status: game_status, account: system)
+    chat_status, chat_mention = mention('@harry 좋아', from: luna, to: harry, thread: game_status)
+    later_status, later_mention = mention('@luna 그래', from: harry, to: luna, thread: chat_status)
+    plain_status, = mention('@system 안녕', from: harry, to: system)
+    _plain_chat_status, plain_chat_mention = mention('@harry 안녕', from: luna, to: harry, thread: plain_status)
+
+    expect([chat_status, later_status]).to all(be_present)
+    expect(shown?(notice_for(chat_mention))).to be false
+    expect(shown?(notice_for(later_mention))).to be false
+    expect(Game::System.hidden_notification?(notice_for(chat_mention))).to be true
+    expect(shown?(notice_for(plain_chat_mention))).to be true
+    expect(Game::System.hidden_notification?(notice_for(plain_chat_mention))).to be false
+  end
 end

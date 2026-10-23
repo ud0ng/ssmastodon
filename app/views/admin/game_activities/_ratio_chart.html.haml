@@ -1,9 +1,6 @@
--# 비율 막대 한 개: 상대 캐릭터마다 몫을 나눈 100% 막대 + 범례(이름 · 값 · %). 위쪽 8명, 나머지는 '기타'. 마우스를 올리면 말풍선
+-# 비율 막대 한 개: 상대 캐릭터마다 몫을 나눈 100% 막대 + 범례(이름 · 값 · %). 모두 나온다 (색은 12가지를 돌려 쓴다). 마우스를 올리면 말풍선
 -# locals: title, entries [[이름, 값]]
 - entries = entries.select { |_, value| value.positive? }.sort_by { |name, value| [-value, name] }
-- if entries.size > 8
-  - rest = entries.drop(8).sum { |_, value| value }
-  - entries = entries.first(8) + [[game_t('admin.games.activity.ratio_others'), rest]]
 - sum = [entries.sum { |_, value| value }, 1].max
 .act-ratio
   %h4.act-ratio__title= title
@@ -12,13 +9,13 @@
   - else
     .act-ratio__bar
       - entries.each_with_index do |(name, value), index|
-        %span.act-ratio__seg{ class: "act-ratio__seg--#{index == 8 ? 'rest' : index}", style: "flex-grow: #{value}", tabindex: 0 }
+        %span.act-ratio__seg{ class: "act-ratio__seg--#{index % 12}", style: "flex-grow: #{value}", tabindex: 0 }
           .act-chart__tip
             %strong= name
             %span= "#{number_with_delimiter(value)} (#{(value * 100.0 / sum).round(1)}%)"
     %ul.act-ratio__legend
       - entries.each_with_index do |(name, value), index|
         %li
-          %span.act-ratio__dot{ class: "act-ratio__seg--#{index == 8 ? 'rest' : index}" }
+          %span.act-ratio__dot{ class: "act-ratio__seg--#{index % 12}" }
           %span.act-ratio__name= name
           %span.act-ratio__value= "#{number_with_delimiter(value)} · #{(value * 100.0 / sum).round(1)}%"

@@ -40,7 +40,7 @@ module Game
       Game::Engine.parse(text)&.first.to_s.strip.presence
     end
 
-    # 웹 알림창에서 숨길 컨텐츠 알림인가: 시스템이 보낸 알림(기본 명령어에 단 답장은 빼고), 시스템을 멘션하며 컨텐츠 명령어를 쓴 툿의 멘션 알림
+    # 웹 알림창에서 숨길 컨텐츠 알림인가: 시스템이 보낸 알림(기본 명령어에 단 답장은 빼고), 시스템을 멘션하며 컨텐츠 명령어를 쓴 툿의 멘션 알림, 그 컨텐츠 대화 안의 멘션 알림
     # (Notification.without_game 의 SQL 과 같은 판단)
     def hidden_notification?(notification)
       system = account
@@ -53,7 +53,20 @@ module Game
       end
 
       command = status && command_of(status.text)
-      command.present? && !basic_commands.include?(command) && status.mentions.any? { |mention| mention.account_id == system.id }
+      return true if command.present? && !basic_commands.include?(command) && status.mentions.any? { |mention| mention.account_id == system.id }
+
+      status.present? && game_conversation?(status)
+    end
+
+    # 컨텐츠 명령어 툿이 있는 대화인가: 그 대화에서 캐릭터들이 나눈 말도 컨텐츠 안에서만 보인다 (Notification.without_game 의 SQL 과 같은 판단)
+    def game_conversation?(status)
+      return false if status.conversation_id.nil?
+
+      basic = basic_commands
+      Status.where(conversation_id: status.conversation_id).joins(:mentions).where(mentions: { account_id: account.id }).any? do |toot|
+        command = command_of(toot.text)
+        command.present? && basic.exclude?(command)
+      end
     end
 
     # 게임 명령어로 처리할 툿 (Game::MentionWorker)

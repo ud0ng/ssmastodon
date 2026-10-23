@@ -69,6 +69,12 @@
               %td.game-table__number= number_with_delimiter(row.dms)
               %td.game-table__number= number_with_delimiter(row.dm_chars)
               %td.game-table__number= number_with_delimiter(row.skipped)
+            -# 아래 줄: 상대 → 이 캐릭터 (같은 기간)
+            - back = @pairs_back[other.account_id] || Game::ActivitySnapshot::PairTotals.empty
+            %tr.game-table__sub{ data: { href: path } }
+              %td.bot-sheet-table__text
+                %small.hint= "↳ #{other.display_name} → #{@character.display_name}"
+              = render 'admin/game_activities/pair_cells', row: back
           - if @pairs.empty?
             %tr
               %td.bot-sheet-table__text{ colspan: 8 }= game_t('admin.games.activity.no_data')
