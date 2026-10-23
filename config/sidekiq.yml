@@ -44,6 +44,11 @@
       cron: '<%= Random.rand(0..59) %> <%= Random.rand(3..5) %> * * *'
       class: Scheduler::IpCleanupScheduler
       queue: scheduler
+    # 한국 시간 00시 5분 (UTC 15:05): 어제 하루치 활동 스냅샷을 맞추고 빠진 날을 채운다
+    game_activity_snapshot_scheduler:
+      cron: '5 15 * * *'
+      class: Scheduler::GameActivitySnapshotScheduler
+      queue: scheduler
     pghero_scheduler:
       cron: '0 0 * * *'
       class: Scheduler::PgheroScheduler

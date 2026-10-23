@@ -442,6 +442,7 @@ class Status < ApplicationRecord
 
   def enqueue_game_activity
     Game::ActivityWorker.perform_async(account_id)
+    Game::ActivitySnapshotWorker.perform_async(id) # 오늘의 활동 스냅샷에 쌓는다
   end
 
   def update_status_stat!(attrs)

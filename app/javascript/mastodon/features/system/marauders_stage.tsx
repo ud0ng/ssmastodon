@@ -43,7 +43,7 @@ interface MLast {
   secret: number[];
   stairs: boolean;
 }
-interface MHistory { turn: number; positions: Record<string, number>; status_of?: Record<string, string> }
+interface MHistory { turn: number; positions: Record<string, number>; status_of?: Record<string, string>; arrests?: { seat: number; by: number; room: number; out: boolean }[]; rescued?: number[] }
 interface MReward { result: 'win' | 'lose' | 'draw'; points: number; money: number; items: string[] }
 
 interface MView {
@@ -595,34 +595,91 @@ const ChatDock: React.FC<{
   );
 };
 
-// ── 끝: 지도가 지워지고 학생들의 실제 이동 경로가 리플레이로 그려진다 ──
-const Replay: React.FC<{ view: MView; geo: Geometry }> = ({ view, geo }) => {
-  const history = useMemo(() => view.history ?? [], [view.history]);
-  const students = view.players.filter((player) => player.team === 'student');
-  const [step, setStep] = useState(0);
+// ── 끝: 라운드별로 다시 보기 / 경로만 보기 ──
+const PATH_COLORS = ['#1f4e9a', '#9a2a2a', '#2a7a46', '#8a5a14', '#6a2fa0', '#157a85', '#a07a14', '#8a2f66', '#444444', '#c0561b'];
 
-  useEffect(() => {
-    if (history.length === 0) return undefined;
-    const timer = window.setInterval(() => { setStep((value) => (value + 1) % (history.length + 3)); }, 900);
-    return () => { window.clearInterval(timer); };
-  }, [history.length]);
+const routeColor = (view: MView, seat: number) => PATH_COLORS[Math.max(view.players.findIndex((player) => player.seat === seat), 0) % PATH_COLORS.length] ?? '#444444';
 
-  const upto = Math.min(step, history.length - 1);
-  const colors = ['#2b4c8f', '#8b2d2d', '#2d6b3f', '#7a4a1a', '#5a2d8b', '#1d6b73', '#8b6b1d', '#6b2d52'];
-
+// 지도 위에 사람마다 실제로 지나간 길을 점선 발자국으로 그린다 (지도는 그대로 보인다)
+const RoutesLayer: React.FC<{ view: MView; geo: Geometry; seats: number[] }> = ({ view, geo, seats }) => {
+  const history = view.history ?? [];
   return (
     <svg className='mm-replay' viewBox={`0 0 ${geo.width} ${geo.height}`} aria-hidden>
-      {students.map((student, index) => {
-        const points = history.slice(0, upto + 1).map((entry) => entry.positions[String(student.seat)]).filter((room): room is number => room !== undefined).map((room) => geo.center(room));
-        if (points.length < 2) return null;
-        const d = points.map((point, order) => `${order === 0 ? 'M' : 'L'} ${point.x + (index * 3)} ${point.y + (index * 3)}`).join(' ');
-        return <motion.path key={student.seat} d={d} fill='none' stroke={colors[index % colors.length]} strokeWidth={5} strokeLinecap='round' strokeDasharray='2 10' initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.8 }} />;
-      })}
-      {view.map.rooms.filter((room) => view.targets.some((target) => target.room === room.id)).map((room) => {
-        const point = geo.center(room.id);
-        return <text key={room.id} x={point.x} y={point.y} textAnchor='middle' className='mm-replay__goal'>{room.name}</text>;
+      {seats.map((seat, order) => {
+        const rooms = history.map((entry) => entry.positions[String(seat)]).filter((room): room is number => room !== undefined);
+        const trail = rooms.filter((room, index) => index === 0 || room !== rooms[index - 1]);
+        if (trail.length === 0) return null;
+        const shift = ((order % 5) - 2) * 4;
+        const points = trail.map((room) => geo.center(room)).map((point) => ({ x: point.x + shift, y: point.y + shift }));
+        const d = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+        const color = routeColor(view, seat);
+        const last = points[points.length - 1] ?? points[0];
+        const first = points[0];
+        if (!first || !last) return null;
+        return (
+          <g key={seat}>
+            {points.length > 1 && <motion.path d={d} fill='none' stroke={color} strokeWidth={7} strokeLinecap='round' strokeLinejoin='round' strokeDasharray='1 12' initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.8 }} />}
+            <circle cx={first.x} cy={first.y} r={9} fill='#fff8e2' stroke={color} strokeWidth={4} />
+            <circle cx={last.x} cy={last.y} r={9} fill={color} stroke='#fff8e2' strokeWidth={3} />
+          </g>
+        );
       })}
     </svg>
+  );
+};
+
+const ReviewBar: React.FC<{
+  view: MView;
+  mode: 'rounds' | 'routes';
+  round: number;
+  playing: boolean;
+  seats: number[];
+  onMode: (mode: 'rounds' | 'routes') => void;
+  onRound: (round: number) => void;
+  onPlay: () => void;
+  onSeat: (seat: number) => void;
+  onResult: () => void;
+}> = ({ view, mode, round, playing, seats, onMode, onRound, onPlay, onSeat, onResult }) => {
+  const history = view.history ?? [];
+  const last = Math.max(history.length - 1, 0);
+  const entry = history[round];
+  const byseat = new Map(view.players.map((player) => [player.seat, player]));
+  const name = (seat: number) => byseat.get(seat)?.name ?? '?';
+  const notes = [
+    ...(entry?.arrests ?? []).map((arrest) => `${name(arrest.by)} → ${name(arrest.seat)} 체포${arrest.out ? ' (탈락)' : ''}`),
+    ...((entry?.rescued ?? []).length > 0 ? [`구출: ${(entry?.rescued ?? []).map(name).join(', ')}`] : []),
+  ];
+
+  return (
+    <motion.div className='mm-review' initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+      <div className='mm-review__row'>
+        <span className='mm-review__label'>{mode === 'rounds' ? <FormattedMessage id='mm.review_rounds' defaultMessage='Rounds' /> : <FormattedMessage id='mm.review_routes' defaultMessage='Routes' />}</span>
+        {mode === 'rounds' ? (
+          <>
+            {history.map((each, index) => (
+              <button key={each.turn} type='button' className={index === round ? 'is-on' : undefined} onClick={() => { onRound(index); }}>
+                {index === 0 ? <FormattedMessage id='mm.review_start' defaultMessage='Start' /> : index}
+              </button>
+            ))}
+            <button type='button' className='mm-review__play' onClick={onPlay}>
+              {playing ? <FormattedMessage id='mm.review_pause' defaultMessage='Pause' /> : <FormattedMessage id='mm.review_play' defaultMessage='Play' />}
+            </button>
+          </>
+        ) : (
+          view.players.map((player) => (
+            <button key={player.seat} type='button' className={seats.includes(player.seat) ? 'is-on' : undefined} style={{ '--route': routeColor(view, player.seat) } as React.CSSProperties} onClick={() => { onSeat(player.seat); }}>
+              <i />{player.name}
+            </button>
+          ))
+        )}
+        <span className='mm-review__spacer' />
+        <button type='button' className={mode === 'routes' ? 'mm-review__mode is-on' : 'mm-review__mode'} onClick={() => { onMode(mode === 'routes' ? 'rounds' : 'routes'); }}>
+          {mode === 'routes' ? <FormattedMessage id='mm.review_by_round' defaultMessage='By round' /> : <FormattedMessage id='mm.review_routes_only' defaultMessage='Routes only' />}
+        </button>
+        <button type='button' className='mm-review__mode' onClick={onResult}><FormattedMessage id='mm.show_result' defaultMessage='Results' /></button>
+      </div>
+      {mode === 'rounds' && <p className='mm-review__note'>{round === 0 ? '출발 위치' : `${round}/${last}라운드`}{notes.length > 0 ? ` · ${notes.join(' · ')}` : ''}</p>}
+    </motion.div>
   );
 };
 
@@ -644,7 +701,12 @@ export const MaraudersStage: React.FC<{
   const seenInfo = useRef<Set<string> | null>(null);
   const [intro, setIntro] = useState<'oath' | 'role' | 'done'>('done');
   const [pickingWatch, setPickingWatch] = useState(false);
-  const [ending, setEnding] = useState<'none' | 'over' | 'replay' | 'result'>('none');
+  const [ending, setEnding] = useState<'none' | 'over' | 'review' | 'result'>('none');
+  // 끝난 뒤 복기: 라운드별 / 경로만, 보고 있는 라운드, 자동 재생, 경로로 보여 줄 사람
+  const [reviewMode, setReviewMode] = useState<'rounds' | 'routes'>('rounds');
+  const [reviewRound, setReviewRound] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [routeSeats, setRouteSeats] = useState<number[] | null>(null);
   const [busy, setBusy] = useState(false);
   const seenLast = useRef<number>(-1);
 
@@ -751,9 +813,46 @@ export const MaraudersStage: React.FC<{
 
   useEffect(() => {
     if (ending !== 'over') return undefined;
-    const timer = window.setTimeout(() => { setEnding('replay'); }, 3_200);
+    const timer = window.setTimeout(() => { setEnding('review'); setReviewMode('rounds'); setReviewRound(0); setPlaying(true); }, 3_200);
     return () => { window.clearTimeout(timer); };
   }, [ending]);
+
+  // 복기 자동 재생: 1.8초마다 다음 라운드로
+  const lastRound = Math.max((view?.history?.length ?? 1) - 1, 0);
+  useEffect(() => {
+    if (!playing || ending !== 'review' || reviewMode !== 'rounds') return undefined;
+    const timer = window.setInterval(() => {
+      setReviewRound((current) => {
+        if (current >= lastRound) {
+          setPlaying(false);
+          return current;
+        }
+        return current + 1;
+      });
+    }, 1_800);
+    return () => { window.clearInterval(timer); };
+  }, [playing, ending, reviewMode, lastRound]);
+
+  // 복기 중 라운드가 바뀌면 그 라운드의 이동을 발자국으로 찍는다 (체포는 사무실까지 끌려간다)
+  useEffect(() => {
+    if (!view || ending !== 'review' || reviewMode !== 'rounds' || reviewRound <= 0) return undefined;
+    const entry = view.history?.[reviewRound];
+    const prev = view.history?.[reviewRound - 1];
+    if (!entry || !prev) return undefined;
+    const next: Stamp[] = [];
+    Object.entries(entry.positions).forEach(([seat, room]) => {
+      const before = prev.positions[seat];
+      if (before === undefined || before === room) return;
+      const player = view.players.find((each) => String(each.seat) === seat);
+      next.push(...stepsAlong(geo.center(before), geo.center(room), `r${reviewRound}-${seat}`, player?.team ?? 'student', 0.1));
+    });
+    (entry.arrests ?? []).forEach((arrest) => {
+      next.push(...stepsAlong(geo.center(arrest.room), geo.center(view.map.office), `r${reviewRound}-a${arrest.seat}`, 'student', 0.9, 0.24));
+    });
+    setStamps(next);
+    const timer = window.setTimeout(() => { setStamps([]); }, 3_400);
+    return () => { window.clearTimeout(timer); };
+  }, [view, geo, ending, reviewMode, reviewRound]);
 
   const remaining = useRemaining(view);
 
@@ -799,6 +898,13 @@ export const MaraudersStage: React.FC<{
 
   const pct = (point: { x: number; y: number }) => ({ left: `${(point.x / geo.width) * 100}%`, top: `${(point.y / geo.height) * 100}%` });
   const dragged = new Set((view.last?.arrests ?? []).map((arrest) => arrest.seat));
+  // 복기(라운드별)면 그 라운드가 끝났을 때의 자리, 경로만 보기면 토큰 없이 길만
+  const reviewEntry = ending === 'review' && reviewMode === 'rounds' ? view.history?.[reviewRound] : undefined;
+  const shownTokens: MToken[] = reviewEntry
+    ? view.players.map((player) => ({ seat: player.seat, room: reviewEntry.positions[String(player.seat)] ?? 0, team: player.team, status: reviewEntry.status_of?.[String(player.seat)] ?? null }))
+    : (ending === 'review' ? [] : view.tokens);
+  const reviewDragged = new Set((reviewEntry?.arrests ?? []).map((arrest) => arrest.seat));
+  const routeList = routeSeats ?? view.players.filter((player) => player.team === 'student').map((player) => player.seat);
 
   return createPortal(
     <div className='game-stage mm-stage' role='region' aria-label={name} ref={stageRef}>
@@ -829,10 +935,10 @@ export const MaraudersStage: React.FC<{
           {out && <li className='is-warn'><FormattedMessage id='mm.out' defaultMessage='You were caught twice and are out. Watching the rest.' /></li>}
         </ul>
         <div className='mm-board' style={{ aspectRatio: `${geo.width} / ${geo.height}` }}>
-          <MapSvg view={view} geo={geo} reachable={reachable} here={here} planned={planned} pickingWatch={pickingWatch} draw={intro === 'oath' || (ending === 'none' && view.turn <= 1)} fade={ending === 'replay' || ending === 'result'} onPick={pick} />
+          <MapSvg view={view} geo={geo} reachable={reachable} here={here} planned={planned} pickingWatch={pickingWatch} draw={intro === 'oath' || (ending === 'none' && view.turn <= 1)} fade={false} onPick={pick} />
 
           {/* 구역 공개(사감 팀): 대략적인 층/탑이 잉크로 번진다 */}
-          {view.clues.filter((clue) => clue.kind === 'zone' && clue.zone && clue.age <= 3).map((clue) => {
+          {ending !== 'review' && view.clues.filter((clue) => clue.kind === 'zone' && clue.zone && clue.age <= 3).map((clue) => {
             const zone = clue.zone as MZone;
             const rows = geo.rows;
             const style: React.CSSProperties = zone.kind === 'floor'
@@ -846,14 +952,14 @@ export const MaraudersStage: React.FC<{
           })}
 
           {/* 공개된 발자국(사감 팀)·내 흔적(학생 팀): 이름표와 함께 잉크 자국으로 남았다가 서서히 흐려진다 */}
-          {view.clues.filter((clue) => (clue.kind === 'footprint' || clue.kind === 'watch') && clue.room !== undefined && clue.age <= 4).map((clue) => (
+          {ending !== 'review' && view.clues.filter((clue) => (clue.kind === 'footprint' || clue.kind === 'watch') && clue.room !== undefined && clue.age <= 4).map((clue) => (
             <motion.div key={`mark-${clue.turn}-${clue.seat}-${clue.kind}`} className='mm-mark' style={pct(geo.center(clue.room ?? 0))} initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: Math.max(0.55, 1 - (clue.age * 0.15)), scale: 1 }}>
               <FootGlyph team='student' />
               <NameTag player={byseat.get(clue.seat)} team='student' me={clue.seat === view.me} dim={clue.age > 0} />
             </motion.div>
           ))}
 
-          {view.clues.filter((clue) => clue.kind === 'scout' && clue.room !== undefined && clue.age <= 2).map((clue) => (
+          {ending !== 'review' && view.clues.filter((clue) => clue.kind === 'scout' && clue.room !== undefined && clue.age <= 2).map((clue) => (
             <motion.div key={`scout-${clue.turn}-${clue.seat}`} className='mm-scout' style={pct(geo.center(clue.room ?? 0))} initial={{ scale: 0.2, opacity: 0.9 }} animate={{ scale: [0.2, 1, 1.15], opacity: [0.9, 0.7, Math.max(0.1, 0.6 - (clue.age * 0.25))] }} transition={{ duration: 1.4 }}>
               <span><TIcon name='search' size={18} /> <TIcon name='walk' size={18} /> ×{clue.count}</span>
             </motion.div>
@@ -867,11 +973,11 @@ export const MaraudersStage: React.FC<{
           ))}
 
           {/* 이름표 달린 발자국 토큰 */}
-          {ending !== 'replay' && ending !== 'result' && view.tokens.map((token) => {
+          {shownTokens.map((token) => {
             const player = byseat.get(token.seat);
             const point = geo.center(token.room);
-            const secret = view.last?.moves[String(token.seat)]?.secret;
-            const arrested = dragged.has(token.seat);
+            const secret = reviewEntry ? false : view.last?.moves[String(token.seat)]?.secret;
+            const arrested = reviewEntry ? reviewDragged.has(token.seat) : dragged.has(token.seat);
             return (
               <motion.div
                 key={token.seat}
@@ -897,7 +1003,7 @@ export const MaraudersStage: React.FC<{
 
 
           {/* 끝난 뒤 리플레이 */}
-          {(ending === 'replay' || ending === 'result') && <Replay view={view} geo={geo} />}
+          {ending === 'review' && reviewMode === 'routes' && <RoutesLayer view={view} geo={geo} seats={routeList} />}
         </div>
       </div>
 
@@ -939,7 +1045,7 @@ export const MaraudersStage: React.FC<{
         </AnimatePresence>
       </ul>
 
-      <ChatDock sessionId={sessionId} chat={chat} team={view.team} canChat={isPlayer || staff} jailed={jailed} infos={infos} onSent={onChanged} />
+      <ChatDock sessionId={sessionId} chat={chat} team={view.team} canChat={(isPlayer || staff) && view.status !== 'finished'} jailed={jailed} infos={infos} onSent={onChanged} />
 
       {/* 맹세 → 역할 안내 */}
       <AnimatePresence>
@@ -953,11 +1059,20 @@ export const MaraudersStage: React.FC<{
             <motion.strong initial={{ scale: 2.6, opacity: 0, rotate: -6 }} animate={{ scale: 1, opacity: 1, rotate: -3 }} transition={{ type: 'spring', stiffness: 120, damping: 12 }}><FormattedMessage id='mm.mischief_over' defaultMessage='Mischief managed' /></motion.strong>
           </motion.div>
         )}
-        {ending === 'replay' && (
-          <motion.div key='replay-bar' className='mm-replay-bar' initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <span><FormattedMessage id='mm.replay' defaultMessage='Where the students really went' /></span>
-            <button type='button' className='mm-button' onClick={() => { setEnding('result'); }}><FormattedMessage id='mm.show_result' defaultMessage='Results' /></button>
-          </motion.div>
+        {ending === 'review' && (
+          <ReviewBar
+            key='review'
+            view={view}
+            mode={reviewMode}
+            round={reviewRound}
+            playing={playing}
+            seats={routeList}
+            onMode={(mode) => { setReviewMode(mode); setPlaying(false); setStamps([]); }}
+            onRound={(round) => { setReviewRound(round); setPlaying(false); }}
+            onPlay={() => { if (reviewRound >= lastRound) setReviewRound(0); setPlaying((value) => !value); }}
+            onSeat={(seat) => { setRouteSeats((current) => { const list = current ?? view.players.filter((player) => player.team === 'student').map((player) => player.seat); return list.includes(seat) ? list.filter((each) => each !== seat) : [...list, seat]; }); }}
+            onResult={() => { setEnding('result'); setPlaying(false); }}
+          />
         )}
         {ending === 'result' && view.finish && (
           <motion.div key='result' className='mm-result' initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
@@ -975,7 +1090,7 @@ export const MaraudersStage: React.FC<{
               })}
             </ul>
             <div className='mm-result__buttons'>
-              <button type='button' className='mm-button mm-button--ghost' onClick={() => { setEnding('replay'); }}><FormattedMessage id='mm.see_replay' defaultMessage='Watch again' /></button>
+              <button type='button' className='mm-button mm-button--ghost' onClick={() => { setEnding('review'); setReviewMode('rounds'); setReviewRound(lastRound); setPlaying(false); }}><FormattedMessage id='mm.see_replay' defaultMessage='Watch again' /></button>
               <button type='button' className='mm-button' onClick={() => { history.push('/system/group'); }}><FormattedMessage id='mm.leave' defaultMessage='Leave' /></button>
             </div>
           </motion.div>

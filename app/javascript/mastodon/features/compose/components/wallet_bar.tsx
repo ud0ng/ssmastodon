@@ -11,6 +11,8 @@ import { ChangeBadge } from 'mastodon/features/system/change_badge';
 import { useWallet } from 'mastodon/features/system/use_wallet';
 import { useChanged } from 'mastodon/features/system/wallet_changes';
 
+import { ActivityLine } from './activity_line';
+
 export const WalletBar: React.FC = () => {
   const wallet = useWallet();
   const moneyChanged = useChanged('money', wallet);
@@ -31,6 +33,7 @@ export const WalletBar: React.FC = () => {
           <Icon id='diamond' icon={DiamondIcon} />
           {wallet.money.toLocaleString()}
         </span>
+        <ActivityLine activity={wallet.activity} />
       </Link>
 
       <Link to='/system/inventory' className='wallet-bar__item'>

@@ -1,0 +1,86 @@
+- content_for :page_title do
+  = game_t('admin.games.activity.stats_title', name: @character.display_name)
+
+- content_for :heading do
+  = render 'admin/game_characters/heading'
+
+-# 한 캐릭터: 일자별 통계, 상대 캐릭터별 통계 (상대를 누르면 그 상대와의 일자별 통계)
+.game-back
+  = link_to safe_join([material_symbol('arrow_back'), game_t('admin.games.activity.back')]), admin_game_activities_path(range: range_name, from: params[:from], to: params[:to]), class: 'link'
+  = link_to game_t('admin.games.activity.view_logs'), admin_game_activity_logs_path(character: @character.account_id), class: 'link'
+
+= render 'admin/game_activities/range', url: stats_admin_game_activity_path(@character), keep: { opponent: @opponent&.account_id }
+
+= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.activity.stats_daily', name: @character.display_name) } do
+  .bot-sheet-table.game-table.game-table--scroll
+    %table.table
+      %thead
+        %tr
+          %th= game_t('admin.games.activity.date')
+          = render 'admin/game_activities/totals_head'
+      %tbody
+        %tr.game-table__total
+          %td.bot-sheet-table__text
+            %strong= game_t('admin.games.activity.sum_row')
+          = render 'admin/game_activities/totals_cells', totals: @total
+        - @daily.each do |day, totals|
+          %tr
+            %td.bot-sheet-table__text.game-table__time= l(day, format: '%Y-%m-%d (%a)')
+            = render 'admin/game_activities/totals_cells', totals: totals
+        - if @daily.empty?
+          %tr
+            %td.bot-sheet-table__text{ colspan: 7 }= game_t('admin.games.activity.no_data')
+
+= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.activity.pairs_title'), hint: game_t('admin.games.activity.pairs_hint') } do
+  .bot-sheet-table.game-table.game-table--scroll
+    %table.table
+      %thead
+        %tr
+          %th= game_t('admin.games.records.opponent')
+          %th.game-table__number= game_t('admin.games.activity.replies')
+          %th.game-table__number= game_t('admin.games.activity.pair_reply_chars')
+          %th.game-table__number= game_t('admin.games.activity.media')
+          %th.game-table__number= game_t('admin.games.activity.reply_count')
+          %th.game-table__number= game_t('admin.games.activity.dm_posts')
+          %th.game-table__number= game_t('admin.games.activity.pair_dm_chars')
+      %tbody
+        - @pairs.each do |other, row|
+          - path = stats_admin_game_activity_path(@character, opponent: other.account_id, range: range_name, from: params[:from], to: params[:to])
+          %tr.game-table__row{ class: ('is-selected' if @opponent == other), data: { href: path } }
+            = render 'admin/game_characters/name_cell', character: other, path: path
+            %td.game-table__number= number_with_delimiter(row.reply_posts)
+            %td.game-table__number= number_with_delimiter(row.reply_chars)
+            %td.game-table__number= number_with_delimiter(row.reply_media)
+            %td.game-table__number= number_with_delimiter(row.reply_turns)
+            %td.game-table__number= number_with_delimiter(row.dms)
+            %td.game-table__number= number_with_delimiter(row.dm_chars)
+        - if @pairs.empty?
+          %tr
+            %td.bot-sheet-table__text{ colspan: 7 }= game_t('admin.games.activity.no_data')
+
+- if @opponent
+  = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.activity.pair_daily', name: @character.display_name, other: @opponent.display_name) } do
+    .bot-sheet-table.game-table.game-table--scroll
+      %table.table
+        %thead
+          %tr
+            %th= game_t('admin.games.activity.date')
+            %th.game-table__number= game_t('admin.games.activity.replies')
+            %th.game-table__number= game_t('admin.games.activity.pair_reply_chars')
+            %th.game-table__number= game_t('admin.games.activity.media')
+            %th.game-table__number= game_t('admin.games.activity.reply_count')
+            %th.game-table__number= game_t('admin.games.activity.dm_posts')
+            %th.game-table__number= game_t('admin.games.activity.pair_dm_chars')
+        %tbody
+          - @pair_daily.each do |day, row|
+            %tr
+              %td.bot-sheet-table__text.game-table__time= l(day, format: '%Y-%m-%d (%a)')
+              %td.game-table__number= number_with_delimiter(row.reply_posts)
+              %td.game-table__number= number_with_delimiter(row.reply_chars)
+              %td.game-table__number= number_with_delimiter(row.reply_media)
+              %td.game-table__number= number_with_delimiter(row.reply_turns)
+              %td.game-table__number= number_with_delimiter(row.dms)
+              %td.game-table__number= number_with_delimiter(row.dm_chars)
+          - if @pair_daily.empty?
+            %tr
+              %td.bot-sheet-table__text{ colspan: 7 }= game_t('admin.games.activity.no_data')

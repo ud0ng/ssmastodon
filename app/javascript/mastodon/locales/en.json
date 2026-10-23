@@ -1473,5 +1473,14 @@
   "mm.legend_goal": "Goal place",
   "mm.legend_office": "Filch's office (jail)",
   "mm.legend_tower": "Tower room",
-  "mm.legend_foot": "Footprints = where someone is (ribbon = name)"
+  "mm.legend_foot": "Footprints = where someone is (ribbon = name)",
+  "mm.review_rounds": "Rounds",
+  "mm.review_routes": "Routes",
+  "mm.review_start": "Start",
+  "mm.review_pause": "Pause",
+  "mm.review_play": "Play",
+  "mm.review_by_round": "By round",
+  "mm.review_routes_only": "Routes only",
+  "activity.yesterday": "Yesterday {posts} toots · {chars} chars",
+  "activity.today": "Today {posts} toots · {chars} chars"
 }

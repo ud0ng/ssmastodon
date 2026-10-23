@@ -86,6 +86,40 @@ en:
         title: Points per content
         win: Win
       activity:
+        back: Back to activity
+        backfill: Load past records
+        backfill_confirm: Recount every past toot and rebuild the daily activity snapshots? This can take a few minutes.
+        backfill_started: Loading past records. Reload in a moment.
+        building: Building the daily activity snapshots for the first time. Reload in a moment to see the past records.
+        date: Date
+        house_hint: Toots of each house's characters added together. Click a house for its daily statistics.
+        house_name: House
+        house_title: By house
+        members: Members
+        no_data: No records in this period.
+        pair_daily: '%{name} ↔ %{other} by day'
+        pair_dm_chars: DM chars
+        pair_reply_chars: Reply chars
+        pairs_hint: Reply toots and DMs this character sent to each other character. Click a row for the daily statistics with that character.
+        pairs_title: By counterpart
+        range: Period
+        ranges:
+          all: All
+          custom: Custom
+          month: Last 30 days
+          today: Today
+          week: Last 7 days
+          yesterday: Yesterday
+        stats_daily: 'Daily statistics of %{name}'
+        stats_title: 'Activity of %{name}'
+        sum_row: Total
+        total_of: 'Daily statistics of %{name}'
+        total_title: Daily statistics (all)
+        view_logs: View activity log
+        views:
+          character: By character
+          house: By house
+          total: Daily total
         all_chars: Total characters
         all_posts: Total posts
         dm_chars: DM characters

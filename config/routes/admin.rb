@@ -132,6 +132,8 @@ namespace :admin do
   resource :game_staff, path: 'settings/staff', only: [:update], controller: 'game_staff'
   resources :game_settings, path: 'games', only: [:index, :show, :update]
   resources :game_activities, path: 'characters/activity', only: [:index, :show] do
+    get :stats, on: :member
+    post :backfill, on: :collection
     post :give, on: :collection
     patch :criteria, on: :collection
   end

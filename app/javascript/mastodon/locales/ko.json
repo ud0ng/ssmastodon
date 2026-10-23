@@ -1610,5 +1610,14 @@
   "mm.legend_goal": "목표 장소",
   "mm.legend_office": "사감실 (감옥)",
   "mm.legend_tower": "탑의 방",
-  "mm.legend_foot": "발자국 = 있는 곳 (리본 = 이름)"
+  "mm.legend_foot": "발자국 = 있는 곳 (리본 = 이름)",
+  "mm.review_rounds": "라운드",
+  "mm.review_routes": "경로",
+  "mm.review_start": "출발",
+  "mm.review_pause": "일시정지",
+  "mm.review_play": "재생",
+  "mm.review_by_round": "라운드별 보기",
+  "mm.review_routes_only": "경로만 보기",
+  "activity.yesterday": "어제 {posts}툿 · {chars}자",
+  "activity.today": "오늘 {posts}툿 · {chars}자"
 }

@@ -838,6 +838,77 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
   }
 }
 
+// 복기 바 (라운드별 / 경로만)
+.mm-review {
+  position: absolute;
+  bottom: 188px;
+  left: 50%;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  max-width: calc(100% - 40px);
+  padding: 8px 16px;
+  border-radius: 14px;
+  background: rgb(0 0 0 / 72%);
+  box-shadow: 0 0 0 1px rgb(255 241 205 / 25%);
+  font-size: 14px;
+  translate: -50% 0;
+
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+
+    button {
+      min-width: 32px;
+      padding: 2px 10px;
+      border: 0;
+      border-radius: 999px;
+      background: rgb(243 231 200 / 14%);
+      color: #f3e7c8;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+
+      &.is-on {
+        background: #c9a24a;
+        color: #2b1b07;
+      }
+
+      i {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        margin-right: 6px;
+        border-radius: 50%;
+        background: var(--route, #c9a24a);
+      }
+    }
+  }
+
+  &__label {
+    opacity: 0.7;
+  }
+
+  &__spacer {
+    width: 12px;
+  }
+
+  &__play {
+    background: rgb(243 231 200 / 24%) !important;
+  }
+
+  &__note {
+    margin: 0;
+    color: rgb(243 231 200 / 85%);
+    font-size: 13px;
+  }
+}
+
 .mm-replay-bar {
   position: absolute;
   bottom: 190px;

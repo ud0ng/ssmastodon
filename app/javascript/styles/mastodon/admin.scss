@@ -4393,3 +4393,17 @@ button.game-token:focus-visible {
     font-weight: 700;
   }
 }
+
+// 활동 > 캐릭터 상세: 돌아가기 · 활동 기록 보기 링크 줄
+.game-back {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  margin: 6px 0 14px;
+
+  a {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+  }
+}

@@ -1,32 +1,70 @@
 # frozen_string_literal: true
 
 module Admin
-  # 관리 > 시스템 > 캐릭터 관리 > 활동: 캐릭터마다 전체 툿·글자 수, DM 툿·글자 수, 답 횟수, 미디어 툿 수, 재화.
-  # 머리 칸을 누르면 그 칸으로 정렬(오름차순/내림차순). 줄을 누르면 그 캐릭터의 컨텐츠 기록. 위의 [지급]으로 재화나 아이템을 여러 캐릭터에게 준다.
+  # 관리 > 시스템 > 캐릭터 관리 > 활동: 일일 활동 스냅샷(Game::ActivitySnapshot)으로 보는 일자별 통계.
+  #   전체: 일자별 모든 캐릭터 합계 / 소속별 / 캐릭터별 (전체 툿·DM 툿·퍼블 툿·답 툿 수와 글자 수, 답 횟수, 미디어 툿 수, 재화)
+  #   기간은 오늘·어제·최근 7일·30일·전체·직접 입력. 캐릭터별 머리 칸을 누르면 정렬, 줄을 누르면 그 캐릭터의 일자별 통계와 상대 캐릭터와의 통계.
+  #   위의 [지급]으로 재화나 아이템을 여러 캐릭터에게 준다.
   class GameActivitiesController < BaseController
     include Admin::GameGiveForm
 
     RECORDS = 30
+    VIEWS = %w(character house total).freeze
+    RANGES = %w(all today yesterday week month custom).freeze
     SORTS = %w(name posts chars dms dm_chars replies media last_reply partners public_posts public_chars reply_posts reply_chars money).freeze
-    # 예전 칸(퍼블 툿·답 툿)의 값은 Game::Activity.stats 에서
-    STATS_SORTS = { 'public_posts' => :posts, 'public_chars' => :post_chars, 'reply_posts' => :replies, 'reply_chars' => :reply_chars }.freeze
-    helper_method :sort_column, :sort_direction
+    # 표 칸 → 스냅샷 열
+    SORT_FIELDS = { 'posts' => :posts, 'chars' => :post_chars, 'dms' => :dms, 'dm_chars' => :dm_chars, 'replies' => :reply_turns, 'media' => :media,
+                    'public_posts' => :public_posts, 'public_chars' => :public_chars, 'reply_posts' => :reply_posts, 'reply_chars' => :reply_chars }.freeze
+    helper_method :sort_column, :sort_direction, :view_name, :range_name, :range_from, :range_to
 
     def index
       authorize :settings, :show?
 
       GameCharacter.sync!
+      Game::ActivityBackfillWorker.perform_async if Game::ActivitySnapshot.built_through.nil?
       @characters = GameCharacter.visible.includes(:house, :faction, :account).joins(:account)
                                  .order(Arel.sql('accounts.username')).to_a
-      ids = @characters.map(&:account_id)
-      @activity = Game::Activity.overview(ids)
-      @stats = Game::Activity.stats(ids)
+      @filter_house = GameHouse.find_by(id: params[:house]) if params[:house].present?
+      scope = @filter_house ? @characters.select { |character| character.group == @filter_house } : @characters
+      ids = scope.map(&:account_id)
       @criteria = Game::Activity.criteria
-      staff_ids = Account.where('lower(username) IN (?)', GameCharacter.staff_usernames.presence || ['']).pluck(:id)
-      @alerts = Game::Activity.alerts(ids, hours: @criteria[:hours], staff_ids: staff_ids)
-      sorted = @characters.sort_by { |character| sort_value(character) }
-      @characters = sort_direction == 'desc' ? sorted.reverse : sorted
+      case view_name
+      when 'total'
+        @daily = Game::ActivitySnapshot.daily(ids, from: range_from, to: range_to)
+        @total = @daily.reduce(Game::ActivitySnapshot::Totals.empty) { |sum, (_, row)| sum + row }
+      when 'house'
+        load_house_rows(Game::ActivitySnapshot.totals(@characters.map(&:account_id), from: range_from, to: range_to))
+      else
+        @totals = Game::ActivitySnapshot.totals(ids, from: range_from, to: range_to)
+        staff_ids = Account.where('lower(username) IN (?)', GameCharacter.staff_usernames.presence || ['']).pluck(:id)
+        @alerts = Game::Activity.alerts(ids, hours: @criteria[:hours], staff_ids: staff_ids)
+        sorted = scope.sort_by { |character| sort_value(character) }
+        @characters = sort_direction == 'desc' ? sorted.reverse : sorted
+      end
       load_give_form
+    end
+
+    # 한 캐릭터의 일자별 통계, 상대 캐릭터별 통계 (상대를 고르면 그 상대와의 일자별 통계)
+    def stats
+      authorize :settings, :show?
+
+      @character = GameCharacter.visible.find(params[:id])
+      @characters = GameCharacter.visible.includes(:account).to_a
+      @daily = Game::ActivitySnapshot.daily([@character.account_id], from: range_from, to: range_to)
+      @total = @daily.reduce(Game::ActivitySnapshot::Totals.empty) { |sum, (_, row)| sum + row }
+      by_account = @characters.index_by(&:account_id)
+      @pairs = Game::ActivitySnapshot.pairs(@character.account_id, from: range_from, to: range_to).filter_map { |other, row| [by_account[other], row] if by_account[other] }
+      @pairs.sort_by! { |other, row| [-(row.reply_posts + row.dms), other.display_name.downcase] }
+      @opponent = by_account[params[:opponent].to_i]
+      @pair_daily = Game::ActivitySnapshot.pair_daily(@character.account_id, @opponent.account_id, from: range_from, to: range_to) if @opponent
+    end
+
+    # 과거 툿 활동을 스냅샷으로 다시 올린다 (처음 한 번, 또는 지운 툿을 반영해 전부 다시)
+    def backfill
+      authorize :settings, :update?
+
+      Game::ActivityBackfillWorker.perform_async(true)
+      redirect_to admin_game_activities_path, notice: t('admin.games.activity.backfill_started')
     end
 
     def show
@@ -99,6 +137,51 @@ module Admin
       SORTS.include?(params[:sort]) ? params[:sort] : 'name'
     end
 
+    def view_name
+      VIEWS.include?(params[:view]) ? params[:view] : 'character'
+    end
+
+    def range_name
+      RANGES.include?(params[:range]) ? params[:range] : 'all'
+    end
+
+    # 기간 (한국 시간 날짜). 전체면 둘 다 nil
+    def range_from
+      today = Game::ActivitySnapshot.today
+      case range_name
+      when 'today' then today
+      when 'yesterday' then today - 1
+      when 'week' then today - 6
+      when 'month' then today - 29
+      when 'custom' then parse_day(params[:from])
+      end
+    end
+
+    def range_to
+      today = Game::ActivitySnapshot.today
+      case range_name
+      when 'today' then today
+      when 'yesterday' then today - 1
+      when 'week', 'month' then today
+      when 'custom' then parse_day(params[:to])
+      end
+    end
+
+    def parse_day(value)
+      Date.parse(value.to_s)
+    rescue Date::Error
+      nil
+    end
+
+    # 소속별 합계 (소속 없음 포함): [[소속 또는 nil, 인원, Totals]]
+    def load_house_rows(totals)
+      groups = @characters.group_by(&:group)
+      @house_rows = groups.map do |house, members|
+        [house, members.size, members.reduce(Game::ActivitySnapshot::Totals.empty) { |sum, character| sum + totals[character.account_id] }]
+      end
+      @house_rows.sort_by! { |house, _, _| [house ? 0 : 1, house&.position.to_i, house&.id.to_i] }
+    end
+
     def sort_direction
       params[:dir] == 'desc' ? 'desc' : 'asc'
     end
@@ -109,9 +192,7 @@ module Admin
       return [@alerts[character.account_id].last_reply_at&.to_i.to_i, character.display_name.downcase] if sort_column == 'last_reply'
       return [@alerts[character.account_id].partners, character.display_name.downcase] if sort_column == 'partners'
 
-      return [@stats[character.account_id].public_send(STATS_SORTS[sort_column]).to_i, character.display_name.downcase] if STATS_SORTS.key?(sort_column)
-
-      [@activity[character.account_id].public_send(sort_column).to_i, character.display_name.downcase]
+      [@totals[character.account_id][SORT_FIELDS.fetch(sort_column)].to_i, character.display_name.downcase]
     end
 
     # 아이템 고르기(admin/ui/_item_picker): items[][name], items[][count] → { 이름 => 개수 } (상점에 있는 아이템만, 같은 이름은 더한다)

@@ -93,12 +93,12 @@ class Api::V1::System::HousesController < Api::BaseController
   def build_summary
     ids = house_members.map(&:account_id)
     results = GamePlayer.joins(:session).merge(GameSession.real).where(account_id: ids, game_sessions: { status: 'finished' }).group(:result).count
-    activity = Game::Activity.overview(ids).values_at(*ids)
+    totals = Game::ActivitySnapshot.totals(ids)
     {
       money: house_members.sum { |character| character.money.to_i },
       win: results['win'].to_i, lose: results['lose'].to_i, draw: results['draw'].to_i,
-      posts: activity.sum { |each| each ? each.posts + each.dms : 0 },
-      chars: activity.sum { |each| each ? each.chars + each.dm_chars : 0 },
+      posts: ids.sum { |id| totals[id].all_posts },
+      chars: ids.sum { |id| totals[id].all_chars },
     }
   end
 

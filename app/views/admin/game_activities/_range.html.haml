@@ -1,0 +1,15 @@
+-# 기간 고르기 (한국 시간 날짜): 전체 · 오늘 · 어제 · 최근 7일 · 최근 30일 · 직접 입력
+-# local: url, keep (함께 넘길 값 { view:, house:, opponent: })
+= form_tag url, method: :get, class: 'simple_form game-table__filter' do
+  - local_assigns[:keep].to_h.compact_blank.each do |key, value|
+    = hidden_field_tag key, value, id: nil
+  .filters
+    .filter-subset.filter-subset--with-select
+      %strong= game_t('admin.games.activity.range')
+      .input.select.optional
+        = select_tag :range, options_for_select(Admin::GameActivitiesController::RANGES.map { |name| [game_t("admin.games.activity.ranges.#{name}"), name] }, range_name)
+    .filter-subset
+      = date_field_tag :from, params[:from], class: 'ui-input', 'aria-label': game_t('admin.games.shop.records_ui.from')
+      %span ~
+      = date_field_tag :to, params[:to], class: 'ui-input', 'aria-label': game_t('admin.games.shop.records_ui.to')
+    = button_tag game_t('admin.games.shop.records_ui.search'), type: :submit, class: 'button'

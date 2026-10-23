@@ -1,0 +1,8 @@
+-# 툿 칸 여섯: 전체(툿/글자) · DM(툿/글자) · 퍼블(툿/글자) · 답(툿/글자) · 답 횟수 · 미디어
+-# local: totals (Game::ActivitySnapshot::Totals)
+%td.game-table__number.game-table__pair= game_pair(totals.posts, totals.post_chars)
+%td.game-table__number.game-table__pair= game_pair(totals.dms, totals.dm_chars)
+%td.game-table__number.game-table__pair= game_pair(totals.public_posts, totals.public_chars)
+%td.game-table__number.game-table__pair= game_pair(totals.reply_posts, totals.reply_chars)
+%td.game-table__number= number_with_delimiter(totals.reply_turns)
+%td.game-table__number= number_with_delimiter(totals.media)

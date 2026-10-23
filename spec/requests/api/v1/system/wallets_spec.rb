@@ -27,6 +27,25 @@ RSpec.describe 'API V1 System wallet' do
     expect(body['inventory']).to contain_exactly(a_hash_including('name' => '초콜릿 개구리', 'count' => 3, 'description' => '폴짝'))
   end
 
+  it 'shows yesterday and today toots and chars for me and each house from the daily activity snapshot, and the all-time totals' do
+    GameHouse.ensure_defaults!
+    house = GameHouse.houses.first
+    GameCharacter.for(user.account).update!(house: house)
+    GameCharacter.for(friend.account).update!(house: house)
+    today = Game::ActivitySnapshot.today
+    GameActivityDay.create!(day: today, account_id: user.account.id, posts: 3, post_chars: 210, dms: 1, dm_chars: 20)
+    GameActivityDay.create!(day: today - 1, account_id: user.account.id, posts: 8, post_chars: 560)
+    GameActivityDay.create!(day: today - 1, account_id: friend.account.id, posts: 2, post_chars: 100)
+    GameActivityDay.create!(day: today - 5, account_id: user.account.id, posts: 10, post_chars: 900)
+
+    get '/api/v1/system/wallet', headers: headers
+
+    body = response.parsed_body
+    expect(body['activity']).to eq('yesterday' => { 'posts' => 8, 'chars' => 560 }, 'today' => { 'posts' => 4, 'chars' => 230 })
+    expect(body).to include('posts' => 22, 'post_chars' => 1_690) # 누적 (DM 포함)
+    expect(body['houses']).to include(a_hash_including('id' => house.id.to_s, 'activity' => { 'yesterday' => { 'posts' => 10, 'chars' => 660 }, 'today' => { 'posts' => 4, 'chars' => 230 } }))
+  end
+
   it 'shows the group points for the bottom of the compose panel' do
     GameHouse.ensure_defaults!
     house = GameHouse.houses.first
@@ -37,7 +56,7 @@ RSpec.describe 'API V1 System wallet' do
 
     body = response.parsed_body
     expect(body).to include('house_term' => '기숙사', 'my_house_id' => house.id.to_s)
-    expect(body['houses']).to include('id' => house.id.to_s, 'name' => house.name, 'color' => house.color, 'total' => 12, 'counters' => 0, 'fx' => nil, 'fx_until' => nil)
+    expect(body['houses']).to include(a_hash_including('id' => house.id.to_s, 'name' => house.name, 'color' => house.color, 'total' => 12, 'counters' => 0, 'fx' => nil, 'fx_until' => nil))
     expect(body['houses'].size).to eq GameHouse.houses.count
   end
 

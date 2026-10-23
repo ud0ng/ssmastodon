@@ -23,27 +23,6 @@
 - count = capture do
   %span.game-table__count= game_t('admin.games.activity_log.count', count: number_with_delimiter(@statuses.total_count))
 = render layout: 'admin/ui/section', locals: { title: safe_join([title, ' ', count]) } do
-  -# 캐릭터 하나를 골랐을 때: 답 툿 요약 카드 (종류가 답인 툿만, 운영진 계정 제외). 머리 칸을 누르면 정렬
-  - if @reply_summary
-    .game-summary.game-summary--card
-      .bot-sheet-table.game-table
-        %table.table
-          %thead
-            %tr
-              %th= game_sort_header(game_t('admin.games.records.character'), 'name', summary_sort, summary_direction, param: 'ssort', dir_param: 'sdir')
-              %th.game-table__number= game_sort_header(game_t('admin.games.activity_log.summary_replies'), 'replies', summary_sort, summary_direction, param: 'ssort', dir_param: 'sdir')
-              %th.game-table__number= game_sort_header(game_t('admin.games.activity_log.summary_chars'), 'chars', summary_sort, summary_direction, param: 'ssort', dir_param: 'sdir')
-              %th.game-table__number= game_sort_header(game_t('admin.games.activity.media'), 'media', summary_sort, summary_direction, param: 'ssort', dir_param: 'sdir')
-              %th.game-table__number= game_sort_header(game_t('admin.games.activity.reply_count'), 'turns', summary_sort, summary_direction, param: 'ssort', dir_param: 'sdir')
-          %tbody
-            - @reply_summary.each do |row|
-              %tr{ class: ('game-summary__row--zero' if row.replies.zero?) }
-                %td.bot-sheet-table__text= render 'admin/game_activity_logs/person', account: row.character.account, character: row.character, log: true
-                %td.game-table__number= number_with_delimiter(row.replies)
-                %td.game-table__number= number_with_delimiter(row.chars)
-                %td.game-table__number= number_with_delimiter(row.media)
-                %td.game-table__number= number_with_delimiter(row.turns)
-
   .bot-sheet-table.game-table
     %table.table
       %thead

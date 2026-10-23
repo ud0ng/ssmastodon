@@ -19802,6 +19802,18 @@ body.app-body.layout-game-room.layout-single-column {
 }
 
 // ── 소속 점수 카드: 칸 위에 아이템 효과 겹(_game_fx.scss)이 깔려도 이름·점수는 위로 (compose/components/house_points.tsx) ──
+.activity-line {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.35;
+  opacity: 0.8;
+  text-align: center;
+}
+
 .house-points__item {
   position: relative;
   isolation: isolate;
