@@ -1,0 +1,53 @@
+- content_for :page_title do
+  = t('admin.manito.words_title', name: @character.display_name)
+
+- content_for :heading do
+  = render 'admin/manito/heading', save_form: 'manito_words'
+
+= render 'admin/ui/subtabs', label: t('admin.manito.words_title', name: @character.display_name),
+  back: [t('admin.games.activity.back_to_characters'), admin_rp_manito_roster_path],
+  items: [[@character.display_name, admin_rp_manito_words_path(@character), true, false]]
+
+-# 이 캐릭터가 지금 가지고 있는 마니또 보상
+= render layout: 'admin/ui/section', locals: { title: t('admin.manito.holding_title') } do
+  .bot-sheet-table.game-table.game-table--fit
+    %table.table
+      %thead
+        %tr
+          %th.game-table__number= t('admin.manito.points')
+          %th.game-table__number= t('admin.manito.money', currency: Game::Config.for('common')['currency_name'])
+          %th= t('admin.manito.items')
+      %tbody
+        %tr
+          = render 'admin/manito/holding', holding: @holding
+
+-# 상대마다: 이 캐릭터가 그 상대에게 몰래 말해야 하는 단어(엔터로 여러 개) · 사용 횟수 · 들킴 (체크를 풀면 다시 보상을 받는다)
+= form_tag admin_rp_manito_words_path(@character), method: :patch, id: 'manito_words', class: 'simple_form' do
+  = render layout: 'admin/ui/section', locals: { title: t('admin.manito.words_section'), hint: t('admin.manito.words_hint') } do
+    .bot-sheet-table.game-table.game-table--fit
+      %table.table
+        %thead
+          %tr
+            %th= game_t('admin.games.records.opponent')
+            %th= t('admin.manito.word')
+            %th.game-table__number= t('admin.manito.uses')
+            %th= t('admin.manito.caught')
+        %tbody
+          - @others.each do |other|
+            - pair = @pairs[other.account_id]
+            - words = Array(pair&.words)
+            %tr.manito-row{ class: ('manito-row--caught' if pair&.caught?), style: "--manito-house: #{other.group&.color.presence || 'transparent'}" }
+              = render 'admin/game_characters/name_cell', character: other, path: admin_rp_manito_words_path(other)
+              %td.manito-words
+                = text_area_tag "words[#{other.account_id}]", words.join("\n"), rows: [words.size, 1].max, class: 'ui-input ui-input--textarea manito-words__input', placeholder: t('admin.manito.word_placeholder'), 'aria-label': "#{other.display_name} #{t('admin.manito.word')}"
+              %td.game-table__number= number_with_delimiter(pair&.uses.to_i)
+              %td.bot-sheet-table__text
+                %label.manito-caught
+                  = check_box_tag 'caught[]', other.account_id, pair&.caught?, id: "caught_#{other.account_id}"
+                  - if pair&.caught?
+                    %span.game-badge.game-badge--lose= t('admin.manito.caught_at', when: l(pair.caught_at.in_time_zone('Asia/Seoul'), format: '%m/%d %H:%M'))
+                  - else
+                    %span.hint= t('admin.manito.not_caught')
+
+  .actions
+    = button_tag t('generic.save_changes'), type: :submit, class: 'button'

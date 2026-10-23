@@ -129,6 +129,7 @@ namespace :api, format: false do
       resource :config, only: [:show]
       resources :shops, only: [:index]
       post 'items/use', to: 'items#use'
+      post 'manito/guess', to: 'manito#guess'
       resources :characters, only: [:index, :show] do
         post :apply, on: :collection
       end

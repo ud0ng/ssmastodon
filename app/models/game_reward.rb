@@ -7,7 +7,7 @@
 class GameReward < ApplicationRecord
   include Redisable
 
-  KINDS = %w(content purchase use consume transfer attendance toot randombox investigation admin).freeze
+  KINDS = %w(content purchase use consume transfer attendance toot randombox investigation admin manito).freeze
 
   belongs_to :account
   belongs_to :session, class_name: 'GameSession', foreign_key: :game_session_id, optional: true, inverse_of: :rewards

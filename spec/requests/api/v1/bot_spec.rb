@@ -261,4 +261,27 @@ RSpec.describe 'API V1 Bot' do
     expect(body['help']).to eq ['[가방] 가방 보기', '', '▸ 사고팔기', '[구매/템] 사기']
     expect(body['help_topics'].first).to include('command' => '가게 안내')
   end
+
+  describe 'POST /manito/guess (the bot [마니또/단어/캐릭터])' do
+    before do
+      Game::Config.update!('manito', 'manito_enabled' => '1', 'manito_reward_money' => '2')
+      GameManitoWord.create!(account: harry, target_account: ron, words: %w(하지마))
+    end
+
+    it 'judges the guess of the target and answers with the message for the bot' do
+      post '/api/v1/bot/manito/guess', headers: headers, as: :json, params: { acct: 'ron', word: '하지마', target: '해리' }
+
+      expect(response).to have_http_status(200)
+      expect(response.parsed_body['message']).to include('정답')
+      expect(GameManitoWord.find_by!(account: harry, target_account: ron)).to be_caught
+    end
+
+    it 'refuses an unknown character and tells the command name to the bot' do
+      post '/api/v1/bot/manito/guess', headers: headers, as: :json, params: { acct: 'ron', word: '하지마', target: '없는사람' }
+      expect(response).to have_http_status(422)
+
+      get '/api/v1/bot/config', headers: headers
+      expect(response.parsed_body['manito_command']).to eq '마니또'
+    end
+  end
 end

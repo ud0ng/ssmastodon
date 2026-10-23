@@ -1,0 +1,45 @@
+- content_for :page_title do
+  = t('admin.manito.tabs.records')
+
+- content_for :heading do
+  = render 'admin/manito/heading'
+
+-# 종류 거르기
+= form_tag admin_rp_manito_records_path, method: :get, class: 'game-table__filter' do
+  = select_tag :kind, options_for_select([[game_t('admin.games.manage.roster.all'), '']] + GameManitoLog::KINDS.map { |kind| [t("admin.manito.kinds.#{kind}"), kind] }, params[:kind]), class: 'ui-input ui-input--select', onchange: 'this.form.submit()'
+
+- count = capture do
+  %span.game-table__count= game_t('admin.games.activity_log.count', count: number_with_delimiter(@logs.total_count))
+= render layout: 'admin/ui/section', locals: { title: safe_join([t('admin.manito.tabs.records'), ' ', count]) } do
+  .bot-sheet-table.game-table.game-table--fit
+    %table.table
+      %thead
+        %tr
+          %th= game_t('admin.games.houses.when')
+          %th= t('admin.manito.kind')
+          %th= t('admin.manito.who')
+          %th= t('admin.manito.whom')
+          %th= t('admin.manito.word')
+          %th.game-table__number= t('admin.manito.points')
+          %th.game-table__number= t('admin.manito.money', currency: Game::Config.for('common')['currency_name'])
+          %th= t('admin.manito.items')
+      %tbody
+        - badges = { 'use' => 'game-badge--win', 'correct' => 'game-badge--lose', 'wrong' => nil }
+        - @logs.each do |log|
+          %tr
+            %td.bot-sheet-table__text.game-table__time= l(log.created_at.in_time_zone('Asia/Seoul'), format: '%m/%d %H:%M')
+            %td.bot-sheet-table__text
+              %span.game-badge{ class: badges[log.kind] }= t("admin.manito.kinds.#{log.kind}")
+              - if log.kind == 'use' && !log.rewarded
+                %small.hint= t('admin.manito.capped')
+              - if log.stolen_at
+                %small.hint= t('admin.manito.stolen')
+            - [log.account, log.other_account].each do |account|
+              %td.bot-sheet-table__text= @characters_by_account[account.id]&.display_name || account.username
+            %td.bot-sheet-table__text= log.word.presence || '—'
+            = render 'admin/manito/holding', holding: { points: log.points, money: log.money, items: Array(log.items).to_h { |item| [item['name'], item['count'].to_i] } }
+        - if @logs.empty?
+          %tr
+            %td.bot-sheet-table__text{ colspan: 8 }= t('admin.manito.no_records')
+
+= paginate @logs

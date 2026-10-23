@@ -71,6 +71,8 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
 - 미리보기에서 시험: `bin/rails runner /dev/stdin "owner|@system @luna [젤리빈]" "luna|@system [수락]|reply" < dev/preview/play.rb` (sidekiq 이 처리, `|dm` 은 DM). Engine 을 직접 부르면 sidekiq 과 두 번 처리된다.
 - 컨텐츠 전체 점검: `docker compose -f dev/preview/docker-compose.yml exec -T web bin/rails runner /dev/stdin < dev/preview/smoke.rb` (진짜 툿으로 컨텐츠마다 신청→끝 또는 첫 턴, 결과·보상·알림 확인, 설정은 끝나면 되돌림).
 
+- 마니또 (관리 > RP > 마니또 설정 /admin/rp/manito, `Game::Manito`, 테이블 `game_manito_words`·`game_manito_logs`): 운영진이 캐릭터(A)마다 상대(B)에게 몰래 말할 단어를 정한다. A가 B를 태그한 툿에 단어가 있으면 툿 하나에 1회(`Game::ManitoWorker`, DM 은 설정), 하루 최대 보상 횟수 안이면 보상(소속 점수·재화·아이템)을 주고 상점봇이 A에게만 DM. B가 상점봇에게 [마니또/단어/캐릭터] → 자동봇 ssbot 이 `POST /api/v1/bot/manito/guess` 로 묻고 서버가 판정: 맞으면 A가 B에게서 받은 보상을 B가 가져가고(남은 만큼) A는 B에게서만 더 못 받는다, 틀리면 벌금·하루 추측 횟수 제한. 설정은 Game::Config 'manito' (컨텐츠 설정과 같은 편집기), 명단에서 들킴을 풀 수 있다.
+
 ## 이벤트·컨텐츠 서버 부하 줄이기 (2026-10-22, 20명 동시 접속에서 502 났던 일)
 
 본서버(GCE e2-standard-2, 2코어)에서 비행 대결 20명이 방에 들어오자 웹이 502 를 냈다. 원인은 방 정보 요청(`GET /api/v1/system/sessions/:id`) 하나가 1.2~2.4초(DB 1초 이상)씩 걸리는데 20명이 2~3초마다 보내서 puma(프로세스 2×스레드 5=동시 10개)가 밀린 것. 아래 규칙으로 요청당 비용을 10배 이상 줄였다 (11명 기준 방 정보 30~55ms, /view 40~57ms, 웹 CPU 145%→10~30%). **새 이벤트·컨텐츠 화면을 만들 때 지킬 것:**

@@ -60,12 +60,13 @@ module Game
 
       def schema(key)
         return Game::Help::FIELDS if key == 'help'
+        return Game::Manito::FIELDS if key == 'manito' # (Game::Manito 이 Config::Field 를 쓰므로 SCHEMAS 에 넣지 않고 여기서)
 
         SCHEMAS.fetch(key) { Game::Kinds.fetch(key).schema }
       end
 
       def keys
-        SCHEMAS.keys + %w(help) + Game::Kinds.keys
+        SCHEMAS.keys + %w(help manito) + Game::Kinds.keys
       end
 
       # 관리 화면에서 묶어 보여 줄 칸: [[묶음 이름, 칸들], ...]
@@ -325,6 +326,14 @@ module Game
         ['unlock', %w(unlock)],
         ['opening', %w(opening)],
         ['limits', %w(limits)],
+      ],
+      # 관리 > RP > 마니또 설정 > 설정
+      ['manito', 'settings'] => [
+        ['manito_unlock', %w(manito_unlock)],
+        ['manito_limits', %w(manito_limits)],
+        ['manito_rewards', %w(manito_rewards)],
+        ['manito_commands', %w(manito_commands)],
+        ['manito_messages', %w(manito_messages)],
       ],
       ['events', 'messages'] => [
         ['event_commands', %w(commands)],

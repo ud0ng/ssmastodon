@@ -22,6 +22,45 @@ ko:
     self_follow_error: 본인의 계정을 팔로우할 수는 없습니다
   admin:
     system_menu: 시스템
+    rp_menu: RP
+    manito:
+      title: 마니또 설정
+      hint: 캐릭터마다 상대에게 몰래 말해야 하는 단어를 정해 줍니다. 상대를 태그한 툿에 단어를 쓰면 보상을 받고 상점봇이 몰래 DM 으로 알려 줍니다. 상대가 상점봇에게 [마니또/단어/캐릭터]로 맞히면 그 상대에게서 받은 보상을 모두 빼앗기고 더 이상 그 상대에게서는 보상을 받지 못합니다.
+      tabs:
+        settings: 설정
+        roster: 명단
+        records: 기록
+      sections:
+        manito_unlock: 해금
+        manito_limits: 제한
+        manito_rewards: 보상 (단어 1회 사용마다)
+        manito_commands: 명령어
+        manito_messages: 문구
+      roster_hint: 지금 가지고 있는 마니또 보상입니다 (들켜서 빼앗긴 것은 빼고, 맞혀서 빼앗은 것은 더합니다). 줄을 누르면 상대별 단어를 정합니다.
+      words_title: '%{name}의 마니또 단어'
+      words_section: 상대별 단어
+      words_hint: 이 캐릭터가 각 상대에게 몰래 말해야 하는 단어입니다. 엔터로 여러 개를 넣습니다. 사용 횟수는 그 상대를 태그한 툿에 단어를 넣은 횟수(툿 하나에 1회)이고, 들킴을 풀면 다시 보상을 받습니다.
+      word_placeholder: 단어 (엔터로 여러 개)
+      holding_title: 지금 가진 마니또 보상
+      words_set: 단어 정한 상대
+      word: 단어
+      uses: 사용 횟수
+      caught: 들킴
+      caught_at: '%{when} 들킴'
+      not_caught: 안 들킴
+      points: 소속 점수
+      money: '%{currency}'
+      items: 아이템
+      kind: 종류
+      who: 캐릭터
+      whom: 상대
+      kinds:
+        use: 사용
+        correct: 정답
+        wrong: 오답
+      capped: 하루 보상 다 씀
+      stolen: 빼앗김
+      no_records: 아직 기록이 없습니다.
     games:
       lessons_ui:
         settings: "설정"
@@ -508,6 +547,7 @@ ko:
           consume: 소모
           content: 컨텐츠 보상
           investigation: 조사
+          manito: 마니또
           purchase: 구매
           randombox: 랜덤박스
           toot: 툿 보상

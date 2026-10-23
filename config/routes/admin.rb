@@ -130,6 +130,15 @@ namespace :admin do
   end
   resource :game_event, path: 'games/event', only: [:create]
   get 'events', to: 'game_events#index', as: :game_events_settings
+  # RP > 마니또 설정 (설정 · 명단 · 기록)
+  scope 'rp', as: 'rp' do
+    get 'manito', to: 'manito#settings', as: :manito
+    patch 'manito', to: 'manito#update'
+    get 'manito/roster', to: 'manito#roster', as: :manito_roster
+    get 'manito/roster/:id', to: 'manito#words', as: :manito_words
+    patch 'manito/roster/:id', to: 'manito#update_words'
+    get 'manito/records', to: 'manito#records', as: :manito_records
+  end
   get 'events/records', to: 'game_events#records', as: :game_event_records
   resource :game_staff, path: 'settings/staff', only: [:update], controller: 'game_staff'
   resources :game_settings, path: 'games', only: [:index, :show, :update]

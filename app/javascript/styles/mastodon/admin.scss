@@ -5006,3 +5006,41 @@ button.game-token:focus-visible {
     margin-left: 0;
   }
 }
+
+// 마니또 (관리 > RP > 마니또 설정): 줄 맨 앞에 소속 색 띠, 들킨 줄은 흐리게, 단어 입력칸, 보상 아이템 작은 그림
+.manito-row td:first-child {
+  box-shadow: inset 4px 0 0 var(--manito-house, transparent);
+}
+
+.manito-row--caught td {
+  opacity: 0.7;
+}
+
+.manito-words {
+  min-width: 180px;
+}
+
+.manito-words__input {
+  width: 100%;
+  min-height: 34px;
+  resize: vertical;
+}
+
+.manito-caught {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.manito-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.manito-items__item {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}

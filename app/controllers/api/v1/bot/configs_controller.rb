@@ -23,6 +23,8 @@ class Api::V1::Bot::ConfigsController < Api::V1::Bot::BaseController
       toot_reward_amount: 0,
       commands: COMMANDS.to_h { |key, name| [name, currency[key].to_s.strip.presence || Game::Config.schema('currency').find { |field| field.key == key }.default] },
       admins: Array(currency['admin_usernames']),
+      # 마니또 추측 명령어 (관리 > RP > 마니또 설정). 꺼져 있어도 이 명령어는 서버가 '열려 있지 않다'고 답한다
+      manito_command: Game::Manito.command,
       # 도움말: 컨텐츠 설정 > 도움말 (help 상점, admin_help 운영진, content_help 컨텐츠, basic_help 기본, help_topics 분류)
       **Game::Help.bot_json,
       stats: GameCharacterField.stats.map { |field| { name: field.name, type: field.stat_type, min: field.stat? ? field.min : nil, max: field.stat? ? field.max : nil } },

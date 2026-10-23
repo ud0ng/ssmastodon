@@ -1,0 +1,27 @@
+- content_for :page_title do
+  = t('admin.manito.tabs.roster')
+
+- content_for :heading do
+  = render 'admin/manito/heading'
+
+-# 캐릭터마다 지금 가지고 있는 마니또 보상 (들켜서 빼앗긴 것은 빼고, 맞혀서 빼앗은 것은 더한다). 줄을 누르면 상대별 단어
+= render layout: 'admin/ui/section', locals: { title: t('admin.manito.tabs.roster'), hint: t('admin.manito.roster_hint') } do
+  .bot-sheet-table.game-table.game-table--fit
+    %table.table
+      %thead
+        %tr
+          %th= game_t('admin.games.manage.roster.name')
+          %th.game-table__number= t('admin.manito.words_set')
+          %th.game-table__number= t('admin.manito.points')
+          %th.game-table__number= t('admin.manito.money', currency: Game::Config.for('common')['currency_name'])
+          %th= t('admin.manito.items')
+      %tbody
+        - @characters.each do |character|
+          - path = admin_rp_manito_words_path(character)
+          %tr.game-table__row.manito-row{ data: { href: path }, style: "--manito-house: #{character.group&.color.presence || 'transparent'}" }
+            = render 'admin/game_characters/name_cell', character: character, path: path
+            %td.game-table__number= number_with_delimiter(@word_counts[character.account_id].to_i)
+            = render 'admin/manito/holding', holding: @holdings[character.account_id]
+        - if @characters.empty?
+          %tr
+            %td.bot-sheet-table__text{ colspan: 5 }= game_t('admin.games.manage.roster.empty')

@@ -24,6 +24,45 @@ en:
     self_follow_error: Following your own account is not allowed
   admin:
     system_menu: System
+    rp_menu: RP
+    manito:
+      title: Manito
+      hint: Give each character secret words to say to each other character. Saying the word in a post tagging that character earns a reward, reported secretly by the shop bot. If that character guesses it with [manito/word/character], the rewards earned from them are taken and no more are given for them.
+      tabs:
+        settings: Settings
+        roster: Roster
+        records: Records
+      sections:
+        manito_unlock: Unlock
+        manito_limits: Limits
+        manito_rewards: Rewards (per use)
+        manito_commands: Commands
+        manito_messages: Messages
+      roster_hint: Manito rewards held now. Click a row to set the words per counterpart.
+      words_title: "%{name}'s manito words"
+      words_section: Words per counterpart
+      words_hint: Words this character must secretly say to each counterpart. One per line. Uses count posts tagging them with a word (one per post). Unchecking caught lets rewards come again.
+      word_placeholder: Words (one per line)
+      holding_title: Manito rewards held now
+      words_set: Counterparts with words
+      word: Word
+      uses: Uses
+      caught: Caught
+      caught_at: 'Caught %{when}'
+      not_caught: Not caught
+      points: Points
+      money: '%{currency}'
+      items: Items
+      kind: Kind
+      who: Character
+      whom: Counterpart
+      kinds:
+        use: Use
+        correct: Right guess
+        wrong: Wrong guess
+      capped: daily rewards used up
+      stolen: taken
+      no_records: No records yet.
     games:
       lessons_ui:
         settings: "Settings"
@@ -493,6 +532,7 @@ en:
           consume: Consume
           content: Content reward
           investigation: Investigation
+          manito: Manito
           purchase: Purchase
           randombox: Random box
           toot: Post reward

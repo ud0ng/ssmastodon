@@ -1,0 +1,14 @@
+-# 마니또 설정 제목 + 탭 (설정 · 명단 · 기록). save_form: 저장 버튼이 제출할 폼 id
+.content__heading__row
+  %h2= t('admin.manito.title')
+
+  - if local_assigns[:save_form]
+    .content__heading__actions
+      = button_tag t('generic.save_changes'), class: 'button', form: save_form
+
+.content__heading__tabs
+  = render_navigation renderer: :links do |primary|
+    :ruby
+      primary.item :manito_settings, safe_join([material_symbol('tune'), t('admin.manito.tabs.settings')]), admin_rp_manito_path, highlights_on: %r{/admin/rp/manito\z}
+      primary.item :manito_roster, safe_join([material_symbol('badge'), t('admin.manito.tabs.roster')]), admin_rp_manito_roster_path, highlights_on: %r{/admin/rp/manito/roster}
+      primary.item :manito_records, safe_join([material_symbol('history'), t('admin.manito.tabs.records')]), admin_rp_manito_records_path, highlights_on: %r{/admin/rp/manito/records}

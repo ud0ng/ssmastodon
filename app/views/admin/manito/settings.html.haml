@@ -1,0 +1,37 @@
+- content_for :page_title do
+  = t('admin.manito.title')
+
+- content_for :heading do
+  = render 'admin/manito/heading', save_form: 'edit_game_config'
+
+%p.hint.game-config__hint= t('admin.manito.hint')
+
+-# 컨텐츠 설정과 같은 편집기 (game_config_editor.ts): 바뀐 칸 표시·되돌리기·문구 미리보기·보상 아이템 고르기
+- shop = Game::Gift.bot_accounts.first
+= form_tag admin_rp_manito_path, method: :patch, id: 'edit_game_config', class: 'simple_form game-config',
+  data: { game_config: true, samples: game_preview_samples(t('admin.manito.title')).to_json,
+          system_name: shop&.display_name.presence || shop&.username || 'shop', system_avatar: shop ? full_asset_url(shop.avatar_static_url) : '',
+          changed_label: game_t('admin.games.changed'), reset_label: game_t('admin.games.reset_default'), section_reset_label: game_t('admin.games.reset_section'),
+          chips_placeholder: game_t('admin.games.chips_placeholder'), unknown_label: game_t('admin.games.unknown_tokens'), split_labels: [].to_json } do
+  - @sections.each do |section, fields|
+    - messages = fields.any? { |field| field.type == :text }
+    - changed = capture do
+      %span.game-group__changed{ hidden: true }
+    = render layout: 'admin/ui/section', locals: { title: t("admin.manito.sections.#{section}"), actions: changed } do
+      - if messages
+        .game-tokens__legend
+          %span.hint= game_t('admin.games.messages_hint')
+          %span.game-token.game-token--person= '{계정명}'
+          %span.game-token= '{단어}'
+          %span.game-token.game-token--particle= '{이가}'
+      = render layout: 'admin/ui/fields' do
+        - fields.each do |field|
+          = render 'admin/game_settings/config_field', field: field
+
+  .game-savebar{ hidden: true }
+    %span.game-savebar__text{ data: { template: game_t('admin.games.unsaved') } }
+    %button.button.button-secondary.game-savebar__reset{ type: 'button' }= game_t('admin.games.undo_all')
+    = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+
+  .actions
+    = button_tag t('generic.save_changes'), type: :submit, class: 'button'

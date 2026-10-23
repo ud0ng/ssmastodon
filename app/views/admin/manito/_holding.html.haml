@@ -1,0 +1,13 @@
+-# 마니또 보상 칸 셋: 소속 점수 · 재화 · 아이템(작은 그림 + 개수). local: holding ({ money:, points:, items: { 이름 => 개수 } })
+- items = holding[:items].select { |_, count| count.positive? }
+%td.game-table__number= number_with_delimiter(holding[:points])
+%td.game-table__number= number_with_delimiter(holding[:money])
+%td.bot-sheet-table__text
+  - if items.empty?
+    %span.hint —
+  - else
+    .manito-items
+      - items.each do |name, count|
+        %span.manito-items__item{ title: name }
+          = render 'admin/game_characters/item_thumb', name: name, image: @item_images[Game::Wallet.key(name)]
+          %small= "×#{count}"

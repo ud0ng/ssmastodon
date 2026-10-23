@@ -49,6 +49,11 @@ SimpleNavigation::Configuration.run do |navigation|
       s.item :game_characters, safe_join([material_symbol('badge'), t('admin.games.characters.title')]), admin_game_characters_path, highlights_on: %r{/admin/characters}, if: -> { current_user.can?(:manage_settings) }
     end
 
+    # RP: 캐릭터끼리 하는 놀이 규칙 (마니또)
+    n.item :rp, safe_join([material_symbol('groups'), t('admin.rp_menu')]), nil, if: -> { current_user.can?(:manage_settings) && !self_destruct } do |s|
+      s.item :manito, safe_join([material_symbol('visibility_off'), t('admin.manito.title')]), admin_rp_manito_path, highlights_on: %r{/admin/rp/manito}, if: -> { current_user.can?(:manage_settings) }
+    end
+
     n.item :sidekiq, safe_join([material_symbol('diamond'), 'Sidekiq']), sidekiq_path, link_html: { target: 'sidekiq' }, if: -> { current_user.can?(:view_devops) }
     n.item :pghero, safe_join([material_symbol('database'), 'PgHero']), pghero_path, link_html: { target: 'pghero' }, if: -> { current_user.can?(:view_devops) }
     n.item :logout, safe_join([material_symbol('logout'), t('auth.logout')]), destroy_user_session_path, link_html: { 'data-method' => 'delete' }
