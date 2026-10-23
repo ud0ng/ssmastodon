@@ -35,6 +35,55 @@ const isAwaitingReply = (
   return true;
 };
 
+// 같은 사람이 같은 대화에서 연달아 보낸 멘션은 마지막 것만 남긴다:
+// 더 나중에 온 같은 사람의 멘션이 이 멘션에 이어서(답글 사슬) 달렸거나, 이 멘션과 같은 툿에 단 답이면 앞의 것은 묻힌 것으로 본다.
+// (마지막 것에 답하거나 하트를 눌러 없어지면 앞의 것도 함께 없어진다 — 마지막 것이 답 대기 여부를 정한다)
+const isSupersededByLaterMention = (
+  group: NotificationGroup,
+  groups: (NotificationGroup | NotificationGap)[],
+  statuses: StatusesMap,
+): boolean => {
+  if (group.type !== 'mention' || !group.statusId) return false;
+
+  const sender = group.sampleAccountIds[0];
+  const parentId = statuses.get(group.statusId)?.get('in_reply_to_id') as
+    | string
+    | null
+    | undefined;
+
+  return groups.some((other) => {
+    if (other.type !== 'mention' || !other.statusId) return false;
+    if (other.statusId === group.statusId) return false;
+    if (other.sampleAccountIds[0] !== sender) return false;
+    if (compareId(other.statusId, group.statusId) <= 0) return false;
+
+    let current = statuses.get(other.statusId);
+
+    for (let depth = 0; current && depth < 10; depth += 1) {
+      const replyTo = current.get('in_reply_to_id') as string | null | undefined;
+
+      if (!replyTo) return false;
+      if (replyTo === group.statusId) return true;
+      if (parentId && replyTo === parentId) return true;
+
+      current = statuses.get(replyTo);
+    }
+
+    return false;
+  });
+};
+
+const awaitingReplyGroups = (
+  notifications: (NotificationGroup | NotificationGap)[],
+  statuses: StatusesMap,
+): (NotificationGroup | NotificationGap)[] =>
+  notifications.filter(
+    (g) =>
+      g.type === 'gap' ||
+      (isAwaitingReply(g, statuses) &&
+        !isSupersededByLaterMention(g, notifications, statuses)),
+  );
+
 /**
  * Filters notifications based on the active filter type.
  * Mentions and DMs ignore excludedTypes to always appear in their respective tabs.
@@ -68,9 +117,7 @@ const filterNotificationsByAllowedTypes = (
   }
 
   if (allowedType === 'noti_pending') {
-    return notifications.filter(
-      (g) => g.type === 'gap' || isAwaitingReply(g, statuses),
-    );
+    return awaitingReplyGroups(notifications, statuses);
   }
 
   // Other types: apply excludedTypes normally
@@ -89,9 +136,7 @@ export const selectPendingMentionGroups = createSelector(
     selectStatusesMap,
   ],
   (notifications, statuses): (NotificationGroup | NotificationGap)[] =>
-    notifications.filter(
-      (g) => g.type === 'gap' || isAwaitingReply(g, statuses),
-    ),
+    awaitingReplyGroups(notifications, statuses),
 );
 
 export const selectNotificationGroups = createSelector(
