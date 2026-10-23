@@ -124,6 +124,8 @@ class InitialStateSerializer < ActiveModel::Serializer
       # 컨텐츠 툿(시스템 계정 툿·시스템에게 보낸 명령어 툿)은 웹 홈·타임라인·알림에서 숨기고 컨텐츠 메뉴에서만 본다
       system_acct: Game::System.username,
       system_account_id: Game::System.account&.id&.to_s,
+      # 자동봇(상점) 계정 (컨텐츠 설정 > 설정 > 봇 계정): 웹 '답장할 멘션'에 넣지 않는다
+      bot_account_ids: Game::Gift.bot_accounts.map { |account| account.id.to_s },
     }
   end
 

@@ -5,9 +5,9 @@
   = render 'admin/game_characters/heading'
 
 -# 한 캐릭터: 일자별 통계, 상대 캐릭터별 통계 (상대를 누르면 그 상대와의 일자별 통계)
-.game-back
-  = link_to safe_join([material_symbol('arrow_back'), game_t('admin.games.activity.back')]), admin_game_activities_path(range: range_name, from: params[:from], to: params[:to]), class: 'link'
-  = link_to game_t('admin.games.activity.view_logs'), admin_game_activity_logs_path(character: @character.account_id), class: 'link'
+= render 'admin/ui/subtabs', label: game_t('admin.games.activity.stats_title', name: @character.display_name),
+  items: [[game_t('admin.games.activity.back'), admin_game_activities_path(range: range_name, from: params[:from], to: params[:to]), false, false],
+          [game_t('admin.games.activity.view_logs'), admin_game_activity_logs_path(character: @character.account_id), false, false]]
 
 = render 'admin/game_activities/range', url: stats_admin_game_activity_path(@character), keep: { opponent: @opponent&.account_id }
 

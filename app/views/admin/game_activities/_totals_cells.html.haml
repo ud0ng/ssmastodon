@@ -5,4 +5,5 @@
 %td.game-table__number.game-table__pair= game_pair(totals.public_posts, totals.public_chars)
 %td.game-table__number.game-table__pair= game_pair(totals.reply_posts, totals.reply_chars)
 %td.game-table__number= number_with_delimiter(totals.reply_turns)
-%td.game-table__number= number_with_delimiter(totals.media)
+- unless local_assigns[:media] == false
+  %td.game-table__number= number_with_delimiter(totals.media)

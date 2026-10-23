@@ -3294,6 +3294,21 @@ body .image-picker {
 }
 
 // 시스템 > 캐릭터 관리 (명단·소속·스탯·항목) 공통
+// 가로 스크롤 없이 한 줄에 다 들어가게: 칸 안쪽 여백을 줄이고 숫자는 줄바꿈하지 않는다
+.game-table--fit {
+  .table {
+    width: 100%;
+    table-layout: auto;
+  }
+
+  .table td,
+  .table th {
+    padding-right: 6px;
+    padding-left: 6px;
+    white-space: nowrap;
+  }
+}
+
 .game-table--scroll {
   overflow-x: auto;
 

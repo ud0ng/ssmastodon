@@ -27,7 +27,9 @@ module Game
         args = Array(args).map { |arg| arg.to_s.strip }.compact_blank
         target = args.find { |arg| arg.start_with?('@', '＠') }&.delete_prefix('＠')
         house = args.find { |arg| GameHouse.active.any? { |item| item.name == arg || item.id.to_s == arg } }
-        target ||= args.find { |arg| arg != house && (GameCharacter.where(name: arg).exists? || GameCharacter.eligible_accounts.exists?(username: arg)) }
+        # @ 없이 쓴 말은 이름이 정확히 맞거나, 캐릭터를 고르는 아이템이면 이름 일부만 맞아도 상대로 본다 (소문 내용과 헷갈리지 않게)
+        needs_character = Game::ItemEffects.needs_character?(GameShopItem.all.find { |item| Game::Wallet.key(item.name) == Game::Wallet.key(name) }&.effects_list || [])
+        target ||= args.find { |arg| arg != house && (GameCharacter.where(name: arg).exists? || GameCharacter.eligible_accounts.exists?(username: arg) || (needs_character && GameCharacter.search(arg).any?)) }
         text = (args - [target, house].compact).join('/')
         new(account, name, target: target, house_id: house, text: text, via: via)
       end
@@ -85,12 +87,11 @@ module Game
         raise Error, '아이템을 쓸 캐릭터를 골라 주세요. 예: [사용/아이템/@상대]' if query.blank?
         return @account if query == 'me' # 웹 [나에게 쓰기]
 
-        username = query.split('@').first.to_s
-        target = GameCharacter.eligible_accounts.find_by(username: username)
-        target ||= GameCharacter.where(name: query).first&.account
-        raise Error, "'#{query}' 캐릭터를 찾을 수 없습니다." if target.nil?
+        matches = GameCharacter.search(query)
+        raise Error, "'#{query}' 캐릭터를 찾을 수 없습니다." if matches.empty?
+        raise Error, "'#{query}'에 해당하는 캐릭터가 여럿입니다: #{matches.map(&:display_name).join(', ')}. 더 자세히 적어 주세요." if matches.size > 1
 
-        target
+        matches.first.account
       end
 
       # '같은 소속에 사용 불가능' 옵션: 내 소속과 같은 소속(소속을 고른 경우)이나 같은 소속 캐릭터(본인 포함)에게는 쓸 수 없다

@@ -103,7 +103,7 @@ export const connectTimelineStream = (timelineId, channelName, params = {}, opti
 
           // 컨텐츠 알림(시스템 계정이 나를 부름, 비밀 선택 DM 포함)은 알림 목록 대신 컨텐츠 메뉴 배지로 + 새 '내 차례' 면 소리·데스크톱 알림.
           // DM 채팅 검사보다 먼저 본다 (시스템의 DM 도 컨텐츠 알림이다)
-          if (notificationJSON.account?.acct === systemAcct || isGameStatus(notificationJSON.status)) {
+          if (notificationJSON.game_hidden ?? (notificationJSON.account?.acct === systemAcct || isGameStatus(notificationJSON.status))) {
             dispatch(notifyGameTurn());
             break;
           }

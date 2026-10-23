@@ -46,6 +46,7 @@ export interface BaseNotificationJSON {
   type: NotificationType;
   created_at: string;
   group_key: string;
+  game_hidden?: boolean;
   account: ApiAccountJSON;
 }
 

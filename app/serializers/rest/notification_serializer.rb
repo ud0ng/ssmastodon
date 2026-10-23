@@ -5,6 +5,7 @@ class REST::NotificationSerializer < ActiveModel::Serializer
   attributes :id, :type, :created_at, :group_key
 
   attribute :filtered, if: :filtered?
+  attribute :game_hidden, if: :game_hidden? # 컨텐츠 알림이면 웹 알림창에 안 넣는다 (Game::System.hidden_notification?)
 
   belongs_to :from_account, key: :account, serializer: REST::AccountSerializer
   belongs_to :target_status, key: :status, if: :status_type?, serializer: REST::StatusSerializer
@@ -37,4 +38,12 @@ class REST::NotificationSerializer < ActiveModel::Serializer
   end
 
   delegate :filtered?, to: :object
+
+  def game_hidden?
+    instance_options[:streaming] || false
+  end
+
+  def game_hidden
+    Game::System.hidden_notification?(object)
+  end
 end

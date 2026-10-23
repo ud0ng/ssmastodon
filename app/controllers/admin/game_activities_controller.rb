@@ -11,7 +11,7 @@ module Admin
     RECORDS = 30
     VIEWS = %w(character house total).freeze
     RANGES = %w(all today yesterday week month custom).freeze
-    SORTS = %w(name posts chars dms dm_chars replies media last_reply partners public_posts public_chars reply_posts reply_chars money).freeze
+    SORTS = %w(name posts chars dms dm_chars replies media last_reply partners public_posts public_chars reply_posts reply_chars).freeze
     # 표 칸 → 스냅샷 열
     SORT_FIELDS = { 'posts' => :posts, 'chars' => :post_chars, 'dms' => :dms, 'dm_chars' => :dm_chars, 'replies' => :reply_turns, 'media' => :media,
                     'public_posts' => :public_posts, 'public_chars' => :public_chars, 'reply_posts' => :reply_posts, 'reply_chars' => :reply_chars }.freeze
@@ -176,6 +176,8 @@ module Admin
     # 소속별 합계 (소속 없음 포함): [[소속 또는 nil, 인원, Totals]]
     def load_house_rows(totals)
       groups = @characters.group_by(&:group)
+      # 새로 만든 소속도 인원이 0명이어도 바로 보인다
+      GameHouse.active.each { |house| groups[house] ||= [] }
       @house_rows = groups.map do |house, members|
         [house, members.size, members.reduce(Game::ActivitySnapshot::Totals.empty) { |sum, character| sum + totals[character.account_id] }]
       end
@@ -188,7 +190,6 @@ module Admin
 
     def sort_value(character)
       return [character.display_name.downcase] if sort_column == 'name'
-      return [character.money.to_i, character.display_name.downcase] if sort_column == 'money'
       return [@alerts[character.account_id].last_reply_at&.to_i.to_i, character.display_name.downcase] if sort_column == 'last_reply'
       return [@alerts[character.account_id].partners, character.display_name.downcase] if sort_column == 'partners'
 

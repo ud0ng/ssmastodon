@@ -28,6 +28,34 @@ module Game
       status.mentions.any? { |mention| mention.account_id == system.id && !mention.silent? }
     end
 
+    # 컨텐츠 안에서 쓰지 않는 기본 명령어: 도움말·점수·내전적·사용. 이 명령어와 그 답장, 단순 멘션은 웹 알림창에도 보인다
+    def basic_commands
+      common = Game::Config.for('common')
+      use = Game::Config.for('currency')['cmd_use'].to_s.strip.presence || '사용'
+      [Game::Help.system_command.presence, common['cmd_points'], common['cmd_record'], use].map { |name| name.to_s.strip }.compact_blank.uniq
+    end
+
+    # 툿 글의 첫 [명령어] 이름 ("[먹기/2]" → "먹기"), 없으면 nil
+    def command_of(text)
+      Game::Engine.parse(text)&.first.to_s.strip.presence
+    end
+
+    # 웹 알림창에서 숨길 컨텐츠 알림인가: 시스템이 보낸 알림(기본 명령어에 단 답장은 빼고), 시스템을 멘션하며 컨텐츠 명령어를 쓴 툿의 멘션 알림
+    # (Notification.without_game 의 SQL 과 같은 판단)
+    def hidden_notification?(notification)
+      system = account
+      return false if system.nil?
+
+      status = notification.type == :mention ? notification.target_status : nil
+      if notification.from_account_id == system.id
+        parent = status&.in_reply_to_id && Status.find_by(id: status.in_reply_to_id)
+        return !(parent && basic_commands.include?(command_of(parent.text)))
+      end
+
+      command = status && command_of(status.text)
+      command.present? && !basic_commands.include?(command) && status.mentions.any? { |mention| mention.account_id == system.id }
+    end
+
     # 게임 명령어로 처리할 툿 (Game::MentionWorker)
     def command_toot?(status)
       mentioned_in?(status)

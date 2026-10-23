@@ -157,23 +157,40 @@ class Notification < ApplicationRecord
       scope.without_unavailable
     end
 
-    # 컨텐츠 알림 빼기 (웹): 시스템 계정이 보낸 알림, 시스템 계정을 멘션한 툿(명령어)의 멘션 알림
+    # 컨텐츠 알림 빼기 (웹): 시스템 계정이 보낸 알림(기본 명령어에 단 답장은 보임), 시스템 계정을 멘션하며 컨텐츠 명령어를 쓴 툿의 멘션 알림.
+    # 기본 명령어(도움말·점수·내전적·사용)와 명령어 없는 단순 멘션은 그대로 보인다 (Game::System.hidden_notification? 과 같은 판단)
     def without_game
       system = Game::System.account
       return all if system.nil?
 
-      where.not(from_account_id: system.id).where(
+      first_command = %q|btrim(split_part(substring(%s from '\[([^\[\]\n]{1,60})\]'), '/', 1))|
+      where(
         <<~SQL.squish,
-          NOT EXISTS (
+          (
+            notifications.from_account_id <> :system_id
+            OR EXISTS (
+              SELECT 1
+                FROM mentions
+                INNER JOIN statuses ON statuses.id = mentions.status_id
+                INNER JOIN statuses AS parents ON parents.id = statuses.in_reply_to_id
+               WHERE notifications.activity_type = 'Mention'
+                 AND mentions.id = notifications.activity_id
+                 AND #{format(first_command, 'parents.text')} IN (:basic)
+            )
+          )
+          AND NOT EXISTS (
             SELECT 1
               FROM mentions
+              INNER JOIN statuses ON statuses.id = mentions.status_id
               INNER JOIN mentions AS game_mentions ON game_mentions.status_id = mentions.status_id
              WHERE notifications.activity_type = 'Mention'
                AND mentions.id = notifications.activity_id
                AND game_mentions.account_id = :system_id
+               AND #{format(first_command, 'statuses.text')} <> ''
+               AND #{format(first_command, 'statuses.text')} NOT IN (:basic)
           )
         SQL
-        system_id: system.id
+        system_id: system.id, basic: Game::System.basic_commands
       )
     end
 

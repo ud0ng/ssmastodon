@@ -76,7 +76,7 @@
         = button_tag t('generic.save_changes'), type: :submit, class: 'button'
 
   = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.manage.tabs.activity'), hint: game_t('admin.games.activity.hint'), actions: safe_join([backfill, give]) } do
-    .bot-sheet-table.game-table.game-table--scroll
+    .bot-sheet-table.game-table.game-table--fit
       %table.table
         %thead
           %tr
@@ -86,23 +86,22 @@
             %th.game-table__number= game_sort_header(game_t('admin.games.activity.posts'), 'public_posts', sort_column, sort_direction)
             %th.game-table__number= game_sort_header(game_t('admin.games.activity.replies'), 'reply_posts', sort_column, sort_direction)
             %th.game-table__number= game_sort_header(game_t('admin.games.activity.reply_count'), 'replies', sort_column, sort_direction)
-            %th.game-table__number= game_sort_header(game_t('admin.games.activity.media'), 'media', sort_column, sort_direction)
-            %th.game-table__number= game_sort_header(game_t('admin.games.activity.last_reply'), 'last_reply', sort_column, sort_direction)
             %th.game-table__number= game_sort_header(game_t('admin.games.activity.partners'), 'partners', sort_column, sort_direction)
-            %th.game-table__number= game_sort_header(@currency, 'money', sort_column, sort_direction)
+            %th.game-table__number= game_sort_header(game_t('admin.games.activity.last_reply'), 'last_reply', sort_column, sort_direction)
+            %th.game-table__number= game_sort_header(game_t('admin.games.activity.media'), 'media', sort_column, sort_direction)
         %tbody
           - @characters.each do |character|
             - totals = @totals[character.account_id]
             - path = stats_admin_game_activity_path(character, range: range_name, from: params[:from], to: params[:to])
             %tr.game-table__row{ data: { href: path } }
               = render 'admin/game_characters/name_cell', character: character, path: path
-              = render 'admin/game_activities/totals_cells', totals: totals
+              = render 'admin/game_activities/totals_cells', totals: totals, media: false
               -# 경고: 마지막 답 툿이 기준 시간보다 오래됐거나, 기준 시간 안에 교류한 캐릭터가 모자라면 붉게
               - alert = @alerts[character.account_id]
               - late = alert.last_reply_at.nil? || alert.last_reply_at < @criteria[:hours].hours.ago
+              %td.game-table__number{ class: ('game-alert' if alert.partners < @criteria[:min_partners]) }= game_t('admin.games.activity.partners_value', count: alert.partners)
               %td.game-table__number{ class: ('game-alert' if late) }= game_ago(alert.last_reply_at)
-              %td.game-table__number{ class: ('game-alert' if alert.partners < @criteria[:min_partners]) }= game_t('admin.games.activity.partners_value', count: alert.partners, min: @criteria[:min_partners])
-              %td.game-table__number= number_with_delimiter(character.money)
+              %td.game-table__number= number_with_delimiter(totals.media)
           - if @characters.empty?
             %tr
               %td.bot-sheet-table__text{ colspan: 10 }= game_t('admin.games.manage.roster.empty')

@@ -101,6 +101,18 @@ RSpec.describe 'Admin character roster' do
     expect(GameCounterLog.where(reason: '운영진 수정').count).to eq 2
   end
 
+  it 'sets the money from the detail page, logging only the difference' do
+    character.update!(money: 30)
+
+    patch money_admin_game_character_path(character), params: { money: '50', reason: '이벤트 보정' }
+    expect(response).to redirect_to(edit_admin_game_character_path(character))
+    expect(character.reload.money).to eq 50
+    expect(GameReward.where(account: character.account).last).to have_attributes(money: 20, reason: '이벤트 보정')
+
+    patch money_admin_game_character_path(character), params: { money: '50' }
+    expect(GameReward.where(account: character.account).count).to eq 1
+  end
+
   describe 'inventory cards' do
     before { character.update!(inventory: [{ 'name' => '투명 망토', 'count' => 1, 'note' => '' }]) }
 
@@ -108,6 +120,7 @@ RSpec.describe 'Admin character roster' do
       post items_admin_game_character_path(character), params: { item: { name: '초콜릿 개구리', count: '3', note: '' } }
       post items_admin_game_character_path(character), params: { item: { name: '초콜릿개구리', count: '0', note: '반쯤 먹음' } }
 
+      expect(response).to redirect_to(edit_admin_game_character_path(character))
       expect(character.reload.inventory).to eq [
         { 'name' => '투명 망토', 'count' => 1, 'note' => '' },
         { 'name' => '초콜릿 개구리', 'count' => 4, 'note' => '반쯤 먹음' },

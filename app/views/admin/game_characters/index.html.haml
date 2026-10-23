@@ -5,7 +5,7 @@
   = render 'admin/game_characters/heading'
 
 - none = game_t('admin.games.manage.none')
-- column_count = 5 + @counter_groups.size + @base_stats.size + @statuses.size
+- column_count = 4 + @counter_groups.size + @base_stats.size + @statuses.size
 
 -# 찾기 + 소속·진영 거르기 (서버원 관리와 같은 모양)
 = form_tag admin_game_characters_path, method: :get, class: 'simple_form game-table__filter' do
@@ -31,7 +31,7 @@
         %th= game_t('admin.games.manage.roster.name')
         %th= @labels['house_label']
         %th= @labels['faction_label']
-        %th= game_t('admin.games.manage.roster.record')
+        %th= @currency
         -# 누적 수치: 상성이 있으면 '벌점/상점' 처럼 함께 (값은 상쇄하고 난 현재값)
         - @counter_groups.each do |group|
           %th= group.compact.map(&:name).join('/')
@@ -39,31 +39,26 @@
           %th= stat.name
         - @statuses.each do |status|
           %th= status.name
-        %th.bot-sheet-table__actions
     %tbody
       - if @characters.empty?
         %tr
           %td.bot-sheet-table__text{ colspan: column_count }= game_t('admin.games.manage.roster.empty')
       - @characters.each do |character|
         - stat_values = @base_stats.to_h { |stat| [stat.name, character.stat_value(stat)] }
-        %tr.game-table__row{ data: { href: admin_game_records_path(character: character.account_id) } }
-          = render 'admin/game_characters/name_cell', character: character, path: admin_game_records_path(character: character.account_id)
+        %tr.game-table__row{ data: { href: edit_admin_game_character_path(character, filter_params) } }
+          = render 'admin/game_characters/name_cell', character: character, path: edit_admin_game_character_path(character, filter_params)
           -# 소속·진영: 누르면 바로 드롭다운, 고르면 그 자리에서 저장 (admin/inline_select.ts)
           %td.bot-sheet-table__text
             = select_tag "house_#{character.id}", options_for_select([[none, '']] + @houses.map { |house| [house.name, house.id] }, character.game_house_id), class: 'game-inline-select', 'aria-label': @labels['house_label'], data: { inline_save: group_admin_game_character_path(character), kind: 'house' }
           %td.bot-sheet-table__text
             = select_tag "faction_#{character.id}", options_for_select([[none, '']] + @factions.map { |faction| [faction.name, faction.id] }, character.game_faction_id), class: 'game-inline-select', 'aria-label': @labels['faction_label'], data: { inline_save: group_admin_game_character_path(character), kind: 'faction' }
-          - record = @records[character.account_id]
-          %td.bot-sheet-table__text.game-table__record
-            = game_t('admin.games.manage.roster.record_format', win: record['win'].to_i, lose: record['lose'].to_i, draw: record['draw'].to_i)
+          %td.bot-sheet-table__text= number_with_delimiter(character.money)
           - @counter_groups.each do |group|
             %td.bot-sheet-table__text= group.compact.map { |counter| counter.net_for(character) }.join('/')
           - @base_stats.each do |stat|
             %td.bot-sheet-table__text= stat_values[stat.name]
           - @statuses.each do |status|
             %td.bot-sheet-table__text= character.status_value(status, @base_stats) || '-'
-          %td.bot-sheet-table__actions
-            = link_to material_symbol('edit'), edit_admin_game_character_path(character, filter_params), class: 'icon-button', title: game_t('admin.games.characters.edit')
 
 
 = paginate @characters

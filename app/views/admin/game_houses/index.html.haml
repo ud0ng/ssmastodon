@@ -5,10 +5,22 @@
   = render 'admin/game_characters/heading'
 
 -# 점수 기준 소속: 기숙사 / 진영 중 점수를 모을 쪽
+- add_any = button_tag safe_join([material_symbol('add'), game_t('admin.games.houses.add_any')]), type: :button, class: 'button', data: { modal_open: 'house-add-any' }
 - rename = button_tag safe_join([material_symbol('edit'), game_t('admin.games.houses.rename')]), type: :button, class: 'button button-tertiary', data: { modal_open: 'house-labels' }
-= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.houses.mode'), hint: game_t('admin.games.houses.mode_hint'), actions: rename } do
+= render layout: 'admin/ui/section', locals: { title: game_t('admin.games.houses.mode'), hint: game_t('admin.games.houses.mode_hint'), actions: safe_join([add_any, rename]) } do
   = render 'admin/ui/segmented', url: mode_admin_game_houses_path, param: :mode, value: @mode, label: game_t('admin.games.houses.mode'),
                                  options: GameHouse::CATEGORIES.map { |category| [@labels[category], category] }
+
+-# 소속 추가: 종류(기숙사·진영)를 고르고 이름·색·순서를 정한다
+= render layout: 'admin/ui/modal', locals: { id: 'house-add-any', title: game_t('admin.games.houses.add_any') } do
+  = form_tag admin_game_houses_path, method: :post, class: 'simple_form' do
+    = render 'admin/ui/field', label: game_t('admin.games.houses.kind'), name: 'game_house[category]', id: 'house_add_any_category', value: GameHouse::CATEGORIES.first, type: :select,
+                               options: GameHouse::CATEGORIES.map { |category| [@labels[category], category] }, wide: true
+    = render 'admin/ui/field', label: game_t('admin.games.houses.name_label'), name: 'game_house[name]', id: 'house_add_any_name', value: '', required: true, wide: true
+    = render layout: 'admin/ui/fields', locals: { columns: 2 } do
+      = render 'admin/ui/field', label: game_t('admin.games.houses.color'), name: 'game_house[color]', id: 'house_add_any_color', value: '#6b5b3e', type: :color
+      = render 'admin/ui/field', label: game_t('admin.games.houses.order'), name: 'game_house[position]', id: 'house_add_any_position', value: GameHouse.count, type: :number
+    = render 'admin/ui/modal_actions'
 
 = render layout: 'admin/ui/modal', locals: { id: 'house-labels', title: game_t('admin.games.houses.rename') } do
   = form_tag labels_admin_game_houses_path, method: :patch, class: 'simple_form' do

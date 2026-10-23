@@ -601,7 +601,9 @@ en:
         effects_label: Turn on rank effects
         label_faction: Name for factions
         label_house: Name for houses
-        rename: Rename
+        add_any: Add house
+        kind: Type
+        rename: Change houses
         add_named: 'Add %{name}'
         delete_confirm_named: 'Delete %{name} (%{term})? Its point history is deleted too.'
         delete_named: 'Delete %{name}'
@@ -642,6 +644,9 @@ en:
         when: When
       manage:
         detail:
+          money_now: Current amount
+          money_reason: Edited by staff
+          money_reason_label: Reason (optional)
           with: "With %{names}"
           item_conflict: The inventory changed meanwhile, so nothing was saved. Please check again.
           remove_item_confirm: Remove '%{name}' from the inventory?

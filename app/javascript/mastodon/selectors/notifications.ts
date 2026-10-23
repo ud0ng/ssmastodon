@@ -2,6 +2,7 @@ import { createSelector } from '@reduxjs/toolkit';
 import type { Map as ImmutableMap } from 'immutable';
 
 import { compareId } from 'mastodon/compare_id';
+import { botAccountIds, systemAccountId } from 'mastodon/initial_state';
 import type { NotificationGroup } from 'mastodon/models/notification_group';
 import type { NotificationGap } from 'mastodon/reducers/notification_groups';
 import type { RootState } from 'mastodon/store';
@@ -21,6 +22,9 @@ const isAwaitingReply = (
   if (group.type !== 'mention') return false;
   if (group.visibility === 'public' || !group.visibility) return false;
   if (!group.statusId) return false;
+  // 시스템 계정(컨텐츠 진행)과 자동봇(상점) 계정의 멘션은 답장할 멘션에 넣지 않는다
+  if (systemAccountId && group.sampleAccountIds.includes(systemAccountId)) return false;
+  if (group.sampleAccountIds.some((id) => botAccountIds.includes(id))) return false;
 
   const status = statuses.get(group.statusId);
   if (!status) return true;

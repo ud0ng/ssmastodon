@@ -146,6 +146,7 @@ namespace :admin do
     member do
       patch :group, action: :assign_group
       post :items, action: :add_item
+      patch :money, action: :set_money
       post :effects, action: :add_effect, as: :add_effect
       patch 'effects/:index', action: :update_effect, as: :effect
       delete 'effects/:index', action: :remove_effect

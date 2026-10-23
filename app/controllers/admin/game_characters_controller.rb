@@ -19,7 +19,6 @@ module Admin
       @characters = filtered.includes(:house, :faction, account: :user)
                             .order(Arel.sql('game_houses.position NULLS LAST, game_houses.id NULLS LAST, accounts.username'))
                             .page(params[:page]).per(PER_PAGE)
-      load_records(@characters.map(&:account_id))
     end
 
     # 명단에서 소속·진영을 눌러 바로 바꾼다 (kind: house|faction, value: 소속 번호, 비우면 없음)
@@ -98,7 +97,20 @@ module Admin
       redirect_to edit_admin_game_character_path(character, filter_params), notice: t('generic.changes_saved_msg')
     end
 
-    # 활동 > 인벤토리 카드: 아이템 더하기 (이름이 같으면 개수만 더한다)
+    # 상세 > 재화 카드: 가진 재화를 입력한 값으로 맞춘다 (바뀐 만큼이 재화 내역에 남는다)
+    def set_money
+      authorize :settings, :update?
+
+      character = GameCharacter.find(params[:id])
+      target = [params[:money].to_i, 0].max
+      delta = target - character.money
+      unless delta.zero?
+        Game::Wallet.apply!([{ account: character.account, money: delta }], kind: 'admin', detail: params[:reason].to_s.strip.presence || t('admin.games.manage.detail.money_reason'), actor: current_account.username)
+      end
+      redirect_to edit_admin_game_character_path(character, filter_params), notice: t('generic.changes_saved_msg')
+    end
+
+    # 상세 > 인벤토리 카드: 아이템 더하기 (이름이 같으면 개수만 더한다)
     def add_item
       authorize :settings, :update?
 
@@ -117,7 +129,7 @@ module Admin
           character.update!(inventory: inventory)
         end
       end
-      redirect_to admin_game_activity_path(character), notice: t('generic.changes_saved_msg')
+      redirect_to edit_admin_game_character_path(character, filter_params), notice: t('generic.changes_saved_msg')
     end
 
     # 인벤토리 카드: 개수·메모 고치기 (그사이 그 자리의 아이템이 바뀌었으면 고치지 않는다)
@@ -144,19 +156,14 @@ module Admin
       @currency = Game::Config.for('common')['currency_name']
     end
 
-    # 명단의 전적: 계정마다 { 'win' => n, 'lose' => n, 'draw' => n } (끝난 판만)
-    def load_records(account_ids)
-      counts = GamePlayer.joins(:session).merge(GameSession.current_kinds.real).where(account_id: account_ids, game_sessions: { status: 'finished' }).group(:account_id, :result).count
-      @records = Hash.new { |hash, key| hash[key] = {} }
-      counts.each { |(account_id, result), count| @records[account_id][result] = count }
-    end
-
     # 상세 화면: 전적(승·패·무)과 최근 판
     def prepare_form
       load_columns
       @counters = GameCounter.includes(:opposite).to_a
       finished = GamePlayer.joins(:session).merge(GameSession.real).where(account_id: @character.account_id, game_sessions: { status: 'finished' })
       @record = finished.group(:result).count
+      @item_images = GameShopItem.by_key
+      @shop_item_names = GameShopItem.pluck(:name)
     end
 
     def filter_params
@@ -203,7 +210,7 @@ module Admin
           flash[:alert] = t('admin.games.manage.detail.item_conflict')
         end
       end
-      redirect_to admin_game_activity_path(character)
+      redirect_to edit_admin_game_character_path(character, filter_params)
     end
 
     def filtered

@@ -54,6 +54,24 @@ class GameCharacter < ApplicationRecord
     GameHouse.faction_mode? ? game_faction_id : game_house_id
   end
 
+  # 이름이나 계정 아이디로 캐릭터를 찾는다 (자동봇·시스템 [사용/아이템/@상대], 웹). 아이디가 같은 캐릭터가 있으면 그쪽만,
+  # 없으면 이름(공백 무시)이 같은 캐릭터 → 그 말로 시작하는 캐릭터 → 그 말이 들어 있는 캐릭터 순으로 처음 나온 묶음.
+  # 예: '에이비 시디' 는 '에이비' 만 써도 찾는다. 여럿이면 여럿 다 돌려주니 부르는 쪽이 다시 물어본다.
+  def self.search(query)
+    text = query.to_s.strip.delete_prefix('@').delete_prefix('＠').strip
+    key = Game::Wallet.key(text)
+    return [] if key.blank?
+
+    username = text.split('@').first.to_s
+    characters = visible.includes(:account).to_a
+    [
+      characters.select { |character| character.account.username.casecmp?(username) },
+      characters.select { |character| Game::Wallet.key(character.display_name) == key },
+      characters.select { |character| Game::Wallet.key(character.display_name).start_with?(key) },
+      characters.select { |character| Game::Wallet.key(character.display_name).include?(key) },
+    ].find(&:any?) || []
+  end
+
   def display_name
     name.presence || account.display_name.presence || account.username
   end
