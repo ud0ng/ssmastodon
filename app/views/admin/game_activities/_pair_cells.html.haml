@@ -1,8 +1,22 @@
--# 두 캐릭터 일자별 표의 숫자 칸 (PairTotals)
-%td.game-table__number= number_with_delimiter(row.reply_posts)
-%td.game-table__number= number_with_delimiter(row.reply_chars)
+-# 두 캐릭터 표의 숫자 칸 (PairTotals). ratios: true 면 숫자 옆에 비율을 작게 (답 횟수당 툿 수 · 툿당 글자 수 · 답 횟수 비중 · 스루율)
+-# turn_total: 이 캐릭터의 전체 답 횟수 (비중의 분모, 위쪽 줄에만)
+- ratios = local_assigns[:ratios]
+%td.game-table__number
+  = number_with_delimiter(row.reply_posts)
+  - if ratios && row.posts_per_turn
+    %small.act-small= game_t('admin.games.activity.posts_per_turn_short', count: row.posts_per_turn)
+%td.game-table__number
+  = number_with_delimiter(row.reply_chars)
+  - if ratios && row.avg_chars
+    %small.act-small= game_t('admin.games.activity.avg_chars_short', count: number_with_delimiter(row.avg_chars))
 %td.game-table__number= number_with_delimiter(row.reply_media)
-%td.game-table__number= number_with_delimiter(row.reply_turns)
+%td.game-table__number
+  = number_with_delimiter(row.reply_turns)
+  - if ratios && local_assigns[:turn_total].to_i.positive?
+    %small.act-small= game_t('admin.games.activity.turn_share_short', rate: (row.reply_turns * 100.0 / local_assigns[:turn_total]).round(1))
 %td.game-table__number= number_with_delimiter(row.dms)
 %td.game-table__number= number_with_delimiter(row.dm_chars)
-%td.game-table__number= number_with_delimiter(row.skipped)
+%td.game-table__number
+  = number_with_delimiter(row.skipped)
+  - if ratios && row.skip_rate
+    %small.act-small= game_t('admin.games.activity.skip_rate_short', rate: row.skip_rate)

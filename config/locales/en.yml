@@ -91,7 +91,26 @@ en:
         chart_days: Toots by day
         pair_chart_legend: 'Upper bars: %{me} → %{other}, lower bars: %{other} → %{me}'
         pair_daily_hint: 'For each date the first row is %{name} → %{other} and the row below is %{other} → %{name}. Hover a bar for details.'
-        ratio_hint: How this character's activity is split between the other characters. Hover a bar for numbers.
+        avg_chars_short: 'avg %{count} chars'
+        posts_per_turn_short: '%{count} toots per turn'
+        turn_share_short: 'share %{rate}%'
+        skip_rate_short: 'skip rate %{rate}%'
+        rate_basis: '(%{count})'
+        rate_posts: Average toots per reply turn
+        rank: Rank
+        overall: Overall
+        times: '×%{value}'
+        fair_interest: 'interest ×%{value}'
+        fair_care: 'care ×%{value}'
+        fair_response: 'response ×%{value}'
+        fair_few: few samples
+        rate_overall: Overall (interest × care × response)
+        rate_interest: Interest (share of visits ÷ fair share)
+        mark_average: '| = average 1.0'
+        mark_fair: '| = fair 1.0'
+        mark_mine: '| = own %{value}'
+        rate_chars: Average characters per toot
+        rate_skip: Skip rate
         ratio_others: Others
         ratio_replies: Share of reply toots
         ratio_skipped: Share of skipped

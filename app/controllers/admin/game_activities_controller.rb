@@ -20,7 +20,7 @@ module Admin
     HOUSE_SORTS = (%w(name members) + SORT_FIELDS.keys).freeze
     PAIR_FIELDS = { 'reply_posts' => :reply_posts, 'reply_chars' => :reply_chars, 'media' => :reply_media, 'replies' => :reply_turns,
                     'dms' => :dms, 'dm_chars' => :dm_chars, 'skipped' => :skipped }.freeze
-    PAIR_SORTS = (%w(name) + PAIR_FIELDS.keys).freeze
+    PAIR_SORTS = (%w(rank name overall) + PAIR_FIELDS.keys).freeze
     PAIR_DAY_SORTS = (%w(date) + PAIR_FIELDS.keys).freeze
     helper_method :sort_state, :sort_column, :sort_direction, :view_name, :range_name, :range_from, :range_to
 
@@ -63,13 +63,18 @@ module Admin
       @daily = Game::ActivitySnapshot.daily([@character.account_id], from: range_from, to: range_to)
       @total = @daily.reduce(Game::ActivitySnapshot::Totals.empty) { |sum, (_, row)| sum + row }
       by_account = @characters.index_by(&:account_id)
-      @pairs = Game::ActivitySnapshot.pairs(@character.account_id, from: range_from, to: range_to).filter_map { |other, row| [by_account[other], row] if by_account[other] }
-      @pairs.sort_by! { |other, row| [-(row.reply_posts + row.dms), other.display_name.downcase] }
-      @pairs_back = Game::ActivitySnapshot.pairs_to(@character.account_id, from: range_from, to: range_to) # 상대 → 이 캐릭터
+      load_fairness
       @opponent = by_account[params[:opponent].to_i]
       @chart_days = chart_days(@daily)
       @daily = sort_table(:days, @daily, DAY_SORTS, default: 'date', default_dir: 'desc') { |(day, row), key| key == 'date' ? day : [row[SORT_FIELDS.fetch(key)].to_i, day] }
-      @pairs = sort_table(:pairs, @pairs, PAIR_SORTS, default: nil, param: :psort, dir_param: :pdir) { |(other, row), key| key == 'name' ? other.display_name.downcase : [row[PAIR_FIELDS.fetch(key)].to_i, other.display_name.downcase] }
+      @pairs = sort_table(:pairs, @pairs, PAIR_SORTS, default: 'rank', param: :psort, dir_param: :pdir) do |(other, row), key|
+        case key
+        when 'rank' then @ranks[other.account_id]
+        when 'name' then other.display_name.downcase
+        when 'overall' then [@scores[other.account_id].overall || -1, other.display_name.downcase]
+        else [row[PAIR_FIELDS.fetch(key)].to_i, other.display_name.downcase]
+        end
+      end
       load_pair_days if @opponent
     end
 
@@ -160,6 +165,24 @@ module Admin
       first = range_from || by_day.keys.min || last
       first = [first, last - (CHART_DAYS - 1)].max
       (first..last).map { |day| [day, by_day[day] || Game::ActivitySnapshot::Totals.empty] }
+    end
+
+    # 상대 캐릭터별 (편애·차별 보기, Game::Fairness): 다른 모든 캐릭터를 (한 번도 안 주고받았어도) 줄로 세우고
+    # 이 캐릭터의 평균과 견준 지수·순위를 매긴다. 아래 줄(상대 → 이 캐릭터)은 그 상대 자신의 평균과 견준다.
+    def load_fairness
+      others = @characters.reject { |character| character.account_id == @character.account_id }
+      ids = others.map(&:account_id)
+      empty = Game::ActivitySnapshot::PairTotals.empty
+      mine = Game::ActivitySnapshot.pairs(@character.account_id, from: range_from, to: range_to)
+      @pairs = others.map { |other| [other, mine[other.account_id] || empty] }
+      @pairs_back = Game::ActivitySnapshot.pairs_to(@character.account_id, from: range_from, to: range_to) # 상대 → 이 캐릭터
+      @my_total = @pairs.reduce(empty) { |sum, (_, row)| sum + row }
+      people = others.size
+      @scores = @pairs.to_h { |other, row| [other.account_id, Game::Fairness.score(row, @my_total, people)] }
+      @ranks = Game::Fairness.ranks(@pairs.map { |other, row| [other.account_id, row, @scores[other.account_id]] })
+      everyone = ids + [@character.account_id]
+      back_totals = Game::ActivitySnapshot.pair_sums(ids, everyone, from: range_from, to: range_to)
+      @back_scores = ids.index_with { |id| Game::Fairness.score(@pairs_back[id] || empty, back_totals[id] || empty, people) }
     end
 
     # 이 캐릭터(A)와 고른 상대(B)의 일자별: [[날짜, A→B, B→A]] 최근 날짜가 위 (두 쪽 중 한쪽이라도 기록이 있는 날)

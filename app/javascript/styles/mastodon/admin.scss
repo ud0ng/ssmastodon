@@ -4828,3 +4828,140 @@ button.game-token:focus-visible {
 .game-table__sub td {
   background: rgba(128, 128, 128, 0.06);
 }
+
+// 상대 캐릭터별 비율 막대 목록 (비율 하나씩)
+.act-rate {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
+  margin: 8px 0 0;
+  font-size: 12px;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: minmax(70px, 130px) 1fr 70px 46px;
+    gap: 8px;
+    align-items: center;
+  }
+}
+
+.act-rate__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.act-rate__track {
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(128, 128, 128, 0.12);
+  overflow: hidden;
+}
+
+.act-rate__fill {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: var(--act-ratio-color);
+}
+
+.act-rate__value {
+  font-weight: 600;
+  text-align: right;
+}
+
+.act-rate__basis,
+.act-small {
+  opacity: 0.55;
+  font-size: 10.5px;
+}
+
+.act-small {
+  display: block;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+// 상대 → 이 캐릭터 줄: 배경을 달리해 구분한다
+.game-table__back td {
+  background: rgba(107, 170, 215, 0.24);
+}
+
+.game-table__back td:first-child {
+  box-shadow: inset 3px 0 0 rgba(107, 170, 215, 0.7);
+}
+
+.act-back {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding-left: 10px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.act-back__avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+// 편애·차별 보기: 순위·종합 지수, 막대의 기준선(평균)
+.act-rank {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.act-fair__value {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.act-fair__value--high {
+  background: rgba(240, 165, 60, 0.25);
+  color: #a05a00;
+}
+
+.act-fair__value--low {
+  background: rgba(220, 70, 60, 0.18);
+  color: #b0302a;
+}
+
+.act-fair__few {
+  font-style: italic;
+}
+
+.act-rate__track {
+  position: relative;
+}
+
+.act-rate__mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.act-rate__legend {
+  margin-left: 8px;
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+// 상대 캐릭터별 표: 칸이 많아 가로로 넘기고, 이름·지수는 줄바꿈하지 않는다
+.act-fair-table td,
+.act-fair-table th {
+  white-space: nowrap;
+}
+
+.act-back span {
+  white-space: nowrap;
+}

@@ -55,6 +55,23 @@ module Game
       def +(other)
         self.class.new(**PAIR_COLUMNS.to_h { |column| [column, self[column].to_i + other[column].to_i] })
       end
+
+      # 절대 수가 아니라 비율로 보는 값 (분모가 0이면 nil). 답 툿 수는 타래에 따라 달라서 '답 횟수'(찾아간 횟수)를 기준으로 본다
+      # 답 횟수당 평균 툿 수: 한 번 찾아가면 평균 몇 번 말을 이었나
+      def posts_per_turn
+        reply_turns.to_i.positive? ? (reply_posts.to_f / reply_turns).round(1) : nil
+      end
+
+      # 툿당 평균 글자 수: 답 툿 하나에 평균 몇 글자를 썼나
+      def avg_chars
+        reply_posts.to_i.positive? ? (reply_chars.to_f / reply_posts).round : nil
+      end
+
+      # 스루율: 스루 ÷ (답 횟수 + 스루). 같은 스루 수라도 찾아간 횟수가 많으면 낮다
+      def skip_rate
+        total = reply_turns.to_i + skipped.to_i
+        total.positive? ? (skipped * 100.0 / total).round(1) : nil
+      end
     end
 
     module_function
@@ -343,6 +360,15 @@ module Game
       range_scope(GameActivityPair.where(other_account_id: account_id), from, to).group(:account_id)
                                                                                   .pluck(:account_id, *PAIR_COLUMNS.map { |column| Arel.sql("SUM(#{column})") })
                                                                                   .each { |other, *values| result[other] = PairTotals.new(**PAIR_COLUMNS.zip(values.map(&:to_i)).to_h) }
+      result
+    end
+
+    # 캐릭터 id => PairTotals (그 캐릭터가 other_ids 의 상대들에게 한 것의 합계)
+    def pair_sums(account_ids, other_ids, from: nil, to: nil)
+      result = {}
+      range_scope(GameActivityPair.where(account_id: account_ids, other_account_id: other_ids), from, to).group(:account_id)
+                                                                                                         .pluck(:account_id, *PAIR_COLUMNS.map { |column| Arel.sql("SUM(#{column})") })
+                                                                                                         .each { |id, *values| result[id] = PairTotals.new(**PAIR_COLUMNS.zip(values.map(&:to_i)).to_h) }
       result
     end
 

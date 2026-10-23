@@ -1,0 +1,12 @@
+-# 종합 지수 칸 (Game::Fairness::Score): 큰 숫자 + 관심·정성·응답 지수. 1.0 = 그 캐릭터의 평균대로
+-# local: score
+- tone = if score.overall.nil? || score.few? then nil elsif score.overall >= 1.5 then 'high' elsif score.overall <= 0.5 then 'low' end
+%td.game-table__number.act-fair
+  - if score.overall
+    %strong.act-fair__value{ class: ("act-fair__value--#{tone}" if tone) }= game_t('admin.games.activity.times', value: score.overall)
+  - else
+    %span.hint —
+  %small.act-small
+    = [score.interest && game_t('admin.games.activity.fair_interest', value: score.interest), score.care && game_t('admin.games.activity.fair_care', value: score.care), score.response && game_t('admin.games.activity.fair_response', value: score.response)].compact.join(' · ')
+  - if score.few?
+    %small.act-small.act-fair__few= game_t('admin.games.activity.fair_few')

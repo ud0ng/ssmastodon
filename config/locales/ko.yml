@@ -135,7 +135,26 @@ ko:
         chart_days: 일자별 툿
         pair_chart_legend: '위쪽 막대는 %{me} → %{other}, 아래쪽 막대는 %{other} → %{me}'
         pair_daily_hint: '날짜마다 위 줄은 %{name} → %{other}, 아래 줄은 %{other} → %{name} 기록입니다. 막대에 마우스를 올리면 자세한 수가 보입니다.'
-        ratio_hint: '이 캐릭터가 상대 캐릭터별로 얼마나 나눴는지 비율로 보여 줍니다. 막대에 마우스를 올리면 수가 보입니다.'
+        avg_chars_short: '평균 %{count}자'
+        posts_per_turn_short: '횟수당 %{count}툿'
+        turn_share_short: '비중 %{rate}%'
+        skip_rate_short: '스루율 %{rate}%'
+        rate_basis: '(%{count})'
+        rate_posts: 답 횟수당 평균 툿 수
+        rank: 순위
+        overall: 종합
+        times: '×%{value}'
+        fair_interest: '관심 ×%{value}'
+        fair_care: '정성 ×%{value}'
+        fair_response: '응답 ×%{value}'
+        fair_few: 표본 적음
+        rate_overall: 종합 지수 (관심 × 정성 × 응답)
+        rate_interest: 관심 지수 (찾아간 몫 ÷ 공평한 몫)
+        mark_average: '| = 평균 1.0'
+        mark_fair: '| = 공평 1.0'
+        mark_mine: '| = 이 캐릭터 %{value}'
+        rate_chars: 툿당 평균 글자 수
+        rate_skip: 스루율
         ratio_others: 기타
         ratio_replies: 답 툿 수 비율
         ratio_skipped: 스루 수 비율

@@ -78,6 +78,14 @@ RSpec.describe Game::ActivitySnapshot do
     expect(GameActivityDay.find_by!(day: day, account_id: account.id).reply_turns).to eq 0
   end
 
+  it 'gives the per-turn, per-toot and skip ratios of a counterpart, nil when there is nothing to divide' do
+    totals = described_class::PairTotals.new(reply_posts: 10, reply_chars: 500, reply_turns: 3, skipped: 1)
+    expect(totals.avg_chars).to eq 50
+    expect(totals.posts_per_turn).to eq 3.3 # 10 toots over 3 turns
+    expect(totals.skip_rate).to eq 25.0 # 1 / (3 + 1)
+    expect(described_class::PairTotals.empty).to have_attributes(posts_per_turn: nil, avg_chars: nil, skip_rate: nil)
+  end
+
   it 'rebuilding replaces what was there, so deleted toots drop out' do
     status = toot('곧 지울 툿')
     described_class.rebuild!(day)
