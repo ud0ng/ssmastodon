@@ -52,6 +52,30 @@ RSpec.describe Game::ActivitySnapshot do
     expect(GameActivityDay.find_by!(day: day - 1, account_id: account.id).posts).to eq 1 # 한국 시간으로 어제 23:59
   end
 
+  it 'counts a visit once per conversation, also when answering a follow-up toot, and not again on another day' do
+    root = toot('상대 툿', from: other, at: noon - 1.day)
+    follow = toot('상대 이어쓰기', from: other, reply_to: root, at: noon - 1.day)
+    toot('첫 답', reply_to: follow)
+    toot('다음날 또 답', reply_to: root, at: noon + 1.day)
+    other_reply = toot('내 툿', at: noon)
+    toot('상대가 내 툿에 답', from: other, reply_to: other_reply, at: noon + 2.days)
+    toot('내가 상대 답에 다시 답', reply_to: toot('상대의 답의 답', from: other, reply_to: other_reply), at: noon + 2.days)
+    (-1..3).each { |offset| described_class.rebuild!(day + offset) }
+
+    mine = GameActivityPair.where(account_id: account.id, other_account_id: other.id)
+    expect(mine.sum(:reply_turns)).to eq 1 # 한 대화에 한 번 (이어쓴 툿에 달아도 1, 다음 날 또 달아도 그대로)
+    expect(GameActivityPair.where(account_id: other.id, other_account_id: account.id).sum(:reply_turns)).to eq 1 # 상대가 내 툿에 찾아온 것
+    expect(GameActivityDay.where(account_id: account.id).sum(:reply_turns)).to eq 1
+  end
+
+  it 'does not count visits to or from the system and shop bots' do
+    bot = Fabricate(:user).account
+    allow(Game::System).to receive(:account).and_return(bot)
+    toot('시스템 툿', from: bot).then { |status| toot('시스템에 답', reply_to: status) }
+    described_class.rebuild!(day)
+    expect(GameActivityDay.find_by!(day: day, account_id: account.id).reply_turns).to eq 0
+  end
+
   it 'rebuilding replaces what was there, so deleted toots drop out' do
     status = toot('곧 지울 툿')
     described_class.rebuild!(day)

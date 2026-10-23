@@ -26,8 +26,8 @@
       %table.table
         %thead
           %tr
-            %th= game_t('admin.games.activity.date')
-            = render 'admin/game_activities/totals_head'
+            %th= game_sort_header(game_t('admin.games.activity.date'), 'date', *sort_state(:days))
+            = render 'admin/game_activities/totals_head', table: :days
         %tbody
           %tr.game-table__total
             %td.bot-sheet-table__text
@@ -47,9 +47,9 @@
       %table.table
         %thead
           %tr
-            %th= game_t('admin.games.activity.house_name')
-            %th.game-table__number= game_t('admin.games.activity.members')
-            = render 'admin/game_activities/totals_head'
+            %th= game_sort_header(game_t('admin.games.activity.house_name'), 'name', *sort_state(:houses))
+            %th.game-table__number= game_sort_header(game_t('admin.games.activity.members'), 'members', *sort_state(:houses))
+            = render 'admin/game_activities/totals_head', table: :houses
         %tbody
           - @house_rows.each do |house, count, totals|
             - path = house ? admin_game_activities_path(view: 'total', house: house.id, range: range_name, from: params[:from], to: params[:to]) : nil

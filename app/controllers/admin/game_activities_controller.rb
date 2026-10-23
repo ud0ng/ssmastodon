@@ -15,7 +15,14 @@ module Admin
     # 표 칸 → 스냅샷 열
     SORT_FIELDS = { 'posts' => :posts, 'chars' => :post_chars, 'dms' => :dms, 'dm_chars' => :dm_chars, 'replies' => :reply_turns, 'media' => :media,
                     'public_posts' => :public_posts, 'public_chars' => :public_chars, 'reply_posts' => :reply_posts, 'reply_chars' => :reply_chars, 'skipped' => :skipped }.freeze
-    helper_method :sort_column, :sort_direction, :view_name, :range_name, :range_from, :range_to
+    # 일자별·소속별·상대 캐릭터별 표의 정렬 (머리 칸을 누르면 그 칸 기준, 표마다 따로 기억한다)
+    DAY_SORTS = %w(date posts dms public_posts reply_posts replies media skipped).freeze
+    HOUSE_SORTS = (%w(name members) + SORT_FIELDS.keys).freeze
+    PAIR_FIELDS = { 'reply_posts' => :reply_posts, 'reply_chars' => :reply_chars, 'media' => :reply_media, 'replies' => :reply_turns,
+                    'dms' => :dms, 'dm_chars' => :dm_chars, 'skipped' => :skipped }.freeze
+    PAIR_SORTS = (%w(name) + PAIR_FIELDS.keys).freeze
+    PAIR_DAY_SORTS = (%w(date) + PAIR_FIELDS.keys).freeze
+    helper_method :sort_state, :sort_column, :sort_direction, :view_name, :range_name, :range_from, :range_to
 
     def index
       authorize :settings, :show?
@@ -33,6 +40,7 @@ module Admin
         @daily = Game::ActivitySnapshot.daily(ids, from: range_from, to: range_to)
         @total = @daily.reduce(Game::ActivitySnapshot::Totals.empty) { |sum, (_, row)| sum + row }
         @chart_days = chart_days(@daily)
+        @daily = sort_table(:days, @daily, DAY_SORTS, default: 'date', default_dir: 'desc') { |(day, row), key| key == 'date' ? day : [row[SORT_FIELDS.fetch(key)].to_i, day] }
       when 'house'
         load_house_rows(Game::ActivitySnapshot.totals(@characters.map(&:account_id), from: range_from, to: range_to))
       else
@@ -59,6 +67,8 @@ module Admin
       @pairs.sort_by! { |other, row| [-(row.reply_posts + row.dms), other.display_name.downcase] }
       @opponent = by_account[params[:opponent].to_i]
       @chart_days = chart_days(@daily)
+      @daily = sort_table(:days, @daily, DAY_SORTS, default: 'date', default_dir: 'desc') { |(day, row), key| key == 'date' ? day : [row[SORT_FIELDS.fetch(key)].to_i, day] }
+      @pairs = sort_table(:pairs, @pairs, PAIR_SORTS, default: nil, param: :psort, dir_param: :pdir) { |(other, row), key| key == 'name' ? other.display_name.downcase : [row[PAIR_FIELDS.fetch(key)].to_i, other.display_name.downcase] }
       load_pair_days if @opponent
     end
 
@@ -157,6 +167,7 @@ module Admin
       theirs = Game::ActivitySnapshot.pair_daily(@opponent.account_id, @character.account_id, from: range_from, to: range_to).to_h
       empty = Game::ActivitySnapshot::PairTotals.empty
       @pair_days = (mine.keys | theirs.keys).sort.reverse.map { |day| [day, mine[day] || empty, theirs[day] || empty] }
+      @pair_days = sort_table(:pair_days, @pair_days, PAIR_DAY_SORTS, default: 'date', default_dir: 'desc', param: :dsort, dir_param: :ddir) { |(day, row, _), key| key == 'date' ? day : [row[PAIR_FIELDS.fetch(key)].to_i, day] }
       @pair_mine = @pair_days.reduce(empty) { |sum, (_, row, _)| sum + row }
       @pair_theirs = @pair_days.reduce(empty) { |sum, (_, _, row)| sum + row }
     end
@@ -210,6 +221,28 @@ module Admin
         [house, members.size, members.reduce(Game::ActivitySnapshot::Totals.empty) { |sum, character| sum + totals[character.account_id] }]
       end
       @house_rows.sort_by! { |house, _, _| [house ? 0 : 1, house&.position.to_i, house&.id.to_i] }
+      @house_rows = sort_table(:houses, @house_rows, HOUSE_SORTS, default: nil) do |(house, count, totals), key|
+        case key
+        when 'name' then [house ? 0 : 1, house&.name.to_s.downcase]
+        when 'members' then count
+        else totals[SORT_FIELDS.fetch(key)].to_i
+        end
+      end
+    end
+
+    # rows 를 표의 정렬대로 세운다 (같은 값이면 원래 순서). 표마다 [고른 칸, 방향]을 @sort_states 에 기억해 머리 칸이 읽는다.
+    def sort_table(table, rows, keys, default:, default_dir: 'asc', param: :sort, dir_param: :dir)
+      key = keys.include?(params[param]) ? params[param] : default
+      direction = %w(asc desc).include?(params[dir_param]) ? params[dir_param] : (params[param] ? 'asc' : default_dir)
+      (@sort_states ||= {})[table] = [key, direction]
+      return rows if key.nil?
+
+      sorted = rows.each_with_index.sort_by { |row, index| [yield(row, key), index] }.map(&:first)
+      direction == 'desc' ? sorted.reverse : sorted
+    end
+
+    def sort_state(table)
+      (@sort_states || {}).fetch(table, [nil, 'asc'])
     end
 
     def sort_direction

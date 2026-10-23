@@ -21,8 +21,8 @@
       %table.table
         %thead
           %tr
-            %th= game_t('admin.games.activity.date')
-            = render 'admin/game_activities/totals_head'
+            %th= game_sort_header(game_t('admin.games.activity.date'), 'date', *sort_state(:days))
+            = render 'admin/game_activities/totals_head', table: :days
         %tbody
           %tr.game-table__total
             %td.bot-sheet-table__text
@@ -49,17 +49,17 @@
       %table.table
         %thead
           %tr
-            %th= game_t('admin.games.records.opponent')
-            %th.game-table__number= game_t('admin.games.activity.replies')
-            %th.game-table__number= game_t('admin.games.activity.pair_reply_chars')
-            %th.game-table__number= game_t('admin.games.activity.media')
-            %th.game-table__number= game_t('admin.games.activity.reply_count')
-            %th.game-table__number= game_t('admin.games.activity.dm_posts')
-            %th.game-table__number= game_t('admin.games.activity.pair_dm_chars')
-            %th.game-table__number= game_t('admin.games.activity.skipped')
+            %th= game_sort_header(game_t('admin.games.records.opponent'), 'name', *sort_state(:pairs), param: 'psort', dir_param: 'pdir')
+            %th.game-table__number= game_sort_header(game_t('admin.games.activity.replies'), 'reply_posts', *sort_state(:pairs), param: 'psort', dir_param: 'pdir')
+            %th.game-table__number= game_sort_header(game_t('admin.games.activity.pair_reply_chars'), 'reply_chars', *sort_state(:pairs), param: 'psort', dir_param: 'pdir')
+            %th.game-table__number= game_sort_header(game_t('admin.games.activity.media'), 'media', *sort_state(:pairs), param: 'psort', dir_param: 'pdir')
+            %th.game-table__number= game_sort_header(game_t('admin.games.activity.reply_count'), 'replies', *sort_state(:pairs), param: 'psort', dir_param: 'pdir')
+            %th.game-table__number= game_sort_header(game_t('admin.games.activity.dm_posts'), 'dms', *sort_state(:pairs), param: 'psort', dir_param: 'pdir')
+            %th.game-table__number= game_sort_header(game_t('admin.games.activity.pair_dm_chars'), 'dm_chars', *sort_state(:pairs), param: 'psort', dir_param: 'pdir')
+            %th.game-table__number= game_sort_header(game_t('admin.games.activity.skipped'), 'skipped', *sort_state(:pairs), param: 'psort', dir_param: 'pdir')
         %tbody
           - @pairs.each do |other, row|
-            - path = stats_admin_game_activity_path(@character, period.merge(tab: 'pairs', opponent: other.account_id))
+            - path = stats_admin_game_activity_path(@character, period.merge(tab: 'pairs', opponent: other.account_id, psort: params[:psort], pdir: params[:pdir]).compact_blank)
             %tr.game-table__row{ class: ('is-selected' if @opponent == other), data: { href: path } }
               = render 'admin/game_characters/name_cell', character: other, path: path
               %td.game-table__number= number_with_delimiter(row.reply_posts)
@@ -80,14 +80,14 @@
         %table.table
           %thead
             %tr
-              %th= game_t('admin.games.activity.date')
-              %th.game-table__number= game_t('admin.games.activity.replies')
-              %th.game-table__number= game_t('admin.games.activity.pair_reply_chars')
-              %th.game-table__number= game_t('admin.games.activity.media')
-              %th.game-table__number= game_t('admin.games.activity.reply_count')
-              %th.game-table__number= game_t('admin.games.activity.dm_posts')
-              %th.game-table__number= game_t('admin.games.activity.pair_dm_chars')
-              %th.game-table__number= game_t('admin.games.activity.skipped')
+              %th= game_sort_header(game_t('admin.games.activity.date'), 'date', *sort_state(:pair_days), param: 'dsort', dir_param: 'ddir')
+              %th.game-table__number= game_sort_header(game_t('admin.games.activity.replies'), 'reply_posts', *sort_state(:pair_days), param: 'dsort', dir_param: 'ddir')
+              %th.game-table__number= game_sort_header(game_t('admin.games.activity.pair_reply_chars'), 'reply_chars', *sort_state(:pair_days), param: 'dsort', dir_param: 'ddir')
+              %th.game-table__number= game_sort_header(game_t('admin.games.activity.media'), 'media', *sort_state(:pair_days), param: 'dsort', dir_param: 'ddir')
+              %th.game-table__number= game_sort_header(game_t('admin.games.activity.reply_count'), 'replies', *sort_state(:pair_days), param: 'dsort', dir_param: 'ddir')
+              %th.game-table__number= game_sort_header(game_t('admin.games.activity.dm_posts'), 'dms', *sort_state(:pair_days), param: 'dsort', dir_param: 'ddir')
+              %th.game-table__number= game_sort_header(game_t('admin.games.activity.pair_dm_chars'), 'dm_chars', *sort_state(:pair_days), param: 'dsort', dir_param: 'ddir')
+              %th.game-table__number= game_sort_header(game_t('admin.games.activity.skipped'), 'skipped', *sort_state(:pair_days), param: 'dsort', dir_param: 'ddir')
           %tbody
             - [[nil, @pair_mine, @pair_theirs]].concat(@pair_days).each do |day, mine, theirs|
               %tr{ class: ('game-table__total' if day.nil?) }

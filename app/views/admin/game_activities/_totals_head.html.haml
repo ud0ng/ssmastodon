@@ -1,7 +1,4 @@
-%th.game-table__number= game_t('admin.games.activity.all_posts')
-%th.game-table__number= game_t('admin.games.activity.dm_posts')
-%th.game-table__number= game_t('admin.games.activity.posts')
-%th.game-table__number= game_t('admin.games.activity.replies')
-%th.game-table__number= game_t('admin.games.activity.reply_count')
-%th.game-table__number= game_t('admin.games.activity.media')
-%th.game-table__number= game_t('admin.games.activity.skipped')
+-# 툿 칸 머리: sort 를 주면 [고른 칸, 방향] 으로 눌러서 정렬하는 머리 칸이 된다 (table: 정렬 상태 이름)
+- sort = local_assigns[:table] ? sort_state(local_assigns[:table]) : nil
+- [['all_posts', 'posts'], ['dm_posts', 'dms'], ['posts', 'public_posts'], ['replies', 'reply_posts'], ['reply_count', 'replies'], ['media', 'media'], ['skipped', 'skipped']].each do |label, key|
+  %th.game-table__number= sort ? game_sort_header(game_t("admin.games.activity.#{label}"), key, *sort) : game_t("admin.games.activity.#{label}")

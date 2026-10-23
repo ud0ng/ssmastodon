@@ -14,6 +14,10 @@ module Game
   # 세는 법은 예전 활동 화면과 같다 (Game::Activity): 부스트·지운 툿은 빼고, 퍼블은 답이 아닌 툿, 답 툿은 답글, 글자 수는 본문 길이,
   # 답 횟수는 다른 사람의 (답이 아닌 퍼블) 툿에 답을 단 것을 같은 툿에는 1회로 센다 (날짜마다 따로), 미디어는 사진 등을 붙인 툿 (DM 제외).
   #
+  # 답 횟수(reply_turns): 상대에게 '찾아간' 횟수. 상대(B)가 쓴 첫 툿(남에게 단 답이 아닌 툿, B가 자기 툿에 이어 쓴 툿 포함)에 이 캐릭터(A)가
+  # 처음 답을 단 것을 한 번으로 센다. 같은 대화에서는 며칠에 걸쳐 여러 번 답해도 처음 한 번만 (날짜는 처음 답한 날).
+  # 시스템·상점봇 계정과의 답은 세지 않는다 (스루 수와 같은 조건).
+  #
   # 오늘 것은 툿이 저장될 때마다 쌓고 (record! ← Game::ActivitySnapshotWorker), 하루가 끝나면 그날 것을 툿에서 다시 계산해 맞춘다 (rebuild!, 지운 툿 반영).
   # 지난 날은 한꺼번에 올린다 (catch_up! ← game:activity_backfill, 매일 밤 스케줄러가 빠진 날을 채운다).
   module ActivitySnapshot
@@ -89,9 +93,8 @@ module Game
       open.where.not(in_reply_to_id: nil).group(:account_id).pluck(:account_id, Arel.sql('COUNT(*)'), chars).each { |id, count, sum| days[id].merge!(reply_posts: count, reply_chars: sum.to_i) }
       open.where(id: media_ids).group(:account_id).count.each { |id, count| days[id][:media] = count }
 
-      turn_scope = open.where.not(in_reply_to_id: nil).joins('INNER JOIN statuses parents ON parents.id = statuses.in_reply_to_id')
-                       .where('parents.account_id <> statuses.account_id AND parents.in_reply_to_id IS NULL AND parents.visibility <> ?', direct)
-      turn_scope.group('statuses.account_id').pluck(Arel.sql('statuses.account_id'), Arel.sql('COUNT(DISTINCT statuses.in_reply_to_id)')).each { |id, count| days[id][:reply_turns] = count }
+      turn_scope = first_visit_scope(open)
+      turn_scope.group('statuses.account_id').pluck(Arel.sql('statuses.account_id'), Arel.sql('COUNT(*)')).each { |id, count| days[id][:reply_turns] = count }
 
       # 상대 캐릭터와: 답 툿(수·글자·미디어·답 횟수), DM(수·글자)
       replies = open.where.not(in_reply_to_id: nil).where.not(in_reply_to_account_id: nil).where('statuses.in_reply_to_account_id <> statuses.account_id')
@@ -99,8 +102,8 @@ module Game
         pairs[[id, other]].merge!(reply_posts: count, reply_chars: sum.to_i)
       end
       replies.where(id: media_ids).group(:account_id, :in_reply_to_account_id).count.each { |(id, other), count| pairs[[id, other]][:reply_media] = count }
-      turn_scope.where('statuses.in_reply_to_account_id <> statuses.account_id').group('statuses.account_id', 'statuses.in_reply_to_account_id')
-                .pluck(Arel.sql('statuses.account_id'), Arel.sql('statuses.in_reply_to_account_id'), Arel.sql('COUNT(DISTINCT statuses.in_reply_to_id)')).each { |id, other, count| pairs[[id, other]][:reply_turns] = count }
+      turn_scope.group('statuses.account_id', 'parents.account_id')
+                .pluck(Arel.sql('statuses.account_id'), Arel.sql('parents.account_id'), Arel.sql('COUNT(*)')).each { |id, other, count| pairs[[id, other]][:reply_turns] = count }
       skipped_scope(id_range(date)).group('mentions.account_id', 'statuses.account_id').count.each do |(id, author), count|
         days[id][:skipped] += count
         pairs[[id, author]][:skipped] = count
@@ -118,6 +121,28 @@ module Game
         GameActivityPair.insert_all(pairs.map { |(id, other), values| { day: date, account_id: id, other_account_id: other, **values } }) if pairs.any?
       end
       date
+    end
+
+    # 상대의 '첫 툿' 조건: 다른 사람에게 단 답이 아닌 툿 (답이 아니거나, 자기 툿에 이어 쓴 툿), DM 아님
+    FIRST_TOOT = "%<t>s.visibility <> #{Status.visibilities[:direct]} AND (%<t>s.in_reply_to_id IS NULL OR %<t>s.in_reply_to_account_id = %<t>s.account_id)"
+
+    # 그 날 쓴 답 툿 중 '찾아간' 것: 상대의 첫 툿에 단 답이고, 같은 대화에서 이 캐릭터가 그 상대에게 먼저 단 답이 없는 것
+    def first_visit_scope(scope)
+      excluded = excluded_account_ids
+      visit = scope.where.not(in_reply_to_id: nil)
+                   .joins('INNER JOIN statuses parents ON parents.id = statuses.in_reply_to_id')
+                   .where('parents.account_id <> statuses.account_id AND parents.deleted_at IS NULL')
+                   .where(format(FIRST_TOOT, t: 'parents'))
+                   .where(<<~SQL.squish)
+                     NOT EXISTS (
+                       SELECT 1 FROM statuses prior
+                         INNER JOIN statuses prior_parents ON prior_parents.id = prior.in_reply_to_id
+                        WHERE prior.account_id = statuses.account_id AND prior.conversation_id = statuses.conversation_id AND prior.id < statuses.id
+                          AND prior.deleted_at IS NULL AND prior.reblog_of_id IS NULL AND prior.visibility <> #{Status.visibilities[:direct]}
+                          AND prior_parents.account_id = parents.account_id AND prior_parents.deleted_at IS NULL AND #{format(FIRST_TOOT, t: 'prior_parents')}
+                     )
+                   SQL
+      excluded.any? ? visit.where.not(account_id: excluded).where.not(parents: { account_id: excluded }) : visit
     end
 
     # 그 날 스루된 태그: 멘션 줄 (받은 사람 mentions.account_id, 쓴 사람 statuses.account_id)
@@ -228,13 +253,17 @@ module Game
       Mention.joins(:status).where(statuses: { id: status.id }, mentions: { account_id: receiver_id }).where(SKIP_FIRST_OF_RUN).exists?
     end
 
-    # 이 답 툿이 그 날 처음으로 그 툿에 단 답인가 (다른 사람의 답이 아닌 퍼블 툿에 단 답만 센다)
-    def new_reply_turn?(status, date)
+    # 이 답 툿이 그 상대에게 '찾아간' 것인가: 상대의 첫 툿에 단 답이고, 같은 대화에서 이 캐릭터가 그 상대에게 먼저 단 답이 없다 (워커가 늦거나 다시 돌아도 같은 값)
+    def new_reply_turn?(status, _date)
       parent = Status.find_by(id: status.in_reply_to_id)
-      return false if parent.nil? || parent.account_id == status.account_id || parent.in_reply_to_id.present? || parent.direct_visibility?
+      return false if parent.nil? || parent.account_id == status.account_id || parent.direct_visibility? || (excluded_account_ids & [status.account_id, parent.account_id]).any?
+      return false unless parent.in_reply_to_id.nil? || parent.in_reply_to_account_id == parent.account_id
 
-      earlier = id_range(date).begin...status.id # 그 날 이 답보다 먼저 쓴 답만 본다 (워커가 늦거나 다시 돌아도 같은 값)
-      !Status.where(id: earlier, account_id: status.account_id, in_reply_to_id: parent.id, reblog_of_id: nil).where.not(visibility: :direct).exists?
+      earlier = Status.where(account_id: status.account_id, conversation_id: status.conversation_id, reblog_of_id: nil).where('statuses.id < ?', status.id).where.not(visibility: :direct)
+                      .where.not(in_reply_to_id: nil)
+      earlier_parents = Status.where(id: earlier.select(:in_reply_to_id), account_id: parent.account_id).where.not(visibility: :direct)
+                              .where('in_reply_to_id IS NULL OR in_reply_to_account_id = account_id')
+      !earlier_parents.exists?
     end
 
     # 있는 줄에는 더하고 없으면 만든다 (동시에 여러 툿이 와도 안전)
