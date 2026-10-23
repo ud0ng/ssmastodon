@@ -1,8 +1,8 @@
 -# 상대 캐릭터마다 값 하나씩 보여 주는 막대 목록. 높은 순, 모두 나온다. 괄호는 근거가 된 수(적으면 믿기 어렵다)
--# locals: title, unit ('percent' = 0~100%, 'scale' = 가장 긴 막대 기준), entries [[이름, 값, 표시, 근거 수]], mark (기준선: 평균 1.0 등, 없어도 됨), mark_label
-- entries = entries.sort_by { |name, value, _, _| [-value, name] }
+-# locals: title, unit ('percent' = 0~100%, 'scale' = 가장 긴 막대 기준), entries [[이름, 값, 표시, 근거 수, 색(소속 색, 없으면 기본 색)]], mark (기준선: 평균 1.0 등, 없어도 됨), mark_label
+- entries = entries.sort_by { |name, value, *| [-value, name] }
 - mark = local_assigns[:mark]
-- scale = unit == 'percent' ? 100.0 : [entries.map { |_, value, _, _| value }.max.to_f, mark.to_f * 1.25, 0.1].max
+- scale = unit == 'percent' ? 100.0 : [entries.map { |_, value, *| value }.max.to_f, mark.to_f * 1.25, 0.1].max
 .act-ratio
   %h4.act-ratio__title
     = title
@@ -12,11 +12,11 @@
     %p.hint= game_t('admin.games.activity.no_data')
   - else
     %ul.act-rate
-      - entries.each_with_index do |(name, value, label, basis), index|
+      - entries.each_with_index do |(name, value, label, basis, color), index|
         %li
           %span.act-rate__name= name
           %span.act-rate__track
-            %span.act-rate__fill{ class: "act-ratio__seg--#{index % 12}", style: "width: #{[(value / scale * 100).round(1), 0.8].max}%" }
+            %span.act-rate__fill{ class: "act-ratio__seg--#{index % 12}", style: "width: #{[(value / scale * 100).round(1), 0.8].max}%;#{" --act-ratio-color: #{color};" if color}" }
             - if mark
               %span.act-rate__mark{ style: "left: #{(mark / scale * 100).round(1)}%" }
           %span.act-rate__value= label

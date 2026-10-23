@@ -98,6 +98,7 @@ en:
         rate_basis: '(%{count})'
         rate_posts: Average toots per reply turn
         rank: Rank
+        back_to_characters: Back
         overall: Overall
         times: '×%{value}'
         fair_interest: 'interest ×%{value}'

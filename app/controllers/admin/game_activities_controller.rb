@@ -59,7 +59,7 @@ module Admin
 
       @tab = params[:tab] == 'pairs' ? 'pairs' : 'days'
       @character = GameCharacter.visible.find(params[:id])
-      @characters = GameCharacter.visible.includes(:account).to_a
+      @characters = GameCharacter.visible.includes(:account, :house, :faction).to_a
       @daily = Game::ActivitySnapshot.daily([@character.account_id], from: range_from, to: range_to)
       @total = @daily.reduce(Game::ActivitySnapshot::Totals.empty) { |sum, (_, row)| sum + row }
       by_account = @characters.index_by(&:account_id)

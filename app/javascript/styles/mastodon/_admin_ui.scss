@@ -1372,3 +1372,16 @@ textarea.ui-input {
   color: #d93025 !important;
   font-weight: 700;
 }
+
+// 탭 안의 탭 맨 왼쪽 돌아가기
+.ui-subtabs__back {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin-inline-end: 6px;
+  opacity: 0.75;
+
+  &:hover {
+    opacity: 1;
+  }
+}

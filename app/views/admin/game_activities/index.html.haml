@@ -78,7 +78,7 @@
         = button_tag t('generic.save_changes'), type: :submit, class: 'button'
 
   = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.manage.tabs.activity'), hint: game_t('admin.games.activity.hint'), actions: safe_join([backfill, give]) } do
-    .bot-sheet-table.game-table.game-table--fit
+    .bot-sheet-table.game-table.game-table--fit.act-fit
       %table.table
         %thead
           %tr

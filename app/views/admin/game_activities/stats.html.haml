@@ -7,6 +7,7 @@
 -# 한 캐릭터: 탭 일자별 / 상대 캐릭터별 / 활동 기록(검색 화면으로)
 - period = { range: range_name, from: params[:from], to: params[:to] }.compact_blank
 = render 'admin/ui/subtabs', label: game_t('admin.games.activity.stats_title', name: @character.display_name),
+  back: [t('admin.games.activity.back_to_characters'), admin_game_activities_path(period.merge(view: 'character'))],
   items: [[game_t('admin.games.activity.tab_days'), stats_admin_game_activity_path(@character, period.merge(tab: 'days')), @tab == 'days', false],
           [game_t('admin.games.activity.tab_pairs'), stats_admin_game_activity_path(@character, period.merge(tab: 'pairs')), @tab == 'pairs', false],
           [game_t('admin.games.activity.tab_logs'), admin_game_activity_logs_path(character: @character.account_id), false, false]]
@@ -39,23 +40,24 @@
 - else
   -# 상대 캐릭터별 (편애·차별 보기, Game::Fairness): 지수는 이 캐릭터의 평균 = 1.0
   - turn_total = @my_total.reply_turns
+  - color = ->(character) { character.group&.color.presence }
   = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.activity.ratio_title') } do
     .act-ratio__grid
       = render 'admin/game_activities/rate_chart', title: game_t('admin.games.activity.rate_overall'), unit: 'scale', mark: 1.0, mark_label: game_t('admin.games.activity.mark_average'),
-                                                  entries: @pairs.filter_map { |other, row| (score = @scores[other.account_id]).overall && [other.display_name, score.overall, game_t('admin.games.activity.times', value: score.overall), score.basis] }
+                                                  entries: @pairs.filter_map { |other, row| (score = @scores[other.account_id]).overall && [other.display_name, score.overall, game_t('admin.games.activity.times', value: score.overall), score.basis, color.call(other)] }
       = render 'admin/game_activities/rate_chart', title: game_t('admin.games.activity.rate_interest'), unit: 'scale', mark: 1.0, mark_label: game_t('admin.games.activity.mark_fair'),
-                                                  entries: @pairs.filter_map { |other, row| (score = @scores[other.account_id]).interest && [other.display_name, score.interest, game_t('admin.games.activity.times', value: score.interest), row.reply_turns] }
+                                                  entries: @pairs.filter_map { |other, row| (score = @scores[other.account_id]).interest && [other.display_name, score.interest, game_t('admin.games.activity.times', value: score.interest), row.reply_turns, color.call(other)] }
       = render 'admin/game_activities/rate_chart', title: game_t('admin.games.activity.rate_chars'), unit: 'scale', mark: @my_total.avg_chars, mark_label: (@my_total.avg_chars && game_t('admin.games.activity.mark_mine', value: game_t('admin.games.activity.avg_chars_short', count: @my_total.avg_chars))),
-                                                  entries: @pairs.filter_map { |other, row| row.avg_chars && [other.display_name, row.avg_chars, game_t('admin.games.activity.avg_chars_short', count: number_with_delimiter(row.avg_chars)), row.reply_posts] }
+                                                  entries: @pairs.filter_map { |other, row| row.avg_chars && [other.display_name, row.avg_chars, game_t('admin.games.activity.avg_chars_short', count: number_with_delimiter(row.avg_chars)), row.reply_posts, color.call(other)] }
       = render 'admin/game_activities/rate_chart', title: game_t('admin.games.activity.rate_skip'), unit: 'percent', mark: @my_total.skip_rate, mark_label: (@my_total.skip_rate && game_t('admin.games.activity.mark_mine', value: "#{@my_total.skip_rate}%")),
-                                                  entries: @pairs.filter_map { |other, row| row.skip_rate && [other.display_name, row.skip_rate, "#{row.skip_rate}%", row.reply_turns + row.skipped] }
+                                                  entries: @pairs.filter_map { |other, row| row.skip_rate && [other.display_name, row.skip_rate, "#{row.skip_rate}%", row.reply_turns + row.skipped, color.call(other)] }
 
   = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.activity.pairs_title') } do
-    .bot-sheet-table.game-table.game-table--scroll.act-fair-table
+    .bot-sheet-table.game-table.game-table--scroll.act-fair-table.act-fit
       %table.table
         %thead
           %tr
-            %th.game-table__number= game_sort_header(game_t('admin.games.activity.rank'), 'rank', *sort_state(:pairs), param: 'psort', dir_param: 'pdir')
+            %th.game-table__number.act-rank= game_sort_header(game_t('admin.games.activity.rank'), 'rank', *sort_state(:pairs), param: 'psort', dir_param: 'pdir')
             %th= game_sort_header(game_t('admin.games.records.opponent'), 'name', *sort_state(:pairs), param: 'psort', dir_param: 'pdir')
             %th.game-table__number= game_sort_header(game_t('admin.games.activity.overall'), 'overall', *sort_state(:pairs), param: 'psort', dir_param: 'pdir')
             %th.game-table__number= game_sort_header(game_t('admin.games.activity.replies'), 'reply_posts', *sort_state(:pairs), param: 'psort', dir_param: 'pdir')
@@ -70,13 +72,14 @@
             - path = stats_admin_game_activity_path(@character, period.merge(tab: 'pairs', opponent: other.account_id, psort: params[:psort], pdir: params[:pdir]).compact_blank)
             %tr.game-table__row{ class: ('is-selected' if @opponent == other), data: { href: path } }
               %td.game-table__number.act-rank= @ranks[other.account_id]
-              = render 'admin/game_characters/name_cell', character: other, path: path
+              -# 이름을 누르면 그 캐릭터의 상대 캐릭터별 화면으로 (줄의 다른 곳을 누르면 이 캐릭터와의 일자별)
+              = render 'admin/game_characters/name_cell', character: other, path: stats_admin_game_activity_path(other, period.merge(tab: 'pairs'))
               = render 'admin/game_activities/fair_cell', score: @scores[other.account_id]
               = render 'admin/game_activities/pair_cells', row: row, ratios: true, turn_total: turn_total
             -# 아래 줄: 상대 → 이 캐릭터 (같은 기간, 지수는 그 상대 자신의 평균과 견준다)
             - back = @pairs_back[other.account_id] || Game::ActivitySnapshot::PairTotals.empty
             %tr.game-table__sub.game-table__back{ data: { href: path } }
-              %td
+              %td.act-rank
               %td.bot-sheet-table__text
                 %span.act-back
                   %svg.act-back__arrow{ viewBox: '0 0 24 24', width: 14, height: 14, fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': true }

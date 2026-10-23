@@ -142,6 +142,7 @@ ko:
         rate_basis: '(%{count})'
         rate_posts: 답 횟수당 평균 툿 수
         rank: 순위
+        back_to_characters: 돌아가기
         overall: 종합
         times: '×%{value}'
         fair_interest: '관심 ×%{value}'
