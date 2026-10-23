@@ -93,6 +93,7 @@ class Api::V1::System::HousesController < Api::BaseController
   def build_summary
     ids = house_members.map(&:account_id)
     results = GamePlayer.joins(:session).merge(GameSession.real).where(account_id: ids, game_sessions: { status: 'finished' }).group(:result).count
+    # 소속 점수 화면의 툿 합계: 일일 활동 스냅샷에서 읽는다 (어제까지 저장된 날 + 오늘 툿마다 쌓이는 값)
     totals = Game::ActivitySnapshot.totals(ids)
     {
       money: house_members.sum { |character| character.money.to_i },

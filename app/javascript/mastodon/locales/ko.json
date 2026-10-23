@@ -1617,7 +1617,5 @@
   "mm.review_pause": "일시정지",
   "mm.review_play": "재생",
   "mm.review_by_round": "라운드별 보기",
-  "mm.review_routes_only": "경로만 보기",
-  "activity.yesterday": "어제 {posts}툿 · {chars}자",
-  "activity.today": "오늘 {posts}툿 · {chars}자"
+  "mm.review_routes_only": "경로만 보기"
 }

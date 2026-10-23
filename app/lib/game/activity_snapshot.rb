@@ -2,7 +2,7 @@
 
 module Game
   # 일일 활동 스냅샷: 하루(한국 시간 00시 기준)마다 캐릭터가 쓴 툿의 수와 글자 수를 저장해 두고,
-  # 캐릭터 관리 > 활동·활동 기록과 글쓰기 패널(어제 + 오늘)이 이 표만 읽게 한다 (툿 전체를 매번 세지 않게).
+  # 캐릭터 관리 > 활동·활동 기록과 재화 화면·소속 점수 화면의 툿 합계가 이 표만 읽게 한다 (툿 전체를 매번 세지 않게).
   #
   #   game_activity_days   캐릭터×날짜: 전체(퍼블+답, DM 제외)·DM·퍼블·답 툿 수·글자 수, 답 횟수, 미디어 툿 수
   #   game_activity_pairs  캐릭터×상대 캐릭터×날짜: 답 툿 수·글자 수·미디어·답 횟수, DM 툿 수·글자 수
@@ -232,15 +232,6 @@ module Game
     def pair_daily(account_id, other_id, from: nil, to: nil)
       rows = range_scope(GameActivityPair.where(account_id: account_id, other_account_id: other_id), from, to).order(day: :desc)
       rows.map { |row| [row.day, PairTotals.new(**PAIR_COLUMNS.to_h { |column| [column, row[column].to_i] })] }
-    end
-
-    # 글쓰기 패널: 어제 + 오늘만 읽는다 (DB 부담을 줄이려고 이 이틀 치 줄만). account_id => { yesterday: Totals, today: Totals }
-    def recent(account_ids)
-      result = Hash.new { |hash, id| hash[id] = { yesterday: Totals.empty, today: Totals.empty } }
-      GameActivityDay.where(account_id: account_ids, day: yesterday..today).each do |row|
-        result[row.account_id][row.day == today ? :today : :yesterday] = row_totals(row)
-      end
-      result
     end
   end
 end

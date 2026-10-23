@@ -89,7 +89,7 @@ RSpec.describe Game::ActivitySnapshot do
     end
   end
 
-  it 'reads totals, daily rows, counterpart rows and the yesterday + today window' do
+  it 'reads totals, daily rows and counterpart rows' do
     seed!
     described_class.rebuild!(day)
     described_class.rebuild!(day - 1)
@@ -99,11 +99,5 @@ RSpec.describe Game::ActivitySnapshot do
     expect(described_class.daily([account.id]).map(&:first)).to eq [day, day - 1]
     expect(described_class.pairs(account.id)[other.id].reply_posts).to eq 4
     expect(described_class.pair_daily(account.id, other.id).map(&:first)).to eq [day]
-
-    travel_to(Time.find_zone!('Asia/Seoul').local(2026, 10, 21, 10)) do
-      recent = described_class.recent([account.id])[account.id]
-      expect(recent[:yesterday].posts).to eq 7
-      expect(recent[:today].posts).to eq 0
-    end
   end
 end

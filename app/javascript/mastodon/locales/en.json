@@ -1480,7 +1480,5 @@
   "mm.review_pause": "Pause",
   "mm.review_play": "Play",
   "mm.review_by_round": "By round",
-  "mm.review_routes_only": "Routes only",
-  "activity.yesterday": "Yesterday {posts} toots · {chars} chars",
-  "activity.today": "Today {posts} toots · {chars} chars"
+  "mm.review_routes_only": "Routes only"
 }

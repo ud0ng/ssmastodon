@@ -12,7 +12,6 @@ import type { Wallet } from 'mastodon/features/system/use_wallet';
 import { useWallet } from 'mastodon/features/system/use_wallet';
 import { useChanged } from 'mastodon/features/system/wallet_changes';
 
-import { ActivityLine } from './activity_line';
 import { GoldFx, HOUSE_FX_CLASS, PoopFx } from './house_fx';
 
 const HouseCard: React.FC<{ house: Wallet['houses'][number]; wallet: Wallet; classes: string }> = ({ house, wallet, classes }) => {
@@ -29,7 +28,6 @@ const HouseCard: React.FC<{ house: Wallet['houses'][number]; wallet: Wallet; cla
         <Crest house={{ ...house, emoji: '' }} />
         <strong>{house.total.toLocaleString()}</strong>
       </span>
-      <ActivityLine activity={house.activity} />
     </Link>
   );
 };

@@ -15,12 +15,10 @@ class Api::V1::System::WalletsController < Api::BaseController
 
   def show
     character = GameCharacter.for(current_account)
-    recent = Game::ActivitySnapshot.recent(visible_characters.map(&:account_id))
-    @recent_activity = recent
     shop_items = GameShopItem.includes(:shop).index_by { |item| Game::Wallet.key(item.name) }
     results = GamePlayer.joins(:session).merge(GameSession.real).where(account: current_account, game_sessions: { status: 'finished' }).group(:result).count
     rewards = GameReward.where(account: current_account)
-    # 툿 합계는 일일 활동 스냅샷에서 읽는다 (툿을 일일이 세지 않는다)
+    # 재화 화면의 툿 합계: 일일 활동 스냅샷(어제까지 저장된 날 + 오늘 툿마다 쌓이는 값)에서 읽는다 (툿을 일일이 세지 않는다)
     totals = Game::ActivitySnapshot.totals([current_account.id])[current_account.id]
 
     render json: {
@@ -35,8 +33,6 @@ class Api::V1::System::WalletsController < Api::BaseController
       # 내 툿 합계 (DM 포함 전체 툿 수 / 글자 수): 재화 화면 누적 사용 옆
       posts: totals.all_posts,
       post_chars: totals.all_chars,
-      # 글쓰기 패널: 내 어제 + 오늘 툿 수·글자 수 (스냅샷의 이틀 치 줄만 읽는다)
-      activity: activity_json(recent[current_account.id]),
       item_count: character.item_count,
       record: { win: results['win'].to_i, lose: results['lose'].to_i, draw: results['draw'].to_i },
       # 왼쪽 컨텐츠 메뉴 배지: 받고 아직 수락하지 않은 신청 수
@@ -89,25 +85,6 @@ class Api::V1::System::WalletsController < Api::BaseController
 
   # 내 자리에 버튼(행동)이 열려 있는 판: 수락 대기 신청, 내가 고를 차례 (웹 방의 '내 차례예요' 와 같은 기준, Game::Card)
   # 소속마다 점수·카드 효과와, 그 소속 캐릭터들의 누적 수치 결과값 합계 (바뀌면 소속 점수 카드에 알림 배지·소리)
-  # 어제·오늘 툿 수 / 글자 수 (DM 포함 전체)
-  def activity_json(entry)
-    { yesterday: { posts: entry[:yesterday].all_posts, chars: entry[:yesterday].all_chars }, today: { posts: entry[:today].all_posts, chars: entry[:today].all_chars } }
-  end
-
-  def visible_characters
-    @visible_characters ||= GameCharacter.visible.includes(:house, :faction).to_a
-  end
-
-  # 소속 점수 카드 아래: 소속 캐릭터들의 어제 + 오늘 툿 합계
-  def house_activity(house)
-    members = visible_characters.select { |each| each.group == house }
-    sum = members.reduce({ yesterday: Game::ActivitySnapshot::Totals.empty, today: Game::ActivitySnapshot::Totals.empty }) do |total, each|
-      entry = @recent_activity[each.account_id]
-      { yesterday: total[:yesterday] + entry[:yesterday], today: total[:today] + entry[:today] }
-    end
-    activity_json(sum)
-  end
-
   def houses_json
     counters = GameCounter.where(affects_house: true).includes(:opposite).to_a
     sums = Hash.new(0)
@@ -118,7 +95,7 @@ class Api::V1::System::WalletsController < Api::BaseController
       end
     end
     GameHouse.active.map do |house|
-      { id: house.id.to_s, name: house.name, color: house.color, total: house.total, counters: sums[house.id], fx: Game::Fx.house_preset(house), fx_until: Game::Fx.house_until(house), activity: house_activity(house) }
+      { id: house.id.to_s, name: house.name, color: house.color, total: house.total, counters: sums[house.id], fx: Game::Fx.house_preset(house), fx_until: Game::Fx.house_until(house) }
     end
   end
 
