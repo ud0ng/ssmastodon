@@ -150,7 +150,7 @@ RSpec.describe Game::ActivitySnapshot do
       tag("안 답함", from: other, to: account)
       tag("조용한 공개", from: other, to: account, visibility: :unlisted)
       answered = tag("답함", from: other, to: account)
-      Fabricate(:status, account: account, thread: answered, created_at: noon)
+      Fabricate(:status, account: account, thread: answered, created_at: noon + 1.hour)
       tag("DM", from: other, to: account, visibility: :direct)
       tag("공개", from: other, to: account, visibility: :public)
       tag("셋이서", from: other, to: [account, third])
@@ -179,6 +179,46 @@ RSpec.describe Game::ActivitySnapshot do
       [opener, first, second].each { |status| described_class.record!(status.id) }
       expect(GameActivityDay.find_by!(day: day, account_id: account.id).skipped).to eq 1
 
+    end
+
+    # 실시간으로 쌓은 값과 다시 계산한 값이 같은지까지 본다
+    def skips_both_ways(*statuses)
+      GameActivityDay.delete_all
+      GameActivityPair.delete_all
+      statuses.each { |status| described_class.record!(status.id) }
+      live = [account, other].map { |who| GameActivityDay.where(account_id: who.id).sum(:skipped) }
+      described_class.rebuild!(day)
+      rebuilt = [account, other].map { |who| GameActivityDay.where(account_id: who.id).sum(:skipped) }
+      expect(live).to eq rebuilt
+      rebuilt
+    end
+
+    it 'does not count a skip when B splits a reply into several toots and A answers only the last one' do
+      opener = tag('A가 B를 태그', from: account, to: other)
+      first = tag('B 답 1', from: other, to: account, thread: opener)
+      second = tag('B 답 2 (이어서)', from: other, to: account, thread: first)
+      answer = tag('A가 마지막 것에 답', from: account, to: other, thread: second)
+
+      expect(skips_both_ways(opener, first, second, answer)).to eq [0, 1] # A 0, 끝에 남은 B 의 스루 1
+    end
+
+    it 'does not count a skip when A carries the conversation on in another branch' do
+      opener = tag('A가 B를 태그', from: account, to: other)
+      reply = tag('B 답', from: other, to: account, thread: opener)
+      branch = tag('A가 자기 첫 툿에 이어 씀', from: account, to: other, thread: opener)
+
+      expect(skips_both_ways(opener, reply, branch)).to eq [0, 1]
+    end
+
+    it 'leaves exactly one skip with whoever got the last word unanswered, and one turn for whoever answered first' do
+      opener = tag('A가 B를 태그', from: account, to: other)
+      b1 = tag('B 답', from: other, to: account, thread: opener)
+      a1 = tag('A 답', from: account, to: other, thread: b1)
+      b2 = tag('B 답', from: other, to: account, thread: a1)
+
+      expect(skips_both_ways(opener, b1, a1, b2)).to eq [1, 0]
+      expect(GameActivityDay.find_by!(day: day, account_id: other.id).reply_turns).to eq 1 # B 가 A 에게 찾아감
+      expect(GameActivityDay.find_by!(day: day, account_id: account.id).reply_turns).to eq 0 # A 는 B 의 답에 답했을 뿐
     end
 
     it "adds a tag as it is written and takes it back when the tagged character answers, matching a rebuild" do

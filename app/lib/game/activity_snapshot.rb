@@ -7,9 +7,13 @@ module Game
   #   game_activity_days   캐릭터×날짜: 전체(퍼블+답, DM 제외)·DM·퍼블·답 툿 수·글자 수, 답 횟수, 미디어 툿 수
   #   game_activity_pairs  캐릭터×상대 캐릭터×날짜: 답 툿 수·글자 수·미디어·답 횟수, DM 툿 수·글자 수, 스루 수
   #
-  # 스루 수(skipped): 상대 캐릭터가 이 캐릭터 한 명만 태그해서 쓴 툿(팔로워 공개·조용한 공개, DM 제외)에 이 캐릭터가 답 툿을 달지 않은 수.
+  # 스루 수(skipped): 상대 캐릭터(B)가 이 캐릭터(A) 한 명만 태그해서 쓴 툿(팔로워 공개·조용한 공개, DM 제외) 뒤로 A가 그 대화에 아무 툿도 쓰지 않은 것.
+  # B가 연달아 쓴 툿(그 사이 A의 툿이 없는 것)은 첫 툿 하나로 센다. A가 그중 어느 툿에 답하든, 다른 가지에 이어 쓰든 대화를 이었으면 스루가 아니다.
+  # 그래서 한 대화에서 스루는 '마지막에 답을 못 받은 쪽'에 많아야 1이다 (예: A 멘션 - B 답 - A - B - B 로 끝나면 A의 스루 1).
   # 하트를 눌러도 답이 아니니 센다. 시스템·상점봇 계정이 쓰거나 태그된 툿, 태그가 둘 이상(셋 이상이 함께하는 툿)인 툿은 뺀다 (웹 '답장할 멘션'과 비슷한 조건).
-  # 날짜는 태그받은 툿을 쓴 날이고, 나중에 답을 달면 그 날 것에서 하나 줄인다.
+  # 날짜는 그 첫 툿을 쓴 날이고, 나중에 A가 그 대화에 쓰면 그 날 것에서 하나 줄인다.
+  # 두 사람 사이의 대화 하나는 '찾아간' 쪽의 답 횟수 1(아무도 답하지 않았으면 0)과 끝에 남은 쪽의 스루 1 을 만든다.
+  # 그래서 스루 합이 답 횟수 합보다 많은 만큼이 '아무도 답하지 않은 첫 툿' 수다. 대화마다 맞는지는 game:activity_explain 으로 본다.
   #
   # 세는 법은 예전 활동 화면과 같다 (Game::Activity): 부스트·지운 툿은 빼고, 퍼블은 답이 아닌 툿, 답 툿은 답글, 글자 수는 본문 길이,
   # 답 횟수는 다른 사람의 (답이 아닌 퍼블) 툿에 답을 단 것을 같은 툿에는 1회로 센다 (날짜마다 따로), 미디어는 사진 등을 붙인 툿 (DM 제외).
@@ -162,9 +166,8 @@ module Game
       excluded.any? ? visit.where.not(account_id: excluded).where.not(parents: { account_id: excluded }) : visit
     end
 
-    # 그 날 스루된 태그: 멘션 줄 (받은 사람 mentions.account_id, 쓴 사람 statuses.account_id)
-    # 이어진 스루는 하나로 센다: 같은 대화에서 같은 사람(B)이 A만 태그한 툿이 이미 답 없이 있고 그 뒤로 A가 그 대화에 아무 툿도 안 썼다면,
-    # 새 툿은 앞 툿의 연속이라 따로 세지 않는다 (예: A의 멘션에 B가 답멘을 달고 또 하나 더 단 경우 → 스루 1)
+    # 스루 후보 툿: 멘션 줄 (받은 사람 mentions.account_id, 쓴 사람 statuses.account_id).
+    # 연달아 쓴 툿은 첫 툿만: 같은 대화에서 같은 사람이 받은 사람만 태그한 툿이 앞에 있고 그 뒤로 받은 사람이 그 대화에 쓴 툿이 없으면 앞 툿의 연속이다
     SKIP_FIRST_OF_RUN = <<~SQL.squish
       NOT EXISTS (
         SELECT 1
@@ -177,21 +180,33 @@ module Game
            AND prev.reblog_of_id IS NULL
            AND prev.visibility IN (#{Status.visibilities[:unlisted]}, #{Status.visibilities[:private]})
            AND (SELECT COUNT(*) FROM mentions others WHERE others.status_id = prev.id AND others.account_id <> prev.account_id AND others.silent = FALSE) = 1
-           AND NOT EXISTS (SELECT 1 FROM statuses answers WHERE answers.in_reply_to_id = prev.id AND answers.account_id = mentions.account_id AND answers.deleted_at IS NULL)
-           AND NOT EXISTS (SELECT 1 FROM statuses mine WHERE mine.account_id = mentions.account_id AND mine.conversation_id = statuses.conversation_id AND mine.id > prev.id AND mine.id < statuses.id AND mine.deleted_at IS NULL)
+           AND NOT EXISTS (SELECT 1 FROM statuses mine WHERE mine.account_id = mentions.account_id AND mine.conversation_id = statuses.conversation_id AND mine.id > prev.id AND mine.id < statuses.id AND mine.deleted_at IS NULL AND mine.reblog_of_id IS NULL)
       )
     SQL
 
-    # status_ids: 툿 번호 범위(그 날) 또는 툿 번호 하나
-    def skipped_scope(status_ids)
+    # 그 뒤로 받은 사람이 그 대화에 쓴 툿이 없다 (:until 을 주면 그 툿 전까지만 본다)
+    SKIP_UNANSWERED = <<~SQL.squish
+      NOT EXISTS (
+        SELECT 1 FROM statuses later
+         WHERE later.account_id = mentions.account_id AND later.conversation_id = statuses.conversation_id
+           AND later.id > statuses.id AND later.id < :until AND later.deleted_at IS NULL AND later.reblog_of_id IS NULL
+      )
+    SQL
+
+    # 한 사람만 태그한 팔로워 공개·조용한 공개 툿의 멘션 줄 (시스템·상점봇 빼고), 연달아 쓴 것은 첫 툿만
+    def skip_candidates(status_ids)
       excluded = excluded_account_ids
       scope = Mention.joins(:status).where(silent: false)
                      .where(statuses: { id: status_ids, visibility: %i(unlisted private), reblog_of_id: nil, local: true })
                      .where('mentions.account_id <> statuses.account_id')
                      .where('(SELECT COUNT(*) FROM mentions others WHERE others.status_id = statuses.id AND others.account_id <> statuses.account_id AND others.silent = FALSE) = 1')
-                     .where('NOT EXISTS (SELECT 1 FROM statuses answers WHERE answers.in_reply_to_id = statuses.id AND answers.account_id = mentions.account_id AND answers.deleted_at IS NULL)')
                      .where(SKIP_FIRST_OF_RUN)
       excluded.any? ? scope.where.not(account_id: excluded).where.not(statuses: { account_id: excluded }) : scope
+    end
+
+    # 스루: 후보 중 그 뒤로 받은 사람이 그 대화에 쓴 툿이 없는 것. status_ids: 툿 번호 범위(그 날) 또는 툿 번호 하나
+    def skipped_scope(status_ids, until_id: nil)
+      skip_candidates(status_ids).where(SKIP_UNANSWERED, until: until_id || Mastodon::Snowflake.id_at(1.year.from_now, with_random: false))
     end
 
     # 스루에서 뺄 계정: 시스템 계정, 상점봇 계정
@@ -247,27 +262,23 @@ module Game
       pairs.each { |other, values| bump!(GameActivityPair, :index_game_activity_pairs_on_day_and_accounts, [{ day: date, account_id: status.account_id, other_account_id: other, **values }], values.keys) }
     end
 
-    # 새 툿이 한 사람만 태그했으면 그 사람의 스루 +1, 이 툿이 스루 후보 툿에 처음 단 답이면 그 날 것에서 -1
+    # 새 툿이 한 사람만 태그한 스루 후보면 그 사람의 스루 +1 (연달아 쓴 둘째 툿부터는 세지 않는다).
+    # 그리고 이 툿을 쓴 사람이 받아 두고 아직 답하지 않은 같은 대화의 스루는 이제 이어졌으니 그 날 것에서 -1
     def record_skips!(status, date)
       target = skip_target(status)
-      if target && skipped_scope(status.id).exists?(mentions: { account_id: target })
+      if target && skipped_scope(status.id, until_id: status.id).exists?(mentions: { account_id: target }) # 뒤의 답은 그 답을 쌓을 때 뺀다
         bump!(GameActivityDay, %i(day account_id), [{ day: date, account_id: target, skipped: 1 }], %i(skipped))
         bump!(GameActivityPair, :index_game_activity_pairs_on_day_and_accounts, [{ day: date, account_id: target, other_account_id: status.account_id, skipped: 1 }], %i(skipped))
       end
+      return if status.conversation_id.nil?
 
-      parent = status.in_reply_to_id && Status.find_by(id: status.in_reply_to_id)
-      return if parent.nil? || skip_target(parent) != status.account_id
-      return unless first_of_skip_run?(parent, status.account_id) # 앞 툿에 이어진 툿은 세지 않았으니 줄이지도 않는다
-      return if Status.where(id: parent.id..status.id, account_id: status.account_id, in_reply_to_id: parent.id).where.not(id: status.id).exists? # 이미 먼저 답했다
-
-      parent_date = parent.created_at.in_time_zone(ZONE).to_date
-      bump!(GameActivityDay, %i(day account_id), [{ day: parent_date, account_id: status.account_id, skipped: -1 }], %i(skipped))
-      bump!(GameActivityPair, :index_game_activity_pairs_on_day_and_accounts, [{ day: parent_date, account_id: status.account_id, other_account_id: parent.account_id, skipped: -1 }], %i(skipped))
-    end
-
-    # 이 툿이 (답이 달렸는지는 따지지 않고) 스루 줄의 첫 툿이어서 센 것이었나
-    def first_of_skip_run?(status, receiver_id)
-      Mention.joins(:status).where(statuses: { id: status.id }, mentions: { account_id: receiver_id }).where(SKIP_FIRST_OF_RUN).exists?
+      earlier = Status.where(conversation_id: status.conversation_id).where('statuses.id < ?', status.id).select(:id)
+      skipped_scope(earlier, until_id: status.id).where(mentions: { account_id: status.account_id })
+                                                 .pluck(Arel.sql('statuses.id'), Arel.sql('statuses.account_id')).each do |id, author|
+        day = Mastodon::Snowflake.to_time(id).in_time_zone(ZONE).to_date
+        bump!(GameActivityDay, %i(day account_id), [{ day: day, account_id: status.account_id, skipped: -1 }], %i(skipped))
+        bump!(GameActivityPair, :index_game_activity_pairs_on_day_and_accounts, [{ day: day, account_id: status.account_id, other_account_id: author, skipped: -1 }], %i(skipped))
+      end
     end
 
     # 이 답 툿이 그 상대에게 '찾아간' 것인가: 상대의 첫 툿에 단 답이고, 같은 대화에서 이 캐릭터가 그 상대에게 먼저 단 답이 없다 (워커가 늦거나 다시 돌아도 같은 값)
