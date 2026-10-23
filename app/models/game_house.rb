@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# 소속: 기숙사(category house)와 진영(category faction). 캐릭터는 둘 다 가질 수 있고,
-# 공통 설정의 '점수 단위'로 고른 쪽만 점수·토너먼트·모래시계·결산에 쓴다 (다른 쪽 점수는 보관).
+# 소속: 기숙사(category house)와 진영(category faction), 운영진이 더 만든 종류(category x1, x2 …, Game::GroupKinds).
+# 캐릭터는 종류마다 소속 하나를 가질 수 있고, 공통 설정의 '점수 단위'로 고른 종류만 점수·토너먼트·모래시계·결산에 쓴다 (다른 종류 점수는 보관).
 class GameHouse < ApplicationRecord
   CATEGORIES = %w(house faction).freeze
 
@@ -25,16 +25,23 @@ class GameHouse < ApplicationRecord
   validates :name, presence: true, length: { maximum: 30 }
   validates :emoji, length: { maximum: 16 }
   validates :color, format: { with: /\A(#[0-9a-fA-F]{6})?\z/ }
-  validates :category, inclusion: { in: CATEGORIES }
+  validate :category_exists
+  after_destroy :clear_extra_members
 
   default_scope { order(:position, :id) }
   scope :houses, -> { where(category: 'house') }
   scope :factions, -> { where(category: 'faction') }
 
   class << self
+    # 기숙사·진영·더 만든 종류의 키
+    def categories
+      Game::GroupKinds.keys
+    end
+
     # 점수 단위 (공통 설정 group_mode)
     def mode
-      Game::Config.for('common')['group_mode'] == 'faction' ? 'faction' : 'house'
+      value = Game::Config.for('common')['group_mode'].to_s
+      value != 'house' && categories.include?(value) ? value : 'house'
     end
 
     def faction_mode?
@@ -64,10 +71,27 @@ class GameHouse < ApplicationRecord
     category == 'faction'
   end
 
+  def extra?
+    !GameHouse::CATEGORIES.include?(category)
+  end
+
   # 이번 시즌 점수 (마지막으로 끝난 시즌 뒤에 쌓인 점수)
   def total
     since = GameSeason.points_since
     (since ? points.where(created_at: since..) : points).sum(:amount)
+  end
+
+  def category_exists
+    errors.add(:category, :inclusion) unless self.class.categories.include?(category)
+  end
+
+  # 더 만든 종류의 소속을 지우면 그 소속에 있던 캐릭터는 소속 없음으로
+  def clear_extra_members
+    return unless extra?
+
+    GameCharacter.where('extra_group_ids ->> ? = ?', category, id.to_s).find_each do |character|
+      character.update!(extra_group_ids: character.extra_group_ids.except(category))
+    end
   end
 
   # 이름만 보인다 (이모지는 쓰지 않는다)

@@ -50,7 +50,7 @@ module Game
         stored = stored_data(key)
         values = fields.to_h { |field| [field.key, stored.key?(field.key) ? stored[field.key] : field.default] }
         # 문구의 {소속 이름}: 지금 점수 단위의 이름
-        values['house_term'] = values['group_mode'] == 'faction' ? values['faction_label'] : values['house_label'] if key == 'common'
+        values['house_term'] = (values['group_mode'] == 'faction' ? values['faction_label'] : Game::GroupKinds.extras.find { |kind| kind['key'] == values['group_mode'] }&.dig('label') || values['house_label']) if key == 'common'
         values
       end
 
@@ -126,7 +126,7 @@ module Game
         when :integer then value.to_s.strip.empty? ? field.default : value.to_i
         when :boolean then ActiveModel::Type::Boolean.new.cast(value) || false
         when :lines then (value.is_a?(Array) ? value : value.to_s.lines).map { |line| line.to_s.strip }.compact_blank
-        when :select then field.choices.to_h.key?(value.to_s) ? value.to_s : field.default
+        when :select then field.choices.to_h.key?(value.to_s) || (field.key == 'group_mode' && Game::GroupKinds.keys.include?(value.to_s)) ? value.to_s : field.default
         when :account then value.to_s.strip.delete_prefix('@')
         when :accounts then Array(value).flat_map { |item| item.to_s.split(/[\s,]+/) }.map { |item| item.strip.delete_prefix('@') }.compact_blank.uniq
         # 폼으로 오는 줄바꿈(\r\n)을 \n 으로 맞춘다 — 안 그러면 기본값과 같은 문구도 '바뀐 값'으로 저장돼 기본 문구를 고쳐도 반영되지 않는다

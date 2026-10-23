@@ -22,6 +22,15 @@ RSpec.describe 'Admin character activity' do
     expect(GameReward.where(kind: 'admin', reason: '생일').count).to eq 2
   end
 
+  it 'takes currency away with a minus amount, without a DM, and refuses to go below zero' do
+    post give_admin_game_activities_path, params: { give_kind: 'money', character_ids: [harry.id], money: '-3' }
+    expect(harry.reload.money).to eq 2
+
+    post give_admin_game_activities_path, params: { give_kind: 'money', character_ids: [harry.id], money: '-50' }
+    expect(harry.reload.money).to eq 2
+    expect(flash[:alert]).to be_present
+  end
+
   it 'tells each receiver by its own DM from the system account what was given' do
     system = Fabricate(:account, username: 'system')
     allow(Game::System).to receive(:account).and_return(system)

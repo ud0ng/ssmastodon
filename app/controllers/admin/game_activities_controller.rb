@@ -32,6 +32,7 @@ module Admin
       when 'total'
         @daily = Game::ActivitySnapshot.daily(ids, from: range_from, to: range_to)
         @total = @daily.reduce(Game::ActivitySnapshot::Totals.empty) { |sum, (_, row)| sum + row }
+        @chart_days = chart_days(@daily)
       when 'house'
         load_house_rows(Game::ActivitySnapshot.totals(@characters.map(&:account_id), from: range_from, to: range_to))
       else
@@ -44,10 +45,11 @@ module Admin
       load_give_form
     end
 
-    # 한 캐릭터의 일자별 통계, 상대 캐릭터별 통계 (상대를 고르면 그 상대와의 일자별 통계)
+    # 한 캐릭터: 탭 일자별(그래프·표) / 상대 캐릭터별(비율 그래프·표, 상대를 고르면 그 상대와의 일자별 그래프·표) / 활동 기록(검색 화면으로)
     def stats
       authorize :settings, :show?
 
+      @tab = params[:tab] == 'pairs' ? 'pairs' : 'days'
       @character = GameCharacter.visible.find(params[:id])
       @characters = GameCharacter.visible.includes(:account).to_a
       @daily = Game::ActivitySnapshot.daily([@character.account_id], from: range_from, to: range_to)
@@ -56,7 +58,8 @@ module Admin
       @pairs = Game::ActivitySnapshot.pairs(@character.account_id, from: range_from, to: range_to).filter_map { |other, row| [by_account[other], row] if by_account[other] }
       @pairs.sort_by! { |other, row| [-(row.reply_posts + row.dms), other.display_name.downcase] }
       @opponent = by_account[params[:opponent].to_i]
-      @pair_daily = Game::ActivitySnapshot.pair_daily(@character.account_id, @opponent.account_id, from: range_from, to: range_to) if @opponent
+      @chart_days = chart_days(@daily)
+      load_pair_days if @opponent
     end
 
     # 과거 툿 활동을 스냅샷으로 다시 올린다 (처음 한 번, 또는 지운 툿을 반영해 전부 다시)
@@ -94,7 +97,7 @@ module Admin
       accounts = GameCharacter.visible.where(id: Array(params[:character_ids])).includes(:account).map(&:account)
       return give_counter(accounts) if params[:give_kind] == 'counter'
 
-      money = params[:give_kind] == 'money' ? [params[:money].to_i, 0].max : 0
+      money = params[:give_kind] == 'money' ? params[:money].to_i : 0 # 마이너스면 차감
       items = params[:give_kind] == 'items' ? picked_items : {}
       if accounts.empty? || (money.zero? && items.empty?)
         redirect_to give_return_path(modal: 'activity-give'), alert: t('admin.games.activity.give_nothing')
@@ -102,8 +105,12 @@ module Admin
       end
 
       changes = accounts.map { |account| { account: account, money: money, items: items } }
-      Game::Wallet.apply!(changes, kind: 'admin', detail: params[:reason].to_s.strip.presence || t('admin.games.activity.give'), actor: current_account.username)
-      notify_given(accounts, money, items)
+      begin
+        Game::Wallet.apply!(changes, kind: 'admin', detail: params[:reason].to_s.strip.presence || t('admin.games.activity.give'), actor: current_account.username)
+      rescue Game::Wallet::Error => e
+        return redirect_to(give_return_path(modal: 'activity-give'), alert: e.message)
+      end
+      notify_given(accounts, money, items) unless money.negative?
       redirect_to give_return_path, notice: t('admin.games.activity.given', count: accounts.size)
     end
 
@@ -131,6 +138,27 @@ module Admin
       rescue StandardError => e
         Rails.logger.warn { "admin give notice to #{account.username} failed: #{e.class} #{e.message}" }
       end
+    end
+
+    CHART_DAYS = 60
+
+    # 그래프용 날짜별 합계: 빈 날 포함, 최근 CHART_DAYS 일까지 [[날짜, Totals]] (오래된 날부터)
+    def chart_days(daily)
+      by_day = daily.to_h
+      last = range_to || Game::ActivitySnapshot.today
+      first = range_from || by_day.keys.min || last
+      first = [first, last - (CHART_DAYS - 1)].max
+      (first..last).map { |day| [day, by_day[day] || Game::ActivitySnapshot::Totals.empty] }
+    end
+
+    # 이 캐릭터(A)와 고른 상대(B)의 일자별: [[날짜, A→B, B→A]] 최근 날짜가 위 (두 쪽 중 한쪽이라도 기록이 있는 날)
+    def load_pair_days
+      mine = Game::ActivitySnapshot.pair_daily(@character.account_id, @opponent.account_id, from: range_from, to: range_to).to_h
+      theirs = Game::ActivitySnapshot.pair_daily(@opponent.account_id, @character.account_id, from: range_from, to: range_to).to_h
+      empty = Game::ActivitySnapshot::PairTotals.empty
+      @pair_days = (mine.keys | theirs.keys).sort.reverse.map { |day| [day, mine[day] || empty, theirs[day] || empty] }
+      @pair_mine = @pair_days.reduce(empty) { |sum, (_, row, _)| sum + row }
+      @pair_theirs = @pair_days.reduce(empty) { |sum, (_, _, row)| sum + row }
     end
 
     def sort_column

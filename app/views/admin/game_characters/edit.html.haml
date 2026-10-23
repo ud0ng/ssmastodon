@@ -15,7 +15,7 @@
       .gd-hero__line
         %h1.gd-hero__name= @character.display_name
         = link_to "(@#{account.username})", admin_account_path(account.id), class: 'gd-hero__acct'
-        - [@character.house, @character.faction].compact.each do |group|
+        - ([@character.house, @character.faction] + Game::GroupKinds.extras.map { |kind| @character.group_of(kind['key']) }).compact.each do |group|
           %span.gd-chip{ style: "--badge: #{group.color.presence || '#6b5b3e'}" }= group.name
     .gd-hero__record
       %span.gd-record
@@ -83,14 +83,12 @@
     .gd-actions
       = button_tag t('generic.save_changes'), type: :submit, class: 'gd-button'
 
-  -# 재화: 입력한 값으로 맞춘다 (바뀐 만큼이 재화 내역에 남는다)
+  -# 재화·아이템 변동: 상점 목록의 지급과 같은 모달 (+ 지급, - 차감)
   %section.gd-card
     %h2.gd-card__title= @currency
-    = form_tag money_admin_game_character_path(@character, filter_params), method: :patch, class: 'simple_form' do
-      = render layout: 'admin/ui/fields' do
-        = render 'admin/ui/field', label: game_t('admin.games.manage.detail.money_now'), name: 'money', id: 'character_money', value: @character.money, type: :number, html: { min: 0 }
-        = render 'admin/ui/field', label: game_t('admin.games.manage.detail.money_reason_label'), name: 'reason', id: 'character_money_reason', value: '', html: { maxlength: 200 }
-      = button_tag t('generic.save_changes'), type: :submit, class: 'gd-button'
+    .gd-money
+      %strong.gd-money__amount= number_with_delimiter(@character.money)
+      = button_tag safe_join([material_symbol('celebration'), game_t('admin.games.activity.give')]), type: :button, class: 'button button-secondary', data: { modal_open: 'activity-give' }
 
   -# 인벤토리: 아이템 카드 (그림 + 개수 배지 + 이름). 누르면 모달에서 고치기·지우기, 바로 저장된다
   %section.gd-card
@@ -105,7 +103,7 @@
             = render 'admin/game_characters/item_thumb', name: item['name'], image: image&.image&.url(:small)
             %span.game-inventory__count= "×#{item['count']}"
           %span.game-inventory__name= item['name']
-      %button.game-inventory__card.game-inventory__card--add{ type: 'button', data: { modal_open: 'item-add' } }
+      %button.game-inventory__card.game-inventory__card--add{ type: 'button', data: { modal_open: 'activity-give' } }
         .game-inventory__image= material_symbol('add')
         %span.game-inventory__name= game_t('admin.games.manage.detail.add_item')
 
@@ -121,16 +119,7 @@
                                            update_url: effect_admin_game_character_path(@character, index, filter_params), delete_url: effect_admin_game_character_path(@character, index, filter_params)
     = render 'admin/game_effects/add_form', url: add_effect_admin_game_character_path(@character, filter_params), kind: 'character', id: 'character_fx'
 
-%datalist#game-shop-item-names
-  - @shop_item_names.each do |name|
-    %option{ value: name }
-
-= render layout: 'admin/ui/modal', locals: { id: 'item-add', title: game_t('admin.games.manage.detail.add_item') } do
-  = form_tag items_admin_game_character_path(@character, filter_params), method: :post, class: 'simple_form' do
-    = render 'admin/game_characters/item_fields', item: { 'name' => '', 'count' => 1, 'note' => '' }, prefix: 'item_new', named: true
-    .actions
-      %button.button.button-tertiary{ type: 'button', data: { modal_close: true } }= t('generic.cancel')
-      = button_tag game_t('admin.games.manage.detail.add_item'), type: :submit, class: 'button'
+= render 'admin/game_activities/give_modal', return_to: edit_admin_game_character_path(@character, filter_params), character: @character
 
 - Array(@character.inventory).each_with_index do |item, index|
   - image = @item_images[Game::Wallet.key(item['name'])]

@@ -1,5 +1,5 @@
 -# 지급 모달: 재화 또는 아이템(아이템마다 개수) 또는 누적 수치(+/-)를 고른 캐릭터들에게. 활동 탭·상점 탭이 같이 쓴다
--# locals: return_to (지급 뒤 돌아갈 관리 화면 주소). 컨트롤러에서 load_give_form (Admin::GameGiveForm) 을 부른다
+-# locals: return_to (지급 뒤 돌아갈 관리 화면 주소), character (있으면 그 캐릭터 한 명에게만, 받을 캐릭터 고르기는 숨긴다). 컨트롤러에서 load_give_form (Admin::GameGiveForm) 을 부른다
 = render layout: 'admin/ui/modal', locals: { id: 'activity-give', title: game_t('admin.games.activity.give') } do
   = form_tag give_admin_game_activities_path, method: :post, class: 'simple_form', data: { give_form: true } do
     = hidden_field_tag :return_to, return_to, id: nil
@@ -7,12 +7,15 @@
       = render 'admin/ui/choice', name: 'give_kind', value: 'money', data: { give_kind: true }, label: game_t('admin.games.activity.give'),
                                   options: (@give_counters.any? ? %w(money items counter) : %w(money items)).map { |kind| [game_t("admin.games.activity.give_#{kind}", currency: @currency), kind] }
 
-    = render layout: 'admin/ui/field', locals: { label: game_t('admin.games.activity.give_to'), id: 'give_to', type: :custom, wide: true } do
-      = render 'admin/ui/multi_select', name: 'character_ids[]', placeholder: game_t('admin.games.activity.pick_characters'), all_label: game_t('admin.games.activity.all_characters'),
-                                        options: @give_characters.map { |character| [character.display_name, character.id] }
+    - if local_assigns[:character]
+      = hidden_field_tag 'character_ids[]', character.id, id: nil
+    - else
+      = render layout: 'admin/ui/field', locals: { label: game_t('admin.games.activity.give_to'), id: 'give_to', type: :custom, wide: true } do
+        = render 'admin/ui/multi_select', name: 'character_ids[]', placeholder: game_t('admin.games.activity.pick_characters'), all_label: game_t('admin.games.activity.all_characters'),
+                                          options: @give_characters.map { |give_character| [give_character.display_name, give_character.id] }
 
     %div{ data: { give_part: 'money' } }
-      = render 'admin/ui/field', label: game_t('admin.games.activity.money_amount', currency: @currency), name: 'money', id: 'give_money', type: :number, html: { min: 1 }
+      = render 'admin/ui/field', label: game_t('admin.games.activity.money_amount', currency: @currency), name: 'money', id: 'give_money', type: :number, hint: game_t('admin.games.activity.money_hint')
 
     %div{ data: { give_part: 'items' }, hidden: true }
       = render layout: 'admin/ui/field', locals: { label: game_t('admin.games.activity.item_kinds'), id: 'give_items', type: :custom, wide: true, hint: game_t('admin.games.activity.items_hint') } do

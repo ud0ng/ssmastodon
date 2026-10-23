@@ -5,7 +5,7 @@
   = render 'admin/game_characters/heading'
 
 - none = game_t('admin.games.manage.none')
-- column_count = 4 + @counter_groups.size + @base_stats.size + @statuses.size
+- column_count = 4 + @extra_kinds.size + @counter_groups.size + @base_stats.size + @statuses.size
 
 -# 찾기 + 소속·진영 거르기 (서버원 관리와 같은 모양)
 = form_tag admin_game_characters_path, method: :get, class: 'simple_form game-table__filter' do
@@ -18,6 +18,11 @@
       %strong= @labels['faction_label']
       .input.select.optional
         = select_tag :faction, options_for_select([[game_t('admin.games.manage.roster.all'), ''], [none, 'none']] + @factions.map { |faction| [faction.name, faction.id] }, params[:faction])
+    - @extra_kinds.each do |kind, houses|
+      .filter-subset.filter-subset--with-select
+        %strong= kind['label']
+        .input.select.optional
+          = select_tag "groups[#{kind['key']}]", options_for_select([[game_t('admin.games.manage.roster.all'), ''], [none, 'none']] + houses.map { |house| [house.name, house.id] }, params.dig(:groups, kind['key'])), id: "groups_#{kind['key']}"
   .fields-group
     .input.string.optional
       = text_field_tag :q, params[:q], class: 'string optional', placeholder: game_t('admin.games.manage.roster.search')
@@ -31,6 +36,8 @@
         %th= game_t('admin.games.manage.roster.name')
         %th= @labels['house_label']
         %th= @labels['faction_label']
+        - @extra_kinds.each do |kind, _|
+          %th= kind['label']
         %th= @currency
         -# 누적 수치: 상성이 있으면 '벌점/상점' 처럼 함께 (값은 상쇄하고 난 현재값)
         - @counter_groups.each do |group|
@@ -52,6 +59,9 @@
             = select_tag "house_#{character.id}", options_for_select([[none, '']] + @houses.map { |house| [house.name, house.id] }, character.game_house_id), class: 'game-inline-select', 'aria-label': @labels['house_label'], data: { inline_save: group_admin_game_character_path(character), kind: 'house' }
           %td.bot-sheet-table__text
             = select_tag "faction_#{character.id}", options_for_select([[none, '']] + @factions.map { |faction| [faction.name, faction.id] }, character.game_faction_id), class: 'game-inline-select', 'aria-label': @labels['faction_label'], data: { inline_save: group_admin_game_character_path(character), kind: 'faction' }
+          - @extra_kinds.each do |kind, houses|
+            %td.bot-sheet-table__text
+              = select_tag "group_#{kind['key']}_#{character.id}", options_for_select([[none, '']] + houses.map { |house| [house.name, house.id] }, character.extra_group_ids[kind['key']]), class: 'game-inline-select', 'aria-label': kind['label'], data: { inline_save: group_admin_game_character_path(character), kind: kind['key'] }
           %td.bot-sheet-table__text= number_with_delimiter(character.money)
           - @counter_groups.each do |group|
             %td.bot-sheet-table__text= group.compact.map { |counter| counter.net_for(character) }.join('/')

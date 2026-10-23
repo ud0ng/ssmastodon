@@ -4422,3 +4422,406 @@ button.game-token:focus-visible {
     align-items: center;
   }
 }
+
+// 활동 그래프: 일자별 쌓은 막대 / 가로 막대. 말풍선은 마우스를 올리거나 포커스를 주면 (CSS만)
+.act-chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.act-chart__key {
+  &::before {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 6px;
+    border-radius: 3px;
+    content: '';
+    background: var(--act-chart-color);
+  }
+}
+
+.act-chart__key--public,
+.act-chart__seg--public {
+  --act-chart-color: var(--ct-point, #6364ff);
+}
+
+.act-chart__key--reply,
+.act-chart__seg--reply {
+  --act-chart-color: color-mix(in srgb, var(--ct-point, #6364ff) 55%, #fff);
+}
+
+.act-chart__key--dm,
+.act-chart__seg--dm {
+  --act-chart-color: #9aa0a6;
+}
+
+.act-chart__line--public::before,
+.act-chart__line--reply::before,
+.act-chart__line--dm::before {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 2px;
+  content: '';
+}
+
+.act-chart__line--public::before { background: var(--ct-point, #6364ff); }
+.act-chart__line--reply::before { background: color-mix(in srgb, var(--ct-point, #6364ff) 55%, #fff); }
+.act-chart__line--dm::before { background: #9aa0a6; }
+
+.act-chart__seg {
+  min-height: 2px;
+  background: var(--act-chart-color);
+}
+
+.act-chart__tip {
+  position: absolute;
+  z-index: 5;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 190px;
+  padding: 8px 10px;
+  border: 1px solid var(--ui-border, #d9dce3);
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  color: #1f2430;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+}
+
+.act-chart--days {
+  display: flex;
+  gap: 8px;
+  height: 220px;
+  padding-bottom: 20px;
+
+  .act-chart__axis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 28px;
+    padding-bottom: 0;
+    font-size: 11px;
+    text-align: right;
+    opacity: 0.6;
+  }
+
+  .act-chart__plot {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: stretch;
+    gap: 3px;
+    border-bottom: 1px solid var(--ui-border, #d9dce3);
+    background: repeating-linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), rgba(128, 128, 128, 0.18) calc(50% - 1px), rgba(128, 128, 128, 0.18) 50%);
+  }
+
+  .act-chart__col {
+    position: relative;
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-width: 4px;
+    max-width: 56px;
+    outline: none;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(128, 128, 128, 0.12);
+
+      .act-chart__tip {
+        display: flex;
+      }
+    }
+  }
+
+  .act-chart__stack {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 0;
+    border-radius: 3px 3px 0 0;
+    overflow: hidden;
+  }
+
+  .act-chart__seg {
+    flex-basis: 0;
+  }
+
+  .act-chart__tip {
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 6px;
+  }
+
+  .act-chart__col--end .act-chart__tip {
+    right: 0;
+    left: auto;
+  }
+
+  .act-chart__label {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-top: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+    opacity: 0.6;
+    transform: translateX(-50%);
+  }
+}
+
+.act-chart--rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  .act-chart__row {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(120px, 200px) 1fr 48px;
+    gap: 10px;
+    align-items: center;
+    padding: 4px 6px;
+    border-radius: 8px;
+    outline: none;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(128, 128, 128, 0.1);
+
+      .act-chart__tip {
+        display: flex;
+      }
+    }
+  }
+
+  .act-chart__name {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    overflow: hidden;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .act-chart__track {
+    height: 14px;
+    border-radius: 7px;
+    background: rgba(128, 128, 128, 0.12);
+    overflow: hidden;
+  }
+
+  .act-chart__bar {
+    display: flex;
+    height: 100%;
+    min-width: 2px;
+  }
+
+  .act-chart__seg {
+    flex-basis: 0;
+  }
+
+  .act-chart__value {
+    font-size: 13px;
+    text-align: right;
+  }
+
+  .act-chart__tip {
+    top: 100%;
+    left: 130px;
+    margin-top: 2px;
+  }
+}
+
+// 비율 막대 (상대 캐릭터별 답 툿 수·답 횟수·스루 수)
+.act-ratio__grid {
+  display: grid;
+  gap: 20px;
+}
+
+.act-ratio__title {
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.act-ratio__bar {
+  display: flex;
+  height: 22px;
+  border-radius: 11px;
+  background: rgba(128, 128, 128, 0.12);
+  overflow: visible;
+}
+
+.act-ratio__seg {
+  position: relative;
+  flex-basis: 0;
+  min-width: 3px;
+  outline: none;
+  background: var(--act-ratio-color);
+
+  &:first-child {
+    border-radius: 11px 0 0 11px;
+  }
+
+  &:last-child {
+    border-radius: 0 11px 11px 0;
+  }
+
+  &:only-child {
+    border-radius: 11px;
+  }
+
+  &:hover,
+  &:focus-visible {
+    filter: brightness(0.92);
+
+    .act-chart__tip {
+      bottom: 100%;
+      left: 0;
+      display: flex;
+      min-width: 0;
+      margin-bottom: 6px;
+    }
+  }
+}
+
+.act-ratio__seg--0 { --act-ratio-color: #f08a7e; }
+.act-ratio__seg--1 { --act-ratio-color: #f2b266; }
+.act-ratio__seg--2 { --act-ratio-color: #e3cf62; }
+.act-ratio__seg--3 { --act-ratio-color: #8cc78a; }
+.act-ratio__seg--4 { --act-ratio-color: #6bbfb5; }
+.act-ratio__seg--5 { --act-ratio-color: #6aa6e0; }
+.act-ratio__seg--6 { --act-ratio-color: #9b8be0; }
+.act-ratio__seg--7 { --act-ratio-color: #c98bd0; }
+.act-ratio__seg--rest { --act-ratio-color: #9aa0a6; }
+
+.act-ratio__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  padding: 0;
+  margin: 10px 0 0;
+  font-size: 12px;
+  list-style: none;
+
+  li {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+}
+
+.act-ratio__dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--act-ratio-color);
+}
+
+.act-ratio__value {
+  opacity: 0.65;
+}
+
+// 두 캐릭터 일자별 그래프: 위쪽 A → B, 아래쪽 B → A
+.act-chart--mirror {
+  display: flex;
+  gap: 3px;
+  height: 240px;
+  padding-bottom: 20px;
+  margin-bottom: 16px;
+
+  .act-chart__col {
+    position: relative;
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-width: 4px;
+    max-width: 56px;
+    outline: none;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(128, 128, 128, 0.12);
+
+      .act-chart__tip {
+        display: flex;
+      }
+    }
+  }
+
+  .act-chart__half {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .act-chart__half--up {
+    border-bottom: 1px solid var(--ui-border, #d9dce3);
+  }
+
+  .act-chart__stack {
+    position: absolute;
+    right: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .act-chart__half--up .act-chart__stack {
+    bottom: 0;
+    justify-content: flex-end;
+    border-radius: 3px 3px 0 0;
+  }
+
+  .act-chart__half--down .act-chart__stack {
+    top: 0;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    border-radius: 0 0 3px 3px;
+  }
+
+  .act-chart__seg {
+    flex-basis: 0;
+  }
+
+  .act-chart__tip {
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 6px;
+  }
+
+  .act-chart__col--end .act-chart__tip {
+    right: 0;
+    left: auto;
+  }
+
+  .act-chart__label {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-top: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+    opacity: 0.6;
+    transform: translateX(-50%);
+  }
+}
+
+.game-table__sub td {
+  background: rgba(128, 128, 128, 0.06);
+}

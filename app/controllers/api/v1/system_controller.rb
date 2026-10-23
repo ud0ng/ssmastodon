@@ -59,9 +59,9 @@ class Api::V1::SystemController < Api::BaseController
       GameCharacterField.statuses.map { |field| { name: field.name, value: (character.status_value(field, base) || '-').to_s } }
   end
 
-  # 내 캐릭터 칩: 점수 기준이 아닌 쪽 소속(기숙사 또는 진영)
+  # 내 캐릭터 칩: 점수 기준 소속만 (기숙사·진영·더 만든 종류 중 점수를 모으는 종류)
   def profile_tags(character)
-    groups = [character.house, character.faction].compact.reject { |group| group.id == character.group_id }
+    groups = [character.group].compact
     groups.map { |group| { name: group.category, value: group.label, color: group.color.presence } }
   end
 

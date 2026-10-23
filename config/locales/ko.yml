@@ -132,6 +132,23 @@ ko:
         hours_hint: 1~24시간 (기본 24)
         last_reply: 최근 활동
         skipped: 스루
+        chart_days: 일자별 툿
+        pair_chart_legend: '위쪽 막대는 %{me} → %{other}, 아래쪽 막대는 %{other} → %{me}'
+        pair_daily_hint: '날짜마다 위 줄은 %{name} → %{other}, 아래 줄은 %{other} → %{name} 기록입니다. 막대에 마우스를 올리면 자세한 수가 보입니다.'
+        ratio_hint: '이 캐릭터가 상대 캐릭터별로 얼마나 나눴는지 비율로 보여 줍니다. 막대에 마우스를 올리면 수가 보입니다.'
+        ratio_others: 기타
+        ratio_replies: 답 툿 수 비율
+        ratio_skipped: 스루 수 비율
+        ratio_title: 상대 캐릭터별 비율
+        ratio_turns: 답 횟수 비율
+        tab_days: 일자별
+        tab_logs: 활동 기록
+        tab_pairs: 상대 캐릭터별
+        chart_days_hint: '최근 %{count}일의 툿 수입니다 (퍼블·답·DM을 쌓은 막대). 막대에 마우스를 올리면 그 날의 자세한 수가 보입니다.'
+        chart_houses: 상대 소속별
+        chart_houses_hint: '이 캐릭터가 답 툿과 DM으로 이야기한 상대를 상대의 소속(점수 기준)별로 합친 수입니다.'
+        chart_pairs: 상대 캐릭터별
+        chart_pairs_hint: '답 툿과 DM을 많이 나눈 상대 캐릭터 상위 10명입니다.'
         partners: 교류수
         partners_value: '%{count}명'
         all_posts: 전체 툿
@@ -149,6 +166,7 @@ ko:
         give_items: 아이템
         give_money: '재화 (%{currency})'
         give_nothing: 받을 캐릭터와 재화 수·아이템·누적 수치를 골라 주세요.
+        money_hint: '마이너스(-)를 쓰면 차감합니다.'
         give_to: 지급할 캐릭터
         given: '%{count}명에게 지급했습니다.'
         hint: '하루(한국 시간 00시 기준)마다 저장한 일일 활동 스냅샷입니다. 각 툿은 툿 수 / 툿 글자수이며, 답 횟수는 다른 사람의 툿에 답 툿을 단 횟수입니다(같은 툿에는 하루에 1회, 답 툿에 단 답과 DM은 세지 않습니다). 오늘 것은 툿을 쓸 때마다 쌓이고, 하루가 끝나면 지운 툿을 반영해 다시 맞춥니다.'
@@ -618,7 +636,12 @@ ko:
         label_faction: 진영 부르는 이름
         label_house: 기숙사 부르는 이름
         add_any: 소속 추가
-        kind: 종류
+        kind_blank: 소속 종류 이름을 적어 주세요.
+        kind_hint: '기숙사·진영처럼 소속 종류를 하나 더 만듭니다. 만들고 나면 아래에 그 종류의 목록이 생기고, 거기서 소속을 추가하면 됩니다. 점수 기준 소속으로도 고를 수 있습니다.'
+        kind_name: 소속 종류 이름
+        label_extra: 소속 종류 이름
+        remove_kind: 이 종류 지우기
+        remove_kind_confirm: "'%{name}' 종류를 지울까요? 이 종류의 소속과 캐릭터가 속한 기록이 함께 지워집니다."
         rename: 소속 변경
         add_named: '%{name} 추가'
         delete_confirm_named: '%{name}(%{term}) 지울까요? 점수 기록도 함께 지워집니다.'

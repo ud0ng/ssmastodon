@@ -5,37 +5,37 @@
   = render 'admin/game_characters/heading'
 
 -# 점수 기준 소속: 기숙사 / 진영 중 점수를 모을 쪽
-- add_any = button_tag safe_join([material_symbol('add'), game_t('admin.games.houses.add_any')]), type: :button, class: 'button', data: { modal_open: 'house-add-any' }
+- add_any = button_tag safe_join([material_symbol('add'), game_t('admin.games.houses.add_any')]), type: :button, class: 'button', data: { modal_open: 'house-add-kind' }
 - rename = button_tag safe_join([material_symbol('edit'), game_t('admin.games.houses.rename')]), type: :button, class: 'button button-tertiary', data: { modal_open: 'house-labels' }
 = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.houses.mode'), hint: game_t('admin.games.houses.mode_hint'), actions: safe_join([add_any, rename]) } do
   = render 'admin/ui/segmented', url: mode_admin_game_houses_path, param: :mode, value: @mode, label: game_t('admin.games.houses.mode'),
-                                 options: GameHouse::CATEGORIES.map { |category| [@labels[category], category] }
+                                 options: @categories.map { |category| [@labels[category], category] }
 
--# 소속 추가: 종류(기숙사·진영)를 고르고 이름·색·순서를 정한다
-= render layout: 'admin/ui/modal', locals: { id: 'house-add-any', title: game_t('admin.games.houses.add_any') } do
-  = form_tag admin_game_houses_path, method: :post, class: 'simple_form' do
-    = render 'admin/ui/field', label: game_t('admin.games.houses.kind'), name: 'game_house[category]', id: 'house_add_any_category', value: GameHouse::CATEGORIES.first, type: :select,
-                               options: GameHouse::CATEGORIES.map { |category| [@labels[category], category] }, wide: true
-    = render 'admin/ui/field', label: game_t('admin.games.houses.name_label'), name: 'game_house[name]', id: 'house_add_any_name', value: '', required: true, wide: true
-    = render layout: 'admin/ui/fields', locals: { columns: 2 } do
-      = render 'admin/ui/field', label: game_t('admin.games.houses.color'), name: 'game_house[color]', id: 'house_add_any_color', value: '#6b5b3e', type: :color
-      = render 'admin/ui/field', label: game_t('admin.games.houses.order'), name: 'game_house[position]', id: 'house_add_any_position', value: GameHouse.count, type: :number
+-# 소속 추가: 기숙사·진영 같은 소속 종류를 하나 더 만든다 (만들면 아래에 그 종류의 목록이 생기고, 거기서 소속을 추가한다)
+= render layout: 'admin/ui/modal', locals: { id: 'house-add-kind', title: game_t('admin.games.houses.add_any') } do
+  = form_tag kinds_admin_game_houses_path, method: :post, class: 'simple_form' do
+    %p.hint= game_t('admin.games.houses.kind_hint')
+    = render 'admin/ui/field', label: game_t('admin.games.houses.kind_name'), name: 'name', id: 'house_kind_name', value: '', required: true, wide: true, html: { maxlength: 20 }
     = render 'admin/ui/modal_actions'
 
 = render layout: 'admin/ui/modal', locals: { id: 'house-labels', title: game_t('admin.games.houses.rename') } do
   = form_tag labels_admin_game_houses_path, method: :patch, class: 'simple_form' do
     = render layout: 'admin/ui/fields', locals: { columns: 2 } do
-      - GameHouse::CATEGORIES.each do |category|
-        = render 'admin/ui/field', label: game_t("admin.games.houses.label_#{category}"), name: "labels[#{category}]", id: "house_label_#{category}", value: @labels[category], required: true, html: { maxlength: 20 }
+      - @categories.each do |category|
+        = render 'admin/ui/field', label: (GameHouse::CATEGORIES.include?(category) ? game_t("admin.games.houses.label_#{category}") : game_t('admin.games.houses.label_extra')), name: "labels[#{category}]", id: "house_label_#{category}", value: @labels[category], required: true, html: { maxlength: 20 }
     = render 'admin/ui/modal_actions'
 
 = render 'admin/game_houses/seasons'
 
--# 기숙사 · 진영 목록
-- GameHouse::CATEGORIES.each do |category|
+-# 기숙사 · 진영 · 더 만든 종류 목록
+- @categories.each do |category|
   - label = @labels[category]
   - actions = capture do
     = button_tag safe_join([material_symbol('add'), game_t('admin.games.houses.add_named', name: label)]), type: :button, class: 'button', data: { modal_open: "house-add-#{category}" }
+    - if Game::GroupKinds.extra?(category)
+      = button_to kind_admin_game_houses_path(category), method: :delete, class: 'button button--destructive', form_class: 'inline-form', data: { confirm: game_t('admin.games.houses.remove_kind_confirm', name: label) } do
+        = material_symbol('delete')
+        = game_t('admin.games.houses.remove_kind')
     - if category == GameHouse::CATEGORIES.first
       = button_tag safe_join([material_symbol('edit_note'), game_t('admin.games.houses.adjust')]), type: :button, class: 'button button-secondary', data: { modal_open: 'house-adjust' }
   - title = capture do
@@ -99,7 +99,7 @@
     %p.hint= game_t('admin.games.houses.adjust_hint')
     = render layout: 'admin/ui/fields', locals: { columns: 2 } do
       = render layout: 'admin/ui/field', locals: { label: game_t('admin.games.houses.name'), id: 'adjust_house', type: :custom } do
-        = select_tag :house_id, grouped_options_for_select(GameHouse::CATEGORIES.to_h { |category| [@labels[category], @lists[category].map { |house| [house.label, house.id] }] }), id: 'adjust_house', class: 'ui-input ui-input--select'
+        = select_tag :house_id, grouped_options_for_select(@categories.to_h { |category| [@labels[category], @lists[category].map { |house| [house.label, house.id] }] }), id: 'adjust_house', class: 'ui-input ui-input--select'
       = render 'admin/ui/field', label: game_t('admin.games.houses.amount'), name: 'amount', id: 'adjust_amount', type: :number, required: true
     = render 'admin/ui/field', label: game_t('admin.games.houses.reason'), name: 'reason', id: 'adjust_reason', wide: true
     = render 'admin/ui/modal_actions', submit: game_t('admin.games.houses.adjust')

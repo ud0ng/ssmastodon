@@ -4,6 +4,8 @@ module Admin
   # 관리 > 시스템 > 캐릭터 관리 > 명단: 회원 목록에서 자동으로 만들어지는 캐릭터를 소속별 표로 보고,
   # 캐릭터를 눌러 상세 화면(소속·스탯·메모·전적)에서 고친다. 재화·인벤토리는 활동 탭.
   class GameCharactersController < BaseController
+    include Admin::GameGiveForm
+
     PER_PAGE = 100
 
     helper_method :filter_params
@@ -27,11 +29,9 @@ module Admin
 
       character = GameCharacter.find(params[:id])
       value = params[:value].presence
-      case params[:kind]
-      when 'house' then character.update!(house: value && GameHouse.houses.find(value))
-      when 'faction' then character.update!(faction: value && GameHouse.factions.find(value))
-      else return head :unprocessable_entity
-      end
+      return head :unprocessable_entity unless GameHouse.categories.include?(params[:kind].to_s)
+
+      character.assign_group!(params[:kind].to_s, value && GameHouse.where(category: params[:kind].to_s).find(value))
       head :no_content
     rescue ActiveRecord::RecordNotFound, ActiveRecord::RecordInvalid
       head :unprocessable_entity
@@ -97,19 +97,6 @@ module Admin
       redirect_to edit_admin_game_character_path(character, filter_params), notice: t('generic.changes_saved_msg')
     end
 
-    # 상세 > 재화 카드: 가진 재화를 입력한 값으로 맞춘다 (바뀐 만큼이 재화 내역에 남는다)
-    def set_money
-      authorize :settings, :update?
-
-      character = GameCharacter.find(params[:id])
-      target = [params[:money].to_i, 0].max
-      delta = target - character.money
-      unless delta.zero?
-        Game::Wallet.apply!([{ account: character.account, money: delta }], kind: 'admin', detail: params[:reason].to_s.strip.presence || t('admin.games.manage.detail.money_reason'), actor: current_account.username)
-      end
-      redirect_to edit_admin_game_character_path(character, filter_params), notice: t('generic.changes_saved_msg')
-    end
-
     # 상세 > 인벤토리 카드: 아이템 더하기 (이름이 같으면 개수만 더한다)
     def add_item
       authorize :settings, :update?
@@ -150,6 +137,7 @@ module Admin
     def load_columns
       @houses = GameHouse.houses.to_a
       @factions = GameHouse.factions.to_a
+      @extra_kinds = Game::GroupKinds.extras.map { |kind| [kind, GameHouse.where(category: kind['key']).to_a] }
       @labels = Game::Config.for('common').slice('house_label', 'faction_label')
       @base_stats = GameCharacterField.base_stats.to_a
       @statuses = GameCharacterField.statuses.to_a
@@ -163,11 +151,11 @@ module Admin
       finished = GamePlayer.joins(:session).merge(GameSession.real).where(account_id: @character.account_id, game_sessions: { status: 'finished' })
       @record = finished.group(:result).count
       @item_images = GameShopItem.by_key
-      @shop_item_names = GameShopItem.pluck(:name)
+      load_give_form
     end
 
     def filter_params
-      { q: params[:q], house: params[:house], faction: params[:faction] }.compact_blank
+      { q: params[:q], house: params[:house], faction: params[:faction], groups: params[:groups]&.permit!&.to_h }.compact_blank
     end
 
     # 스탯: 정의된 스탯만, 최소~최대 안으로 (비우면 저장하지 않아 최소치)
@@ -221,6 +209,12 @@ module Admin
       end
       scope = params[:house] == 'none' ? scope.where(game_house_id: nil) : scope.where(game_house_id: params[:house]) if params[:house].present?
       scope = params[:faction] == 'none' ? scope.where(game_faction_id: nil) : scope.where(game_faction_id: params[:faction]) if params[:faction].present?
+      Game::GroupKinds.extras.each do |kind|
+        value = params.dig(:groups, kind['key']).presence
+        next if value.nil?
+
+        scope = value == 'none' ? scope.where('game_characters.extra_group_ids ->> ? IS NULL', kind['key']) : scope.where('game_characters.extra_group_ids ->> ? = ?', kind['key'], value.to_s)
+      end
       scope
     end
 

@@ -130,6 +130,23 @@ RSpec.describe Game::ActivitySnapshot do
       expect(GameActivityPair.find_by!(day: day, account_id: account.id, other_account_id: other.id).skipped).to eq 3
     end
 
+    it 'counts the unanswered replies B strings together after A started the thread as one skip' do
+      opener = tag('A가 B를 태그', from: account, to: other)
+      first = tag('B의 답멘', from: other, to: account, thread: opener)
+      second = tag('B의 또 답멘', from: other, to: account, thread: first)
+
+      described_class.rebuild!(day)
+      expect(GameActivityDay.find_by!(day: day, account_id: account.id).skipped).to eq 1
+      expect(GameActivityPair.find_by!(day: day, account_id: account.id, other_account_id: other.id).skipped).to eq 1
+
+      # 실시간으로 쌓아도 같다
+      GameActivityDay.delete_all
+      GameActivityPair.delete_all
+      [opener, first, second].each { |status| described_class.record!(status.id) }
+      expect(GameActivityDay.find_by!(day: day, account_id: account.id).skipped).to eq 1
+
+    end
+
     it "adds a tag as it is written and takes it back when the tagged character answers, matching a rebuild" do
       tagged = tag("태그", from: other, to: account)
       described_class.record!(tagged.id)

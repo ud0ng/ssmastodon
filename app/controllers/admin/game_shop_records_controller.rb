@@ -71,8 +71,13 @@ module Admin
 
       characters = GameCharacter.joins(:account)
       if params[:house].present?
-        column = GameHouse.faction_mode? ? :game_faction_id : :game_house_id
-        characters = characters.where(column => params[:house] == 'none' ? nil : params[:house])
+        mode = GameHouse.mode
+        if mode == 'house' || mode == 'faction'
+          column = mode == 'faction' ? :game_faction_id : :game_house_id
+          characters = characters.where(column => params[:house] == 'none' ? nil : params[:house])
+        else
+          characters = params[:house] == 'none' ? characters.where('game_characters.extra_group_ids ->> ? IS NULL', mode) : characters.where('game_characters.extra_group_ids ->> ? = ?', mode, params[:house].to_s)
+        end
       end
       characters = characters.where(account_id: params[:character]) if params[:character].present?
       if params[:q].present?

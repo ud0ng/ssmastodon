@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Admin
-  # 관리 > 시스템 > 캐릭터 관리 > 소속: 기숙사·진영 목록, 점수 기준 소속(둘 중 무엇으로 점수·토너먼트를 할지), 점수 현황·조정, 정기 툿
+  # 관리 > 시스템 > 캐릭터 관리 > 소속: 기숙사·진영·더 만든 소속 종류의 목록, 점수 기준 소속(어느 종류로 점수·토너먼트를 할지), 점수 현황·조정, 정기 툿
   class GameHousesController < BaseController
     def index
       authorize :settings, :show?
@@ -9,12 +9,15 @@ module Admin
       GameHouse.ensure_defaults!
       common = Game::Config.for('common')
       @mode = GameHouse.mode
-      @labels = { 'house' => common['house_label'], 'faction' => common['faction_label'] }
-      @lists = GameHouse::CATEGORIES.index_with { |category| GameHouse.where(category: category).to_a }
+      @labels = Game::GroupKinds.labels
+      @categories = GameHouse.categories
+      @lists = @categories.index_with { |category| GameHouse.where(category: category).to_a }
       @counts = {
         'house' => GameCharacter.visible.group(:game_house_id).count,
         'faction' => GameCharacter.visible.group(:game_faction_id).count,
       }
+      extras = GameCharacter.visible.pluck(:extra_group_ids)
+      Game::GroupKinds.extras.each { |kind| @counts[kind['key']] = extras.filter_map { |ids| ids[kind['key']] }.tally }
       @scoring_mode = common['scoring_mode']
       @seasons = GameSeason.order(id: :desc).to_a
       @season_fields = Game::Config.sections('common', 'season').flat_map(&:last)
@@ -24,7 +27,7 @@ module Admin
     def create
       authorize :settings, :update?
 
-      category = GameHouse::CATEGORIES.include?(params.dig(:game_house, :category)) ? params[:game_house][:category] : 'house'
+      category = GameHouse.categories.include?(params.dig(:game_house, :category)) ? params[:game_house][:category] : 'house'
       GameHouse.create!(house_params.merge(category: category, position: GameHouse.where(category: category).count))
       redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
     rescue ActiveRecord::RecordInvalid => e
@@ -51,16 +54,36 @@ module Admin
     def mode
       authorize :settings, :update?
 
-      Game::Config.merge!('common', 'group_mode' => params[:mode] == 'faction' ? 'faction' : 'house')
+      Game::Config.merge!('common', 'group_mode' => GameHouse.categories.include?(params[:mode].to_s) ? params[:mode].to_s : 'house')
       redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
     end
 
-    # 기숙사·진영을 부르는 이름 (공통 설정 house_label / faction_label)
+    # 소속 종류를 부르는 이름: 기숙사·진영은 공통 설정 house_label / faction_label, 더 만든 종류는 종류 목록
     def labels
       authorize :settings, :update?
 
       values = GameHouse::CATEGORIES.to_h { |category| ["#{category}_label", params.dig(:labels, category).to_s.strip.first(20)] }.compact_blank
       Game::Config.merge!('common', values) if values.any?
+      Game::GroupKinds.extras.each { |kind| Game::GroupKinds.rename!(kind['key'], params.dig(:labels, kind['key'])) }
+      redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
+    end
+
+    # 소속 종류 추가 (기숙사·진영 말고 하나 더)
+    def add_kind
+      authorize :settings, :update?
+
+      name = params[:name].to_s.strip
+      return redirect_to(admin_game_houses_path(modal: 'house-add-kind'), alert: t('admin.games.houses.kind_blank')) if name.blank?
+
+      Game::GroupKinds.add!(name)
+      redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
+    end
+
+    # 더 만든 소속 종류 지우기 (그 종류의 소속과 캐릭터가 속한 기록도 함께)
+    def remove_kind
+      authorize :settings, :update?
+
+      Game::GroupKinds.remove!(params[:key])
       redirect_to admin_game_houses_path, notice: t('generic.changes_saved_msg')
     end
 

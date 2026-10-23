@@ -45,13 +45,37 @@ class GameCharacter < ApplicationRecord
     eligible_accounts.where.not(id: existing).find_each { |account| find_or_create_by!(account: account) }
   end
 
-  # 점수를 모으는 소속 (공통 설정의 점수 단위에 따라 기숙사 또는 진영)
+  # 점수를 모으는 소속 (공통 설정의 점수 단위에 따라 기숙사·진영·더 만든 종류)
   def group
-    GameHouse.faction_mode? ? faction : house
+    group_of(GameHouse.mode)
   end
 
   def group_id
-    GameHouse.faction_mode? ? game_faction_id : game_house_id
+    case (mode = GameHouse.mode)
+    when 'house' then game_house_id
+    when 'faction' then game_faction_id
+    else group_of(mode)&.id
+    end
+  end
+
+  # 종류(house·faction·x1 …)별 소속
+  def group_of(category)
+    case category
+    when 'house' then house
+    when 'faction' then faction
+    else
+      id = extra_group_ids[category.to_s]
+      id && GameHouse.unscoped.find_by(id: id, category: category.to_s)
+    end
+  end
+
+  # 종류별 소속 바꾸기 (nil 이면 소속 없음)
+  def assign_group!(category, house_record)
+    case category
+    when 'house' then update!(house: house_record)
+    when 'faction' then update!(faction: house_record)
+    else update!(extra_group_ids: house_record ? extra_group_ids.merge(category.to_s => house_record.id) : extra_group_ids.except(category.to_s))
+    end
   end
 
   # 이름이나 계정 아이디로 캐릭터를 찾는다 (자동봇·시스템 [사용/아이템/@상대], 웹). 아이디가 같은 캐릭터가 있으면 그쪽만,

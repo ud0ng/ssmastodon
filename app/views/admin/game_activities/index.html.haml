@@ -19,6 +19,8 @@
 - if view_name == 'total'
   -# 일자별: 모든 캐릭터(또는 고른 소속) 합계. 맨 위는 기간 합계
   - title = @filter_house ? game_t('admin.games.activity.total_of', name: @filter_house.name) : game_t('admin.games.activity.total_title')
+  = render 'admin/game_activities/day_chart', days: @chart_days
+
   = render layout: 'admin/ui/section', locals: { title: title, hint: game_t('admin.games.activity.hint'), actions: backfill } do
     .bot-sheet-table.game-table.game-table--scroll
       %table.table

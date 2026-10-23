@@ -101,18 +101,6 @@ RSpec.describe 'Admin character roster' do
     expect(GameCounterLog.where(reason: '운영진 수정').count).to eq 2
   end
 
-  it 'sets the money from the detail page, logging only the difference' do
-    character.update!(money: 30)
-
-    patch money_admin_game_character_path(character), params: { money: '50', reason: '이벤트 보정' }
-    expect(response).to redirect_to(edit_admin_game_character_path(character))
-    expect(character.reload.money).to eq 50
-    expect(GameReward.where(account: character.account).last).to have_attributes(money: 20, reason: '이벤트 보정')
-
-    patch money_admin_game_character_path(character), params: { money: '50' }
-    expect(GameReward.where(account: character.account).count).to eq 1
-  end
-
   describe 'inventory cards' do
     before { character.update!(inventory: [{ 'name' => '투명 망토', 'count' => 1, 'note' => '' }]) }
 
@@ -162,6 +150,35 @@ RSpec.describe 'Admin character roster' do
     post admin_game_houses_path, params: { game_house: { name: '중립', color: '#888888', category: 'faction' } }
 
     expect(GameHouse.factions.pluck(:name)).to include('중립')
+  end
+
+  it 'adds another group type like houses and factions, fills it, scores by it and removes it' do
+    post kinds_admin_game_houses_path, params: { name: '동아리' }
+    key = Game::GroupKinds.extras.first['key']
+    expect(Game::GroupKinds.labels[key]).to eq '동아리'
+
+    post admin_game_houses_path, params: { game_house: { name: '체스부', color: '#112233', category: key } }
+    club = GameHouse.unscoped.find_by!(category: key, name: '체스부')
+    patch group_admin_game_character_path(character), params: { kind: key, value: club.id }
+    expect(response).to have_http_status(204)
+    expect(character.reload.group_of(key)).to eq club
+    patch group_admin_game_character_path(character), params: { kind: 'x99', value: club.id }
+    expect(response).to have_http_status(422)
+
+    post mode_admin_game_houses_path, params: { mode: key }
+    expect(GameHouse.mode).to eq key
+    expect(GameHouse.active.to_a).to eq [club]
+    expect(character.reload.group).to eq club
+    expect(Game::Config.for('common')['house_term']).to eq '동아리'
+
+    patch labels_admin_game_houses_path, params: { labels: { key => '모임' } }
+    expect(Game::GroupKinds.labels[key]).to eq '모임'
+
+    delete kind_admin_game_houses_path(key)
+    expect(Game::GroupKinds.extras).to be_empty
+    expect(GameHouse.unscoped.where(category: key)).to be_empty
+    expect(character.reload.extra_group_ids).to eq({})
+    expect(GameHouse.mode).to eq 'house'
   end
 
   it 'renames houses and factions from the groups tab' do

@@ -94,6 +94,8 @@ namespace :admin do
     post :scoring, on: :collection
     post :mode, on: :collection
     patch :labels, on: :collection
+    post :kinds, action: :add_kind, on: :collection
+    delete 'kinds/:key', action: :remove_kind, on: :collection, as: :kind
   end
   resources :game_seasons, path: 'characters/seasons', only: [:create, :update, :destroy] do
     member do
@@ -146,7 +148,6 @@ namespace :admin do
     member do
       patch :group, action: :assign_group
       post :items, action: :add_item
-      patch :money, action: :set_money
       post :effects, action: :add_effect, as: :add_effect
       patch 'effects/:index', action: :update_effect, as: :effect
       delete 'effects/:index', action: :remove_effect

@@ -1,0 +1,26 @@
+-# 두 캐릭터의 일자별 그래프: 위쪽은 A → B, 아래쪽은 B → A (답 툿 + DM을 쌓은 막대). 마우스를 올리면 말풍선
+-# locals: rows [[날짜, A→B PairTotals, B→A PairTotals]] (최근 날짜가 위), me, other (GameCharacter)
+- rows = rows.sort_by(&:first).last(Admin::GameActivitiesController::CHART_DAYS)
+- total_of = ->(row) { row.reply_posts + row.dms }
+- max = [rows.map { |_, mine, theirs| [total_of.call(mine), total_of.call(theirs)].max }.max.to_i, 1].max
+.act-chart__legend
+  %span.act-chart__key.act-chart__key--reply= game_t('admin.games.activity.replies')
+  %span.act-chart__key.act-chart__key--dm= game_t('admin.games.activity.dm_posts')
+  %span.hint= game_t('admin.games.activity.pair_chart_legend', me: me.display_name, other: other.display_name)
+.act-chart.act-chart--mirror
+  - rows.each_with_index do |(day, mine, theirs), index|
+    %div.act-chart__col{ class: ('act-chart__col--end' if index > rows.size * 2 / 3), tabindex: 0 }
+      - [[mine, 'up'], [theirs, 'down']].each do |row, side|
+        .act-chart__half{ class: "act-chart__half--#{side}" }
+          .act-chart__stack{ style: "height: #{(total_of.call(row) * 100.0 / max).round(1)}%" }
+            - if row.dms.positive?
+              %span.act-chart__seg.act-chart__seg--dm{ style: "flex-grow: #{row.dms}" }
+            - if row.reply_posts.positive?
+              %span.act-chart__seg.act-chart__seg--reply{ style: "flex-grow: #{row.reply_posts}" }
+      .act-chart__tip
+        %strong= l(day, format: '%m-%d (%a)')
+        - [[me, mine, '↑'], [other, theirs, '↓']].each do |who, row, arrow|
+          %span.act-chart__line= "#{arrow} #{who.display_name} → #{(who == me ? other : me).display_name}"
+          %span.act-chart__line.act-chart__line--reply= "#{game_t('admin.games.activity.replies')} #{row.reply_posts} / #{number_with_delimiter(row.reply_chars)} · #{game_t('admin.games.activity.reply_count')} #{row.reply_turns}"
+          %span.act-chart__line.act-chart__line--dm= "#{game_t('admin.games.activity.dm_posts')} #{row.dms} / #{number_with_delimiter(row.dm_chars)} · #{game_t('admin.games.activity.skipped')} #{row.skipped}"
+      %span.act-chart__label= day.day == 1 || index.zero? ? l(day, format: '%-m/%-d') : day.day

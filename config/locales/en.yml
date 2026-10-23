@@ -88,6 +88,23 @@ en:
       activity:
         back: Back to activity
         skipped: Skipped
+        chart_days: Toots by day
+        pair_chart_legend: 'Upper bars: %{me} → %{other}, lower bars: %{other} → %{me}'
+        pair_daily_hint: 'For each date the first row is %{name} → %{other} and the row below is %{other} → %{name}. Hover a bar for details.'
+        ratio_hint: How this character's activity is split between the other characters. Hover a bar for numbers.
+        ratio_others: Others
+        ratio_replies: Share of reply toots
+        ratio_skipped: Share of skipped
+        ratio_title: Share by counterpart
+        ratio_turns: Share of reply turns
+        tab_days: By day
+        tab_logs: Activity log
+        tab_pairs: By counterpart
+        chart_days_hint: 'Toots of the last %{count} days (public, replies and DMs stacked). Hover a bar for that day.'
+        chart_houses: By counterpart house
+        chart_houses_hint: Reply toots and DMs with other characters, added up by their house (the scoring one).
+        chart_pairs: By counterpart character
+        chart_pairs_hint: Top 10 characters this character exchanged the most reply toots and DMs with.
         backfill: Load past records
         backfill_confirm: Recount every past toot and rebuild the daily activity snapshots? This can take a few minutes.
         backfill_started: Loading past records. Reload in a moment.
@@ -138,6 +155,7 @@ en:
         give_items: Items
         give_money: "Currency (%{currency})"
         give_nothing: Choose characters and an amount or items.
+        money_hint: Use a minus (-) to take away.
         give_to: Characters
         given: "Given to %{count} characters."
         hint: Posts are toots that are not replies (even with mentions); replies are replies. DMs, boosts and deleted toots are not counted. Click a row for details.
@@ -602,8 +620,13 @@ en:
         effects_label: Turn on rank effects
         label_faction: Name for factions
         label_house: Name for houses
-        add_any: Add house
-        kind: Type
+        add_any: Add group type
+        kind_blank: Enter a name for the group type.
+        kind_hint: Adds one more group type like houses and factions. A list for it appears below where you add groups. It can also be the scoring group.
+        kind_name: Group type name
+        label_extra: Group type name
+        remove_kind: Remove this type
+        remove_kind_confirm: "Remove '%{name}'? Its groups and the characters' memberships are removed too."
         rename: Change houses
         add_named: 'Add %{name}'
         delete_confirm_named: 'Delete %{name} (%{term})? Its point history is deleted too.'
