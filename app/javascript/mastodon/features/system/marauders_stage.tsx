@@ -47,6 +47,8 @@ interface MLast {
   goals?: (number | null)[];
 }
 interface MHistory { turn: number; positions: Record<string, number>; status_of?: Record<string, string>; arrests?: { seat: number; by: number; room: number; out: boolean }[]; rescued?: number[] }
+// 오늘의 MVP 장면 (서버 Game::MaraudersScenes): 체포왕 · 목표 사냥꾼 · 구출 영웅 · 비밀 통로 달인 · 끝까지 못 잡은 학생 · 또 잡혔어요?
+interface MScene { kind: string; round: number; seats: number[]; title: string; text: string; score: number }
 interface MReward { result: 'win' | 'lose' | 'draw'; points: number; money: number; items: string[] }
 
 interface MView {
@@ -74,7 +76,7 @@ interface MView {
   history: MHistory[] | null;
   roles: Record<string, string> | null;
   winner: 'student' | 'prefect' | null;
-  finish: { currency: string; test: boolean; rewards: Record<string, MReward | null> } | null;
+  finish: { currency: string; test: boolean; rewards: Record<string, MReward | null>; mvp?: MScene[] } | null;
   me: number | null;
   team: 'student' | 'prefect' | null;
   spectator: boolean;
@@ -82,7 +84,10 @@ interface MView {
   role: 'watcher' | 'scout' | 'chaser' | null;
   my_status: string | null;
   items: { cloak?: number; cloaked?: boolean; ability?: number };
-  planned: { room?: number } | null;
+  // 이번 턴에 고른 것: 갈 방, 추격 중 지나가는 칸, 쓴 능력·아이템
+  planned: { room?: number; path?: number[]; ability?: string; cloak?: boolean } | null;
+  // 감시 중인 방 (사감 팀·끝난 뒤에만)
+  watch?: { room: number; until: number; by: number } | null;
   my_turn: boolean;
   submitted: boolean;
   waiting: string[];
@@ -245,7 +250,7 @@ const MapSvg: React.FC<{
         })}
       </g>
 
-      {/* 비밀 통로: 문이 반짝반짝 빛난다 */}
+      {/* 비밀 통로: 보라 점선 (문 별은 방 위에 따로) */}
       <g className='mm-secret'>
         {view.secret.map((passage) => {
           const from = geo.center(passage.a);
@@ -261,9 +266,6 @@ const MapSvg: React.FC<{
                 animate={{ pathLength: 1, opacity: [0.5, 1, 0.5] }}
                 transition={{ pathLength: { duration: 1.6 }, opacity: { duration: 2.4, repeat: Infinity } }}
               />
-              {[from, to].map((point, index) => (
-                <motion.text key={index} x={point.x + 36} y={point.y - 22} className='mm-door' animate={{ opacity: [0.3, 1, 0.3], scale: [0.9, 1.25, 0.9] }} transition={{ duration: 1.8, repeat: Infinity, delay: index * 0.5 }}>✦</motion.text>
-              ))}
             </g>
           );
         })}
@@ -276,7 +278,9 @@ const MapSvg: React.FC<{
         const canGo = reachable.includes(room.id);
         const isHere = here === room.id;
         const isPlan = planned === room.id;
-        const classes = ['mm-room', room.kind === 'tower' && 'mm-room--tower', room.kind === 'office' && 'mm-room--office', canGo && 'is-go', isHere && 'is-here', isPlan && 'is-plan', pickingWatch && 'is-pick', target !== undefined && 'is-goal', target && 'is-done'].filter(Boolean).join(' ');
+        const isWatched = view.watch?.room === room.id;
+        const isVia = (view.planned?.path ?? []).includes(room.id);
+        const classes = ['mm-room', room.kind === 'tower' && 'mm-room--tower', room.kind === 'office' && 'mm-room--office', canGo && 'is-go', isHere && 'is-here', isPlan && 'is-plan', isVia && 'is-via', isWatched && 'is-watched', pickingWatch && 'is-pick', target !== undefined && 'is-goal', target && 'is-done'].filter(Boolean).join(' ');
         return (
           <motion.g
             key={room.id}
@@ -298,6 +302,27 @@ const MapSvg: React.FC<{
           </motion.g>
         );
       })}
+
+      {/* 비밀 통로 문: 반짝이는 보라 별. 방 위에 그려서 잘 보이게 */}
+      <g className='mm-doors'>
+        {view.secret.flatMap((passage) => [passage.a, passage.b].map((room, index) => {
+          const point = geo.center(room);
+          return (
+            <motion.text
+              key={`${passage.a}-${passage.b}-${index}`}
+              x={point.x + 36}
+              y={point.y - 18}
+              className='mm-door'
+              textAnchor='middle'
+              animate={{ opacity: [0.55, 1, 0.55], scale: [0.9, 1.2, 0.9] }}
+              transition={{ duration: 1.8, repeat: Infinity, delay: index * 0.5 }}
+              style={{ transformOrigin: `${point.x + 36}px ${point.y - 26}px` }}
+            >
+              ✦
+            </motion.text>
+          );
+        }))}
+      </g>
     </motion.svg>
   );
 };
@@ -453,6 +478,8 @@ const useRemaining = (view: MView | null) => {
 
 // ── 효과음: 웹 오디오로 바로 만든다 (파일 없음). 머리 줄의 소리 버튼으로 끄고, 브라우저가 막으면 조용히 넘어간다 ──
 const SOUND_KEY = 'ssm:mm-sound';
+const BGM_URL = '/sounds/marauders_bgm.mp3';
+const BGM_VOLUME = 0.35;
 let audioContext: AudioContext | null = null;
 
 const soundOn = () => {
@@ -535,8 +562,130 @@ const sfx = {
   escape: (at = 0) => { tone(330, at, 0.6, { type: 'triangle', volume: 0.18, to: 880 }); tone(1320, at + 0.45, 0.35, { volume: 0.1 }); },
   // 새 채팅
   message: () => { tone(880, 0, 0.1, { volume: 0.08 }); tone(1175, 0.08, 0.14, { volume: 0.07 }); },
+  // 투명 망토: 반짝이며 아래로 사라지는 소리
+  cloak: (at = 0) => { tone(1568, at, 0.7, { volume: 0.1, to: 392 }); tone(2093, at + 0.05, 0.5, { volume: 0.05, to: 523 }); noise(at, 0.6, 0.12, 3000); },
+  // 감시: 낮게 울리는 눈뜨는 소리
+  watch: (at = 0) => { tone(220, at, 0.7, { type: 'triangle', volume: 0.16, to: 330 }); tone(440, at + 0.2, 0.5, { volume: 0.08 }); },
+  // 정찰: 수중 음파처럼 핑 + 메아리
+  scout: (at = 0) => { tone(1320, at, 0.25, { volume: 0.16 }); tone(1320, at + 0.35, 0.22, { volume: 0.07 }); tone(1320, at + 0.65, 0.2, { volume: 0.03 }); },
+  // 비밀 통로: 신비로운 아르페지오가 내려갔다 올라온다
+  secret: (at = 0) => { [784, 622, 494, 622, 988].forEach((freq, index) => { tone(freq, at + (index * 0.08), 0.35, { type: 'triangle', volume: 0.09 }); }); },
+  // 추격: 휙 바람 소리
+  chase: (at = 0) => { noise(at, 0.4, 0.45, 1400); tone(260, at, 0.35, { type: 'sawtooth', volume: 0.05, to: 820 }); },
 };
 const thump = sfx.thump;
+
+// ── 끝: 승리 팀 (이긴 팀 아바타·이름, 아래에 얻은 것 배지) → [다음] → 오늘의 MVP (그 장면을 지도에서 다시 틀어 줌) → [종료] → 장난 끝 ──
+const RewardBadges: React.FC<{ view: MView; seat: number }> = ({ view, seat }) => {
+  const reward = view.finish?.rewards[String(seat)];
+  if (view.finish?.test) return <span className='mm-badges'><span className='mm-badge mm-badge--dim'><FormattedMessage id='mm.test' defaultMessage='Test play: no rewards' /></span></span>;
+  if (!reward) return null;
+  return (
+    <span className='mm-badges'>
+      {reward.points !== 0 && <span className='mm-badge mm-badge--points'>+{reward.points}점</span>}
+      {reward.money !== 0 && <span className='mm-badge mm-badge--money'>+{reward.money} {view.finish?.currency}</span>}
+      {reward.items.map((item) => <span key={item} className='mm-badge mm-badge--item'>🎁 {item}</span>)}
+    </span>
+  );
+};
+
+const WinnerScreen: React.FC<{ view: MView; onNext: () => void }> = ({ view, onNext }) => {
+  const winners = view.players.filter((player) => player.team === view.winner);
+  const losers = view.players.filter((player) => player.team !== view.winner);
+  const teamName = (team: string | null) => (team === 'student' ? view.student_name : view.prefect_name);
+  return (
+    <motion.div className='mm-final' initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.small className='mm-final__eyebrow' initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+        <FormattedMessage id='mm.result_title' defaultMessage='Result' />
+      </motion.small>
+      <motion.h2 initial={{ scale: 2.2, opacity: 0, rotate: -4 }} animate={{ scale: 1, opacity: 1, rotate: -2 }} transition={{ type: 'spring', stiffness: 130, damping: 12 }}>
+        {teamName(view.winner)} 팀 승리!
+      </motion.h2>
+      <div className='mm-final__winners'>
+        {winners.map((player, index) => (
+          <motion.div key={player.seat} className={`mm-final__winner mm-final__winner--${player.team}`} initial={{ y: -140, opacity: 0, scale: 0.5 }} animate={{ y: 0, opacity: 1, scale: 1 }} transition={{ type: 'spring', stiffness: 120, damping: 11, delay: 0.5 + (index * 0.18) }}>
+            <motion.span className='mm-final__crown' animate={{ rotate: [-8, 8, -8], y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity }}>👑</motion.span>
+            <span className='mm-final__avatar'>{player.avatar ? <img src={player.avatar} alt='' /> : <TIcon name='walk' size={34} />}</span>
+            <b className='mm-final__name'>{player.name}</b>
+            <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 + (index * 0.18) }}>
+              <RewardBadges view={view} seat={player.seat} />
+            </motion.span>
+          </motion.div>
+        ))}
+      </div>
+      {losers.length > 0 && (
+        <motion.ul className='mm-final__losers' initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3 }}>
+          {losers.map((player) => (
+            <li key={player.seat}>
+              <span className='mm-final__mini'>{player.avatar ? <img src={player.avatar} alt='' /> : null}</span>
+              <b>{player.name}</b>
+              <RewardBadges view={view} seat={player.seat} />
+            </li>
+          ))}
+        </motion.ul>
+      )}
+      <motion.button type='button' className='mm-button mm-final__next' initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.6 }} onClick={onNext}>
+        <FormattedMessage id='mm.next' defaultMessage='Next' />
+      </motion.button>
+    </motion.div>
+  );
+};
+
+// MVP: 위쪽 카드만 띄우고 지도는 보이게 둔다 (뒤에서 그 장면의 턴이 되풀이된다)
+const MvpScreen: React.FC<{ view: MView; index: number; onIndex: (index: number) => void; onReplay: () => void; onClose: () => void }> = ({ view, index, onIndex, onReplay, onClose }) => {
+  const scenes = view.finish?.mvp ?? [];
+  const scene = scenes[index];
+  const people = scene ? view.players.filter((player) => scene.seats.includes(player.seat)) : [];
+  return (
+    <motion.div className='mm-mvp' initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+      <motion.h2 initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 180, damping: 12 }}>
+        🏆 <FormattedMessage id='mm.mvp' defaultMessage="Today's MVP" />
+      </motion.h2>
+      {scene ? (
+        <AnimatePresence mode='wait'>
+          <motion.div key={`${scene.kind}-${index}`} className='mm-mvp__card' initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
+            <small><FormattedMessage id='mm.mvp_scene' defaultMessage='#{rank} · Turn {turn}' values={{ rank: index + 1, turn: scene.round }} /></small>
+            <strong>{scene.title}</strong>
+            <span className='mm-mvp__people'>
+              {people.map((player) => (
+                <span key={player.seat}>{player.avatar && <img src={player.avatar} alt='' />}{player.name}</span>
+              ))}
+            </span>
+            <p>{scene.text}</p>
+          </motion.div>
+        </AnimatePresence>
+      ) : (
+        <p className='mm-mvp__none'><FormattedMessage id='mm.mvp_none' defaultMessage='No standout scenes this time.' /></p>
+      )}
+      {scenes.length > 1 && (
+        <div className='mm-mvp__chips'>
+          {scenes.map((each, position) => (
+            <button key={`${each.kind}-${position}`} type='button' className={position === index ? 'is-on' : undefined} onClick={() => { onIndex(position); }}>{position + 1}</button>
+          ))}
+        </div>
+      )}
+      <div className='mm-result__buttons'>
+        <button type='button' className='mm-button mm-button--ghost' onClick={onReplay}><FormattedMessage id='mm.see_replay' defaultMessage='Watch again' /></button>
+        <button type='button' className='mm-button' onClick={onClose}><FormattedMessage id='mm.close_game' defaultMessage='Finish' /></button>
+      </div>
+    </motion.div>
+  );
+};
+
+// [종료]: 맹세(오프닝)처럼 '장난 끝' 글이 써지고 지도가 접히며 배경 음악이 줄어든 뒤 방을 나간다
+const CLOSING = '장난 끝';
+const Closing: React.FC = () => (
+  <motion.div className='mm-oath mm-oath--closing' initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 1.2 }}>
+    <p>
+      {CLOSING.split('').map((char, index) => (
+        <motion.span key={index} initial={{ opacity: 0, y: 6, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ delay: 1.6 + (index * 0.16), duration: 0.5 }}>{char}</motion.span>
+      ))}
+    </p>
+  </motion.div>
+);
+
+// 지도 위 효과 종류: 목표 달성 · 투옥 · 탈출 · 투명 망토 · 감시 · 정찰 · 추격 · 비밀 통로
+type BurstKind = 'goal' | 'jail' | 'escape' | 'cloak' | 'watch' | 'scout' | 'chase' | 'secret';
 
 // ── 역할 안내 창 ──
 const ROLE_LINES: Record<string, { title: string; lines: string[]; items: { name: string; text: string }[] }> = {
@@ -563,6 +712,30 @@ const RoleModal: React.FC<{ view: MView; onClose: () => void }> = ({ view, onClo
           <>
             <h2>{info.title}</h2>
             {info.lines.map((line) => <p key={line}>{line}</p>)}
+            {view.team === 'student' && view.targets.length > 0 && (
+              <div className='mm-modal__goals'>
+                <b>목적지</b>
+                {/* 실제 지도와 같은 목표 장소 모양 (점선 테두리 + 빗금, 빗금 무늬는 뒤의 지도 SVG 의 #mm-hatch) */}
+                <ul>
+                  {view.targets.map((target) => {
+                    const room = view.map.rooms.find((each) => each.id === target.room);
+                    return (
+                      <li key={target.room}>
+                        <svg className='mm-modal__goal' viewBox='0 0 132 56' aria-hidden>
+                          <g className={target.done ? 'mm-room is-goal is-done' : 'mm-room is-goal'}>
+                            <rect x='4' y='4' width='124' height='48' rx='8' className='mm-room__base' />
+                            <rect x='4' y='4' width='124' height='48' rx='8' className='mm-room__shape' />
+                            <rect x='9' y='9' width='114' height='38' rx='5' className='mm-room__inner' />
+                            {!target.done && <rect x='9' y='9' width='114' height='38' rx='5' className='mm-room__hatch' />}
+                          </g>
+                        </svg>
+                        <span>{room?.name ?? '?'}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
             <ul>
               {info.items.map((item) => <li key={item.name}><strong>{item.name}</strong> {item.text}</li>)}
             </ul>
@@ -809,7 +982,10 @@ export const MaraudersStage: React.FC<{
   // pending: 아직 모름 (첫 화면을 받기 전). 대기실 카운트다운이 끝나고 들어오면 지도를 먼저 보여 주지 않고 바로 맹세(오프닝)부터
   const [intro, setIntro] = useState<'pending' | 'oath' | 'role' | 'done'>('pending');
   const [pickingWatch, setPickingWatch] = useState(false);
-  const [ending, setEnding] = useState<'none' | 'over' | 'review' | 'result'>('none');
+  const [ending, setEnding] = useState<'none' | 'over' | 'review' | 'winner' | 'mvp' | 'closing'>('none');
+  // MVP: 보고 있는 장면 번호, 그 장면 턴을 되풀이할 때 지금 보여 주는 기록 번호(history 의 자리)
+  const [mvpIndex, setMvpIndex] = useState(0);
+  const [mvpFrame, setMvpFrame] = useState<number | null>(null);
   // 끝난 뒤 복기: 라운드별 / 경로만, 보고 있는 라운드, 자동 재생, 경로로 보여 줄 사람
   const [reviewMode, setReviewMode] = useState<'rounds' | 'routes'>('rounds');
   const [reviewRound, setReviewRound] = useState(0);
@@ -819,7 +995,7 @@ export const MaraudersStage: React.FC<{
   const seenLast = useRef<number>(-1);
   // 지도 위 그 자리에 잠깐 떴다 사라지는 소식·효과 (목표·투옥·탈출), 계단이 움직이는 중
   const [notes, setNotes] = useState<{ id: string; kind: string; text: string; x: number; y: number; delay: number }[]>([]);
-  const [bursts, setBursts] = useState<{ id: string; kind: 'goal' | 'jail' | 'escape'; x: number; y: number; delay: number; label: string }[]>([]);
+  const [bursts, setBursts] = useState<{ id: string; kind: BurstKind; x: number; y: number; delay: number; label: string }[]>([]);
   const [stairsShift, setStairsShift] = useState(false);
   const [sound, setSound] = useState(soundOn);
   const toggleSound = useCallback(() => {
@@ -829,6 +1005,48 @@ export const MaraudersStage: React.FC<{
     });
   }, []);
   const askedTurn = useRef<number>(-1);
+
+  // 배경 음악: 맹세(오프닝)가 시작되면(다시 들어온 방은 바로) 반복 재생, 소리를 끄면 멈추고, 방을 나가면 끝
+  const bgm = useRef<HTMLAudioElement | null>(null);
+  const bgmOn = sound && intro !== 'pending';
+  useEffect(() => {
+    if (!bgmOn) {
+      bgm.current?.pause();
+      return;
+    }
+    if (!bgm.current) {
+      bgm.current = new Audio(BGM_URL);
+      bgm.current.loop = true;
+      bgm.current.volume = BGM_VOLUME;
+    }
+    bgm.current.play().catch(() => {
+      // 자동 재생이 막히면 화면을 한 번 누를 때 시작
+      const resume = () => { void bgm.current?.play().catch(() => undefined); window.removeEventListener('pointerdown', resume); };
+      window.addEventListener('pointerdown', resume);
+    });
+  }, [bgmOn]);
+  useEffect(() => () => {
+    bgm.current?.pause();
+    bgm.current = null;
+  }, []);
+
+  // [종료]: 배경 음악을 2초 동안 줄여 멈추고, 지도가 접힌 뒤 방을 나간다
+  useEffect(() => {
+    if (ending !== 'closing') return undefined;
+    const audioEl = bgm.current;
+    const start = audioEl?.volume ?? 0;
+    let step = 0;
+    const fade = window.setInterval(() => {
+      step += 1;
+      if (audioEl) audioEl.volume = Math.max(0, start * (1 - (step / 20)));
+      if (step >= 20) {
+        audioEl?.pause();
+        window.clearInterval(fade);
+      }
+    }, 100);
+    const leave = window.setTimeout(() => { history.push('/system/group'); }, 4_600);
+    return () => { window.clearInterval(fade); window.clearTimeout(leave); };
+  }, [ending, history]);
 
   useEffect(() => {
     if (!view) return undefined;
@@ -901,7 +1119,12 @@ export const MaraudersStage: React.FC<{
   // 새 턴 결과: 발자국이 찍히며 이동 / 체포되면 발자국이 사무실까지 끌려간다
   useEffect(() => {
     const last = view?.last;
-    if (!view || !last) return;
+    if (!view) return;
+    // 아직 지난 턴 결과가 없으면(1턴) '본 턴 = 0' 으로 두어, 첫 결과도 효과가 나오게 한다
+    if (!last) {
+      if (seenLast.current === -1) seenLast.current = 0;
+      return;
+    }
     if (seenLast.current === -1) {
       seenLast.current = last.turn;
       return;
@@ -942,12 +1165,24 @@ export const MaraudersStage: React.FC<{
     placed.forEach((note) => { if (note.kind !== 'stairs' && note.kind !== 'caught') sfx.note(note.delay); });
 
     // 목표 장소 · 투옥 · 탈출 효과
-    const effects: { id: string; kind: 'goal' | 'jail' | 'escape'; x: number; y: number; delay: number; label: string }[] = [];
+    const effects: { id: string; kind: BurstKind; x: number; y: number; delay: number; label: string }[] = [];
     (last.goals ?? []).forEach((room, index) => {
       const point = room === null ? { x: geo.width / 2, y: geo.height * 0.3 } : geo.center(room);
       effects.push({ id: `${last.turn}-g${index}`, kind: 'goal', x: point.x, y: point.y, delay: 1.3 + (index * 0.4), label: '목표 달성!' });
       sfx.goal(1.3 + (index * 0.4));
     });
+    // 비밀 통로로 옮긴 학생 (학생 팀 화면에만): 출발 방에서 사라지고 도착 방에 나타난다
+    if (view.team === 'student') {
+      Object.entries(last.moves).forEach(([seat, move]) => {
+        if (!move.secret || move.from === move.to) return;
+        const who = view.players.find((each) => String(each.seat) === seat)?.name ?? '';
+        const from = geo.center(move.from);
+        const to = geo.center(move.to);
+        effects.push({ id: `${last.turn}-s${seat}-a`, kind: 'secret', x: from.x, y: from.y, delay: 0.3, label: `${who} 비밀 통로!` });
+        effects.push({ id: `${last.turn}-s${seat}-b`, kind: 'secret', x: to.x, y: to.y, delay: 1.1, label: '여기로 나왔다!' });
+        sfx.secret(0.3);
+      });
+    }
     if (last.arrests.length > 0) {
       const office = geo.center(view.map.office);
       effects.push({ id: `${last.turn}-jail`, kind: 'jail', x: office.x, y: office.y, delay: 2.8, label: last.arrests.some((arrest) => arrest.out) ? '탈락!' : '투옥!' });
@@ -969,20 +1204,74 @@ export const MaraudersStage: React.FC<{
     return () => { window.clearTimeout(timer); window.clearTimeout(clear); };
   }, [view, geo]);
 
+  // 스킬·아이템 효과: 새로 받은 화면에서 바뀐 것을 찾아 그 자리에 효과 + 효과음
+  //   투명 망토를 썼다(cloaked 가 켜짐) · 추격(능력 횟수가 줄어든 추격자) · 새 감시·정찰 단서
+  const skillSeen = useRef<{ cloaked: Set<number>; ability: Map<number, number>; clues: Set<string>; watch: string } | null>(null);
+  useEffect(() => {
+    if (!view) return undefined;
+    const cloaked = new Set(view.players.filter((player) => player.cloaked).map((player) => player.seat));
+    const ability = new Map(view.players.filter((player) => player.ability).map((player) => [player.seat, player.ability?.left ?? 0]));
+    const clueKey = (clue: MClue) => `${clue.turn}-${clue.seat}-${clue.kind}-${clue.room ?? ''}`;
+    const clues = view.clues.filter((clue) => clue.kind === 'watch' || clue.kind === 'scout');
+    const before = skillSeen.current;
+    const watchKey = view.watch ? `${view.watch.room}-${view.watch.until}` : '';
+    skillSeen.current = { cloaked, ability, clues: new Set(clues.map(clueKey)), watch: watchKey };
+    if (!before) return undefined;
+
+    const at = (seat: number) => {
+      const token = view.tokens.find((each) => each.seat === seat);
+      return token ? geo.center(token.room) : { x: geo.width / 2, y: geo.height * 0.3 };
+    };
+    const name = (seat: number) => view.players.find((player) => player.seat === seat)?.name ?? '';
+    const effects: { id: string; kind: BurstKind; x: number; y: number; delay: number; label: string }[] = [];
+    cloaked.forEach((seat) => {
+      if (before.cloaked.has(seat)) return;
+      effects.push({ id: `cloak-${view.turn}-${seat}`, kind: 'cloak', ...at(seat), delay: 0, label: `${name(seat)} 투명 망토!` });
+    });
+    ability.forEach((left, seat) => {
+      const player = view.players.find((each) => each.seat === seat);
+      if (player?.ability?.role !== 'chaser' || left >= (before.ability.get(seat) ?? left)) return;
+      effects.push({ id: `chase-${view.turn}-${seat}`, kind: 'chase', ...at(seat), delay: 0, label: `${name(seat)} 추격!` });
+    });
+    if (view.watch && watchKey !== before.watch) {
+      const room = view.map.rooms.find((each) => each.id === view.watch?.room);
+      effects.push({ id: `watch-set-${watchKey}`, kind: 'watch', ...geo.center(view.watch.room), delay: 0, label: `감시 시작: ${room?.name ?? ''}` });
+    }
+    clues.forEach((clue) => {
+      if (before.clues.has(clueKey(clue))) return;
+      if (clue.kind === 'scout' && view.team === 'student') return;
+      const point = clue.room !== undefined ? geo.center(clue.room) : at(clue.seat);
+      const label = clue.kind === 'watch' ? `감시${clue.room_name ? `: ${clue.room_name}` : ''}` : ((clue.count ?? 0) > 0 ? `근처에 학생 ${clue.count}명!` : '근처에 학생 없음');
+      effects.push({ id: `${clue.kind}-${clueKey(clue)}`, kind: clue.kind === 'watch' ? 'watch' : 'scout', ...point, delay: 0, label });
+    });
+    if (effects.length === 0) return undefined;
+
+    const sounds: Partial<Record<BurstKind, (at?: number) => void>> = { cloak: sfx.cloak, watch: sfx.watch, scout: sfx.scout, chase: sfx.chase };
+    effects.forEach((effect, index) => {
+      effect.delay = index * 0.35;
+      sounds[effect.kind]?.(effect.delay);
+    });
+    setBursts((current) => [...current, ...effects]);
+    const timer = window.setTimeout(() => {
+      setBursts((current) => current.filter((burst) => !effects.some((effect) => effect.id === burst.id)));
+    }, 4_000 + (effects.length * 350));
+    return () => { window.clearTimeout(timer); };
+  }, [view, geo]);
+
   // 끝났다 → '장난 끝' → 리플레이 → 결과 (이미 끝난 방에 들어오면 바로 결과)
   const status = view?.status;
   const prevStatus = useRef<string | null>(null);
   useEffect(() => {
     if (!status) return;
     if (status === 'finished') {
-      setEnding((current) => (current !== 'none' ? current : (prevStatus.current && prevStatus.current !== 'finished' ? 'over' : 'result')));
+      setEnding((current) => (current !== 'none' ? current : (prevStatus.current && prevStatus.current !== 'finished' ? 'over' : 'winner')));
     }
     prevStatus.current = status;
   }, [status]);
 
   useEffect(() => {
     if (ending !== 'over') return undefined;
-    const timer = window.setTimeout(() => { setEnding('review'); setReviewMode('rounds'); setReviewRound(0); setPlaying(true); }, 3_200);
+    const timer = window.setTimeout(() => { setEnding('winner'); }, 3_200);
     return () => { window.clearTimeout(timer); };
   }, [ending]);
 
@@ -1002,26 +1291,49 @@ export const MaraudersStage: React.FC<{
     return () => { window.clearInterval(timer); };
   }, [playing, ending, reviewMode, lastRound]);
 
+  // MVP 장면 되풀이: 그 장면 턴의 바로 앞 위치 → 그 턴 위치 (발자국·체포는 아래 효과가 찍는다), 4초마다 다시
+  const mvpScene = ending === 'mvp' ? view?.finish?.mvp?.[mvpIndex] : undefined;
+  // 화면은 2.5초마다 새로 오므로 장면 턴과 기록 길이(숫자)만 보고 되풀이를 다시 시작한다
+  const mvpRound = mvpScene?.round ?? null;
+  const historyTurns = view?.history?.map((entry) => entry.turn).join(",") ?? "";
+  useEffect(() => {
+    if (mvpRound === null || !historyTurns) {
+      setMvpFrame(null);
+      return undefined;
+    }
+    const turns = historyTurns.split(",").map(Number);
+    const at = turns.indexOf(mvpRound);
+    const target = at < 0 ? turns.length - 1 : at;
+    const play = () => {
+      setMvpFrame(Math.max(target - 1, 0));
+      window.setTimeout(() => { setMvpFrame(target); }, 900);
+    };
+    play();
+    const timer = window.setInterval(play, 4_200);
+    return () => { window.clearInterval(timer); };
+  }, [mvpRound, historyTurns]);
+
   // 복기 중 라운드가 바뀌면 그 라운드의 이동을 발자국으로 찍는다 (체포는 사무실까지 끌려간다)
   useEffect(() => {
-    if (!view || ending !== 'review' || reviewMode !== 'rounds' || reviewRound <= 0) return undefined;
-    const entry = view.history?.[reviewRound];
-    const prev = view.history?.[reviewRound - 1];
+    const round = ending === 'review' && reviewMode === 'rounds' ? reviewRound : ending === 'mvp' ? mvpFrame : null;
+    if (!view || round === null || round <= 0) return undefined;
+    const entry = view.history?.[round];
+    const prev = view.history?.[round - 1];
     if (!entry || !prev) return undefined;
     const next: Stamp[] = [];
     Object.entries(entry.positions).forEach(([seat, room]) => {
       const before = prev.positions[seat];
       if (before === undefined || before === room) return;
       const player = view.players.find((each) => String(each.seat) === seat);
-      next.push(...stepsAlong(geo.center(before), geo.center(room), `r${reviewRound}-${seat}`, player?.team ?? 'student', 0.1));
+      next.push(...stepsAlong(geo.center(before), geo.center(room), `r${round}-${seat}`, player?.team ?? 'student', 0.1));
     });
     (entry.arrests ?? []).forEach((arrest) => {
-      next.push(...stepsAlong(geo.center(arrest.room), geo.center(view.map.office), `r${reviewRound}-a${arrest.seat}`, 'student', 0.9, 0.24));
+      next.push(...stepsAlong(geo.center(arrest.room), geo.center(view.map.office), `r${round}-a${arrest.seat}`, 'student', 0.9, 0.24));
     });
     setStamps(next);
     const timer = window.setTimeout(() => { setStamps([]); }, 3_400);
     return () => { window.clearTimeout(timer); };
-  }, [view, geo, ending, reviewMode, reviewRound]);
+  }, [view, geo, ending, reviewMode, reviewRound, mvpFrame]);
 
   const remaining = useRemaining(view);
 
@@ -1068,14 +1380,18 @@ export const MaraudersStage: React.FC<{
   const names = view.team === 'student' ? view.student_name : view.prefect_name;
   const total = 45;
 
-  const watchPending = view.role === 'watcher' && (view.items.ability ?? 0) > 0 && canAct;
+  // 능력(감시·정찰·추격)을 지금 쓸 수 있다: 남은 횟수 · 내 차례 · 이번 턴에 아직 안 씀
+  const abilityReady = view.team === 'prefect' && (view.items.ability ?? 0) > 0 && canAct && !view.planned?.ability;
 
   // 내 차례: 갈 수 있는 방(감시 고르기면 모든 방)만 남기고 나머지는 검은 오버레이로 덮는다
 
   const pct = (point: { x: number; y: number }) => ({ left: `${(point.x / geo.width) * 100}%`, top: `${(point.y / geo.height) * 100}%` });
   const dragged = new Set((view.last?.arrests ?? []).map((arrest) => arrest.seat));
   // 복기(라운드별)면 그 라운드가 끝났을 때의 자리, 경로만 보기면 토큰 없이 길만
-  const reviewEntry = ending === 'review' && reviewMode === 'rounds' ? view.history?.[reviewRound] : undefined;
+  const reviewEntry = ending === 'review' && reviewMode === 'rounds'
+    ? view.history?.[reviewRound]
+    : (ending === 'mvp' && mvpFrame !== null ? view.history?.[mvpFrame] : undefined);
+  const mvpSeats = new Set(ending === 'mvp' ? (mvpScene?.seats ?? []) : []);
   const shownTokens: MToken[] = reviewEntry
     ? view.players.map((player) => ({ seat: player.seat, room: reviewEntry.positions[String(player.seat)] ?? 0, team: player.team, status: reviewEntry.status_of?.[String(player.seat)] ?? null }))
     : (ending === 'review' ? [] : view.tokens);
@@ -1102,7 +1418,7 @@ export const MaraudersStage: React.FC<{
       </header>
 
       {/* 지도 (양피지) + 양 옆 팀 열 */}
-      <div className='mm-arena'>
+      <div className={ending === 'closing' ? 'mm-arena is-folding' : 'mm-arena'}>
         <TeamSide view={view} team='student' />
       <div className='mm-parchment' style={{ '--mm-k': Math.max(0.5, Math.min(1, 1000 / geo.width)) } as React.CSSProperties}>
         <MapLegend view={view} />
@@ -1113,6 +1429,14 @@ export const MaraudersStage: React.FC<{
         </ul>
         <div className={stairsShift ? 'mm-board is-shifting' : 'mm-board'} style={{ aspectRatio: `${geo.width} / ${geo.height}` }}>
           <MapSvg view={view} geo={geo} reachable={reachable} here={here} planned={planned} pickingWatch={pickingWatch} draw={intro === 'oath' || (ending === 'none' && view.turn <= 1)} fade={false} onPick={pick} />
+
+          {/* 감시 중(사감 팀만): 방 위에 눈이 깜빡이고 남은 턴 */}
+          {view.watch && (
+            <motion.div key={`watching-${view.watch.room}`} className='mm-watching' style={pct(geo.center(view.watch.room))} initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: 1, scale: 1 }}>
+              <motion.span animate={{ scaleY: [1, 1, 0.1, 1, 1] }} transition={{ duration: 2.6, repeat: Infinity, times: [0, 0.45, 0.5, 0.55, 1] }}><TIcon name='eye' size={22} /></motion.span>
+              <small>감시 중 · {Math.max(view.watch.until - view.turn + 1, 1)}턴</small>
+            </motion.div>
+          )}
 
           {/* 구역 공개(사감 팀): 대략적인 층/탑이 잉크로 번진다 */}
           {ending !== 'review' && view.clues.filter((clue) => clue.kind === 'zone' && clue.zone && clue.age <= 3).map((clue) => {
@@ -1158,7 +1482,7 @@ export const MaraudersStage: React.FC<{
             return (
               <motion.div
                 key={token.seat}
-                className={['mm-token', `mm-token--${token.team}`, token.status === 'jailed' && 'is-jailed', token.status === 'out' && 'is-out', token.seat === view.me && 'is-me'].filter(Boolean).join(' ')}
+                className={['mm-token', `mm-token--${token.team}`, token.status === 'jailed' && 'is-jailed', token.status === 'out' && 'is-out', token.seat === view.me && 'is-me', mvpSeats.has(token.seat) && 'is-mvp', ending === 'mvp' && !mvpSeats.has(token.seat) && 'is-dim'].filter(Boolean).join(' ')}
                 initial={false}
                 animate={{ left: pct(point).left, top: pct(point).top, opacity: secret ? [1, 0, 0, 1] : 1, rotate: arrested ? [0, -9, 9, -7, 7, 0] : 0 }}
                 transition={{ left: { duration: arrested ? 2.4 : 1.1, delay: arrested ? 0.8 : 0.2 }, top: { duration: arrested ? 2.4 : 1.1, delay: arrested ? 0.8 : 0.2 }, opacity: { duration: 1.4 }, rotate: { duration: 0.7 } }}
@@ -1167,7 +1491,7 @@ export const MaraudersStage: React.FC<{
                 <NameTag player={player} team={token.team} me={token.seat === view.me} label={token.status === 'jailed' ? <TIcon name='lock' size={14} /> : token.status === 'out' ? '탈락' : undefined} cloaked={Boolean(player?.cloaked)} />
                 {token.seat === view.me && selecting && intro === 'done' && (
                   <motion.span className='mm-token__ask' initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: [0, 4, 0] }} transition={{ y: { duration: 1.4, repeat: Infinity } }}>
-                    {pickingWatch ? '감시할 방을 고르세요!' : '갈 곳을 고르세요!'}
+                    {pickingWatch ? '감시할 방을 고르세요!' : (view.chase && (view.planned?.path?.length ?? 0) > 0 ? '한 칸 더!' : '갈 곳을 고르세요!')}
                   </motion.span>
                 )}
               </motion.div>
@@ -1183,7 +1507,7 @@ export const MaraudersStage: React.FC<{
             ))}
           </AnimatePresence>
 
-          {/* 목표 달성 · 투옥 · 탈출 효과 */}
+          {/* 목표 달성 · 투옥 · 탈출 · 투명 망토 · 감시 · 정찰 · 추격 효과 */}
           {bursts.map((burst) => (
             <motion.div key={burst.id} className={`mm-burst mm-burst--${burst.kind}`} style={pct({ x: burst.x, y: burst.y })} initial={{ opacity: 0, scale: 0.3 }} animate={{ opacity: [0, 1, 1, 0], scale: [0.3, 1.25, 1, 1.05] }} transition={{ delay: burst.delay, duration: 2.6, times: [0, 0.2, 0.8, 1] }}>
               <i aria-hidden />
@@ -1214,7 +1538,13 @@ export const MaraudersStage: React.FC<{
 
       {selecting && (
         <div className='mm-prompt'>
-          <span>{pickingWatch ? <FormattedMessage id='mm.pick_watch' defaultMessage='Pick a room to watch.' /> : <FormattedMessage id='mm.pick_here' defaultMessage='Choose where to go!' />}</span>
+          <span>
+            {pickingWatch
+              ? <FormattedMessage id='mm.pick_watch' defaultMessage='Pick a room to watch.' />
+              : (view.chase && (view.planned?.path?.length ?? 0) > 0
+                ? <FormattedMessage id='mm.pick_chase_more' defaultMessage='Chase: pick one more room!' />
+                : <FormattedMessage id='mm.pick_here' defaultMessage='Choose where to go!' />)}
+          </span>
         {isPlayer && view.team === 'student' && !jailed && !out && (
           <button type='button' className='mm-button' disabled={!canAct || busy || (view.items.cloak ?? 0) <= 0 || Boolean(view.items.cloaked)} onClick={() => { send(view.commands.cloak); }}>
             <FormattedMessage id='mm.cloak' defaultMessage='Invisibility cloak ({count})' values={{ count: view.items.cloak ?? 0 }} />
@@ -1224,7 +1554,7 @@ export const MaraudersStage: React.FC<{
           <button
             type='button'
             className='mm-button'
-            disabled={!canAct || busy || !watchPending || view.chase}
+            disabled={busy || !abilityReady}
             onClick={() => { if (view.role === 'watcher') setPickingWatch(true); else send(view.commands.ability); }}
           >
             {view.role === 'watcher' && <FormattedMessage id='mm.ability_watch' defaultMessage='Watch a room ({count})' values={{ count: view.items.ability ?? 0 }} />}
@@ -1270,30 +1600,23 @@ export const MaraudersStage: React.FC<{
             onRound={(round) => { setReviewRound(round); setPlaying(false); }}
             onPlay={() => { if (reviewRound >= lastRound) setReviewRound(0); setPlaying((value) => !value); }}
             onSeat={(seat) => { setRouteSeats((current) => { const list = current ?? view.players.filter((player) => player.team === 'student').map((player) => player.seat); return list.includes(seat) ? list.filter((each) => each !== seat) : [...list, seat]; }); }}
-            onResult={() => { setEnding('result'); setPlaying(false); }}
+            onResult={() => { setEnding('winner'); setPlaying(false); }}
           />
         )}
-        {ending === 'result' && view.finish && (
-          <motion.div key='result' className='mm-result' initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-            <h2>{view.winner === 'student' ? view.student_name : view.prefect_name} 팀 승리!</h2>
-            <ul>
-              {view.players.map((player) => {
-                const reward = view.finish?.rewards[String(player.seat)];
-                return (
-                  <li key={player.seat} className={player.team === view.winner ? 'is-win' : undefined}>
-                    <b>{player.name}</b>
-                    <span>{player.team === 'student' ? view.student_name : view.prefect_name}</span>
-                    {view.finish?.test ? <small><FormattedMessage id='mm.test' defaultMessage='Test play: no rewards' /></small> : reward && <small>{reward.points} pts{reward.money > 0 ? ` · ${reward.money} ${view.finish?.currency}` : ''}{reward.items.length > 0 ? ` · ${reward.items.join(', ')}` : ''}</small>}
-                  </li>
-                );
-              })}
-            </ul>
-            <div className='mm-result__buttons'>
-              <button type='button' className='mm-button mm-button--ghost' onClick={() => { setEnding('review'); setReviewMode('rounds'); setReviewRound(lastRound); setPlaying(false); }}><FormattedMessage id='mm.see_replay' defaultMessage='Watch again' /></button>
-              <button type='button' className='mm-button' onClick={() => { history.push('/system/group'); }}><FormattedMessage id='mm.leave' defaultMessage='Leave' /></button>
-            </div>
-          </motion.div>
+        {ending === 'winner' && view.finish && (
+          <WinnerScreen key='winner' view={view} onNext={() => { setMvpIndex(0); setEnding('mvp'); }} />
         )}
+        {ending === 'mvp' && view.finish && (
+          <MvpScreen
+            key='mvp'
+            view={view}
+            index={mvpIndex}
+            onIndex={setMvpIndex}
+            onReplay={() => { setEnding('review'); setReviewMode('rounds'); setReviewRound(0); setPlaying(true); }}
+            onClose={() => { setEnding('closing'); }}
+          />
+        )}
+        {ending === 'closing' && <Closing key='closing' />}
       </AnimatePresence>
     </div>,
     document.body,

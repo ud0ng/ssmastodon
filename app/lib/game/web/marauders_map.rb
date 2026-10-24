@@ -231,9 +231,13 @@ module Game
         state['max_turns'].to_i
       end
 
-      # 이 판에서 지금 행동해야 하는 자리들 (자유로운 학생 + 사감)
+      # 이 판에서 지금 행동해야 하는 자리들 (자유로운 학생 + 사감). 갈 방을 정해야 고른 것 (아이템·능력만 쓰면 아직)
       def pending_seats
-        acting_players.reject { |player| state['moves'].key?(player.seat.to_s) }.map(&:seat)
+        acting_players.reject { |player| chose_room?(player) }.map(&:seat)
+      end
+
+      def chose_room?(player)
+        !state.dig('moves', player.seat.to_s, 'room').nil?
       end
 
       def card_data
@@ -278,8 +282,10 @@ module Game
             items: items_for(player, team),
             planned: player && state.dig('moves', seat),
             my_turn: !full && acting?(player),
-            submitted: player.nil? || !acting?(player) || state['moves'].key?(seat),
-            waiting: acting_players.reject { |each| state['moves'].key?(each.seat.to_s) }.map(&:name),
+            submitted: player.nil? || !acting?(player) || chose_room?(player),
+            waiting: acting_players.reject { |each| chose_room?(each) }.map(&:name),
+            # 감시 중인 방 (사감 팀과 끝난 뒤에만): 지도에서 색이 바뀌고 눈이 깜빡인다
+            watch: (team != 'student' || full) && state['watch'] && state['watch']['until'].to_i >= session.turn ? state['watch'].slice('room', 'until', 'by') : nil,
             moves: !full && acting?(player) ? reachable(player) : [],
             chase: player && state.dig('moves', seat, 'chase') ? true : false
           )
@@ -367,11 +373,15 @@ module Game
       end
 
       # 이 사람이 이번 턴에 갈 수 있는 방 (제자리 포함)
+      # 고를 수 있는 방: 지금 방과 옆 방. 추격 중인 사감은 지금까지 고른 칸(path)의 끝에서 한 칸
       def reachable(player)
-        here = here_of(player)
-        steps = !student?(player) && state.dig('moves', player.seat.to_s, 'chase') ? config['chase_steps'].to_i.clamp(1, 3) : 1
-        list = steps == 1 ? adjacent(here, student: student?(player)) : L.within(links, here, steps)
-        ([here] + list).uniq
+        from = Array(state.dig('moves', player.seat.to_s, 'path')).last || here_of(player)
+        ([from] + adjacent(from, student: student?(player))).uniq
+      end
+
+      # 추격: 이번 턴에 고를 수 있는 칸 수 (능력을 안 썼으면 1)
+      def chase_steps(player)
+        !student?(player) && state.dig('moves', player.seat.to_s, 'chase') ? config['chase_steps'].to_i.clamp(1, 3) : 1
       end
 
       def cloaked?(seat, turn = session.turn)
@@ -390,6 +400,14 @@ module Game
 
         seat = player.seat.to_s
         plan = state['moves'][seat] || {}
+        path = Array(plan['path'])
+        # 추격 중이면 한 칸씩: 마지막 칸 전까지는 지나가는 칸으로 적고 다시 고르게 한다 (지금 칸을 누르면 거기서 멈춤)
+        if path.size < chase_steps(player) - 1 && room != (path.last || here_of(player))
+          state['moves'][seat] = plan.merge('path' => path + [room])
+          session.save!
+          return
+        end
+
         state['moves'][seat] = plan.merge('room' => room)
         session.save!
         resolve! if pending_seats.empty?
@@ -419,6 +437,11 @@ module Game
           state['watch'] = { 'room' => room, 'until' => session.turn + config['watch_turns'].to_i.clamp(1, 6) - 1, 'by' => player.seat }
           plan = { 'ability' => 'watch', 'target' => room }
         when 'scout'
+          # 지금 자리에서 N칸 안의 자유로운 학생 수 (바로 단서로 남아 화면에 뜬다)
+          range = config['scout_range'].to_i.clamp(1, 4)
+          around = L.within(links, here_of(player), range)
+          count = free_students.count { |student| around.include?(state['positions'][student.seat.to_s]) }
+          state['clues'] << { 'turn' => session.turn, 'kind' => 'scout', 'seat' => player.seat, 'room' => here_of(player), 'count' => count, 'range' => range }
           plan = { 'ability' => 'scout' }
         else
           plan = { 'ability' => 'chase', 'chase' => true }
@@ -445,6 +468,7 @@ module Game
           secret = student?(player) && from[seat] != room && state['secret'].any? { |pair| pair.sort == [from[seat], room].sort }
           last['moves'][seat] = { 'from' => from[seat], 'to' => room, 'secret' => secret }
           last['secret'] << player.seat if secret
+          bump!('secret_by', seat) if secret
         end
         moved = free_students
 
@@ -454,6 +478,7 @@ module Game
           next unless state['targets'].include?(room) && state['done'].exclude?(room)
 
           state['done'] << room
+          bump!('goals_by', player.seat.to_s)
           last['goals'] = (last['goals'] || []) << room # 이번 턴에 이룬 목표 (화면 효과)
         end
 
@@ -500,18 +525,12 @@ module Game
             last['rescued'] << player.seat
           end
           rescuers.each { |player| footprint!(player, office, turn, log) }
+          rescuers.each { |player| bump!('rescues_by', player.seat.to_s, jailed.size) }
           note(log, render(config['msg_rescue'], player: rescuers.first, players: jailed.map(&:name).join(', ')), 'rescue', room: office)
         end
 
-        # 6) 정찰자: 주변 N칸 안 학생 수
-        prefects.each do |prefect|
-          next unless plans.dig(prefect.seat.to_s, 'ability') == 'scout'
+        # 6) 정찰자는 능력을 쓰는 순간 알려 준다 (use_ability!)
 
-          here = state['positions'][prefect.seat.to_s]
-          range = L.within(links, here, config['scout_range'].to_i.clamp(1, 4))
-          count = free_students.count { |student| range.include?(state['positions'][student.seat.to_s]) }
-          state['clues'] << { 'turn' => turn, 'kind' => 'scout', 'seat' => prefect.seat, 'room' => here, 'count' => count, 'range' => config['scout_range'].to_i.clamp(1, 4) }
-        end
 
         # 7) 구역 공개: 몇 턴마다 무작위 학생 2명 (학생 팀이 1~2명이면 전원)
         every = config['hint_every'].to_i.clamp(2, 6)
@@ -547,6 +566,13 @@ module Game
         end
       end
 
+      # MVP 용 사람별 횟수 (state[key][자리] += by)와 마지막으로 한 턴 (state["#{key}_turn"], 다시보기 장면)
+      def bump!(key, seat, by = 1)
+        state[key] ||= {}
+        state[key][seat] = state[key][seat].to_i + by
+        (state["#{key}_turn"] ||= {})[seat] = session.turn
+      end
+
       def footprint!(player, room, turn, log)
         state['clues'] << { 'turn' => turn, 'kind' => 'footprint', 'seat' => player.seat, 'room' => room }
         note(log, render(config['msg_footprint'], room: room_name(room), player: player), 'footprint', room: room)
@@ -563,6 +589,7 @@ module Game
         names = { student: 'msg_win_student', prefect: 'msg_win_prefect', limit: 'msg_win_limit' }
         ending = render(config[names.fetch(who)], student: config['student_name'], prefect: config['prefect_name'], turns: session.turn)
         state['finished_turn'] = session.turn
+        state['mvp'] = Game::MaraudersScenes.call(state, players, students.map { |player| player.seat.to_s })
         session.save!
         finish!(winners: winners, message: "#{text}\n\n#{ending}")
       end
@@ -600,7 +627,7 @@ module Game
           players: players.map do |other|
             { seat: other.seat, name: other.name, account_id: other.account_id, team: student?(other) ? 'student' : 'prefect',
               status: student?(other) ? status_of(other) : nil, rescued: state.dig('rescued_count', other.seat.to_s).to_i,
-              chosen: acting?(other) && state['moves'].key?(other.seat.to_s),
+              chosen: acting?(other) && chose_room?(other),
               # 투명 망토를 쓰고 있다 (학생 팀과 끝난 뒤에만 보인다)
               cloaked: student?(other) && (!prefect_view || full) && cloaked?(other.seat),
               # 사감의 능력(감시·정찰·추격) 남은 횟수: 사감 팀과 구경하는 사람에게만
@@ -619,6 +646,8 @@ module Game
       def finish_view
         {
           currency: common['currency_name'], test: session.test?,
+          # 오늘의 MVP 장면 (예전 판은 그때 계산)
+          mvp: state['mvp'] || Game::MaraudersScenes.call(state, players, students.map { |player| player.seat.to_s }),
           rewards: players.to_h do |player|
             outcome = player.result.to_s
             [player.seat, session.test? || outcome.blank? ? nil : {

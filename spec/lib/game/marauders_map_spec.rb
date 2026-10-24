@@ -345,9 +345,30 @@ RSpec.describe Game::Web::MaraudersMap do
       move!(session, chaser.to_i, two_away.first)
       expect(session.state['moves']).to eq({}) # 능력 없이는 2칸을 못 간다
 
+      # 추격: 한 칸 고르면 거기서 한 칸 더 고른다
       Game::WebCommand.play(session, session.players.find_by!(seat: chaser.to_i).account, '능력')
-      move!(session, chaser.to_i, two_away.first)
-      expect(session.state['moves'][chaser]).to include('room' => two_away.first, 'chase' => true)
+      target = two_away.first
+      via = (layout.neighbors(links(session), here) & layout.neighbors(links(session), target)).first
+      move!(session, chaser.to_i, via)
+      expect(session.state['moves'][chaser]).to include('path' => [via], 'chase' => true)
+      expect(session.state['moves'][chaser]).to_not have_key('room')
+      move!(session, chaser.to_i, target)
+      expect(session.state['moves'][chaser]).to include('room' => target, 'path' => [via])
+
+      # 정찰: 쓰는 즉시 주변 학생 수가 단서로 남는다
+      Game::WebCommand.play(session.reload, session.players.find_by!(seat: scout.to_i).account, '능력')
+      expect(session.reload.state['clues'].last).to include('kind' => 'scout', 'seat' => scout.to_i, 'turn' => session.turn)
+    end
+
+    it 'keeps the turn open after an item or ability until the room is picked' do
+      session = start!(3)
+      student = session.players.find { |player| kind_for(session).send(:student?, player) }
+      Game::WebCommand.play(session.reload, student.account, '투명망토')
+
+      session.reload
+      expect(session.state['moves'][student.seat.to_s]).to include('cloak' => true)
+      expect(kind_for(session).pending_seats).to include(student.seat)
+      expect(kind_for(session).view_for(student.reload)).to include(submitted: false)
     end
   end
 

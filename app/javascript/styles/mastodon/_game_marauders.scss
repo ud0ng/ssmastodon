@@ -1832,3 +1832,490 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
     background: linear-gradient(180deg, #fff3d8, #ead7a6);
   }
 }
+
+// 이동 안내(이동할 구역 선택)는 자리를 차지하지 않고 지도 위(채팅창 바로 위)에 떠 있는다.
+// 흐름 안에 있으면 안내가 뜰 때마다 지도(.mm-arena)가 줄었다가 고르면 다시 커졌다.
+.mm-prompt {
+  position: absolute;
+  top: auto;
+  bottom: 192px;
+  left: 50%;
+  margin: 0;
+  translate: -50% 0;
+}
+
+// 스킬·아이템 효과: 투명 망토(안개처럼 흐려지는 은빛) · 감시(눈빛 노랑) · 정찰(퍼지는 음파 파랑) · 추격(붉은 바람)
+.mm-burst {
+  &--cloak {
+    i {
+      box-shadow: 0 0 0 4px #cfd8ea, 0 0 40px 16px rgb(207 216 234 / 70%);
+      animation: mm-burst-ring 1.4s ease-out 2, mm-cloak-fade 2.6s ease-in forwards;
+    }
+
+    strong { background: rgb(70 82 110 / 90%); }
+  }
+
+  &--watch {
+    i { box-shadow: 0 0 0 4px #f2c94c, 0 0 0 14px rgb(242 201 76 / 25%), 0 0 30px 10px rgb(242 201 76 / 55%); }
+
+    strong { background: #8a6d12; }
+  }
+
+  &--scout {
+    i {
+      box-shadow: 0 0 0 3px #6fb7ff, 0 0 24px 6px rgb(111 183 255 / 55%);
+      animation: mm-burst-ring 0.9s ease-out 3;
+    }
+
+    strong { background: #1f4f86; }
+  }
+
+  &--chase {
+    i { box-shadow: 0 0 0 4px #ff7a59, 0 0 30px 10px rgb(255 122 89 / 60%); }
+
+    strong {
+      background: #a13a1f;
+      animation: mm-chase-dash 0.6s ease-out;
+    }
+  }
+}
+
+@keyframes mm-cloak-fade {
+  0%, 40% { filter: none; }
+  100% { filter: blur(6px); opacity: 0; }
+}
+
+@keyframes mm-chase-dash {
+  from { transform: translateX(-24px) skewX(-12deg); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+// 역할 안내(학생): 목적지 — 지도와 같은 목표 장소 모양(점선 테두리 + 빗금) 옆에 방 이름
+.mm-modal__goals {
+  margin: 8px 0 4px;
+
+  b {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 700;
+  }
+}
+
+.mm-modal__goal {
+  display: block;
+  width: 96px;
+  height: auto;
+}
+
+// 비밀 통로 문(보라 별): 방 위에 그리고, 흰 테두리를 둘러 양피지·방 위에서도 잘 보이게
+.mm-doors {
+  pointer-events: none;
+}
+
+.mm-door {
+  fill: #7a4dff;
+  font-size: 34px;
+  font-weight: 900;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-linejoin: round;
+  stroke-width: 4px;
+  filter: drop-shadow(0 0 6px rgb(150 120 255 / 95%));
+}
+
+// 비밀 통로 효과 (학생 팀): 보라 소용돌이가 돌며 퍼진다
+.mm-burst--secret {
+  i {
+    border: 4px dashed #b48bff;
+    box-shadow: 0 0 30px 10px rgb(150 110 255 / 60%);
+    animation: mm-burst-ring 1.4s ease-out 2, mm-secret-spin 1.4s linear 2;
+  }
+
+  strong { background: #5b33c7; }
+}
+
+@keyframes mm-secret-spin {
+  to { rotate: 360deg; }
+}
+
+// ── 끝: 승리 화면 (이긴 팀 아바타·이름 + 얻은 것 배지) ──
+.mm-final {
+  position: absolute;
+  inset: 0;
+  z-index: 44;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(ellipse 60% 45% at 50% 38%, rgb(255 214 120 / 22%), transparent 70%),
+    rgb(8 5 2 / 90%);
+
+  h2 {
+    margin: 0;
+    color: #f6e3a1;
+    font-family: $mm-title;
+    font-size: clamp(34px, 4.4vw, 56px);
+    text-shadow: 0 4px 24px rgb(255 190 80 / 45%);
+  }
+
+  &__eyebrow {
+    color: rgb(246 227 161 / 70%);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+  }
+
+  &__winners {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px 28px;
+    justify-content: center;
+    max-width: min(1000px, 100%);
+    margin-top: 10px;
+  }
+
+  &__winner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    width: 150px;
+  }
+
+  &__crown {
+    position: absolute;
+    top: -26px;
+    font-size: 28px;
+    filter: drop-shadow(0 2px 6px rgb(0 0 0 / 50%));
+  }
+
+  &__avatar {
+    display: grid;
+    place-items: center;
+    width: 96px;
+    height: 96px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: rgb(255 241 205 / 12%);
+    box-shadow: 0 0 0 4px #e8c35a, 0 0 28px 6px rgb(232 195 90 / 45%);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__winner--student &__avatar { box-shadow: 0 0 0 4px #6d97ff, 0 0 28px 6px rgb(109 151 255 / 45%); }
+
+  &__winner--prefect &__avatar { box-shadow: 0 0 0 4px #e0533e, 0 0 28px 6px rgb(224 83 62 / 45%); }
+
+  &__name {
+    color: #fff3d2;
+    font-size: 17px;
+    font-weight: 800;
+    text-align: center;
+  }
+
+  &__losers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    justify-content: center;
+    max-width: min(900px, 100%);
+    margin: 10px 0 0;
+    padding: 12px 0 0;
+    border-top: 1px solid rgb(255 241 205 / 18%);
+    list-style: none;
+    opacity: 0.75;
+
+    li {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      color: #f3e7c8;
+      font-size: 13px;
+    }
+  }
+
+  &__mini {
+    width: 26px;
+    height: 26px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: rgb(255 241 205 / 15%);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__next {
+    margin-top: 12px;
+    padding: 8px 34px;
+    font-size: 16px;
+  }
+}
+
+// 얻은 것 배지: 점수 · 재화 · 아이템
+.mm-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+
+.mm-badge {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+
+  &--points { background: #e8c35a; color: #3a2508; }
+
+  &--money { background: rgb(255 241 205 / 16%); color: #f6e3a1; box-shadow: inset 0 0 0 1px rgb(246 227 161 / 45%); }
+
+  &--item { background: rgb(150 110 255 / 22%); color: #e0d4ff; box-shadow: inset 0 0 0 1px rgb(180 150 255 / 50%); }
+
+  &--dim { background: rgb(255 241 205 / 10%); color: rgb(243 231 200 / 70%); }
+}
+
+// ── 오늘의 MVP: 위쪽 카드, 지도에서는 그 장면 턴이 되풀이된다 ──
+.mm-mvp {
+  position: absolute;
+  top: 58px;
+  left: 50%;
+  z-index: 44;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  width: min(560px, calc(100% - 40px));
+  padding: 14px 18px 16px;
+  border-radius: 14px;
+  background: rgb(14 9 4 / 88%);
+  box-shadow: 0 0 0 1px rgb(255 232 170 / 28%), 0 10px 40px rgb(0 0 0 / 55%);
+  translate: -50% 0;
+
+  h2 {
+    margin: 0;
+    color: #f6e3a1;
+    font-family: $mm-title;
+    font-size: 26px;
+  }
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    text-align: center;
+
+    small {
+      color: rgb(246 227 161 / 65%);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    strong {
+      color: #ffe08a;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    p {
+      margin: 0;
+      color: #f3e7c8;
+      font-size: 15px;
+    }
+  }
+
+  &__people {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    justify-content: center;
+
+    span {
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+      color: #fff3d2;
+      font-weight: 800;
+    }
+
+    img {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 0 0 2px #e8c35a;
+    }
+  }
+
+  &__chips {
+    display: flex;
+    gap: 6px;
+
+    button {
+      width: 28px;
+      height: 28px;
+      border: 1px solid rgb(255 241 205 / 35%);
+      border-radius: 50%;
+      background: transparent;
+      color: #f3e7c8;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+
+      &.is-on {
+        border-color: transparent;
+        background: #e8c35a;
+        color: #3a2508;
+      }
+    }
+  }
+
+  &__none {
+    margin: 0;
+    color: #f3e7c8;
+  }
+
+  .mm-result__buttons {
+    margin-top: 4px;
+  }
+}
+
+// MVP 되풀이 중: 장면 주인공은 빛나고, 나머지는 흐리게
+.mm-token.is-mvp {
+  z-index: 6;
+  filter: drop-shadow(0 0 10px rgb(255 214 110 / 95%));
+}
+
+.mm-token.is-dim {
+  opacity: 0.35 !important;
+}
+
+// [종료]: 지도가 반으로 접히며 사라진다 → '장난 끝' (맹세 오프닝과 같은 양피지 화면)
+.mm-arena.is-folding {
+  perspective: 1400px;
+
+  .mm-parchment {
+    animation: mm-fold 1.6s cubic-bezier(0.6, 0, 0.4, 1) forwards;
+    transform-origin: 50% 0;
+  }
+}
+
+@keyframes mm-fold {
+  0% { transform: none; opacity: 1; }
+  45% { transform: rotateX(70deg) scaleY(0.6); opacity: 0.9; }
+  100% { transform: rotateX(90deg) scaleY(0.02); opacity: 0; }
+}
+
+.mm-oath--closing p {
+  font-size: clamp(34px, 4.6vw, 64px);
+}
+
+// 승리 화면은 지도 위 이름표보다 위에, 왕관이 제목에 닿지 않게 간격
+.mm-final {
+  z-index: 60;
+  gap: 10px;
+
+  &__winners {
+    margin-top: 34px;
+  }
+}
+
+.mm-final {
+  background:
+    radial-gradient(ellipse 60% 45% at 50% 38%, rgb(255 214 120 / 18%), transparent 70%),
+    rgb(8 5 2 / 96%);
+
+  h2 {
+    line-height: 1.25;
+  }
+
+  &__eyebrow {
+    margin-bottom: 2px;
+  }
+}
+
+// 감시 중인 방 (사감 팀에게만): 방 색이 노랗게 바뀌고 테두리가 맥동, 위에 깜빡이는 눈
+.mm-room.is-watched .mm-room__shape {
+  fill: rgb(242 201 76 / 55%);
+  stroke: #b8860b;
+  stroke-dasharray: none;
+  stroke-width: 5;
+  animation: mm-watch-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes mm-watch-pulse {
+  0%, 100% { filter: drop-shadow(0 0 2px rgb(242 201 76 / 60%)); }
+  50% { filter: drop-shadow(0 0 12px rgb(242 201 76 / 100%)); }
+}
+
+.mm-watching {
+  position: absolute;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  align-items: center;
+  pointer-events: none;
+  translate: -50% -110%;
+
+  span {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #f2c94c;
+    box-shadow: 0 0 0 2px #fff, 0 0 18px 4px rgb(242 201 76 / 70%);
+    color: #3a2508;
+  }
+
+  small {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: rgb(58 37 8 / 85%);
+    color: #ffe08a;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+}
+
+// 추격: 이번 턴에 지나가는 칸 (한 칸 더 고르는 중)
+.mm-room.is-via .mm-room__shape {
+  fill: rgb(255 122 89 / 35%);
+  stroke: #c0392b;
+  stroke-dasharray: 7 5;
+  stroke-width: 5;
+}
