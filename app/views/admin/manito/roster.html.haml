@@ -5,7 +5,8 @@
   = render 'admin/manito/heading'
 
 -# 캐릭터마다 지금 가지고 있는 마니또 보상 (들켜서 빼앗긴 것은 빼고, 맞혀서 빼앗은 것은 더한다). 줄을 누르면 상대별 단어
-= render layout: 'admin/ui/section', locals: { title: t('admin.manito.tabs.roster'), hint: t('admin.manito.roster_hint') } do
+- assign = button_tag safe_join([material_symbol('refresh'), t('admin.manito.assign')]), type: :button, class: 'button', data: { modal_open: 'manito-assign' }
+= render layout: 'admin/ui/section', locals: { title: t('admin.manito.tabs.roster'), hint: t('admin.manito.roster_hint'), actions: assign } do
   .bot-sheet-table.game-table.game-table--fit
     %table.table
       %thead
@@ -25,3 +26,11 @@
         - if @characters.empty?
           %tr
             %td.bot-sheet-table__text{ colspan: 5 }= game_t('admin.games.manage.roster.empty')
+
+-# 단어 무작위 나눠 주기: 캐릭터마다 다른 모든 캐릭터에게 (한 캐릭터 안에서는 되도록 겹치지 않게)
+= render layout: 'admin/ui/modal', locals: { id: 'manito-assign', title: t('admin.manito.assign') } do
+  = form_tag admin_rp_manito_assign_path, method: :post, class: 'simple_form' do
+    = render 'admin/ui/field', label: t('admin.manito.assign_pool'), name: 'pool', type: :textarea, wide: true, required: true, hint: t('admin.manito.assign_pool_hint'), html: { rows: 8 }
+    = render 'admin/ui/field', label: t('admin.manito.assign_count'), name: 'count', value: 1, type: :number, html: { min: 1, max: 10 }
+    = render 'admin/ui/checks', items: [[t('admin.manito.assign_replace'), 'replace', false]]
+    = render 'admin/ui/modal_actions', submit: t('admin.manito.assign_submit')

@@ -135,6 +135,7 @@ namespace :admin do
     get 'manito', to: 'manito#settings', as: :manito
     patch 'manito', to: 'manito#update'
     get 'manito/roster', to: 'manito#roster', as: :manito_roster
+    post 'manito/assign', to: 'manito#assign', as: :manito_assign
     get 'manito/roster/:id', to: 'manito#words', as: :manito_words
     patch 'manito/roster/:id', to: 'manito#update_words'
     get 'manito/records', to: 'manito#records', as: :manito_records

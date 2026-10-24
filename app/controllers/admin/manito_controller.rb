@@ -34,6 +34,17 @@ module Admin
       @item_images = GameShopItem.by_key
     end
 
+    # 단어 무작위 나눠 주기: 단어 목록(줄마다 하나)에서 짝마다 count 개씩
+    def assign
+      authorize :settings, :update?
+
+      pool = params[:pool].to_s.split(/[\r\n]+/).map(&:strip).compact_blank
+      return redirect_to(admin_rp_manito_roster_path(modal: 'manito-assign'), alert: t('admin.manito.assign_empty')) if pool.empty?
+
+      changed = Game::Manito.assign_random!(pool, count: params[:count].presence || 1, replace: params[:replace] == '1')
+      redirect_to admin_rp_manito_roster_path, notice: t('admin.manito.assigned', count: changed)
+    end
+
     def words
       authorize :settings, :show?
 

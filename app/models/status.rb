@@ -417,6 +417,7 @@ class Status < ApplicationRecord
     discard_time = Time.current
     Status.unscoped.where(reblog_of_id: id, deleted_at: [nil, deleted_at]).in_batches.update_all(deleted_at: discard_time) unless reblog?
     update_attribute(:deleted_at, discard_time)
+    Game::ManitoWorker.perform_async(id, 'revert') if !reblog? && Game::Manito.word_toot?(id) # 마니또 단어 툿이면 사용을 되돌린다 (redis, DB 를 찾지 않음)
 
     rewind_dm_room! if direct_visibility?
   end

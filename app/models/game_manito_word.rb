@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 # 마니또 단어: 캐릭터(account, A)가 상대(target_account, B)에게 몰래 말해야 하는 단어들 (Game::Manito).
-# uses 는 B를 태그한 툿에 단어를 넣은 횟수(툿 하나에 1회), caught_at 은 B에게 들킨 때 (그 뒤로 B에게는 보상이 없다)
+# uses 는 B를 태그한 툿에 단어를 넣은 횟수(툿 하나에 1회), last_status_id 는 그 마지막 툿(들킴 알림을 거기에 답멘으로),
+# caught_at 은 B에게 들킨 때 (그 뒤로 B에게는 보상이 없다)
 class GameManitoWord < ApplicationRecord
   belongs_to :account
   belongs_to :target_account, class_name: 'Account'

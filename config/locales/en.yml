@@ -27,7 +27,7 @@ en:
     rp_menu: RP
     manito:
       title: Manito
-      hint: Give each character secret words to say to each other character. Saying the word in a post tagging that character earns a reward, reported secretly by the shop bot. If that character guesses it with [manito/word/character], the rewards earned from them are taken and no more are given for them.
+      hint: Give each character secret words to say to each other character. Saying the word in a post tagging that character earns a reward; the shop bot replies to that post tagging both (a hint for the other). If that character guesses it with [manito/word/character], the rewards earned from them are taken and no more are given for them.
       tabs:
         settings: Settings
         roster: Roster
@@ -38,6 +38,14 @@ en:
         manito_rewards: Rewards (per use)
         manito_commands: Commands
         manito_messages: Messages
+      assign: Assign words at random
+      assign_pool: Word list
+      assign_pool_hint: One word per line. Every character gets words from this list for every other character (kept different within a character where possible)
+      assign_count: Words per pair
+      assign_replace: Also replace pairs that already have words
+      assign_submit: Assign
+      assign_empty: The word list is empty.
+      assigned: 'Assigned words to %{count} pairs.'
       roster_hint: Manito rewards held now. Click a row to set the words per counterpart.
       words_title: "%{name}'s manito words"
       words_section: Words per counterpart
