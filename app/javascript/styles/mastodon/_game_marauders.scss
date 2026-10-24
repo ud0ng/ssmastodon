@@ -1098,6 +1098,7 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
 // 안내창 버튼은 가운데
 .mm-modal__actions {
   display: flex;
+  gap: 12px;
   justify-content: center;
   margin-top: 14px;
 }
@@ -1823,7 +1824,11 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
 
 // 역할 안내의 [이전]: 양피지 위라 어두운 글자로
 .mm-modal__actions .mm-button--ghost {
-  border-color: rgb(90 58 26 / 50%);
-  background: transparent;
+  background: linear-gradient(180deg, #f6ead0, #e3cf9c);
+  box-shadow: 0 0 0 1.5px #8a5a24, 0 4px 12px rgb(0 0 0 / 25%);
   color: #5a3a1a;
+
+  &:hover {
+    background: linear-gradient(180deg, #fff3d8, #ead7a6);
+  }
 }
