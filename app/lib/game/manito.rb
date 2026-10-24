@@ -22,9 +22,11 @@ module Game
       F.new(key: 'manito_enabled', type: :boolean, default: false, group: 'manito_unlock', label: '마니또 해금', hint: '끄면 단어를 써도 세지 않고 추측 명령어도 받지 않습니다'),
       F.new(key: 'msg_manito_start', type: :text, group: 'manito_unlock', label: '시작 안내 (DM 발송 버튼: 상점봇이 캐릭터마다 DM)',
             default: "마니또가 시작되었습니다.\n%{player}님은 아래의 단어를 상대 캐릭터에게 해줄 때마다 보상을 받습니다.\n%{words}"),
-      F.new(key: 'manito_daily_limit', type: :integer, default: 5, group: 'manito_limits', label: '하루 최대 보상 획득 횟수', hint: '한 캐릭터가 하루(00시 기준)에 보상을 받는 횟수. 넘으면 횟수만 셉니다 (0 = 제한 없음)'),
+      F.new(key: 'manito_daily_limit', type: :integer, default: 5, group: 'manito_limits', label: '하루 최대 보상 획득 횟수 (상대 1명당)', hint: '한 캐릭터가 상대 한 명에게서 하루(00시 기준)에 보상을 받는 횟수. 넘으면 횟수만 셉니다 (0 = 제한 없음)'),
+      F.new(key: 'manito_daily_total_limit', type: :integer, default: 0, group: 'manito_limits', label: '하루 최대 보상 획득 횟수 (전체)', hint: '한 캐릭터가 모든 상대에게서 하루에 보상을 받는 횟수의 합. 넘으면 횟수만 셉니다 (0 = 제한 없음)'),
       F.new(key: 'manito_include_dm', type: :boolean, default: false, group: 'manito_limits', label: 'DM 포함', hint: '켜면 상대에게 보낸 DM 에 쓴 단어도 셉니다'),
-      F.new(key: 'manito_guess_limit', type: :integer, default: 3, group: 'manito_limits', label: '하루 최대 추측 횟수', hint: '한 캐릭터가 하루에 [마니또]로 추측할 수 있는 횟수 (0 = 제한 없음)'),
+      F.new(key: 'manito_guess_limit', type: :integer, default: 3, group: 'manito_limits', label: '하루 최대 추측 횟수 (상대 1명당)', hint: '한 캐릭터가 상대 한 명을 두고 하루에 [마니또]로 추측할 수 있는 횟수 (0 = 제한 없음)'),
+      F.new(key: 'manito_guess_total_limit', type: :integer, default: 0, group: 'manito_limits', label: '하루 최대 추측 횟수 (전체)', hint: '한 캐릭터가 하루에 [마니또]로 추측할 수 있는 횟수의 합 (0 = 제한 없음)'),
       F.new(key: 'manito_wrong_penalty', type: :integer, default: 0, group: 'manito_limits', label: '오답 벌금 (재화)', hint: '틀릴 때마다 빼는 재화. 모자라면 추측할 수 없습니다 (0 = 없음)'),
       F.new(key: 'manito_wrong_points', type: :integer, default: 0, group: 'manito_limits', label: '오답 벌금 (소속 점수)', hint: '틀릴 때마다 추측한 캐릭터의 소속에서 빼는 점수 (0 = 없음)'),
       F.new(key: 'manito_reward_points', type: :integer, default: 0, group: 'manito_rewards', label: '소속 점수', hint: '단어 1회 사용마다 말한 캐릭터의 소속에 주는 점수'),
@@ -40,7 +42,8 @@ module Game
             default: "정답입니다. %{target}의 보상을 탈취합니다.\n보상 내역 : %{rewards}"),
       F.new(key: 'msg_manito_caught', type: :text, group: 'manito_messages', label: '들킴 (상점봇이 들킨 사람의 마지막 단어 툿에 두 사람을 태그한 답멘)',
             default: "%{target}에게 단어(%{word})를 들켰습니다. 보상을 빼앗겼습니다 : %{rewards}\n이제 %{target}에게서는 보상을 받을 수 없습니다."),
-      F.new(key: 'msg_manito_guess_limit', type: :text, group: 'manito_messages', label: '추측 횟수 초과', default: '오늘은 더 추측할 수 없습니다. (하루 %{limit}번)'),
+      F.new(key: 'msg_manito_guess_limit', type: :text, group: 'manito_messages', label: '추측 횟수 초과', default: '오늘은 %{target}{을를} 더 추측할 수 없습니다. (하루 %{limit}번)'),
+      F.new(key: 'msg_manito_guess_total_limit', type: :text, group: 'manito_messages', label: '추측 횟수 초과 (전체)', default: '오늘은 더 추측할 수 없습니다. (하루 전체 %{limit}번)'),
       F.new(key: 'msg_manito_no_money', type: :text, group: 'manito_messages', label: '벌금 부족', default: '추측하려면 %{penalty}{이가} 필요합니다.'),
     ].freeze
 
@@ -90,8 +93,12 @@ module Game
         return if pair.caught? || GameManitoLog.exists?(kind: 'use', status_id: status.id, other_account_id: pair.target_account_id)
 
         pair.update!(uses: pair.uses + 1, last_status_id: status.id)
-        limit = config['manito_daily_limit'].to_i
-        rewarded = limit.zero? || GameManitoLog.uses.where(account_id: pair.account_id, rewarded: true, created_at: today_range).count < limit
+        settings = config
+        rewarded_today = GameManitoLog.uses.where(account_id: pair.account_id, rewarded: true, created_at: today_range)
+        limit = settings['manito_daily_limit'].to_i
+        total = settings['manito_daily_total_limit'].to_i
+        rewarded = (limit.zero? || rewarded_today.where(other_account_id: pair.target_account_id).count < limit) &&
+                   (total.zero? || rewarded_today.count < total) # 상대 1명당, 그리고 전체
         reward = rewarded ? give_reward!(pair) : { money: 0, items: [], points: 0 }
         log = GameManitoLog.create!(kind: 'use', account_id: pair.account_id, other_account_id: pair.target_account_id, word: word, status_id: status.id,
                                     rewarded: rewarded, money: reward[:money], items: reward[:items], points: reward[:points])
@@ -135,10 +142,13 @@ module Game
       raise Error, I18n.t('admin.manito.errors.self', default: '자기 자신은 고를 수 없습니다.') if accused.id == guesser.id
 
       settings = config
+      guessed_today = GameManitoLog.guesses.where(account_id: guesser.id, created_at: today_range)
       limit = settings['manito_guess_limit'].to_i
-      if limit.positive? && GameManitoLog.guesses.where(account_id: guesser.id, created_at: today_range).count >= limit
-        return Game::Text.render(settings['msg_manito_guess_limit'], player: guesser, limit: limit)
+      if limit.positive? && guessed_today.where(other_account_id: accused.id).count >= limit
+        return Game::Text.render(settings['msg_manito_guess_limit'], player: guesser, target: accused, limit: limit)
       end
+      total = settings['manito_guess_total_limit'].to_i
+      return Game::Text.render(settings['msg_manito_guess_total_limit'], player: guesser, limit: total) if total.positive? && guessed_today.count >= total
 
       pair = GameManitoWord.find_by(account_id: accused.id, target_account_id: guesser.id)
       return correct!(pair, guesser, word) if pair && !pair.caught? && pair.word?(word)

@@ -43,12 +43,15 @@ RSpec.describe Game::Manito do
     expect(notes_to(b)).to eq notes # 상대도 태그한다 (힌트)
   end
 
-  it 'keeps counting past the daily reward limit without rewarding' do
+  it 'keeps counting past the daily reward limit per counterpart without rewarding, while other counterparts still pay' do
     3.times { described_class.record!(toot('@draco 하지마')) }
 
     expect(GameManitoWord.find_by!(account: a, target_account: b).uses).to eq 3
     expect(GameCharacter.for(a).money).to eq 6 # 하루 2번까지만
     expect(notes_to(a).last.text).to include('모두 받았습니다', '쌓인 보상 : 6')
+
+    described_class.record!(toot('@luna 달빛', to: [c])) # 상대마다 따로 센다
+    expect(GameCharacter.for(a).money).to eq 9
   end
 
   it 'lets the target steal the rewards earned from them with a right guess, and stops only that pair' do
@@ -98,8 +101,9 @@ RSpec.describe Game::Manito do
 
     GameCharacter.for(b).update!(money: 5)
     described_class.guess!(b, '아무말', a)
-    expect(described_class.guess!(b, '하지마', a)).to include('더 추측할 수 없습니다') # 하루 2번
-    expect(GameManitoLog.guesses.where(account: b).pluck(:kind)).to eq %w(wrong wrong)
+    expect(described_class.guess!(b, '하지마', a)).to include('harry', '더 추측할 수 없습니다') # 해리를 두고 하루 2번
+    expect(described_class.guess!(b, '아무말', c)).to include('오답') # 다른 상대는 따로 센다
+    expect(GameManitoLog.guesses.where(account: b).pluck(:kind)).to eq %w(wrong wrong wrong)
   end
 
   it 'takes back the use and its reward when the toot is deleted' do
@@ -145,6 +149,16 @@ RSpec.describe Game::Manito do
     dm = Status.where(account: shop, visibility: :direct).sole
     expect(dm.mentions.map(&:account_id)).to eq [a.id]
     expect(dm.text).to include('마니또가 시작되었습니다', '해리님은', '드레이코 : 하지마', 'luna : 달빛')
+  end
+
+  it 'also caps rewards and guesses a day across all counterparts' do
+    Game::Config.merge!('manito', 'manito_daily_total_limit' => '1', 'manito_guess_total_limit' => '1', 'manito_wrong_penalty' => '0')
+    described_class.record!(toot('@draco 하지마'))
+    described_class.record!(toot('@luna 달빛', to: [c]))
+    expect(GameCharacter.for(a).money).to eq 3 # 전체 하루 1번
+
+    described_class.guess!(b, '아무말', a)
+    expect(described_class.guess!(b, '아무말', c)).to include('하루 전체 1번')
   end
 
   it 'does nothing while switched off' do
