@@ -17,6 +17,9 @@
     - messages = fields.any? { |field| field.type == :text }
     - changed = capture do
       %span.game-group__changed{ hidden: true }
+      - if section == 'manito_unlock'
+        -# 시작 안내 DM 발송 (아래 따로 있는 폼을 보낸다: 설정 저장과 섞이지 않게)
+        = button_tag safe_join([material_symbol('mail'), t('admin.manito.announce')]), type: :submit, class: 'button button-secondary', form: 'manito_announce', data: { confirm: t('admin.manito.announce_confirm') }
     = render layout: 'admin/ui/section', locals: { title: t("admin.manito.sections.#{section}"), actions: changed } do
       - if messages
         .game-tokens__legend
@@ -35,3 +38,6 @@
 
   .actions
     = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+
+= form_tag admin_rp_manito_announce_path, method: :post, id: 'manito_announce' do
+  -# 해금 묶음의 [DM 발송] 버튼이 보내는 폼

@@ -38,6 +38,9 @@ en:
         manito_rewards: Rewards (per use)
         manito_commands: Commands
         manito_messages: Messages
+      announce: Send DMs
+      announce_confirm: The shop bot will send the start notice by DM to every character with words. Send now?
+      announce_started: Sending the start notice DMs. It may take a while with many characters.
       assign: Assign words at random
       assign_pool: Word list
       assign_pool_hint: One word per line. Every character gets words from this list for every other character (kept different within a character where possible)

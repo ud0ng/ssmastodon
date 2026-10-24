@@ -20,6 +20,8 @@ module Game
 
     FIELDS = [
       F.new(key: 'manito_enabled', type: :boolean, default: false, group: 'manito_unlock', label: '마니또 해금', hint: '끄면 단어를 써도 세지 않고 추측 명령어도 받지 않습니다'),
+      F.new(key: 'msg_manito_start', type: :text, group: 'manito_unlock', label: '시작 안내 (DM 발송 버튼: 상점봇이 캐릭터마다 DM)',
+            default: "마니또가 시작되었습니다.\n%{player}님은 아래의 단어를 상대 캐릭터에게 해줄 때마다 보상을 받습니다.\n%{words}"),
       F.new(key: 'manito_daily_limit', type: :integer, default: 5, group: 'manito_limits', label: '하루 최대 보상 획득 횟수', hint: '한 캐릭터가 하루(00시 기준)에 보상을 받는 횟수. 넘으면 횟수만 셉니다 (0 = 제한 없음)'),
       F.new(key: 'manito_include_dm', type: :boolean, default: false, group: 'manito_limits', label: 'DM 포함', hint: '켜면 상대에게 보낸 DM 에 쓴 단어도 셉니다'),
       F.new(key: 'manito_guess_limit', type: :integer, default: 3, group: 'manito_limits', label: '하루 최대 추측 횟수', hint: '한 캐릭터가 하루에 [마니또]로 추측할 수 있는 횟수 (0 = 제한 없음)'),
@@ -250,6 +252,19 @@ module Game
       GameHousePoint.create!(house: house, account: log.account, amount: -log.points, reason: 'manito') if house && log.points.positive?
     end
 
+    # ── 시작 안내 DM (관리 > 마니또 > 설정 > 해금의 [DM 발송], Game::ManitoWorker) ──
+    # 단어가 하나라도 정해진 캐릭터마다 상점봇이 그 캐릭터만 태그한 DM 하나: "{상대} : 단어, 단어" 줄. 보낸 수를 돌려준다
+    def announce_start!
+      template = config['msg_manito_start']
+      names = GameCharacter.visible.includes(:account).index_by(&:account_id)
+      pairs = GameManitoWord.where(account_id: names.keys, target_account_id: names.keys).where('jsonb_array_length(words) > 0').to_a.group_by(&:account_id)
+      pairs.count do |account_id, list|
+        speaker = names[account_id]
+        lines = list.sort_by { |pair| names[pair.target_account_id].display_name }.map { |pair| "#{names[pair.target_account_id].display_name} : #{Array(pair.words).join(', ')}" }
+        announce(nil, [speaker.account], Game::Text.render(template, player: speaker.account, words: lines.join("\n")), visibility: 'direct')
+      end
+    end
+
     # ── 단어 무작위 나눠 주기 (관리 > 마니또 > 명단) ──
     # 명단의 캐릭터마다 다른 모든 캐릭터에게 단어를 count 개씩. 한 캐릭터 안에서는 되도록 겹치지 않게 (모자라면 다시 섞어 돌려 쓴다).
     # replace 가 아니면 이미 단어가 있는 짝은 그대로 둔다. 바꾼 짝 수를 돌려준다
@@ -301,12 +316,12 @@ module Game
     end
 
     # 상점봇이 그 툿에 두 사람을 태그한 답멘 (팔로워 공개, 그 툿이 DM 이면 DM). 툿이 없으면 두 사람을 태그한 새 툿. 상점봇이 없으면 시스템 계정
-    def announce(status, accounts, text)
+    def announce(status, accounts, text, visibility: nil)
       bot = Game::Gift.bot_accounts.first || Game::System.account
       return if bot.nil? || text.blank?
 
       mentions = accounts.compact.uniq(&:id).map { |account| "@#{account.username}" }.join(' ')
-      visibility = status&.direct_visibility? ? 'direct' : 'private'
+      visibility ||= status&.direct_visibility? ? 'direct' : 'private'
       PostStatusService.new.call(bot, text: "#{mentions} #{text}", visibility: visibility, thread: status)
     rescue => e
       Rails.logger.warn { "manito notify failed: #{e.class} #{e.message}" }

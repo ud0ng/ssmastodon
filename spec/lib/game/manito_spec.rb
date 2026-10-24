@@ -134,6 +134,19 @@ RSpec.describe Game::Manito do
     expect(words.flatten - %w(사과 배 귤)).to be_empty
   end
 
+  it 'sends every character with words a start notice by a DM from the shop bot, listing the words per counterpart' do
+    GameCharacter.for(a)
+    GameCharacter.for(b)
+    GameCharacter.for(c)
+    GameCharacter.for(a).update!(name: '해리')
+    GameCharacter.for(b).update!(name: '드레이코')
+
+    expect(described_class.announce_start!).to eq 1 # 단어가 정해진 사람은 해리뿐
+    dm = Status.where(account: shop, visibility: :direct).sole
+    expect(dm.mentions.map(&:account_id)).to eq [a.id]
+    expect(dm.text).to include('마니또가 시작되었습니다', '해리님은', '드레이코 : 하지마', 'luna : 달빛')
+  end
+
   it 'does nothing while switched off' do
     Game::Config.merge!('manito', 'manito_enabled' => '0')
     described_class.record!(toot('@draco 하지마'))

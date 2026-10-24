@@ -34,6 +34,14 @@ module Admin
       @item_images = GameShopItem.by_key
     end
 
+    # 시작 안내 DM: 단어가 정해진 캐릭터마다 상점봇이 DM 하나씩 (40명이면 시간이 걸려 뒤에서 보낸다)
+    def announce
+      authorize :settings, :update?
+
+      Game::ManitoWorker.perform_async(nil, 'announce')
+      redirect_to admin_rp_manito_path, notice: t('admin.manito.announce_started')
+    end
+
     # 단어 무작위 나눠 주기: 단어 목록(줄마다 하나)에서 짝마다 count 개씩
     def assign
       authorize :settings, :update?

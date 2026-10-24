@@ -9,6 +9,7 @@ class Game::ManitoWorker
 
   def perform(status_id, action = 'record')
     return Game::Manito.revert!(status_id) if action == 'revert'
+    return Game::Manito.announce_start! if action == 'announce' # 시작 안내 DM (status_id 없음)
 
     Game::Manito.record!(Status.find_by(id: status_id))
   end

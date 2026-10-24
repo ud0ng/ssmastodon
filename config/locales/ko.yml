@@ -36,6 +36,9 @@ ko:
         manito_rewards: 보상 (단어 1회 사용마다)
         manito_commands: 명령어
         manito_messages: 문구
+      announce: DM 발송
+      announce_confirm: 단어가 정해진 모든 캐릭터에게 상점봇이 시작 안내 DM 을 하나씩 보냅니다. 보낼까요?
+      announce_started: 시작 안내 DM 을 보내는 중입니다. 캐릭터가 많으면 조금 걸립니다.
       assign: 단어 무작위 나눠 주기
       assign_pool: 단어 목록
       assign_pool_hint: 줄마다 단어 하나. 캐릭터마다 다른 모든 캐릭터에게 이 목록에서 골라 줍니다 (한 캐릭터 안에서는 되도록 겹치지 않게)

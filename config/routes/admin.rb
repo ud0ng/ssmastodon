@@ -134,6 +134,7 @@ namespace :admin do
   scope 'rp', as: 'rp' do
     get 'manito', to: 'manito#settings', as: :manito
     patch 'manito', to: 'manito#update'
+    post 'manito/announce', to: 'manito#announce', as: :manito_announce
     get 'manito/roster', to: 'manito#roster', as: :manito_roster
     post 'manito/assign', to: 'manito#assign', as: :manito_assign
     get 'manito/roster/:id', to: 'manito#words', as: :manito_words
