@@ -436,8 +436,8 @@ const LegendSample: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 const MapLegend: React.FC<{ view: MView }> = ({ view }) => {
   const every = view.map.stairs_every;
   const left = every - ((view.turn - 1) % every);
-  // 지도 안내는 접었다 펼 수 있다
-  const [open, setOpen] = useState(true);
+  // 지도 안내는 처음엔 접혀 있고, 누르면 슬라이드로 펼쳐진다
+  const [open, setOpen] = useState(false);
   return (
     <div className='mm-legends'>
     <aside className={open ? 'mm-legend' : 'mm-legend is-closed'} aria-label='legend'>
@@ -445,7 +445,9 @@ const MapLegend: React.FC<{ view: MView }> = ({ view }) => {
         <h4><FormattedMessage id='mm.legend' defaultMessage='Map key' /></h4>
         <span aria-hidden>{open ? '▾' : '▸'}</span>
       </button>
-      {open && <ul>
+      <AnimatePresence initial={false}>
+      {open && (
+        <motion.ul key='legend' initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.35, ease: 'easeOut' }} style={{ overflow: 'hidden' }}>
         <li><LegendSample><line x1='3' y1='10' x2='41' y2='10' className='mm-road-outer' /><line x1='3' y1='10' x2='41' y2='10' className='mm-road-inner' /></LegendSample><FormattedMessage id='mm.legend_corridor' defaultMessage='Corridor' /></li>
         <li><LegendSample><line x1='3' y1='10' x2='41' y2='10' className='mm-stairs' /></LegendSample><FormattedMessage id='mm.legend_stairs' defaultMessage='Stairs (between floors)' /></li>
         <li><LegendSample><line x1='3' y1='10' x2='41' y2='10' className='mm-stairs mm-stairs--open' /></LegendSample><span><FormattedMessage id='mm.legend_moving' defaultMessage='Moving stairs (open now)' /> <small><FormattedMessage id='mm.legend_moving_note' defaultMessage='Switch every {every} turns, next in {left}' values={{ every, left }} /></small></span></li>
@@ -455,7 +457,9 @@ const MapLegend: React.FC<{ view: MView }> = ({ view }) => {
         <li><LegendSample><rect x='6' y='2' width='32' height='16' rx='3' className='mm-legend__office' /><SvgTIcon name='key' x={8} y={3} size={14} className='mm-room__icon' /></LegendSample><FormattedMessage id='mm.legend_office' defaultMessage="Filch's office (jail)" /></li>
         <li><LegendSample><rect x='6' y='2' width='32' height='16' rx='3' className='mm-legend__tower' /></LegendSample><FormattedMessage id='mm.legend_tower' defaultMessage='Tower room' /></li>
         <li><span className='mm-legend__feet'><FootGlyph team='student' /></span><FormattedMessage id='mm.legend_foot' defaultMessage='Footprints = where someone is (ribbon = name)' /></li>
-      </ul>}
+        </motion.ul>
+      )}
+      </AnimatePresence>
     </aside>
     </div>
   );
@@ -480,6 +484,9 @@ const useRemaining = (view: MView | null) => {
 const SOUND_KEY = 'ssm:mm-sound';
 const BGM_URL = '/sounds/marauders_bgm.mp3';
 const BGM_VOLUME = 0.35;
+// 오프닝: 지도가 하나씩 그려지는 시간, 갈 칸이 빛난 뒤 설명 모달까지
+const MAP_DRAW_MS = 4_400;
+const GLOW_MS = 1_400;
 let audioContext: AudioContext | null = null;
 
 const soundOn = () => {
@@ -758,7 +765,7 @@ const RoleModal: React.FC<{ view: MView; onClose: () => void }> = ({ view, onClo
             : (
               <>
                 <button type='button' className='mm-button mm-button--ghost' onClick={() => { setPage('role'); }}>이전</button>
-                <button type='button' className='mm-button' onClick={onClose}>시작하기</button>
+                <button type='button' className='mm-button' onClick={onClose}>확인했습니다</button>
               </>
             )}
         </div>
@@ -980,7 +987,9 @@ export const MaraudersStage: React.FC<{
   const [toasts, setToasts] = useState<{ id: string; text: string }[]>([]);
   const seenInfo = useRef<Set<string> | null>(null);
   // pending: 아직 모름 (첫 화면을 받기 전). 대기실 카운트다운이 끝나고 들어오면 지도를 먼저 보여 주지 않고 바로 맹세(오프닝)부터
-  const [intro, setIntro] = useState<'pending' | 'oath' | 'role' | 'done'>('pending');
+  // 오프닝: pending(첫 화면 전) → oath(맹세) → drawing(빈 양피지에 지도가 하나씩 그려짐) → glow(갈 칸이 빛남)
+  //        → role(설명 모달, [확인했습니다]) → done(본격 시작). 다시 들어온 방은 바로 done
+  const [intro, setIntro] = useState<'pending' | 'oath' | 'drawing' | 'glow' | 'role' | 'done'>('pending');
   const [pickingWatch, setPickingWatch] = useState(false);
   const [ending, setEnding] = useState<'none' | 'over' | 'review' | 'winner' | 'mvp' | 'closing'>('none');
   // MVP: 보고 있는 장면 번호, 그 장면 턴을 되풀이할 때 지금 보여 주는 기록 번호(history 의 자리)
@@ -1115,6 +1124,19 @@ export const MaraudersStage: React.FC<{
       try { window.sessionStorage.setItem(`ssm:mm-intro:${sessionId}`, '1'); } catch { /* 저장이 막혀도 계속 */ }
     }
   }, [sessionId]);
+
+  // 지도가 다 그려지면(방이 하나씩 나타나는 데 약 4초) 갈 칸이 빛나고, 잠시 뒤 설명 모달 (팀이 없는 구경꾼은 바로 시작)
+  useEffect(() => {
+    if (intro === 'drawing') {
+      const timer = window.setTimeout(() => { if (viewRef.current?.team) setIntro('glow'); else finishIntro('done'); }, MAP_DRAW_MS);
+      return () => { window.clearTimeout(timer); };
+    }
+    if (intro === 'glow') {
+      const timer = window.setTimeout(() => { setIntro('role'); }, GLOW_MS);
+      return () => { window.clearTimeout(timer); };
+    }
+    return undefined;
+  }, [intro, finishIntro]);
 
   // 새 턴 결과: 발자국이 찍히며 이동 / 체포되면 발자국이 사무실까지 끌려간다
   useEffect(() => {
@@ -1372,7 +1394,9 @@ export const MaraudersStage: React.FC<{
   const myToken = view.me !== null ? view.tokens.find((token) => token.seat === view.me) : undefined;
   const here = myToken?.room ?? null;
   const canAct = isPlayer && view.my_turn && !view.submitted;
-  const reachable = canAct ? view.moves : [];
+  // 맹세·지도 그리는 중에는 갈 칸·이름표·안내·지도 안내를 띄우지 않는다
+  const mapReady = intro !== 'oath' && intro !== 'drawing';
+  const reachable = canAct && mapReady ? view.moves : [];
   const planned = view.planned?.room ?? null;
   const jailed = view.my_status === 'jailed';
   const out = view.my_status === 'out';
@@ -1421,14 +1445,14 @@ export const MaraudersStage: React.FC<{
       <div className={ending === 'closing' ? 'mm-arena is-folding' : 'mm-arena'}>
         <TeamSide view={view} team='student' />
       <div className='mm-parchment' style={{ '--mm-k': Math.max(0.5, Math.min(1, 1000 / geo.width)) } as React.CSSProperties}>
-        <MapLegend view={view} />
+        {mapReady && <MapLegend view={view} />}
         {/* 안내글은 전부 지도 위에: 이동 선택 안내, 갇힘·탈락 안내, 소식(누가 어디에 있는지·계단 변화 등) */}
         <ul className='mm-notice' aria-live='polite'>
           {jailed && <li className='is-warn'><FormattedMessage id='mm.jailed' defaultMessage="You were caught and locked in the prefects' room. You can only use the team chat until a teammate rescues you." /></li>}
           {out && <li className='is-warn'><FormattedMessage id='mm.out' defaultMessage='You were caught twice and are out. Watching the rest.' /></li>}
         </ul>
         <div className={stairsShift ? 'mm-board is-shifting' : 'mm-board'} style={{ aspectRatio: `${geo.width} / ${geo.height}` }}>
-          <MapSvg view={view} geo={geo} reachable={reachable} here={here} planned={planned} pickingWatch={pickingWatch} draw={intro === 'oath' || (ending === 'none' && view.turn <= 1)} fade={false} onPick={pick} />
+          {intro !== 'oath' && <MapSvg view={view} geo={geo} reachable={reachable} here={here} planned={planned} pickingWatch={pickingWatch} draw={intro === 'drawing'} fade={false} onPick={pick} />}
 
           {/* 감시 중(사감 팀만): 방 위에 눈이 깜빡이고 남은 턴 */}
           {view.watch && (
@@ -1474,7 +1498,7 @@ export const MaraudersStage: React.FC<{
           ))}
 
           {/* 이름표 달린 발자국 토큰 */}
-          {shownTokens.map((token) => {
+          {mapReady && shownTokens.map((token) => {
             const player = byseat.get(token.seat);
             const point = geo.center(token.room);
             const secret = reviewEntry ? false : view.last?.moves[String(token.seat)]?.secret;
@@ -1534,9 +1558,9 @@ export const MaraudersStage: React.FC<{
       </div>
 
       {/* 맹세(오프닝)는 메뉴 띠까지 덮는 전체 화면, 끝나면 아이콘 메뉴가 있는 지도 화면 */}
-      {createPortal(<AnimatePresence>{intro === 'oath' && <Oath key='oath' onDone={() => { finishIntro(viewRef.current?.team ? 'role' : 'done'); }} />}</AnimatePresence>, document.body)}
+      {createPortal(<AnimatePresence>{intro === 'oath' && <Oath key='oath' onDone={() => { setIntro('drawing'); }} />}</AnimatePresence>, document.body)}
 
-      {selecting && (
+      {selecting && mapReady && (
         <div className='mm-prompt'>
           <span>
             {pickingWatch
