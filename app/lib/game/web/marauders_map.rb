@@ -125,14 +125,15 @@ module Game
         session.players.reset
       end
 
-      # [팀 변경]: 반대 팀으로. 반대 팀 정원이 다 찼으면 :full. :ok / :full / :closed
-      def change_team!(player)
+      # [팀 변경]: 반대 팀으로. 반대 팀 정원이 다 찼으면 :full (운영진이 옮기면 force: 정원과 상관없이). :ok / :full / :closed
+      def change_team!(player, force: false)
         return :closed unless session.lobby? && !Game::Lobby.counting?(session)
 
         target = player.state['team'] == 'student' ? 'prefect' : 'student'
-        return :full if team_counts[target] >= team_caps[target]
+        return :full if !force && team_counts[target] >= team_caps[target]
 
-        player.update!(state: player.state.merge('team' => target))
+        # 운영진이 옮긴 사람은 시작할 때 정원을 맞추며 다시 옮기지 않는다 (team_fixed)
+        player.update!(state: player.state.merge('team' => target, 'team_fixed' => force || player.state['team_fixed'] ? true : nil).compact)
         session.players.reset
         :ok
       end
@@ -148,10 +149,18 @@ module Game
         list = session.players.reload.to_a
         caps = team_caps(list.size)
         teams = list.group_by { |player| player.state['team'] }
-        students = Array(teams['student']).shuffle
-        prefects = Array(teams['prefect']).shuffle
-        students, prefects = [students.first(caps['student']), prefects + students.drop(caps['student'])] if students.size > caps['student']
-        students, prefects = [students + prefects.first(caps['student'] - students.size), prefects.drop(caps['student'] - students.size)] if students.size < caps['student']
+        # 운영진이 정해 준 사람(team_fixed)은 그대로 두고, 나머지만 섞어서 정원에 맞춘다 (고정된 사람만으로 넘치거나 모자라면 그대로)
+        fixed, loose = Array(teams['student']).partition { |player| player.state['team_fixed'] }
+        students = fixed + loose.shuffle
+        fixed, loose = Array(teams['prefect']).partition { |player| player.state['team_fixed'] }
+        prefects = fixed + loose.shuffle
+        if students.size > caps['student']
+          keep = [caps['student'], students.count { |player| player.state['team_fixed'] }].max
+          students, prefects = [students.first(keep), prefects + students.drop(keep)]
+        elsif students.size < caps['student']
+          movable = prefects.reject { |player| player.state['team_fixed'] }.first(caps['student'] - students.size)
+          students, prefects = [students + movable, prefects - movable]
+        end
         ordered = students + prefects
         ordered.each_with_index { |player, index| player.update!(seat: 100 + index) }
         ordered.each_with_index do |player, index|

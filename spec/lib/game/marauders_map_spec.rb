@@ -94,6 +94,11 @@ RSpec.describe Game::Web::MaraudersMap do
       expect(kind.team_full?('student')).to eq(counts['student'] >= 2)
       result = kind.change_team!(mover)
       expect(result).to eq(counts['student'] >= 2 ? :full : :ok)
+
+      # 운영진이 옮기면 정원과 상관없이 바뀐다
+      other = session.reload.players.find { |player| player.state['team'] == 'prefect' }
+      expect(described_class.new(session).change_team!(other, force: true)).to eq :ok
+      expect(other.reload.state['team']).to eq 'student'
     end
 
     it 'shows the teams in the waiting room view with the change blocked once the other team is full' do
@@ -107,6 +112,19 @@ RSpec.describe Game::Web::MaraudersMap do
       expect(view[:teams]).to include(mine: player.state['team'], can_change: true, change_blocked: kind.team_full?(other))
       expect(view[:teams][:caps]).to eq('student' => 2, 'prefect' => 4)
       expect(view[:players].map { |entry| entry[:team] }.compact.size).to eq 6
+    end
+
+    it 'keeps the players the staff moved on their team at the start' do
+      session = make_session(6)
+      kind = described_class.new(session)
+      session.players.each { |player| player.update!(state: player.state.merge('team' => 'prefect')) }
+      picked = session.players.first(3)
+      picked.each { |player| kind.change_team!(player.reload, force: true) } # 정원(학생 2명)을 넘겨 3명을 학생으로
+      described_class.new(session.reload).prepare_event_players!
+
+      session.reload
+      expect(session.state['student_count']).to eq 3
+      expect(session.players.select { |player| player.state['team'] == 'student' }.map(&:account_id)).to match_array(picked.map(&:account_id))
     end
 
     it 'fixes the teams to the caps at the start and puts the students first' do

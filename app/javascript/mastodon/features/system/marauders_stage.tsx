@@ -3,7 +3,7 @@
 //   턴마다 갈 수 있는 방이 빛나고 클릭하면 선택 완료, 모두 고르면 이름표 달린 발자국이 찍히며 이동한다.
 //   체포되면 발자국이 사무실까지 질질 끌려가고, 끝나면 '장난 끝' 문구와 함께 지도가 지워지고 학생들의 실제 이동 경로가 리플레이로 그려진다.
 //   서버: Game::Web::MaraudersMap#view_for (GET /api/v1/system/sessions/:id/view), 행동은 POST /api/v1/system/commands, 채팅은 POST /sessions/:id/chat (channel=team)
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
@@ -384,23 +384,63 @@ const SvgTIcon: React.FC<{ name: string; x: number; y: number; size?: number; cl
 );
 
 // ── 지도 양 옆 팀 열: 아바타 · 이름 · 배지(선택 완료·갇힘·망토·남은 능력) ──
+// 전체 채팅 말풍선: 그 사람의 아바타(지도 양옆 팀 열) 옆에서 지도 쪽으로 나온다.
+// 팀 열은 스크롤되어 안에 두면 잘리므로, 아바타 자리를 재서 화면에 띄운다
+const SideBubble: React.FC<{ anchor: React.RefObject<HTMLLIElement | null>; side: 'student' | 'prefect'; text: string }> = ({ anchor, side, text }) => {
+  const [at, setAt] = useState<{ x: number; y: number } | null>(null);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const box = anchor.current?.getBoundingClientRect();
+      if (box) setAt({ x: side === 'student' ? box.right + 6 : box.left - 6, y: box.top + 22 });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    const list = anchor.current?.closest('.mm-side');
+    list?.addEventListener('scroll', measure);
+    return () => { window.removeEventListener('resize', measure); list?.removeEventListener('scroll', measure); };
+  }, [anchor, side]);
+  if (!at) return null;
+  return createPortal(
+    <motion.div
+      className={`mm-side-bubble mm-side-bubble--${side}`}
+      style={{ left: at.x, top: at.y }}
+      initial={{ opacity: 0, scale: 0.7, x: side === 'student' ? -8 : 8 }}
+      animate={{ opacity: 1, scale: 1, x: 0 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ duration: 0.25 }}
+    >
+      {text}
+    </motion.div>
+    , document.body,
+  );
+};
+
+const SidePlayer: React.FC<{ view: MView; player: MPlayer; team: 'student' | 'prefect' }> = ({ view, player, team }) => {
+  const ref = useRef<HTMLLIElement>(null);
+  const bubble = [...view.bubbles].reverse().find((each) => each.seat === player.seat);
+  return (
+    <li ref={ref} className={['mm-side__player', player.chosen && 'is-chosen', player.status === 'jailed' && 'is-jailed', player.status === 'out' && 'is-out', player.seat === view.me && 'is-me'].filter(Boolean).join(' ')}>
+      {player.avatar ? <img src={player.avatar} alt='' /> : <span className='mm-side__noimg' />}
+      <b>{player.name}</b>
+      <span className='mm-side__badges'>
+        {view.status === 'active' && player.chosen && <i title='choice done'><TIcon name='check' size={12} /></i>}
+        {player.cloaked && <i title='invisible'><TIcon name='eye-off' size={12} /></i>}
+        {player.status === 'jailed' && <i><TIcon name='lock' size={12} /></i>}
+        {player.status === 'out' && <i><TIcon name='x' size={12} /></i>}
+        {player.ability && <i title={player.role ?? ''}><TIcon name={player.role === 'watcher' ? 'eye' : player.role === 'scout' ? 'search' : 'walk'} size={12} />×{player.ability.left}</i>}
+      </span>
+      <AnimatePresence>
+        {bubble && <SideBubble key={bubble.id} anchor={ref} side={team} text={bubble.text} />}
+      </AnimatePresence>
+    </li>
+  );
+};
+
 const TeamSide: React.FC<{ view: MView; team: 'student' | 'prefect' }> = ({ view, team }) => (
   <ul className={`mm-side mm-side--${team}`}>
     <li className={`mm-side__team mm-side__team--${team}`}>{team === 'student' ? view.student_name : view.prefect_name}</li>
     {team === 'student' && view.cloaks_left != null && <li className='mm-side__cloaks' title='cloaks'><TIcon name='eye-off' size={14} /> ×{view.cloaks_left}</li>}
-    {view.players.filter((player) => player.team === team).map((player) => (
-      <li key={player.seat} className={['mm-side__player', player.chosen && 'is-chosen', player.status === 'jailed' && 'is-jailed', player.status === 'out' && 'is-out', player.seat === view.me && 'is-me'].filter(Boolean).join(' ')}>
-        {player.avatar ? <img src={player.avatar} alt='' /> : <span className='mm-side__noimg' />}
-        <b>{player.name}</b>
-        <span className='mm-side__badges'>
-          {view.status === 'active' && player.chosen && <i title='choice done'><TIcon name='check' size={12} /></i>}
-          {player.cloaked && <i title='invisible'><TIcon name='eye-off' size={12} /></i>}
-          {player.status === 'jailed' && <i><TIcon name='lock' size={12} /></i>}
-          {player.status === 'out' && <i><TIcon name='x' size={12} /></i>}
-          {player.ability && <i title={player.role ?? ''}><TIcon name={player.role === 'watcher' ? 'eye' : player.role === 'scout' ? 'search' : 'walk'} size={12} />×{player.ability.left}</i>}
-        </span>
-      </li>
-    ))}
+    {view.players.filter((player) => player.team === team).map((player) => <SidePlayer key={player.seat} view={view} player={player} team={team} />)}
   </ul>
 );
 
@@ -761,6 +801,14 @@ const ROLE_LINES: Record<string, { title: string; lines: string[]; items: { name
   chaser: { title: '당신은 추격자입니다.', lines: ['통금 시간을 어긴 학생들을 체포하세요!'], items: [{ name: '추격 (판당 1회)', text: '이번 턴에 2칸 이동합니다.' }] },
 };
 
+// 설명 모달 2쪽: 아이템·능력 버튼 모양과 쓰는 순서 (턴마다 버튼을 누르고, 갈 곳을 눌러야 턴이 끝난다)
+const USAGE: Record<string, { button: string; steps: string[] }> = {
+  student: { button: '투명 망토 (1)', steps: ['[투명 망토]를 누르면 바로 써집니다 (팀 공용, 2턴 동안 흔적이 남지 않음)', '그다음 지도에서 갈 곳을 누르면 턴이 끝납니다'] },
+  watcher: { button: '방 감시 (1)', steps: ['[방 감시]를 누르고, 지도에서 감시할 방을 누릅니다 (마우스를 올리면 표시)', '감시 중인 방은 우리 팀에게만 노랗게 보입니다', '다시 갈 곳을 누르면 턴이 끝납니다'] },
+  scout: { button: '정찰 (1)', steps: ['[정찰]을 누르면 바로 주변 2칸 안의 학생 수가 뜹니다', '그다음 갈 곳을 누르면 턴이 끝납니다'] },
+  chaser: { button: '추격: 2칸 이동 (1)', steps: ['[추격]을 누르고 빛나는 칸을 하나 고릅니다', '그 칸에서 한 칸 더 고르면 턴이 끝납니다'] },
+};
+
 const RoleModal: React.FC<{ view: MView; onClose: () => void }> = ({ view, onClose }) => {
   const [page, setPage] = useState<'role' | 'how'>('role');
   const key = view.team === 'student' ? 'student' : (view.role ?? 'chaser');
@@ -811,7 +859,17 @@ const RoleModal: React.FC<{ view: MView; onClose: () => void }> = ({ view, onClo
             </svg>
             <p>내 차례가 되면 내 이름표 아래에 안내가 뜨고, 지도에서 <strong>빛나는 방</strong>이 갈 수 있는 곳이 됩니다. 눌러서 고르세요. 지금 있는 방을 누르면 제자리입니다.</p>
             <p>모두 고르면 한꺼번에 움직입니다. 제한 시간 안에 고르지 않으면 제자리에 있습니다.</p>
-            <p>{view.team === 'student' ? '투명 망토는 이동 안내 옆의 버튼으로 씁니다.' : '능력은 이동 안내 옆의 버튼으로 씁니다.'}</p>
+            <h3 className='mm-modal__subhead'>{view.team === 'student' ? '아이템 쓰는 법' : '능력 쓰는 법'}</h3>
+            {/* 게임 화면 아래 이동 안내와 같은 모양으로 보여 준다 */}
+            <div className='mm-modal__sample' aria-hidden>
+              <span className='mm-prompt mm-prompt--sample'>
+                <span>이동할 구역을 선택하세요!</span>
+                <span className='mm-button'>{USAGE[key]?.button ?? ''}</span>
+              </span>
+            </div>
+            <ol className='mm-modal__steps'>
+              {(USAGE[key]?.steps ?? []).map((step) => <li key={step}>{step}</li>)}
+            </ol>
           </>
         )}
         <div className='mm-modal__actions'>
@@ -870,6 +928,11 @@ const ChatDock: React.FC<{
   const tabs: ChatTab[] = team ? ['all', 'info', team] : ['all', 'info', 'student', 'prefect'];
   const [channel, setChannel] = useState<ChatTab>(jailed && team ? team : 'all');
   const [text, setText] = useState('');
+  // 쓰는 곳: 보는 탭과 따로 고른다 (전체 / 우리 팀). 갇힌 학생은 팀 채팅만, 구경꾼은 전체만
+  const writeOptions: ('all' | 'team')[] = team ? (jailed ? ['team'] : ['all', 'team']) : ['all'];
+  const [writeTo, setWriteTo] = useState<'all' | 'team'>(jailed && team ? 'team' : 'all');
+  const [pickOpen, setPickOpen] = useState(false);
+  const target = writeOptions.includes(writeTo) ? writeTo : (writeOptions[0] ?? 'all');
   const listRef = useRef<HTMLUListElement>(null);
   // 전체 탭에는 모든 채팅이 올라온다 (팀 채팅은 앞에 [학생]/[사감] 표시)
   const shown = channel === 'info' ? [] : chat.filter((message) => (channel === 'all' ? true : message.team === channel));
@@ -896,10 +959,10 @@ const ChatDock: React.FC<{
     const value = text.trim();
     if (!value) return;
     setText('');
-    apiRequestPost(`v1/system/sessions/${sessionId}/chat`, { text: value, channel: channel === 'all' ? 'all' : 'team' })
+    apiRequestPost(`v1/system/sessions/${sessionId}/chat`, { text: value, channel: target })
       .then(() => { onSent(); return true; })
       .catch(() => { onSent(); });
-  }, [sessionId, text, channel, onSent]);
+  }, [sessionId, text, target, onSent]);
 
   return (
     <section className='mm-chat'>
@@ -929,6 +992,30 @@ const ChatDock: React.FC<{
       </ul>
       {canChat && (
         <form onSubmit={submit}>
+          {writeOptions.length > 1 ? (
+            // 보낼 곳 고르기: 누르면 위로 목록이 펼쳐진다 (게임 화면 모양, 브라우저 기본 목록 대신)
+            <span className='mm-chat__pick'>
+              <button type='button' className={`mm-chat__to is-${target === 'team' ? team : 'all'}`} aria-haspopup='listbox' aria-expanded={pickOpen} aria-label='채팅 보낼 곳' onClick={() => { setPickOpen((value) => !value); }}>
+                {target === 'team' && team ? label(team) : label('all')} <span aria-hidden>{pickOpen ? '▾' : '▴'}</span>
+              </button>
+              <AnimatePresence>
+                {pickOpen && (
+                  <motion.ul className='mm-chat__menu' role='listbox' initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.15 }}>
+                    {writeOptions.map((option) => (
+                      <li key={option}>
+                        <button type='button' role='option' aria-selected={option === target} className={['mm-chat__option', `is-${option === 'team' ? team : 'all'}`, option === target && 'is-on'].filter(Boolean).join(' ')} onClick={() => { setWriteTo(option); setPickOpen(false); }}>
+                          <b>{option === 'team' && team ? label(team) : label('all')}</b>
+                          <small>{option === 'team' ? '우리 팀에게만' : '모두에게'}</small>
+                        </button>
+                      </li>
+                    ))}
+                  </motion.ul>
+                )}
+              </AnimatePresence>
+            </span>
+          ) : (
+            <span className={`mm-chat__to is-${target === 'team' ? team : 'all'}`}>{target === 'team' && team ? label(team) : label('all')}</span>
+          )}
           <input type='text' value={text} maxLength={200} placeholder={intl.formatMessage(messages.placeholder)} onChange={(event) => { setText(event.target.value); }} />
           <button type='submit' disabled={!text.trim()}>{intl.formatMessage(messages.send)}</button>
         </form>
@@ -1610,14 +1697,6 @@ export const MaraudersStage: React.FC<{
             </motion.div>
           ))}
 
-          {/* 전체 공개 말풍선 */}
-          <AnimatePresence>
-            {view.bubbles.map((bubble) => (
-              <motion.div key={bubble.id} className='mm-bubble' style={pct(geo.center(bubble.room))} initial={{ opacity: 0, y: 10, scale: 0.8 }} animate={{ opacity: 1, y: -34, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-                {bubble.text}
-              </motion.div>
-            ))}
-          </AnimatePresence>
 
 
           {/* 끝난 뒤 리플레이 */}

@@ -160,12 +160,14 @@ class Api::V1::System::SessionsController < Api::BaseController
   end
 
   # 도둑 지도 대기방: 반대 팀으로 [팀 변경] (반대 팀 정원이 차면 안 된다)
+  # 운영진은 account_id 로 다른 참가자의 팀을 바꿀 수 있다 (정원과 상관없이, 시작할 때 정원에 맞춰 다시 맞춘다)
   def team
-    player = @session.player_for(current_account)
+    force = staff? && params[:account_id].present?
+    player = force ? @session.players.find_by(account_id: params[:account_id]) : @session.player_for(current_account)
     kind = @session.kind_class
     return render json: { error: 'forbidden' }, status: 403 if player.nil? || !(kind.respond_to?(:lobby_teams?) && kind.lobby_teams?)
 
-    result = @session.with_lock { kind.new(@session.reload).change_team!(@session.player_for(current_account)) }
+    result = @session.with_lock { kind.new(@session.reload).change_team!(@session.players.find(player.id), force: force) }
     return render json: { error: { full: '바꾸려는 팀의 정원이 가득 찼습니다.', closed: '지금은 팀을 바꿀 수 없습니다.' }.fetch(result) }, status: 422 unless result == :ok
 
     show

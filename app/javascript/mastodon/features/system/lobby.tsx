@@ -123,7 +123,10 @@ const PlayerCard: React.FC<{
   busy: boolean;
   bubble?: string;
   onToggle: (player: LobbyPlayer) => void;
-}> = ({ player, mine, canToggle, busy, bubble, onToggle }) => (
+  // 운영진: 이 참가자를 다른 팀으로 (버튼 글자 = 옮길 팀 이름)
+  moveTo?: string;
+  onMove?: (player: LobbyPlayer) => void;
+}> = ({ player, mine, canToggle, busy, bubble, onToggle, moveTo, onMove }) => (
   <li className={['game-stage__player', player.ready && 'game-stage__player--ready', mine && 'game-stage__player--me'].filter(Boolean).join(' ')}>
     {bubble && <span className='game-stage__speech' key={bubble}>{bubble}</span>}
     <span className='game-stage__avatar'>
@@ -139,6 +142,11 @@ const PlayerCard: React.FC<{
         {player.ready
           ? <FormattedMessage id='lobby.unready' defaultMessage='Cancel ready' />
           : <FormattedMessage id='lobby.ready' defaultMessage='Ready' />}
+      </button>
+    )}
+    {moveTo && onMove && (
+      <button type='button' className='game-stage__button game-stage__button--off lobby-team-move' disabled={busy} onClick={() => { onMove(player); }}>
+        <FormattedMessage id='lobby.move_team' defaultMessage='To {team}' values={{ team: moveTo }} />
       </button>
     )}
   </li>
@@ -277,6 +285,8 @@ export const LobbyStage: React.FC<{
                   busy={busy || counting}
                   bubble={bubbles[player.acct]}
                   onToggle={toggle}
+                  moveTo={lobby.can_manage && !counting ? lobby.teams?.names[team === 'student' ? 'prefect' : 'student'] : undefined}
+                  onMove={(target) => { post('team', { account_id: target.account_id }); }}
                 />
               ))}
               </ul>

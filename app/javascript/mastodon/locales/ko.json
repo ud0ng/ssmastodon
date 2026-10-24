@@ -1575,6 +1575,7 @@
   "lobby.my_team": "내 팀",
   "lobby.team_full": "팀 변경 불가",
   "lobby.change_team": "팀 변경",
+  "lobby.move_team": "{team} 팀으로",
   "mm.chat_all": "전체",
   "mm.chat_team": "팀",
   "mm.chat_placeholder": "한마디 해 보세요",

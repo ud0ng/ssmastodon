@@ -2473,3 +2473,209 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
 
   &__row--trace &__dots i.is-on { background: #8a5a05; }
 }
+
+// 채팅 목록 스크롤바: 평소에는 안 보이고(투명) 마우스를 올리면 얇게 (비행 대결과 같은 모양)
+.mm-chat__list {
+  scrollbar-width: none;
+
+  &:hover {
+    scrollbar-color: rgb(232 199 106 / 50%) transparent;
+    scrollbar-width: thin;
+  }
+
+  &::-webkit-scrollbar {
+    width: 0;
+  }
+
+  &:hover::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background: rgb(232 199 106 / 50%);
+  }
+}
+
+// 채팅 입력창 앞: 보낼 곳 (전체 / 우리 팀) — 보고 있는 탭과 따로
+.mm-chat__to {
+  flex: none;
+  padding: 3px 10px;
+  border: 1px solid rgb(243 231 200 / 30%);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 45%);
+  color: #fff6d8;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+
+  option {
+    background: #1a1209;
+    color: #fff6d8;
+  }
+
+  &.is-student {
+    border-color: #6d97ff;
+    color: #b9cdff;
+  }
+
+  &.is-prefect {
+    border-color: #e0533e;
+    color: #ffb8aa;
+  }
+}
+
+span.mm-chat__to {
+  cursor: default;
+}
+
+// 설명 모달 2쪽: 아이템·능력 버튼 모양 견본과 쓰는 순서
+.mm-modal__subhead {
+  margin: 12px 0 6px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.mm-modal__sample {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0 8px;
+  padding: 10px 0;
+  border-radius: 8px;
+  background: rgb(43 27 7 / 85%);
+}
+
+.mm-prompt.mm-prompt--sample {
+  position: static;
+  margin: 0;
+  translate: none;
+  pointer-events: none;
+}
+
+.mm-modal__steps {
+  margin: 0;
+  padding-inline-start: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: start;
+}
+
+// 전체 채팅 말풍선: 지도 양옆 팀 열의 아바타 옆에서 지도 쪽으로 (학생 열 → 오른쪽, 사감 열 → 왼쪽)
+.mm-side-bubble {
+  position: fixed;
+  z-index: 70;
+  max-width: 220px;
+  padding: 6px 12px;
+  border-radius: 14px;
+  background: #fff6dc;
+  box-shadow: 0 0 0 1.5px #6b4a1f, 0 4px 14px rgb(0 0 0 / 45%);
+  color: #3a2508;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  translate: 0 -50%;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    background: #fff6dc;
+    box-shadow: -1.5px 1.5px 0 0 #6b4a1f;
+    translate: 0 -50%;
+    rotate: 45deg;
+  }
+
+  &--student {
+    transform-origin: left center;
+
+    &::before { left: -5px; }
+  }
+
+  &--prefect {
+    transform-origin: right center;
+    translate: -100% -50%;
+
+    &::before {
+      right: -5px;
+      box-shadow: 1.5px -1.5px 0 0 #6b4a1f;
+    }
+  }
+}
+
+// 보낼 곳 고르기: 누르면 입력창 위로 목록이 펼쳐진다 (채팅 보내기 버튼 모양을 덮어쓴다)
+.mm-chat__pick {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.mm-chat form .mm-chat__to {
+  padding: 3px 12px;
+  border: 1px solid rgb(243 231 200 / 30%);
+  background: rgb(0 0 0 / 45%);
+  color: #fff6d8;
+  font-size: 13px;
+
+  &.is-student {
+    border-color: #6d97ff;
+    color: #b9cdff;
+  }
+
+  &.is-prefect {
+    border-color: #e0533e;
+    color: #ffb8aa;
+  }
+}
+
+.mm-chat__menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+  margin: 0;
+  padding: 5px;
+  border-radius: 10px;
+  background: #1f150a;
+  box-shadow: 0 0 0 1px rgb(255 232 170 / 30%), 0 8px 24px rgb(0 0 0 / 55%);
+  list-style: none;
+}
+
+.mm-chat form .mm-chat__option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: transparent;
+  color: #fff6d8;
+  font-weight: 700;
+  text-align: start;
+
+  small {
+    color: rgb(243 231 200 / 60%);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  &:hover {
+    background: rgb(255 241 205 / 10%);
+  }
+
+  &.is-on {
+    background: rgb(201 162 74 / 25%);
+  }
+
+  &.is-student b { color: #b9cdff; }
+
+  &.is-prefect b { color: #ffb8aa; }
+}

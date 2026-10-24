@@ -1438,6 +1438,7 @@
   "lobby.my_team": "My team",
   "lobby.team_full": "Can't change team",
   "lobby.change_team": "Change team",
+  "lobby.move_team": "To {team}",
   "mm.chat_all": "Everyone",
   "mm.chat_team": "Team",
   "mm.chat_placeholder": "Say something",
