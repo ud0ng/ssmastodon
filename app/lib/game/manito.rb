@@ -176,36 +176,46 @@ module Game
       end
       rewards = describe(taken)
       settings = config
-      announce(Status.find_by(id: pair.last_status_id), [pair.account, guesser], Game::Text.render(settings['msg_manito_caught'], player: pair.account, target: guesser, word: pair.words.first, rewards: rewards))
+      announce(Status.find_by(id: pair.last_status_id), [pair.account, guesser], Game::Text.render(settings['msg_manito_caught'], player: pair.account, target: guesser, word: Array(pair.words).find { |entry| GameManitoWord.key(entry) == GameManitoWord.key(word) } || word, rewards: rewards))
       Game::Text.render(settings['msg_manito_correct'], player: guesser, target: pair.account, rewards: rewards)
     end
 
-    # A가 B에게서 받은 (아직 안 빼앗긴) 보상을 B에게. A가 이미 써 버린 재화·아이템은 남은 만큼만, 점수는 A 소속에서 빼서 B 소속에 준다
+    # A가 B에게서 받은 (아직 안 빼앗긴) 보상을 B에게 그대로 옮긴다.
+    # 재화는 A가 이미 썼어도 전부 빼서(마이너스가 될 수 있다) B에게, 아이템은 A에게 남은 것만 거두고 B에게는 받은 만큼 새로 준다,
+    # 점수는 A 소속에서 빼서 B 소속에 준다
     def steal!(pair)
       logs = GameManitoLog.uses.where(account_id: pair.account_id, other_account_id: pair.target_account_id, rewarded: true, stolen_at: nil).to_a
       thief = pair.target_account
-      victim = GameCharacter.for(pair.account)
-      money = [logs.sum(&:money), victim.money].min
-      wanted = logs.flat_map { |log| Array(log.items) }.each_with_object(Hash.new(0)) { |item, sum| sum[item['name']] += item['count'].to_i }
-      items = wanted.filter_map do |name, count|
-        owned = Array(victim.inventory).find { |entry| Game::Wallet.key(entry['name']) == Game::Wallet.key(name) }.to_h['count'].to_i
-        [name, [count, owned].min] if [count, owned].min.positive?
-      end.to_h
+      money = logs.sum(&:money)
+      items = logs.flat_map { |log| Array(log.items) }.each_with_object(Hash.new(0)) { |item, sum| sum[item['name']] += item['count'].to_i }.select { |_, count| count.positive? }
       points = logs.sum(&:points)
 
-      if money.positive? || items.any?
-        Game::Wallet.apply!([{ account: pair.account, money: -money, items: items.transform_values(&:-@), other: thief, other_dir: 'to' },
-                             { account: thief, money: money, items: items, other: pair.account, other_dir: 'from' }],
-                            kind: 'manito', detail: '마니또 들킴', actor: 'manito')
-      end
+      take_from_victim!(pair.account, thief, money, items) if money.positive? || items.any?
+      Game::Wallet.apply!([{ account: thief, money: money, items: items, other: pair.account, other_dir: 'from' }], kind: 'manito', detail: '마니또 정답', actor: 'manito') if money.positive? || items.any?
       if points.positive?
-        from = victim.group
+        from = GameCharacter.for(pair.account).group
         to = GameCharacter.for(thief).group
         GameHousePoint.create!(house: from, account: pair.account, amount: -points, reason: 'manito') if from
         GameHousePoint.create!(house: to, account: thief, amount: points, reason: 'manito') if to
       end
       GameManitoLog.where(id: logs.map(&:id)).update_all(stolen_at: Time.now.utc)
       { money: money, items: items.map { |name, count| { 'name' => name, 'count' => count } }, points: points }
+    end
+
+    # 들킨 사람에게서 거둔다: 재화는 모자라도 전부 (마이너스), 아이템은 가진 만큼만. Wallet 은 마이너스를 막으니 직접 고치고 기록한다
+    def take_from_victim!(account, thief, money, items)
+      character = GameCharacter.for(account)
+      character.with_lock do
+        removed = items.filter_map do |name, count|
+          owned = Array(character.inventory).find { |entry| Game::Wallet.key(entry['name']) == Game::Wallet.key(name) }.to_h['count'].to_i
+          [name, -[count, owned].min] if [count, owned].min.positive?
+        end.to_h
+        character.money -= money
+        character.inventory = Game::Wallet.changed_inventory(character, removed)
+        character.save!
+        GameReward.create!(account: account, kind: 'manito', money: -money, items: removed.map { |name, count| { 'name' => name, 'count' => count } },
+                           reason: '마니또 들킴', actor: 'manito', other_account_id: thief.id, other_dir: 'to')
+      end
     end
 
     # ── 툿을 지우면: 그 툿으로 센 사용 1회와 (아직 안 빼앗긴) 보상을 되돌린다 (Status#discard_with_reblogs → Game::ManitoWorker) ──

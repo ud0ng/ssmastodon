@@ -69,6 +69,22 @@ RSpec.describe Game::Manito do
     expect(GameManitoWord.find_by!(account: a, target_account: c).uses).to eq 2
   end
 
+  it 'moves everything earned from the guesser even if spent: money goes below zero, items are given anew, and names the guessed word' do
+    GameManitoWord.find_by!(account: a, target_account: b).update!(words: %w(하지마 그만))
+    Game::Config.merge!('manito', 'reward_items_manito' => "초콜릿 개구리|1")
+    described_class.record!(toot('@draco 그만'))
+    described_class.record!(toot('@draco 그만 좀'))
+    harry = GameCharacter.for(a)
+    harry.update!(money: 1, inventory: [{ 'name' => '초콜릿 개구리', 'count' => 1, 'note' => '' }]) # 6 중 5 를 쓰고 개구리 하나를 먹었다
+
+    described_class.guess!(b, '그만', a)
+
+    expect(GameCharacter.for(a)).to have_attributes(money: -5, inventory: [])
+    expect(GameCharacter.for(b).money).to eq 6
+    expect(GameCharacter.for(b).inventory.pluck('name', 'count')).to eq [['초콜릿 개구리', 2]]
+    expect(notes_to(a).last.text).to include('단어(그만)')
+  end
+
   it 'charges a penalty for a wrong guess, refuses without the money, and limits guesses a day' do
     GameCharacter.for(b).update!(money: 1)
     house = GameHouse.create!(name: '슬리데린', category: 'house')
