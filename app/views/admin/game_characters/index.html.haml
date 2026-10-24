@@ -23,6 +23,9 @@
         %strong= kind['label']
         .input.select.optional
           = select_tag "groups[#{kind['key']}]", options_for_select([[game_t('admin.games.manage.roster.all'), ''], [none, 'none']] + houses.map { |house| [house.name, house.id] }, params.dig(:groups, kind['key'])), id: "groups_#{kind['key']}"
+  -# 거를 때도 고른 정렬은 그대로
+  = hidden_field_tag :sort, params[:sort] if params[:sort].present?
+  = hidden_field_tag :dir, params[:dir] if params[:dir].present?
   .fields-group
     .input.string.optional
       = text_field_tag :q, params[:q], class: 'string optional', placeholder: game_t('admin.games.manage.roster.search')
@@ -32,20 +35,22 @@
 .bot-sheet-table.game-table.game-table--scroll
   %table.table
     %thead
+      -# 머리 칸을 누르면 정렬 (활동 탭 표와 같은 game_sort_header): 같은 칸을 다시 누르면 오름차순 ↔ 내림차순
+      - sort_key, sort_dir = roster_sort
       %tr
-        %th= game_t('admin.games.manage.roster.name')
-        %th= @labels['house_label']
-        %th= @labels['faction_label']
+        %th= game_sort_header(game_t('admin.games.manage.roster.name'), 'name', sort_key, sort_dir)
+        %th= game_sort_header(@labels['house_label'], 'house', sort_key, sort_dir)
+        %th= game_sort_header(@labels['faction_label'], 'faction', sort_key, sort_dir)
         - @extra_kinds.each do |kind, _|
-          %th= kind['label']
-        %th= @currency
-        -# 누적 수치: 상성이 있으면 '벌점/상점' 처럼 함께 (값은 상쇄하고 난 현재값)
+          %th= game_sort_header(kind['label'], "group:#{kind['key']}", sort_key, sort_dir)
+        %th= game_sort_header(@currency, 'money', sort_key, sort_dir)
+        -# 누적 수치: 상성이 있으면 '벌점/상점' 처럼 함께 (값은 상쇄하고 난 현재값, 정렬은 앞의 수치로)
         - @counter_groups.each do |group|
-          %th= group.compact.map(&:name).join('/')
+          %th= game_sort_header(group.compact.map(&:name).join('/'), "counter:#{group.compact.first.id}", sort_key, sort_dir)
         - @base_stats.each do |stat|
-          %th= stat.name
+          %th= game_sort_header(stat.name, "stat:#{stat.id}", sort_key, sort_dir)
         - @statuses.each do |status|
-          %th= status.name
+          %th= game_sort_header(status.name, "status:#{status.id}", sort_key, sort_dir)
     %tbody
       - if @characters.empty?
         %tr

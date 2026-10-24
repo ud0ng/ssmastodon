@@ -8,7 +8,7 @@ module Admin
 
     PER_PAGE = 100
 
-    helper_method :filter_params
+    helper_method :filter_params, :roster_sort
 
     def index
       authorize :settings, :show?
@@ -18,9 +18,14 @@ module Admin
       GameCharacter.sync!
       load_columns
       @counter_groups = helpers.game_counter_groups(GameCounter.includes(:opposite).to_a)
-      @characters = filtered.includes(:house, :faction, account: :user)
-                            .order(Arel.sql('game_houses.position NULLS LAST, game_houses.id NULLS LAST, accounts.username'))
-                            .page(params[:page]).per(PER_PAGE)
+      scope = filtered.includes(:house, :faction, account: :user)
+                      .order(Arel.sql('game_houses.position NULLS LAST, game_houses.id NULLS LAST, accounts.username'))
+      # 머리 칸을 누르면 그 칸으로 정렬 (활동 탭 표처럼, 같은 칸을 다시 누르면 반대로). 고르지 않으면 소속 순서
+      @characters = if roster_sort.first
+                      Kaminari.paginate_array(sorted_characters(scope.to_a)).page(params[:page]).per(PER_PAGE)
+                    else
+                      scope.page(params[:page]).per(PER_PAGE)
+                    end
     end
 
     # 명단에서 소속·진영을 눌러 바로 바꾼다 (kind: house|faction, value: 소속 번호, 비우면 없음)
@@ -155,7 +160,43 @@ module Admin
     end
 
     def filter_params
-      { q: params[:q], house: params[:house], faction: params[:faction], groups: params[:groups]&.permit!&.to_h }.compact_blank
+      { q: params[:q], house: params[:house], faction: params[:faction], groups: params[:groups]&.permit!&.to_h, sort: params[:sort], dir: params[:dir] }.compact_blank
+    end
+
+    # 명단 정렬: [칸, 방향]. 칸은 name / house / faction / money / group:<종류> / counter:<번호> / stat:<번호> / status:<번호>
+    def roster_sort
+      key = params[:sort].to_s
+      key = nil unless key.match?(/\A(name|house|faction|money|(group|counter|stat|status):[\w-]+)\z/)
+      [key, params[:dir] == 'desc' ? 'desc' : 'asc']
+    end
+
+    # 고른 칸의 값으로 세운다 (같은 값이면 원래 소속 순서). 값이 없는 칸(소속 없음 등)은 늘 맨 뒤
+    def sorted_characters(list)
+      key, direction = roster_sort
+      kind, id = key.split(':', 2)
+      houses = GameHouse.all.index_by(&:id)
+      fields = GameCharacterField.all.index_by { |field| field.id.to_s }
+      counters = GameCounter.includes(:opposite).index_by { |counter| counter.id.to_s }
+      base = GameCharacterField.base_stats.to_a
+      value = lambda do |character|
+        case kind
+        when 'name' then character.display_name.to_s.downcase
+        when 'house', 'faction'
+          house = houses[kind == 'house' ? character.game_house_id : character.game_faction_id]
+          house && [house.position.to_i, house.name.to_s]
+        when 'group'
+          house = houses[character.extra_group_ids[id].to_i]
+          house && [house.position.to_i, house.name.to_s]
+        when 'money' then character.money.to_i
+        when 'counter' then counters[id]&.net_for(character).to_i
+        when 'stat' then fields[id] && character.stat_value(fields[id]).to_i
+        when 'status' then fields[id] && character.status_value(fields[id], base)
+        end
+      end
+      present, missing = list.each_with_index.map { |character, index| [character, value.call(character), index] }.partition { |_, each, _| !each.nil? }
+      sorted = present.sort_by { |_, each, index| [each, index] }.map(&:first)
+      sorted.reverse! if direction == 'desc'
+      sorted + missing.map(&:first)
     end
 
     # 스탯: 정의된 스탯만, 최소~최대 안으로 (비우면 저장하지 않아 최소치)
