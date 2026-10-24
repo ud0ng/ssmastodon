@@ -38,6 +38,8 @@ import { StageTutorial } from './stage_tutorial';
 import type { MmChatMessage } from './marauders_stage';
 import { MaraudersStage } from './marauders_stage';
 import { MazePlay } from './maze';
+import type { CsMessage } from './chamber_stage';
+import { ChamberStage } from './chamber_stage';
 import { ChamberPlay } from './secret_chamber';
 
 // 무대 화면으로만 보이는 이벤트 (옛 채팅방 화면 없음)
@@ -355,16 +357,18 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   const flyingRoom = data?.kind === 'flying' && ['active', 'finished'].includes(data.status);
   // 도둑 지도 게임방 (양피지 지도 화면)
   const mapRoom = data?.kind === 'marauders_map' && ['active', 'finished'].includes(data.status);
+  // 비밀의 방 게임방 (참가자·관전하는 운영진)
+  const chamberRoom = data?.kind === 'secret_chamber' && ['active', 'finished'].includes(data.status);
 
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, inLobby || flyingRoom || mapRoom ? LOBBY_REFRESH_MS : REFRESH_MS);
+    const timer = window.setInterval(load, inLobby || flyingRoom || mapRoom || chamberRoom ? LOBBY_REFRESH_MS : REFRESH_MS);
     const pending = timers.current;
     return () => {
       window.clearInterval(timer);
       pending.forEach((each) => { window.clearTimeout(each); });
     };
-  }, [load, inLobby, flyingRoom, mapRoom]);
+  }, [load, inLobby, flyingRoom, mapRoom, chamberRoom]);
 
   // 새 메시지가 오면 메시지 칸만 맨 아래로
   useLayoutEffect(() => {
@@ -498,7 +502,17 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
             onChanged={load}
           />
         )}
-        {(!data || (!flyingRoom && !mapRoom && !data.lobby)) && (
+        {data && chamberRoom && (
+          <ChamberStage
+            sessionId={data.id}
+            name={data.name}
+            messages={data.messages.filter((message) => message.text).map((message): CsMessage => ({ id: message.id, kind: message.chat ? 'chat' : message.secret ? 'secret' : 'system', mine: message.mine, name: message.name, acct: message.acct, avatar: message.avatar, text: message.text }))}
+            staff={Boolean(data.staff)}
+            isPlayer={data.player}
+            onChanged={load}
+          />
+        )}
+        {(!data || (!flyingRoom && !mapRoom && !chamberRoom && !data.lobby)) && (
           <StageFrame back='/system/group' label={title}>
             {(data || failed) && (
               <p className='stage-notice'>

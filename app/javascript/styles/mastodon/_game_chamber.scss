@@ -1,0 +1,2770 @@
+// 비밀의 방 게임방 (features/system/chamber_stage.tsx): 해리포터 '비밀의 방' — 젖은 돌벽, 초록 안개, 뱀 석상, 핏빛 글씨.
+// 낮은 횃불의 따뜻한 빛(cs-stage--day), 밤은 초록빛 어둠과 바실리스크의 노란 눈(cs-stage--night).
+// 강조하는 큰 글씨(오프닝·낮/밤·석화/퇴학·결과)만 East Sea Dokdo(핏빛 붓글씨, styles/fonts/chamber.scss), 나머지는 사이트 기본 글꼴
+
+$cs-title: 'East Sea Dokdo', sans-serif;
+$cs-serif: inherit;
+$cs-emerald: #3fbf74;
+$cs-green: #1f5a38;
+$cs-mist: rgb(110 200 140 / 16%);
+$cs-silver: #cfd9d2;
+$cs-blood: #a3141a;
+$cs-gold: #d7b45a;
+$cs-stone: #1d2620;
+
+.cs-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 45%, rgb(40 70 50 / 55%), transparent 70%),
+    linear-gradient(180deg, #0b120e, #050806 70%, #020403);
+  color: #e3ece5;
+  transition: background 1.6s ease;
+
+  &--day {
+    background:
+      radial-gradient(ellipse 60% 45% at 50% 40%, rgb(215 170 90 / 22%), transparent 70%),
+      radial-gradient(ellipse 70% 55% at 50% 45%, rgb(40 70 50 / 45%), transparent 75%),
+      linear-gradient(180deg, #121a14, #070b08 70%, #030504);
+  }
+}
+
+// ── 배경: 돌기둥(뱀 석상) · 흐르는 안개 · 어둠 속 눈 ──
+.cs-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cs-fog {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(ellipse 35% 20% at 30% 70%, $cs-mist, transparent 70%),
+    radial-gradient(ellipse 30% 18% at 70% 80%, $cs-mist, transparent 70%),
+    radial-gradient(ellipse 40% 22% at 50% 95%, rgb(110 200 140 / 12%), transparent 70%);
+  animation: cs-fog 26s ease-in-out infinite alternate;
+
+  &--b {
+    animation-duration: 34s;
+    animation-direction: alternate-reverse;
+    opacity: 0.7;
+  }
+}
+
+.cs-stage--day .cs-fog {
+  opacity: 0.45;
+}
+
+@keyframes cs-fog {
+  from { transform: translateX(-6%) translateY(0); }
+  to { transform: translateX(6%) translateY(-3%); }
+}
+
+// 바실리스크의 노란 두 눈
+.cs-eyes {
+  position: absolute;
+  top: 9%;
+  left: 50%;
+  display: flex;
+  gap: 46px;
+  pointer-events: none;
+  translate: -50% 0;
+
+  i {
+    width: 38px;
+    height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, #fff7a8 0 18%, #f5c400 40%, #7a5a00 70%, transparent 72%);
+    box-shadow: 0 0 22px 8px rgb(245 196 0 / 45%);
+    clip-path: ellipse(50% 40% at 50% 50%);
+
+    &::after {
+      content: '';
+      display: block;
+      width: 4px;
+      height: 12px;
+      margin: 1px auto 0;
+      border-radius: 50%;
+      background: #160c00;
+    }
+  }
+}
+
+// ── 맨 위 ──
+.cs-top {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 120px 6px;
+}
+
+.cs-chip {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 3px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(210 235 215 / 10%);
+  box-shadow: 0 0 0 1px rgb(180 230 195 / 25%);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.6;
+
+  &--day { box-shadow: 0 0 0 1px rgb(215 180 90 / 55%); color: #f3dc9c; }
+
+  &--night { box-shadow: 0 0 0 1px rgb(63 191 116 / 60%); color: #9fe0b5; }
+
+  &--dim { color: rgb(227 236 229 / 70%); font-weight: 600; }
+
+  &--role {
+    cursor: pointer;
+
+    &.is-dark {
+      background: rgb(163 20 26 / 25%);
+      box-shadow: 0 0 0 1px rgb(220 70 70 / 60%);
+      color: #ffb4b4;
+    }
+  }
+}
+
+.cs-timer {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 3px 14px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 40%);
+  box-shadow: 0 0 0 1px rgb(215 180 90 / 40%);
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+
+  &.is-low {
+    color: #ff8a8a;
+    animation: cs-pulse 1s ease-in-out infinite;
+  }
+}
+
+@keyframes cs-pulse {
+  50% { box-shadow: 0 0 0 2px rgb(255 90 90 / 70%), 0 0 16px rgb(255 90 90 / 40%); }
+}
+
+.cs-sound,
+.cs-exit {
+  position: absolute;
+  top: 12px;
+  padding: 3px 12px;
+  border: 1px solid rgb(210 235 215 / 35%);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cs-sound {
+  right: 88px;
+
+  &.is-off { opacity: 0.5; }
+}
+
+.cs-exit { right: 16px; }
+
+// ── 가운데: 장면 + 오른쪽 쪽지 ──
+.cs-main {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 1;
+  gap: 18px;
+  align-items: stretch;
+  justify-content: center;
+  min-height: 0;
+  padding: 8px 3% 0;
+}
+
+// 장면: 남은 자리를 모두 쓴다 (자리는 % 로 놓는다)
+.cs-scene {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 1100px;
+}
+
+// ── 낮 배경: 호그와트 대연회장 ──
+.cs-hogwarts,
+.cs-chamber {
+  position: absolute;
+  inset: 0;
+}
+
+.cs-hogwarts {
+  background:
+    // 돌벽 줄눈
+    repeating-linear-gradient(0deg, rgb(0 0 0 / 22%) 0 2px, transparent 2px 54px),
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 14%) 0 2px, transparent 2px 120px),
+    linear-gradient(180deg, #2c241b, #1d1812 60%, #0f0c09);
+
+  &__windows {
+    position: absolute;
+    top: 0;
+    right: 6%;
+    left: 6%;
+    display: flex;
+    justify-content: space-around;
+    height: 58%;
+
+    i {
+      position: relative;
+      width: 9%;
+      height: 100%;
+      border-radius: 999px 999px 0 0;
+      background:
+        linear-gradient(90deg, transparent 47%, rgb(40 30 20 / 90%) 47% 53%, transparent 53%),
+        repeating-linear-gradient(0deg, transparent 0 46px, rgb(40 30 20 / 80%) 46px 49px),
+        linear-gradient(180deg, #fbe7b0, #e2b866 55%, rgb(180 120 50 / 40%));
+      box-shadow: 0 0 0 8px #3b3026, 0 0 60px 10px rgb(255 210 130 / 30%);
+      opacity: 0.85;
+    }
+  }
+
+  &__rays {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(160deg, transparent 20%, rgb(255 220 150 / 9%) 30%, transparent 40%),
+      linear-gradient(160deg, transparent 45%, rgb(255 220 150 / 7%) 55%, transparent 65%),
+      linear-gradient(200deg, transparent 30%, rgb(255 220 150 / 7%) 40%, transparent 50%);
+    animation: cs-rays-drift 12s ease-in-out infinite alternate;
+  }
+
+  &__banners {
+    position: absolute;
+    top: 0;
+    right: 12%;
+    left: 12%;
+    display: flex;
+    justify-content: space-between;
+
+    i {
+      width: 58px;
+      height: 150px;
+      background:
+        linear-gradient(90deg, var(--trim) 0 4px, transparent 4px calc(100% - 4px), var(--trim) calc(100% - 4px)),
+        linear-gradient(180deg, var(--banner), color-mix(in srgb, var(--banner) 70%, #000));
+      box-shadow: 0 8px 16px rgb(0 0 0 / 50%);
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 86%, 0 100%);
+      transform-origin: 50% 0;
+    }
+  }
+
+  &__floor {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 22%;
+    background: linear-gradient(180deg, transparent, rgb(0 0 0 / 55%));
+  }
+}
+
+// 떠 있는 촛불
+.cs-candle {
+  position: absolute;
+  width: 6px;
+  height: 22px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #fff6df, #e8d7b0);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    width: 8px;
+    height: 12px;
+    margin-left: -4px;
+    border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%;
+    background: radial-gradient(ellipse at 50% 70%, #fff8d0, #ffb840 60%, transparent 70%);
+    box-shadow: 0 0 16px 6px rgb(255 190 80 / 45%);
+    animation: cs-flame 0.4s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes cs-rays-drift {
+  from { opacity: 0.7; transform: translateX(-2%); }
+  to { opacity: 1; transform: translateX(2%); }
+}
+
+// ── 밤 배경: 비밀의 방 ──
+.cs-chamber {
+  background:
+    radial-gradient(ellipse 50% 40% at 50% 30%, rgb(40 80 55 / 35%), transparent 70%),
+    linear-gradient(180deg, #050a07, #020403 70%, #010201);
+
+  &__statue {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: min(520px, 46vw);
+    height: 56%;
+    translate: -50% 0;
+
+    .cs-eyes { top: 28%; gap: 54px; }
+  }
+
+  &__face {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 30px rgb(63 191 116 / 15%));
+    opacity: 0.8;
+  }
+}
+
+.cs-stage--night .cs-hall__water {
+  height: 40%;
+}
+
+// 낮 자리: 대연회장에 앉은 사람 (금빛 테)
+.cs-stage--day .cs-seat {
+  .cs-seat__frame { box-shadow: 0 0 0 3px #b68a3a, 0 0 0 5px rgb(0 0 0 / 60%), 0 6px 16px rgb(0 0 0 / 60%); }
+
+  &.is-selectable .cs-seat__frame { box-shadow: 0 0 0 3px #d9b465, 0 0 0 5px rgb(0 0 0 / 60%), 0 0 18px rgb(255 210 120 / 40%); }
+
+  &.is-selectable:hover .cs-seat__frame { box-shadow: 0 0 0 3px #fff0bf, 0 0 0 6px rgb(0 0 0 / 60%), 0 0 26px rgb(255 210 120 / 75%); }
+}
+
+// 참가자 초상
+.cs-seat {
+  --seat-size: 70px;
+
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+  width: calc(var(--seat-size) + 40px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: default;
+  translate: -50% -50%;
+
+  &__frame {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: var(--seat-size);
+    height: var(--seat-size);
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px #3c5a44, 0 0 0 5px rgb(0 0 0 / 60%), 0 6px 16px rgb(0 0 0 / 60%);
+    transition: box-shadow 0.25s ease, filter 0.6s ease;
+
+    .account__avatar {
+      border-radius: 50%;
+      overflow: hidden;
+    }
+  }
+
+  &__name {
+    max-width: 100%;
+    overflow: hidden;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: rgb(5 10 7 / 75%);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    small { color: $cs-gold; }
+  }
+
+  &__role {
+    padding: 0 8px;
+    border-radius: 999px;
+    background: rgb(63 191 116 / 22%);
+    color: #b9f0c9;
+    font-family: $cs-serif;
+    font-size: 12px;
+
+    &.is-dark { background: rgb(163 20 26 / 40%); color: #ffc2c2; }
+  }
+
+  &__votes {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    display: grid;
+    place-items: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: $cs-gold;
+    box-shadow: 0 0 0 2px #1a1206, 0 0 12px rgb(215 180 90 / 60%);
+    color: #2a1a02;
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  &__picks {
+    position: absolute;
+    top: -6px;
+    left: -8px;
+    display: inline-flex;
+    gap: 2px;
+    align-items: center;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: $cs-blood;
+    box-shadow: 0 0 12px rgb(220 30 40 / 60%);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  &__mine {
+    position: absolute;
+    bottom: -4px;
+    right: -6px;
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #f3dc9c;
+    box-shadow: 0 0 0 2px #1a1206;
+    color: #2a1a02;
+    font-size: 14px;
+
+    &--petrify { background: #ff8a8a; }
+
+    &--protect { background: #a5e6ff; }
+
+    &--investigate { background: #d6b7ff; }
+  }
+
+  &__stamp {
+    position: absolute;
+    padding: 1px 8px;
+    border: 2px solid $cs-blood;
+    border-radius: 4px;
+    color: #ff6b6b;
+    font-size: 15px;
+    font-weight: 900;
+    font-style: normal;
+    text-shadow: 0 0 8px rgb(0 0 0 / 80%);
+    rotate: -14deg;
+  }
+
+  &.is-selectable {
+    cursor: pointer;
+
+    .cs-seat__frame {
+      box-shadow: 0 0 0 3px #5c8a68, 0 0 0 5px rgb(0 0 0 / 60%), 0 0 18px rgb(63 191 116 / 35%);
+    }
+
+    &:hover .cs-seat__frame {
+      box-shadow: 0 0 0 3px $cs-emerald, 0 0 0 6px rgb(0 0 0 / 60%), 0 0 26px rgb(63 191 116 / 70%);
+    }
+  }
+
+  &.is-selected .cs-seat__frame {
+    box-shadow: 0 0 0 4px $cs-gold, 0 0 0 7px rgb(0 0 0 / 60%), 0 0 30px 6px rgb(215 180 90 / 70%);
+    animation: cs-selected 1.2s ease-in-out infinite;
+  }
+
+  &.is-me .cs-seat__frame {
+    box-shadow: 0 0 0 3px $cs-gold, 0 0 0 5px rgb(0 0 0 / 60%), 0 6px 16px rgb(0 0 0 / 60%);
+  }
+
+  &.is-mate .cs-seat__frame,
+  &.is-dark .cs-seat__frame {
+    box-shadow: 0 0 0 3px #8a1c20, 0 0 0 5px rgb(0 0 0 / 60%), 0 0 18px rgb(200 30 40 / 50%);
+  }
+
+  &.is-out .cs-seat__frame { filter: grayscale(0.7) brightness(0.6); }
+
+  &.is-expelled { opacity: 0.6; }
+
+  // 석화: 잿빛 돌
+  &.is-stone .cs-seat__frame {
+    filter: grayscale(1) contrast(1.2) brightness(0.9);
+    box-shadow: 0 0 0 3px #7b8580, 0 0 0 5px rgb(0 0 0 / 60%);
+  }
+}
+
+@keyframes cs-selected {
+  50% { scale: 1.06; }
+}
+
+// 금 간 돌 (석화)
+.cs-cracks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke: rgb(20 24 22 / 85%);
+    stroke-width: 2.5;
+    stroke-linejoin: round;
+  }
+}
+
+// ── 오른쪽: 쪽지 · 밀담 · 예언 ──
+.cs-side {
+  position: relative;
+  z-index: 6;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 8px;
+  align-self: center;
+  width: 250px;
+  max-height: 86%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgb(8 14 10 / 78%);
+  box-shadow: 0 0 0 1px rgb(180 230 195 / 18%), 0 10px 30px rgb(0 0 0 / 50%);
+
+  &__tabs {
+    display: flex;
+    gap: 6px;
+
+    button {
+      padding: 2px 12px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: rgb(227 236 229 / 60%);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+
+      &.is-on { background: rgb(63 191 116 / 22%); color: #b9f0c9; }
+
+      &.is-dark.is-on { background: rgb(163 20 26 / 35%); color: #ffc2c2; }
+    }
+  }
+
+  &__list {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 60px;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+    font-family: $cs-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    scrollbar-width: none;
+
+    &:hover { scrollbar-width: thin; scrollbar-color: rgb(63 191 116 / 40%) transparent; }
+
+    li {
+      padding: 6px 9px;
+      border-radius: 8px;
+      background: rgb(230 220 190 / 9%);
+      white-space: pre-wrap;
+
+      small {
+        display: block;
+        color: $cs-gold;
+        font-size: 11px;
+      }
+
+      &.is-note { background: rgb(215 180 90 / 14%); }
+
+      &.is-empty { background: transparent; color: rgb(227 236 229 / 45%); }
+    }
+
+    &.is-dark li { background: rgb(163 20 26 / 18%); }
+  }
+
+  &__form {
+    display: flex;
+    gap: 6px;
+
+    input {
+      flex: 1;
+      min-width: 0;
+      padding: 4px 10px;
+      border: 1px solid rgb(220 70 70 / 40%);
+      border-radius: 999px;
+      background: rgb(0 0 0 / 40%);
+      color: #fff;
+      font: inherit;
+      font-size: 13px;
+    }
+  }
+
+  &__prophecy {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+
+    p { margin: 0; color: rgb(227 236 229 / 75%); }
+
+    select {
+      padding: 4px 8px;
+      border: 1px solid rgb(220 70 70 / 40%);
+      border-radius: 8px;
+      background: #140b0b;
+      color: #fff;
+      font: inherit;
+      font-size: 13px;
+    }
+  }
+
+  &__current b { color: #ffc2c2; }
+
+  &__hint { color: rgb(227 236 229 / 50%); }
+}
+
+// ── 할 일 띠 ──
+.cs-action {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex: none;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin: 4px auto 0;
+  padding: 4px 20px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+
+  &.is-on {
+    background: rgb(5 10 7 / 80%);
+    box-shadow: 0 0 0 1px rgb(215 180 90 / 40%);
+  }
+
+  &__ask { color: #f3e8c8; }
+}
+
+// ── 아래 채팅 ──
+.cs-chat {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 4px;
+  width: min(760px, calc(100% - 28px));
+  height: 150px;
+  margin: 6px auto 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgb(0 0 0 / 50%);
+  box-shadow: 0 0 0 1px rgb(180 230 195 / 18%);
+
+  &__tabs {
+    display: flex;
+    gap: 6px;
+
+    button {
+      padding: 0 14px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: rgb(227 236 229 / 60%);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+
+      &.is-on { background: rgb(227 236 229 / 14%); color: #fff; }
+    }
+  }
+
+  &__list {
+    flex: 1;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+    font-size: 14px;
+    scrollbar-width: none;
+
+    &:hover { scrollbar-width: thin; scrollbar-color: rgb(63 191 116 / 45%) transparent; }
+
+    &::-webkit-scrollbar { width: 0; }
+
+    &:hover::-webkit-scrollbar { width: 6px; }
+
+    &:hover::-webkit-scrollbar-thumb { border-radius: 3px; background: rgb(63 191 116 / 45%); }
+
+    li {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      line-height: 1.5;
+
+      &.is-mine { color: #c8f5d6; }
+
+      &.is-system {
+        color: #f3dc9c;
+        font-family: $cs-serif;
+        white-space: pre-wrap;
+      }
+
+      img {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+    }
+  }
+
+  &__muted {
+    margin: 0;
+    color: rgb(227 236 229 / 50%);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  form {
+    display: flex;
+    gap: 6px;
+
+    input {
+      flex: 1;
+      padding: 4px 12px;
+      border: 1px solid rgb(180 230 195 / 30%);
+      border-radius: 999px;
+      background: rgb(0 0 0 / 35%);
+      color: #fff;
+      font: inherit;
+      font-size: 14px;
+    }
+  }
+}
+
+// ── 버튼 ──
+.cs-button {
+  padding: 8px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #e9cf86, #b98f2e);
+  box-shadow: 0 0 0 1px #6a4c10, 0 4px 14px rgb(0 0 0 / 40%);
+  color: #2a1a02;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+
+  &:hover { filter: brightness(1.08); }
+
+  &:disabled { opacity: 0.5; cursor: default; }
+
+  &--ghost {
+    background: transparent;
+    box-shadow: 0 0 0 1.5px rgb(215 180 90 / 70%);
+    color: $cs-gold;
+  }
+
+  &--night {
+    background: linear-gradient(180deg, #5fd893, #237a48);
+    box-shadow: 0 0 0 1px #0d3a20, 0 0 18px rgb(63 191 116 / 50%);
+    color: #04140a;
+  }
+
+  &--small {
+    padding: 4px 14px;
+    font-size: 13px;
+  }
+}
+
+// ── 오프닝: 횃불이 비추는 젖은 돌벽에 핏빛 글씨 ──
+.cs-opening {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgb(70 60 40 / 35%), transparent 70%),
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 2%) 0 2px, transparent 2px 64px),
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 25%) 0 2px, transparent 2px 128px),
+    linear-gradient(180deg, #1a1d18, #0b0d0a);
+
+  &__words {
+    max-width: 80%;
+    margin: 0;
+    color: #b0121a;
+    font-family: $cs-title;
+    font-size: clamp(42px, 6.4vw, 92px);
+    line-height: 1.35;
+    text-align: center;
+    text-shadow: 0 0 2px #4a0004, 0 2px 0 #5a0006, 0 0 24px rgb(176 18 26 / 45%);
+    word-break: keep-all;
+
+    span {
+      position: relative;
+      display: inline-block;
+    }
+  }
+
+  &__torch {
+    position: absolute;
+    top: 30%;
+    width: 18px;
+    height: 120px;
+    border-radius: 4px;
+    background: linear-gradient(180deg, #3a2a12, #1a1208);
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -46px;
+      left: 50%;
+      width: 34px;
+      height: 54px;
+      border-radius: 50% 50% 40% 40%;
+      background: radial-gradient(ellipse at 50% 70%, #fff3b0, #ffb400 40%, #e04a00 70%, transparent 72%);
+      filter: blur(0.6px);
+      translate: -50% 0;
+      animation: cs-flame 0.18s ease-in-out infinite alternate;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: -140px;
+      left: 50%;
+      width: 360px;
+      height: 360px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgb(255 180 60 / 22%), transparent 65%);
+      translate: -50% 0;
+    }
+
+    &--left { left: 14%; }
+
+    &--right { right: 14%; }
+  }
+}
+
+// 핏방울이 흘러내린다
+.cs-drip {
+  position: absolute;
+  top: 78%;
+  left: 45%;
+  width: 4px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(180deg, #8a0d12, #b0121a);
+  box-shadow: 0 0 4px rgb(176 18 26 / 60%);
+}
+
+@keyframes cs-flame {
+  from { scale: 1 1; }
+  to { scale: 0.92 1.08; }
+}
+
+// ── 역할 카드 모달 ──
+.cs-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: rgb(2 5 3 / 78%);
+
+  &__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    width: min(560px, calc(100% - 40px));
+    padding: 22px 28px 20px;
+    border-radius: 16px;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgb(63 191 116 / 18%), transparent 60%),
+      linear-gradient(180deg, #17231b, #0b120d);
+    box-shadow: 0 0 0 1px rgb(63 191 116 / 35%), 0 0 0 6px rgb(0 0 0 / 40%), 0 20px 60px rgb(0 0 0 / 70%);
+    text-align: center;
+
+    h2 {
+      margin: 0;
+      color: #f3e8c8;
+      font-family: $cs-serif;
+      font-size: 24px;
+    }
+  }
+
+  &__eyebrow { color: rgb(227 236 229 / 55%); font-size: 12px; }
+
+  &__lead {
+    margin: 0;
+    color: rgb(227 236 229 / 85%);
+    font-family: $cs-serif;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  &__mates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: rgb(163 20 26 / 20%);
+    color: #ffc2c2;
+    font-size: 14px;
+
+    span {
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+      font-weight: 700;
+    }
+
+    img {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+  }
+
+  &__phases {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  &__phase {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+
+    .game-icon { font-size: 26px; }
+
+    b { font-size: 15px; }
+
+    &.is-day { background: rgb(215 180 90 / 14%); color: #f3e8c8; }
+
+    &.is-night { background: rgb(63 191 116 / 14%); color: #c8f5d6; }
+  }
+
+  &__subhead {
+    margin: 4px 0 0;
+    font-size: 15px;
+  }
+
+  &__steps {
+    margin: 0;
+    padding-inline-start: 20px;
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: start;
+  }
+
+  &__note {
+    margin: 0;
+    color: rgb(227 236 229 / 60%);
+    font-size: 12px;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 6px;
+  }
+}
+
+// 역할 카드: 뒷면(뱀 문장) → 앞면(역할)
+.cs-rolecard {
+  width: 150px;
+  height: 200px;
+  perspective: 900px;
+
+  &__inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.9s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+
+  &.is-flipped &__inner { transform: rotateY(180deg); }
+
+  &__back,
+  &__front {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    backface-visibility: hidden;
+  }
+
+  &__back {
+    background: repeating-linear-gradient(45deg, #143020 0 10px, #0f2418 10px 20px);
+    box-shadow: inset 0 0 0 3px #2f7a4a, 0 10px 30px rgb(0 0 0 / 60%);
+  }
+
+  &__front {
+    background: linear-gradient(180deg, #e9dcb4, #c9b37c);
+    box-shadow: inset 0 0 0 3px $cs-gold, 0 10px 30px rgb(0 0 0 / 60%);
+    color: #2a1d08;
+    transform: rotateY(180deg);
+
+    b { font-family: $cs-serif; font-size: 24px; }
+
+    span { font-size: 13px; font-weight: 700; }
+
+    &.is-dark {
+      background: linear-gradient(180deg, #3a0d10, #1a0507);
+      box-shadow: inset 0 0 0 3px #a3141a, 0 0 30px rgb(200 30 40 / 50%);
+      color: #ffd0d0;
+    }
+  }
+}
+
+.cs-sigil {
+  display: grid;
+  place-items: center;
+  width: 1.4em;
+  height: 1.4em;
+  font-size: 1em;
+
+  .cs-rolecard & { font-size: 40px; }
+
+  &--traitor { color: #ff6b6b; }
+
+  &--auror { color: #a993ff; }
+
+  &--healer { color: #7fd4ff; }
+
+  &--seer { color: #ffd76a; }
+
+  &--student { color: #b9f0c9; }
+
+  .cs-rolecard__back & { color: $cs-emerald; }
+}
+
+// ── 전체 화면 연출 ──
+.cs-cue {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+
+  h2 {
+    margin: 0;
+    font-family: $cs-title;
+    font-size: clamp(46px, 6vw, 84px);
+    line-height: 1.1;
+  }
+
+  p {
+    margin: 0;
+    font-family: $cs-serif;
+    font-size: 18px;
+  }
+
+  &__orb {
+    display: grid;
+    place-items: center;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    font-size: 58px;
+  }
+
+  &--day {
+    background: radial-gradient(ellipse at 50% 45%, rgb(255 210 120 / 35%), rgb(10 8 4 / 80%) 65%);
+    color: #ffe7a8;
+
+    .cs-cue__orb {
+      background: radial-gradient(circle, #fff3c2, #f0b840 60%, transparent 72%);
+      box-shadow: 0 0 80px 30px rgb(255 200 90 / 45%);
+      color: #7a4a00;
+    }
+  }
+
+  &--night {
+    background: radial-gradient(ellipse at 50% 45%, rgb(40 90 60 / 40%), rgb(1 4 2 / 92%) 65%);
+    color: #b9f0c9;
+
+    .cs-cue__orb {
+      background: radial-gradient(circle, #e9fff0, #9fe0b5 50%, transparent 72%);
+      box-shadow: 0 0 80px 20px rgb(120 220 160 / 30%);
+      color: #0d3a20;
+    }
+  }
+
+  &--safe {
+    background: radial-gradient(ellipse at 50% 45%, rgb(120 200 255 / 22%), rgb(2 6 10 / 85%) 65%);
+    color: #d6f1ff;
+
+    .cs-cue__orb {
+      background: radial-gradient(circle, #e8f7ff, #7fd4ff 55%, transparent 72%);
+      color: #063048;
+    }
+  }
+
+  &--expel,
+  &--petrify {
+    background: radial-gradient(ellipse at 50% 45%, rgb(60 12 14 / 92%), rgb(4 2 2 / 98%) 65%);
+    color: #ffd0d0;
+  }
+
+  &--petrify {
+    background: radial-gradient(ellipse at 50% 45%, rgb(130 140 130 / 25%), rgb(2 3 2 / 94%) 65%);
+    color: #e6ece8;
+  }
+
+  &__victim {
+    position: relative;
+    display: grid;
+    place-items: center;
+  }
+
+  &__portrait {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    overflow: hidden;
+    border-radius: 50%;
+    box-shadow: 0 0 0 5px #3c5a44, 0 0 40px rgb(0 0 0 / 80%);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &.is-stone img {
+      animation: cs-petrify 2.2s ease-in forwards;
+    }
+  }
+}
+
+@keyframes cs-petrify {
+  0% { filter: none; }
+  40% { filter: saturate(0.4) brightness(1.4); }
+  100% { filter: grayscale(1) contrast(1.3) brightness(0.85); }
+}
+
+.cs-stamp {
+  position: absolute;
+  padding: 4px 16px;
+  border: 4px solid #c3151d;
+  border-radius: 8px;
+  background: rgb(20 0 0 / 40%);
+  color: #ff5555;
+  font-family: $cs-title;
+  font-size: 54px;
+  font-style: normal;
+  line-height: 1;
+  text-shadow: 0 0 10px rgb(0 0 0 / 80%);
+}
+
+.cs-reveal {
+  padding: 10px 22px;
+  border-radius: 12px;
+  background: rgb(63 191 116 / 20%);
+  box-shadow: 0 0 0 1px rgb(63 191 116 / 50%);
+  color: #c8f5d6;
+  font-family: $cs-serif;
+  font-size: 20px;
+
+  b { color: #fff; }
+
+  &.is-dark {
+    background: rgb(163 20 26 / 30%);
+    box-shadow: 0 0 0 1px rgb(220 70 70 / 60%), 0 0 30px rgb(200 30 40 / 40%);
+    color: #ffc2c2;
+  }
+}
+
+// ── 끝 ──
+.cs-end {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgb(2 4 3 / 94%);
+  text-align: center;
+
+  h2 {
+    margin: 0;
+    font-family: $cs-title;
+    font-size: clamp(54px, 7vw, 100px);
+    line-height: 1.05;
+  }
+
+  p { margin: 0; font-family: $cs-serif; font-size: 18px; }
+
+  &__crest {
+    display: grid;
+    place-items: center;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    font-size: 64px;
+  }
+
+  &--light {
+    color: #ffe7a8;
+
+    .cs-end__crest {
+      background: radial-gradient(circle, #fff3c2, #d7b45a 60%, transparent 72%);
+      box-shadow: 0 0 80px 20px rgb(215 180 90 / 45%);
+      color: #5a3a00;
+    }
+  }
+
+  &--dark {
+    color: #ffc2c2;
+
+    .cs-end__crest {
+      background: radial-gradient(circle, #ff9b9b, #a3141a 60%, transparent 72%);
+      box-shadow: 0 0 80px 20px rgb(200 30 40 / 45%);
+      color: #2a0002;
+    }
+  }
+
+  &__roles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    max-width: min(980px, 100%);
+    margin: 10px 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      align-items: center;
+      width: 96px;
+      padding: 8px 4px;
+      border-radius: 10px;
+      background: rgb(63 191 116 / 14%);
+      color: #e3ece5;
+      font-size: 13px;
+
+      &.is-dark { background: rgb(163 20 26 / 30%); }
+
+      img {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        object-fit: cover;
+
+        &.is-out { filter: grayscale(1); }
+      }
+
+      span { font-family: $cs-serif; color: $cs-gold; }
+    }
+  }
+}
+
+// ── 배경: 비밀의 방 복도의 돌 뱀 머리 (양옆, 원근) + 물에 비친 바닥 ──
+.cs-hall {
+  position: absolute;
+  inset: 0;
+
+  &__water {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 26%;
+    background:
+      repeating-linear-gradient(180deg, rgb(160 220 180 / 4%) 0 2px, transparent 2px 9px),
+      linear-gradient(180deg, transparent, rgb(40 80 55 / 30%));
+    animation: cs-water 6s ease-in-out infinite alternate;
+  }
+}
+
+.cs-head {
+  position: absolute;
+  height: auto;
+  filter: drop-shadow(0 10px 20px rgb(0 0 0 / 70%));
+  opacity: 0.85;
+
+  &__eye { fill: #0c100c; }
+}
+
+.cs-stage--night .cs-head__eye {
+  fill: #f5c400;
+  filter: drop-shadow(0 0 4px rgb(245 196 0 / 90%));
+  animation: cs-head-eye 5s ease-in-out infinite;
+}
+
+@keyframes cs-head-eye {
+  0%, 70%, 100% { opacity: 0.25; }
+  80%, 90% { opacity: 1; }
+}
+
+@keyframes cs-water {
+  from { background-position: 0 0, 0 0; opacity: 0.8; }
+  to { background-position: 0 6px, 0 0; opacity: 1; }
+}
+
+// ── 오프닝 2: 뱀이 새겨진 둥근 돌문 ──
+.cs-opening__wall {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.cs-door {
+  position: relative;
+  width: min(70vh, 70vw);
+  aspect-ratio: 1;
+
+  &__half {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 20px 40px rgb(0 0 0 / 80%));
+  }
+
+  &__light {
+    position: absolute;
+    inset: 8%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgb(170 255 200 / 85%), rgb(63 191 116 / 50%) 40%, transparent 72%);
+    filter: blur(8px);
+  }
+
+  &__lock {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40%;
+    height: 40%;
+    translate: -50% -50%;
+    filter: drop-shadow(0 6px 10px rgb(0 0 0 / 70%)) drop-shadow(0 0 14px rgb(63 191 116 / 35%));
+  }
+}
+
+// ── 석화: 바실리스크의 눈 → 섬광 → 돌 ──
+.cs-gaze {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 8vw;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, rgb(30 22 0 / 94%), #000 70%);
+
+  &__eye {
+    width: 30vw;
+    max-width: 420px;
+    height: auto;
+    filter: drop-shadow(0 0 40px rgb(255 200 0 / 70%)) drop-shadow(0 0 90px rgb(255 160 0 / 40%));
+  }
+}
+
+.cs-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, #fffbe0, #ffe066 45%, rgb(255 220 80 / 0%) 80%);
+  mix-blend-mode: screen;
+}
+
+// 돌이 아래에서 위로 번진다 (초상 위에 돌결 무늬)
+.cs-stone {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 30%, rgb(255 255 255 / 18%), transparent 40%),
+    repeating-radial-gradient(circle at 60% 70%, rgb(0 0 0 / 18%) 0 2px, transparent 2px 7px),
+    linear-gradient(160deg, rgb(150 156 150 / 70%), rgb(70 76 72 / 75%));
+  mix-blend-mode: multiply;
+}
+
+.cs-cracks--big path {
+  stroke: rgb(15 18 16 / 90%);
+  stroke-width: 2;
+}
+
+.cs-cue__portrait {
+  .cs-cracks {
+    z-index: 2;
+  }
+}
+
+// 돌가루 · 종이 조각 · 반짝이
+.cs-particles {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+
+  i {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 2px;
+  }
+
+  &--dust i { background: #9aa39c; box-shadow: 0 0 4px rgb(0 0 0 / 60%); }
+
+  &--paper i {
+    width: 12px;
+    height: 16px;
+    border-radius: 1px;
+    background: #efe3c0;
+    box-shadow: 0 2px 4px rgb(0 0 0 / 50%);
+  }
+
+  &--spark i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #fff6c2;
+    box-shadow: 0 0 10px 3px rgb(255 230 120 / 80%);
+  }
+}
+
+.cs-cue--expel .cs-particles--spark i {
+  background: #ffb3b3;
+  box-shadow: 0 0 10px 3px rgb(255 60 60 / 70%);
+}
+
+.cs-cue__lead {
+  color: rgb(255 220 220 / 80%);
+  font-size: 18px;
+}
+
+// 낮: 빛줄기 / 밤: 밀려오는 안개
+.cs-rays {
+  position: absolute;
+  width: 140vmax;
+  height: 140vmax;
+  background: repeating-conic-gradient(from 0deg, rgb(255 220 140 / 16%) 0deg 6deg, transparent 6deg 18deg);
+  mask-image: radial-gradient(circle, #000 10%, transparent 55%);
+}
+
+.cs-cue__mist {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 45% 25% at 30% 75%, rgb(140 220 170 / 22%), transparent 70%),
+    radial-gradient(ellipse 50% 30% at 70% 85%, rgb(140 220 170 / 18%), transparent 70%);
+}
+
+.cs-shield-ring {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  border: 4px solid rgb(127 212 255 / 80%);
+  border-radius: 50%;
+}
+
+// 강조하는 큰 글씨만 붓글씨
+.cs-journey__title,
+.cs-scroll h3,
+.cs-cue h2,
+.cs-end h2,
+.cs-stamp {
+  font-family: $cs-title;
+  font-weight: normal;
+}
+
+// 방주 표시 뱀
+.cs-snake-icon { vertical-align: -0.15em; }
+
+// ── 벽에 쓴 핏빛 글씨 (오프닝 · 예언) ──
+.cs-blood {
+  margin: 0;
+  max-width: min(900px, 86vw);
+  color: #b3141c;
+  font-family: $cs-title;
+  font-size: clamp(34px, 4.6vw, 64px);
+  line-height: 1.35;
+  text-align: center;
+  text-shadow: 0 0 2px #5a0508, 0 2px 0 #4a0306, 0 0 18px rgb(160 10 20 / 45%);
+  word-break: keep-all;
+
+  span {
+    position: relative;
+    display: inline-block;
+    white-space: pre;
+  }
+}
+
+// ── 허공에 쓴 불꽃 글씨 ──
+.cs-fire {
+  position: relative;
+  display: grid;
+  place-items: center;
+
+  p {
+    margin: 0;
+    font-family: $cs-title;
+    font-size: clamp(44px, 6vw, 92px);
+    line-height: 1.1;
+    word-break: keep-all;
+  }
+
+  span {
+    display: inline-block;
+    white-space: pre;
+  }
+
+  &--fire p {
+    color: #ffd9a0;
+    text-shadow: 0 0 4px #fff2c0, 0 0 12px #ff9a2a, 0 0 26px #ff5a00, 0 0 48px #c41a00;
+    animation: cs-fire-flicker 1.6s ease-in-out infinite alternate;
+  }
+
+  &--gold p {
+    color: #fff0bf;
+    text-shadow: 0 0 4px #fff8dc, 0 0 14px #f0c048, 0 0 32px #d79a20, 0 0 54px rgb(215 150 30 / 60%);
+    animation: cs-fire-flicker 2.4s ease-in-out infinite alternate;
+  }
+
+  &--reveal p { font-size: clamp(34px, 4.4vw, 64px); }
+}
+
+.cs-end__title { margin-bottom: 6px; }
+
+@keyframes cs-fire-flicker {
+  0% { filter: brightness(1); translate: 0 0; }
+  50% { filter: brightness(1.15); translate: 0 -1px; }
+  100% { filter: brightness(0.92); translate: 0 1px; }
+}
+
+.cs-particles--ember i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffcf6a;
+  box-shadow: 0 0 8px 2px rgb(255 120 20 / 85%);
+}
+
+.cs-fire--gold .cs-particles--ember i {
+  background: #fff1b8;
+  box-shadow: 0 0 8px 2px rgb(240 190 70 / 85%);
+}
+
+// ── 예언: 낮의 호그와트 복도 벽 ──
+.cs-cue--prophecy {
+  background:
+    linear-gradient(180deg, rgb(30 22 14 / 70%), rgb(10 7 4 / 92%)),
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 3%) 0 2px, transparent 2px 46px),
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 18%) 0 2px, transparent 2px 92px),
+    #6b5a44;
+  color: #f1e3c4;
+}
+
+.cs-castle {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  justify-content: space-around;
+  height: 62%;
+  opacity: 0.55;
+
+  &__arch {
+    width: 12%;
+    height: 100%;
+    border-radius: 999px 999px 0 0;
+    background: linear-gradient(180deg, rgb(255 210 140 / 28%), rgb(0 0 0 / 50%));
+    box-shadow: inset 0 0 0 6px rgb(40 30 18 / 80%);
+  }
+}
+
+.cs-cue__eyebrow {
+  position: relative;
+  color: rgb(241 227 196 / 80%);
+  font-size: 15px;
+  letter-spacing: 0.2em;
+}
+
+.cs-prophecy__text { position: relative; }
+
+// ── 조사 결과 (오러) ──
+.cs-cue--clue {
+  background: radial-gradient(ellipse at 50% 45%, rgb(120 200 255 / 22%), rgb(2 6 10 / 88%) 65%);
+  color: #d6f1ff;
+
+  .cs-cue__orb {
+    background: radial-gradient(circle, #e8f7ff, #7fd4ff 55%, transparent 72%);
+    box-shadow: 0 0 70px 20px rgb(127 212 255 / 35%);
+    color: #063048;
+  }
+}
+
+.cs-clue__text {
+  max-width: min(640px, 86vw);
+  font-size: 22px !important;
+  line-height: 1.5;
+}
+
+// ── 쪽지: 봉랍을 찍은 양피지 쪽지 ──
+.cs-side__tabs button em {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  margin-left: 5px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: $cs-gold;
+  color: #2a1d00;
+  font-size: 10px;
+  font-style: normal;
+  vertical-align: 1px;
+}
+
+.cs-side__list {
+  perspective: 600px;
+}
+
+.cs-side__list li.cs-letter {
+  position: relative;
+  flex: none;
+  padding: 10px 12px 10px 40px;
+  border-radius: 4px 10px 4px 10px;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgb(255 255 255 / 35%), transparent 60%),
+    linear-gradient(170deg, #efe2bd, #d9c590 70%, #c9b07a);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 30%) inset, 0 4px 10px rgb(0 0 0 / 45%);
+  color: #3a2a12;
+  transform-origin: 50% 0;
+
+  // 접힌 자국
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 50% 8px auto;
+    height: 1px;
+    background: rgb(90 60 20 / 18%);
+  }
+
+  p {
+    position: relative;
+    margin: 0;
+    white-space: pre-wrap;
+  }
+
+  .cs-letter__day {
+    display: block;
+    margin-bottom: 2px;
+    color: #8a5a14;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .cs-letter__seal {
+    position: absolute;
+    top: 10px;
+    left: 9px;
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #d2454b, #8a1015 70%);
+    box-shadow: 0 0 0 2px rgb(120 10 14 / 50%), 0 2px 3px rgb(0 0 0 / 40%);
+    color: #ffd9d9;
+    font-size: 13px;
+    font-weight: 700;
+
+    .cs-sigil {
+      display: contents;
+      color: inherit;
+      font-size: 13px;
+    }
+  }
+
+  &.is-prophecy p {
+    color: #7d0b10;
+    font-weight: 700;
+  }
+
+  &.is-secret {
+    background: linear-gradient(170deg, #ded8c4, #bdb59a);
+
+    .cs-letter__seal { background: radial-gradient(circle at 35% 30%, #5bd28d, #1f5a38 70%); color: #e6fff0; box-shadow: 0 0 0 2px rgb(20 70 40 / 50%); }
+  }
+
+  &.is-empty {
+    background: rgb(230 220 190 / 8%);
+    box-shadow: 0 0 0 1px dashed rgb(230 220 190 / 20%);
+    border: 1px dashed rgb(230 220 190 / 25%);
+    color: rgb(227 236 229 / 55%);
+
+    &::before { display: none; }
+
+    .cs-letter__seal { background: rgb(230 220 190 / 14%); box-shadow: none; color: rgb(227 236 229 / 60%); }
+  }
+}
+
+// ── 예언 고르기 ──
+.cs-side__label {
+  margin-top: 2px;
+  color: rgb(255 194 194 / 70%);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.cs-pick {
+  position: relative;
+
+  &__face {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgb(70 14 18 / 85%), rgb(30 6 8 / 90%));
+    box-shadow: 0 0 0 1px rgb(220 70 70 / 45%), inset 0 1px 0 rgb(255 255 255 / 8%);
+    color: #ffe1e1;
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    transition: box-shadow 0.15s;
+
+    &:hover { box-shadow: 0 0 0 1px rgb(255 110 110 / 75%), 0 0 14px rgb(200 30 40 / 35%); }
+
+    &.is-empty { color: rgb(255 225 225 / 55%); }
+
+    img {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 0 0 1px rgb(255 150 150 / 60%);
+    }
+  }
+
+  &.is-open &__face { box-shadow: 0 0 0 1px rgb(255 110 110 / 85%), 0 0 18px rgb(200 30 40 / 45%); }
+
+  &__icon {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgb(163 20 26 / 45%);
+    color: #ffb3b3;
+    font-size: 13px;
+  }
+
+  &__label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__caret {
+    color: rgb(255 180 180 / 70%);
+    font-size: 12px;
+    font-style: normal;
+  }
+
+  &__list {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    left: 0;
+    z-index: 20;
+    max-height: 220px;
+    margin: 0;
+    padding: 4px;
+    overflow-y: auto;
+    border-radius: 10px;
+    background: #170708;
+    box-shadow: 0 0 0 1px rgb(220 70 70 / 50%), 0 12px 30px rgb(0 0 0 / 70%);
+    list-style: none;
+    transform-origin: 50% 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(220 70 70 / 40%) transparent;
+
+    button {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+      padding: 6px 8px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: #ffe1e1;
+      font: inherit;
+      font-size: 13px;
+      text-align: left;
+      cursor: pointer;
+
+      &:hover { background: rgb(163 20 26 / 35%); }
+
+      &.is-on { background: rgb(163 20 26 / 55%); color: #fff; }
+
+      img {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+    }
+  }
+
+  &__dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 12%);
+  }
+}
+
+// ── 진행 기록: 세로줄 연대기 ──
+.cs-chat__list.is-log {
+  position: relative;
+  padding: 2px 0 2px 2px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 14px;
+    width: 2px;
+    background: linear-gradient(180deg, rgb(215 180 90 / 0%), rgb(215 180 90 / 35%) 10%, rgb(215 180 90 / 35%) 90%, rgb(215 180 90 / 0%));
+  }
+}
+
+.cs-chat__list li.cs-log {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 4px 0;
+
+  .cs-log__mark {
+    position: relative;
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #12170f;
+    box-shadow: 0 0 0 2px var(--cs-log, #d7b45a);
+    color: var(--cs-log, #d7b45a);
+    font-size: 14px;
+  }
+
+  .cs-log__text {
+    flex: 1;
+    margin: 0;
+    padding: 4px 10px;
+    border-left: 3px solid var(--cs-log, #d7b45a);
+    border-radius: 0 8px 8px 0;
+    background: rgb(255 255 255 / 5%);
+    color: #ece4cc;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+
+  &.is-banner {
+    align-items: center;
+
+    .cs-log__text {
+      border-left: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--cs-log-bg), transparent);
+      color: var(--cs-log, #d7b45a);
+      font-weight: 700;
+    }
+  }
+
+  &.is-empty .cs-log__text { color: rgb(227 236 229 / 50%); }
+
+  &.cs-log--day { --cs-log: #f0c048; --cs-log-bg: rgb(240 192 72 / 18%); }
+  &.cs-log--night { --cs-log: #7fd8a4; --cs-log-bg: rgb(63 191 116 / 18%); }
+  &.cs-log--petrify { --cs-log: #f5c400; .cs-log__text { background: rgb(245 196 0 / 9%); } .cs-log__mark { box-shadow: 0 0 0 2px #f5c400, 0 0 12px rgb(245 196 0 / 60%); } }
+  &.cs-log--expel { --cs-log: #ff7a7a; .cs-log__text { background: rgb(163 20 26 / 18%); } }
+  &.cs-log--vote { --cs-log: #c9b98f; }
+  &.cs-log--safe { --cs-log: #7fd4ff; .cs-log__text { background: rgb(127 212 255 / 9%); } }
+  &.cs-log--end { --cs-log: #ffe08a; .cs-log__mark { box-shadow: 0 0 0 2px #ffe08a, 0 0 14px rgb(255 224 138 / 60%); } }
+  &.cs-log--info { --cs-log: rgb(227 236 229 / 55%); }
+}
+
+.cs-side__list li.cs-letter .cs-letter__seal svg { width: 14px; height: 14px; }
+
+.cs-chat__list li.cs-log.is-banner .cs-log__text { border-radius: 10px; }
+
+// ════════ 이야기 장면 (대연회장 · 기숙사 · 밤 나들이 · 부엉이 우편) ════════
+
+// 쓰이는 글씨의 붓끝: 젖은 빛이 글자를 따라 지나간다
+.cs-blood span { position: relative; }
+
+.cs-nib {
+  position: absolute;
+  top: 20%;
+  width: 6px;
+  height: 60%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #ff6b6b, rgb(180 10 20 / 0%) 70%);
+  box-shadow: 0 0 12px 4px rgb(220 30 40 / 55%);
+  pointer-events: none;
+}
+
+.cs-blood--dream {
+  color: #e8e2ff;
+  text-shadow: 0 0 6px #b9a8ff, 0 0 18px rgb(150 120 255 / 70%), 0 0 40px rgb(120 90 220 / 40%);
+
+  .cs-nib {
+    background: radial-gradient(ellipse, #fff, rgb(200 190 255 / 0%) 70%);
+    box-shadow: 0 0 14px 5px rgb(190 170 255 / 60%);
+  }
+}
+
+// ── 말풍선 ──
+.cs-bubble {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 30;
+  width: max-content;
+  max-width: 200px;
+  padding: 6px 11px;
+  border-radius: 14px;
+  background: #fdf6e3;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 45%);
+  color: #2a1d0c;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-word;
+  translate: -50% 0;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -7px;
+    border: 7px solid transparent;
+    border-top-color: #fdf6e3;
+  }
+
+  // 밤: 소곤소곤
+  &--whisper {
+    background: rgb(30 40 60 / 92%);
+    box-shadow: 0 0 0 1px rgb(160 180 230 / 30%), 0 6px 16px rgb(0 0 0 / 60%);
+    color: #d7e2ff;
+    font-style: italic;
+
+    &::after { border-top-color: rgb(30 40 60 / 92%); }
+  }
+}
+
+// ── 낮: 대연회장 긴 식탁 ──
+.cs-hall-scene,
+.cs-dorm-scene {
+  position: absolute;
+  inset: 0;
+}
+
+.cs-longtable {
+  position: absolute;
+  left: 4%;
+  z-index: 8;
+  width: 92%;
+  height: 26px;
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 12%), transparent 40%),
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 12%) 0 1px, transparent 1px 60px),
+    linear-gradient(180deg, #7a4f26, #4a2d13);
+  box-shadow: 0 14px 0 -4px #2c1a0a, 0 22px 26px rgb(0 0 0 / 55%);
+  transform-origin: 50% 50%;
+
+  // 금빛 접시와 잔
+  b {
+    position: absolute;
+    top: 4px;
+    width: 22px;
+    height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, #f6dd8e, #b78d2c 70%);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 50%);
+  }
+}
+
+// ── 밤 배경: 불 꺼진 기숙사 ──
+.cs-dorm {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, rgb(0 0 0 / 25%) 0 2px, transparent 2px 54px),
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 16%) 0 2px, transparent 2px 120px),
+    linear-gradient(180deg, #10141f, #0a0c14 60%, #05060a);
+
+  // 달이 걸린 아치 창
+  &__window {
+    position: absolute;
+    top: 6%;
+    left: 50%;
+    width: 150px;
+    height: 220px;
+    margin-left: -75px;
+    border-radius: 999px 999px 0 0;
+    background:
+      linear-gradient(90deg, transparent 47%, #161a26 47% 53%, transparent 53%),
+      linear-gradient(0deg, transparent 48%, #161a26 48% 51%, transparent 51%),
+      radial-gradient(circle at 62% 30%, #fffbe8 0 18px, rgb(255 250 220 / 40%) 22px, transparent 40px),
+      linear-gradient(180deg, #23304f, #121a30);
+    box-shadow: 0 0 0 10px #1b1f2b, 0 0 60px 10px rgb(160 180 255 / 18%);
+  }
+
+  // 바닥에 비친 달빛
+  &__moonlight {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    width: 340px;
+    height: 70%;
+    margin-left: -170px;
+    background: linear-gradient(180deg, rgb(170 190 255 / 14%), transparent 85%);
+    clip-path: polygon(30% 0, 70% 0, 100% 100%, 0 100%);
+    animation: cs-moon 8s ease-in-out infinite alternate;
+  }
+
+  // 꺼진 벽난로: 숯불만 남았다
+  &__hearth {
+    position: absolute;
+    bottom: 18%;
+    left: 3%;
+    width: 120px;
+    height: 100px;
+    border-radius: 60px 60px 0 0;
+    background:
+      radial-gradient(ellipse 40% 22% at 50% 92%, rgb(255 90 30 / 55%), transparent 70%),
+      linear-gradient(180deg, #0b0b0e, #050506);
+    box-shadow: 0 0 0 12px #262833;
+    animation: cs-ember 3s ease-in-out infinite alternate;
+  }
+
+  &__floor {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 30%;
+    background: linear-gradient(180deg, transparent, rgb(0 0 0 / 60%));
+  }
+}
+
+@keyframes cs-moon {
+  from { opacity: 0.7; }
+  to { opacity: 1; }
+}
+
+@keyframes cs-ember {
+  from { filter: brightness(0.8); }
+  to { filter: brightness(1.2); }
+}
+
+// 기숙사 문
+.cs-dorm-door {
+  position: absolute;
+  z-index: 4;
+  width: 70px;
+  height: 100px;
+  color: #3b2a1a;
+  translate: -50% -50%;
+  filter: drop-shadow(0 6px 10px rgb(0 0 0 / 70%));
+
+  svg { width: 100%; height: 100%; }
+
+  &__light {
+    position: absolute;
+    inset: -30%;
+    background: radial-gradient(ellipse, rgb(255 200 110 / 55%), transparent 65%);
+    mix-blend-mode: screen;
+  }
+}
+
+// 침대
+.cs-bed {
+  --seat-size: 70px;
+
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: calc(var(--seat-size) * 1.9);
+  translate: -50% -50%;
+
+  &__frame {
+    position: relative;
+    width: calc(var(--seat-size) * 1.8);
+    height: calc(var(--seat-size) * 1.4);
+    color: #5a3e28;
+    filter: drop-shadow(0 10px 14px rgb(0 0 0 / 65%));
+  }
+
+  &__icon { width: 100%; height: 100%; }
+
+  // 베개 위 잠든 얼굴
+  &__sleeper {
+    position: absolute;
+    top: calc(var(--seat-size) * 0.18);
+    left: calc(var(--seat-size) * 0.2);
+    filter: brightness(0.62) saturate(0.6);
+
+    .account__avatar { border-radius: 50%; box-shadow: 0 0 0 2px #1d2230; }
+  }
+
+  &__zzz {
+    position: absolute;
+    top: calc(var(--seat-size) * -0.05);
+    left: calc(var(--seat-size) * 0.85);
+
+    i {
+      position: absolute;
+      color: #b8c6ff;
+      font-size: 14px;
+      font-style: normal;
+      font-weight: 800;
+      text-shadow: 0 0 6px rgb(150 170 255 / 70%);
+    }
+  }
+
+  // 예언자의 꿈: 머리 위 수정구슬
+  &__dream {
+    position: absolute;
+    top: calc(var(--seat-size) * -0.55);
+    left: calc(var(--seat-size) * 0.18);
+    display: grid;
+    place-items: center;
+    width: calc(var(--seat-size) * 0.7);
+    height: calc(var(--seat-size) * 0.7);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgb(200 180 255 / 35%), transparent 70%);
+    color: #d9ccff;
+    filter: drop-shadow(0 0 10px rgb(170 140 255 / 70%));
+
+    svg { width: 70%; height: 70%; }
+  }
+
+  &__name {
+    margin-top: -6px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: rgb(8 10 18 / 80%);
+    color: #c9d2ec;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+
+    small { color: $cs-gold; }
+  }
+
+  &__tag {
+    margin-top: 2px;
+    padding: 0 6px;
+    border: 1px solid $cs-blood;
+    border-radius: 4px;
+    color: #ff8a8a;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 800;
+  }
+
+  &.is-me .cs-bed__name { box-shadow: 0 0 0 1px $cs-gold; }
+
+  &.is-stone .cs-bed__sleeper { filter: grayscale(1) contrast(1.3) brightness(0.8); }
+
+  &.is-gone,
+  &.is-empty { opacity: 0.75; }
+
+  // 빈 침대: 이불이 젖혀져 있다
+  &.is-empty .cs-bed__frame::after {
+    content: '';
+    position: absolute;
+    top: 38%;
+    left: 30%;
+    width: 50%;
+    height: 14%;
+    border-radius: 40%;
+    background: rgb(140 150 190 / 25%);
+    rotate: -8deg;
+  }
+}
+
+// 몰래 걷는 나
+.cs-walker {
+  position: absolute;
+  z-index: 9;
+  translate: -50% -50%;
+  filter: drop-shadow(0 0 10px rgb(255 210 130 / 55%));
+
+  .account__avatar { border-radius: 50%; box-shadow: 0 0 0 2px $cs-gold; }
+}
+
+.cs-step {
+  position: absolute;
+  z-index: 5;
+  width: 16px;
+  height: 16px;
+  color: rgb(215 190 140 / 75%);
+  translate: -50% -50%;
+
+  svg { width: 100%; height: 100%; }
+}
+
+// ── 밤 나들이 ──
+.cs-journey {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: 0 0 0 1px rgb(180 230 195 / 18%), 0 20px 50px rgb(0 0 0 / 70%);
+
+  &--chamber { background: #020403; }
+
+  &--corridor { background: linear-gradient(180deg, #1b140e, #0c0906); }
+
+  &__door {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    background: rgb(0 0 0 / 55%);
+
+    .cs-door { width: min(56vh, 60%); }
+  }
+
+  &__whisper {
+    margin: 0;
+    color: #9fe0b5;
+    font-size: 15px;
+    font-style: italic;
+    text-shadow: 0 0 10px rgb(63 191 116 / 70%);
+  }
+
+  &__body {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    padding: 4% 4% 3%;
+    overflow-y: auto;
+    text-align: center;
+  }
+
+  &__title {
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+    margin: 0;
+    color: #c9f5d6;
+    font-size: 40px;
+    text-shadow: 0 0 14px rgb(63 191 116 / 60%);
+  }
+
+  &--corridor &__title { color: #ffe2a8; text-shadow: 0 0 14px rgb(255 190 90 / 55%); }
+
+  &__icon { width: 34px; height: 34px; color: #ffd27a; }
+
+  &__lead {
+    max-width: 560px;
+    margin: 0;
+    color: rgb(230 236 230 / 80%);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  &__crew {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+
+    span {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      padding: 3px 10px 3px 3px;
+      border-radius: 999px;
+      background: rgb(163 20 26 / 30%);
+      box-shadow: 0 0 0 1px rgb(220 70 70 / 45%);
+      color: #ffd0d0;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+  }
+
+  &__done {
+    margin: 20px 0;
+    color: #ffe2a8;
+    font-size: 16px;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    margin-top: auto;
+  }
+
+  &__sent { color: rgb(230 236 230 / 70%); font-size: 13px; }
+}
+
+// 복도: 횃불이 늘어선 돌벽
+.cs-corridor {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, rgb(0 0 0 / 25%) 0 2px, transparent 2px 46px),
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 15%) 0 2px, transparent 2px 100px),
+    radial-gradient(ellipse 60% 50% at 50% 100%, rgb(255 170 70 / 18%), transparent 70%);
+
+  &__torch {
+    position: absolute;
+    top: 16%;
+    width: 10px;
+    height: 34px;
+    border-radius: 3px;
+    background: #3a2614;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      width: 16px;
+      height: 22px;
+      margin-left: -8px;
+      border-radius: 50% 50% 40% 40% / 70% 70% 30% 30%;
+      background: radial-gradient(ellipse at 50% 70%, #fff3c0, #ff9a2a 55%, transparent 72%);
+      box-shadow: 0 0 40px 18px rgb(255 160 60 / 30%);
+      animation: cs-flame 0.35s ease-in-out infinite alternate;
+    }
+  }
+}
+
+.cs-targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  max-width: 820px;
+}
+
+.cs-target {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  width: 96px;
+  padding: 10px 6px 8px;
+  border: 0;
+  border-radius: 12px;
+  background: rgb(10 20 14 / 70%);
+  box-shadow: 0 0 0 1px rgb(150 220 175 / 25%);
+  color: #e3ece5;
+  font: inherit;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+
+  &:disabled { cursor: default; opacity: 0.45; }
+
+  &:hover:not(:disabled) { box-shadow: 0 0 0 2px rgb(63 191 116 / 70%), 0 0 22px rgb(63 191 116 / 40%); }
+
+  &__face {
+    width: 58px;
+    height: 58px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: #1a2620;
+    box-shadow: 0 0 0 2px #3c5a44;
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+  }
+
+  b { font-size: 13px; }
+
+  small { color: #ffb3b3; font-size: 11px; }
+
+  &__picks {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: inline-flex;
+    gap: 2px;
+    align-items: center;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: $cs-blood;
+    color: #fff;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 800;
+  }
+
+  &.is-on { box-shadow: 0 0 0 3px #f5c400, 0 0 28px rgb(245 196 0 / 55%); }
+
+  &.is-sent .cs-target__face { box-shadow: 0 0 0 3px #f5c400; }
+}
+
+// 오러·치유사: 기숙사 방문
+.cs-targets--doors .cs-target {
+  width: 104px;
+  padding-top: 0;
+  background: transparent;
+  box-shadow: none;
+
+  .cs-target__door {
+    width: 86px;
+    height: 110px;
+    color: #5a3a1f;
+    filter: drop-shadow(0 8px 12px rgb(0 0 0 / 70%));
+  }
+
+  .cs-target__face {
+    position: absolute;
+    top: 22px;
+    width: 40px;
+    height: 40px;
+    box-shadow: 0 0 0 3px #2a1a0c;
+  }
+
+  b {
+    padding: 1px 8px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #d9b465, #9c7426);
+    color: #2a1a02;
+  }
+
+  &:hover:not(:disabled) { box-shadow: none; }
+
+  &:hover:not(:disabled) .cs-target__door { filter: drop-shadow(0 0 18px rgb(255 190 90 / 75%)); }
+
+  &.is-on .cs-target__door { color: #8a5a2a; filter: drop-shadow(0 0 22px rgb(255 210 120 / 90%)); }
+
+  &.is-on { box-shadow: none; }
+}
+
+// ── 부엉이 ──
+.cs-owl {
+  position: absolute;
+  z-index: 70;
+  width: 74px;
+  height: 74px;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 10px rgb(0 0 0 / 60%));
+
+  &__body {
+    position: absolute;
+    inset: 0;
+    color: #d8c7a4;
+
+    svg { width: 100%; height: 100%; }
+  }
+
+  &__letter {
+    position: absolute;
+    bottom: -14px;
+    left: 26px;
+    width: 30px;
+    height: 30px;
+    color: #f1e4c0;
+    transform-origin: 50% 0;
+
+    svg { width: 100%; height: 100%; }
+  }
+}
+
+// ── 우편함 ──
+.cs-mail {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 7px;
+  min-height: 60px;
+  margin: 0;
+  padding: 2px;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-width: none;
+
+  &:hover { scrollbar-width: thin; scrollbar-color: rgb(215 180 90 / 40%) transparent; }
+
+  &__item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 0 9px;
+    align-items: center;
+    width: 100%;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 4px 10px 4px 10px;
+    background: linear-gradient(170deg, #efe2bd, #d9c590 70%, #c9b07a);
+    box-shadow: 0 3px 8px rgb(0 0 0 / 45%);
+    color: #3a2a12;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: translate 0.15s, box-shadow 0.15s;
+
+    &:hover { translate: 0 -2px; box-shadow: 0 6px 14px rgb(0 0 0 / 50%); }
+
+    .cs-letter-icon { grid-row: span 2; width: 30px; height: 30px; }
+
+    // 안 읽은 것: 봉랍처럼 붉은 점 + 은은한 빛
+    &.is-new {
+      box-shadow: 0 0 0 2px rgb(215 180 90 / 80%), 0 0 16px rgb(255 210 120 / 50%);
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #e8565b, #8a1015 70%);
+        box-shadow: 0 0 8px rgb(220 40 50 / 70%);
+      }
+    }
+
+    &--prophecy { background: linear-gradient(170deg, #e6defa, #c3b5ec 70%, #a999dd); color: #2a1f4a; }
+
+    &--clue { background: linear-gradient(170deg, #f3e3c4, #e3c58b 70%, #cfa964); }
+
+    &--secret { background: linear-gradient(170deg, #ded8c4, #bdb59a); }
+  }
+
+  &__title { font-size: 13px; font-weight: 800; }
+
+  &__preview {
+    overflow: hidden;
+    color: rgb(58 42 18 / 75%);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__empty {
+    padding: 10px;
+    border: 1px dashed rgb(230 220 190 / 25%);
+    border-radius: 8px;
+    color: rgb(227 236 229 / 55%);
+    font-size: 13px;
+  }
+}
+
+.cs-letter-icon {
+  color: #8a5a14;
+
+  &--prophecy { color: #5a3fa8; }
+
+  &--clue { color: #7a4a10; }
+
+  &--secret { color: #1f5a38; }
+}
+
+// ── 펼친 양피지 ──
+.cs-letter-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 55%);
+}
+
+.cs-scroll {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(520px, 90%);
+  transform-origin: 50% 50%;
+
+  &__roll {
+    z-index: 2;
+    width: 106%;
+    height: 22px;
+    border-radius: 11px;
+    background: linear-gradient(180deg, #c9ac70, #f1e2b8 45%, #a8884c);
+    box-shadow: 0 4px 8px rgb(0 0 0 / 50%);
+  }
+
+  &__paper {
+    position: relative;
+    width: 100%;
+    max-height: 60vh;
+    padding: 26px 30px 24px;
+    overflow-y: auto;
+    background:
+      radial-gradient(ellipse at 20% 10%, rgb(255 255 255 / 40%), transparent 55%),
+      radial-gradient(ellipse at 85% 90%, rgb(120 80 30 / 22%), transparent 60%),
+      linear-gradient(175deg, #f3e7c6, #e0cb97 75%, #cdb27a);
+    box-shadow: inset 0 0 40px rgb(140 100 40 / 30%);
+    color: #3a2a12;
+    text-align: center;
+
+    h3 { margin: 4px 0 10px; color: #7d0b10; font-size: 36px; line-height: 1.1; }
+
+    p {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+  }
+
+  &__eyebrow { color: #8a5a14; font-size: 12px; font-weight: 700; letter-spacing: 0.2em; }
+
+  &__seal {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #d2454b, #8a1015 70%);
+    box-shadow: 0 0 0 3px rgb(120 10 14 / 50%), 0 3px 5px rgb(0 0 0 / 40%);
+    color: #ffd9d9;
+    font-size: 20px;
+  }
+
+  &__blood.cs-blood { font-size: clamp(26px, 3.4vw, 40px); }
+
+  &__close { margin-top: 12px; }
+
+  &--prophecy .cs-scroll__paper {
+    background: radial-gradient(ellipse at 50% 30%, #3b3166, #1b1633 75%);
+    color: #e8e2ff;
+
+    h3 { color: #d9ccff; }
+  }
+
+  &--prophecy .cs-scroll__seal { background: radial-gradient(circle at 35% 30%, #a58cff, #4b2fa8 70%); }
+}
+
+// ── 아침의 문 · 예언자의 꿈 ──
+.cs-cue--door {
+  background: radial-gradient(ellipse at 50% 45%, rgb(16 34 22 / 96%), rgb(1 3 2 / 99%) 65%);
+  color: #b9f0c9;
+
+  .cs-door { width: min(60vh, 60vw); }
+}
+
+.cs-cue--dream {
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 45%, rgb(50 38 100 / 94%), rgb(6 4 16 / 98%) 70%);
+  color: #e8e2ff;
+}
+
+.cs-dream__swirl {
+  position: absolute;
+  width: 140vmax;
+  height: 140vmax;
+  background: repeating-conic-gradient(from 0deg, rgb(200 180 255 / 8%) 0deg 10deg, transparent 10deg 30deg);
+  mask-image: radial-gradient(circle, #000 10%, transparent 55%);
+}
+
+.cs-dream__ball {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  color: #d9ccff;
+  filter: drop-shadow(0 0 30px rgb(170 140 255 / 80%));
+
+  svg { width: 100%; height: 100%; }
+}

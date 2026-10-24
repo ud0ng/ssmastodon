@@ -189,7 +189,11 @@ class Api::V1::System::SessionsController < Api::BaseController
     # 대기방과 웹 전용 컨텐츠 방은 끝난 뒤에도 채팅할 수 있다
     if @session.lobby? || Game::Lobby.recruiting?(@session) || (@session.web_channel? && @session.status != 'cancelled')
       # channel=team: 같은 팀끼리만 보이는 팀 채팅 (도둑 지도, 참가자만)
-      team = params[:channel] == 'team' && player ? @session.kind_class.new(@session).try(:team_of, player) : nil
+      kind = @session.kind_class.new(@session)
+      # 비밀의 방: 진행 중에 탈락한 사람은 관전만 (채팅 안 됨)
+      return show if kind.respond_to?(:can_chat?) && !kind.can_chat?(player)
+
+      team = params[:channel] == 'team' && player ? kind.try(:team_of, player) : nil
       Game::Lobby.chat!(@session, current_account, params[:text], team: team)
     end
     show
