@@ -234,6 +234,7 @@ RSpec.describe Game::Web::MaraudersMap do
       expect(session.state['rescued_count']['0']).to eq 1
       expect(session.state['clues']).to include(include('kind' => 'footprint', 'seat' => 1, 'room' => office))
       expect(session.state['last']['rescued']).to eq [0]
+      expect(session.state['last']['notes']).to include(include('kind' => 'rescue', 'room' => office)) # 화면이 사무실 자리에 띄운다
 
       # 두 번째 체포는 탈락
       place!(session, { '0' => 5, '2' => neighbor(session, 5) })
@@ -271,6 +272,8 @@ RSpec.describe Game::Web::MaraudersMap do
       session.reload
       expect(session.state['done']).to eq [goal]
       expect(session.state['clues']).to include(include('kind' => 'footprint', 'seat' => me, 'room' => goal))
+      expect(session.state['last']['goals']).to eq [goal]
+      expect(session.state['last']['notes']).to include(include('kind' => 'footprint', 'room' => goal))
 
       cloak_session = start!(6)
       goal = cloak_session.state['targets'].first

@@ -42,6 +42,9 @@ interface MLast {
   rescued: number[];
   secret: number[];
   stairs: boolean;
+  // 지도 위 그 자리에 띄울 소식 (서버 log 와 같은 글), 이번 턴에 이룬 목표 방 (사감에게는 방 없이 null)
+  notes?: { kind: string; text: string; room?: number; zone?: MZone }[];
+  goals?: (number | null)[];
 }
 interface MHistory { turn: number; positions: Record<string, number>; status_of?: Record<string, string>; arrests?: { seat: number; by: number; room: number; out: boolean }[]; rescued?: number[] }
 interface MReward { result: 'win' | 'lose' | 'draw'; points: number; money: number; items: string[] }
@@ -301,6 +304,8 @@ const MapSvg: React.FC<{
 
 // ── Tabler 아이콘 (https://tabler.io/icons, MIT): 이모티콘 대신 쓰는 선 아이콘 ──
 const TABLER: Record<string, string[]> = {
+  volume: ['M15 8a5 5 0 0 1 0 8', 'M17.7 5a9 9 0 0 1 0 14', 'M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5'],
+  'volume-off': ['M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5', 'M16 10l4 4m0 -4l-4 4'],
   'eye-off': ['M10.585 10.587a2 2 0 0 0 2.829 2.828', 'M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87', 'M3 3l18 18'],
   lock: ['M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z', 'M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0', 'M8 11v-4a4 4 0 1 1 8 0v4'],
   key: ['M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0z'],
@@ -446,27 +451,92 @@ const useRemaining = (view: MView | null) => {
   return Math.max(0, Math.ceil((Date.parse(view.deadline_at) - (Date.now() + offset)) / 1000));
 };
 
-// 체포 때 타격음 (웹 오디오, 브라우저가 막으면 조용히 넘어간다)
-const thump = () => {
+// ── 효과음: 웹 오디오로 바로 만든다 (파일 없음). 머리 줄의 소리 버튼으로 끄고, 브라우저가 막으면 조용히 넘어간다 ──
+const SOUND_KEY = 'ssm:mm-sound';
+let audioContext: AudioContext | null = null;
+
+const soundOn = () => {
   try {
-    const Context = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!Context) return;
-    const context = new Context();
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = 'triangle';
-    oscillator.frequency.setValueAtTime(140, context.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(40, context.currentTime + 0.3);
-    gain.gain.setValueAtTime(0.5, context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.35);
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start();
-    oscillator.stop(context.currentTime + 0.4);
+    return window.localStorage.getItem(SOUND_KEY) !== 'off';
   } catch {
-    // 소리가 안 나도 게임은 계속된다
+    return true;
   }
 };
+
+const audio = () => {
+  if (!soundOn()) return null;
+  try {
+    const Context = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Context) return null;
+    audioContext ??= new Context();
+    if (audioContext.state === 'suspended') void audioContext.resume();
+    return audioContext;
+  } catch {
+    return null;
+  }
+};
+
+// 소리 하나: at 초 뒤에 length 초 동안 (to 가 있으면 그 높이로 미끄러진다)
+const tone = (freq: number, at: number, length: number, options: { type?: OscillatorType; volume?: number; to?: number } = {}) => {
+  const context = audio();
+  if (!context) return;
+  const start = context.currentTime + at;
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = options.type ?? 'sine';
+  oscillator.frequency.setValueAtTime(freq, start);
+  if (options.to) oscillator.frequency.exponentialRampToValueAtTime(options.to, start + length);
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(options.volume ?? 0.2, start + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + length);
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start(start);
+  oscillator.stop(start + length + 0.05);
+};
+
+// 짧은 잡음 (발소리·계단 긁히는 소리)
+const noise = (at: number, length: number, volume: number, frequency: number) => {
+  const context = audio();
+  if (!context) return;
+  const start = context.currentTime + at;
+  const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * length), context.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let index = 0; index < data.length; index += 1) data[index] = (Math.random() * 2 - 1) * (1 - index / data.length);
+  const source = context.createBufferSource();
+  source.buffer = buffer;
+  const filter = context.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = frequency;
+  const gain = context.createGain();
+  gain.gain.value = volume;
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(context.destination);
+  source.start(start);
+};
+
+const sfx = {
+  // 체포: 둔탁한 타격음
+  thump: () => { tone(140, 0, 0.35, { type: 'triangle', volume: 0.5, to: 40 }); },
+  // 내 차례: 두 음 종소리
+  turn: () => { tone(660, 0, 0.3, { volume: 0.18 }); tone(990, 0.14, 0.45, { volume: 0.16 }); },
+  // 소식이 뜰 때
+  note: (at = 0) => { tone(520, at, 0.14, { type: 'triangle', volume: 0.12 }); },
+  // 발소리 한 번
+  step: (at = 0) => { noise(at, 0.08, 0.5, 700); },
+  // 계단이 움직인다: 낮게 긁히는 소리
+  stairs: (at = 0) => { tone(95, at, 1.1, { type: 'sawtooth', volume: 0.08, to: 55 }); noise(at, 1, 0.25, 260); },
+  // 목표 장소: 올라가는 화음
+  goal: (at = 0) => { [523, 659, 784, 1047].forEach((freq, index) => { tone(freq, at + (index * 0.09), 0.45, { volume: 0.16 }); }); },
+  // 투옥: 타격음 + 철창 닫히는 소리
+  jail: (at = 0) => { tone(140, at, 0.35, { type: 'triangle', volume: 0.45, to: 40 }); tone(220, at + 0.25, 0.5, { type: 'square', volume: 0.06, to: 110 }); },
+  // 탈출(구출): 위로 솟는 소리
+  escape: (at = 0) => { tone(330, at, 0.6, { type: 'triangle', volume: 0.18, to: 880 }); tone(1320, at + 0.45, 0.35, { volume: 0.1 }); },
+  // 새 채팅
+  message: () => { tone(880, 0, 0.1, { volume: 0.08 }); tone(1175, 0.08, 0.14, { volume: 0.07 }); },
+};
+const thump = sfx.thump;
 
 // ── 역할 안내 창 ──
 const ROLE_LINES: Record<string, { title: string; lines: string[]; items: { name: string; text: string }[] }> = {
@@ -481,20 +551,43 @@ const ROLE_LINES: Record<string, { title: string; lines: string[]; items: { name
 };
 
 const RoleModal: React.FC<{ view: MView; onClose: () => void }> = ({ view, onClose }) => {
+  const [page, setPage] = useState<'role' | 'how'>('role');
   const key = view.team === 'student' ? 'student' : (view.role ?? 'chaser');
   const info = ROLE_LINES[key] ?? ROLE_LINES.chaser;
   if (!info) return null;
   return (
     <motion.div className='mm-modal' initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      <motion.div className='mm-modal__card' initial={{ y: 30, scale: 0.92, rotate: -1.5 }} animate={{ y: 0, scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 160, damping: 16 }}>
-        <small>{view.team === 'student' ? view.student_name : view.prefect_name} 팀</small>
-        <h2>{info.title}</h2>
-        {info.lines.map((line) => <p key={line}>{line}</p>)}
-        <ul>
-          {info.items.map((item) => <li key={item.name}><strong>{item.name}</strong> {item.text}</li>)}
-        </ul>
+      <motion.div key={page} className='mm-modal__card' initial={{ y: 30, scale: 0.92, rotate: -1.5 }} animate={{ y: 0, scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 160, damping: 16 }}>
+        <small>{view.team === 'student' ? view.student_name : view.prefect_name} 팀 · {page === 'role' ? '1' : '2'} / 2</small>
+        {page === 'role' ? (
+          <>
+            <h2>{info.title}</h2>
+            {info.lines.map((line) => <p key={line}>{line}</p>)}
+            <ul>
+              {info.items.map((item) => <li key={item.name}><strong>{item.name}</strong> {item.text}</li>)}
+            </ul>
+          </>
+        ) : (
+          <>
+            <h2>갈 곳 고르기</h2>
+            {/* 실제 지도와 같은 빛나는 방 */}
+            <svg className='mm-modal__room' viewBox='0 0 200 70' aria-hidden>
+              <g className='mm-room is-go'><rect x='60' y='10' width='80' height='46' rx='8' className='mm-room__shape' /><rect x='65' y='15' width='70' height='36' rx='5' className='mm-room__inner' /></g>
+            </svg>
+            <p>내 차례가 되면 내 이름표 아래에 안내가 뜨고, 지도에서 <strong>빛나는 방</strong>이 갈 수 있는 곳이 됩니다. 눌러서 고르세요. 지금 있는 방을 누르면 제자리입니다.</p>
+            <p>모두 고르면 한꺼번에 움직입니다. 제한 시간 안에 고르지 않으면 제자리에 있습니다.</p>
+            <p>{view.team === 'student' ? '투명 망토는 이동 안내 옆의 버튼으로 씁니다.' : '능력은 이동 안내 옆의 버튼으로 씁니다.'}</p>
+          </>
+        )}
         <div className='mm-modal__actions'>
-          <button type='button' className='mm-button' onClick={onClose}><FormattedMessage id='mm.role_ok' defaultMessage='Got it' /></button>
+          {page === 'role'
+            ? <button type='button' className='mm-button' onClick={() => { setPage('how'); }}>다음</button>
+            : (
+              <>
+                <button type='button' className='mm-button mm-button--ghost' onClick={() => { setPage('role'); }}>이전</button>
+                <button type='button' className='mm-button' onClick={onClose}>시작하기</button>
+              </>
+            )}
         </div>
       </motion.div>
     </motion.div>
@@ -546,6 +639,17 @@ const ChatDock: React.FC<{
   // 전체 탭에는 모든 채팅이 올라온다 (팀 채팅은 앞에 [학생]/[사감] 표시)
   const shown = channel === 'info' ? [] : chat.filter((message) => (channel === 'all' ? true : message.team === channel));
   const shownInfos = channel === 'all' || channel === 'info' ? infos : [];
+  // 안 본 메시지 수 (보고 있는 탭은 0). 다른 사람의 새 채팅은 짧은 소리
+  const counts: Record<ChatTab, number> = { all: chat.length + infos.length, info: infos.length, student: chat.filter((message) => message.team === 'student').length, prefect: chat.filter((message) => message.team === 'prefect').length };
+  const seen = useRef<Record<ChatTab, number>>({ ...counts });
+  seen.current[channel] = counts[channel];
+  const unread = (tab: ChatTab) => Math.max(0, counts[tab] - seen.current[tab]);
+  const others = chat.filter((message) => !message.mine).length;
+  const heard = useRef(others);
+  useEffect(() => {
+    if (others > heard.current) sfx.message();
+    heard.current = others;
+  }, [others]);
   const label = (tab: ChatTab) => (tab === 'all' ? intl.formatMessage(messages.chatAll) : tab === 'info' ? intl.formatMessage(messages.chatInfo) : intl.formatMessage(tab === 'student' ? messages.chatStudent : messages.chatPrefect));
 
   useEffect(() => {
@@ -566,7 +670,10 @@ const ChatDock: React.FC<{
     <section className='mm-chat'>
       <div className='mm-chat__tabs'>
         {tabs.map((tab) => (
-          <button key={tab} type='button' className={[`is-${tab}`, channel === tab && 'is-on'].filter(Boolean).join(' ')} onClick={() => { setChannel(tab); }}>{label(tab)}</button>
+          <button key={tab} type='button' className={[`is-${tab}`, channel === tab && 'is-on'].filter(Boolean).join(' ')} onClick={() => { setChannel(tab); }}>
+            {label(tab)}
+            {channel !== tab && unread(tab) > 0 && <b className='mm-chat__badge'>{unread(tab) > 99 ? '99+' : unread(tab)}</b>}
+          </button>
         ))}
       </div>
       <ul ref={listRef} className='mm-chat__list'>
@@ -699,7 +806,8 @@ export const MaraudersStage: React.FC<{
   const [infos, setInfos] = useState<{ id: string; text: string }[]>([]);
   const [toasts, setToasts] = useState<{ id: string; text: string }[]>([]);
   const seenInfo = useRef<Set<string> | null>(null);
-  const [intro, setIntro] = useState<'oath' | 'role' | 'done'>('done');
+  // pending: 아직 모름 (첫 화면을 받기 전). 대기실 카운트다운이 끝나고 들어오면 지도를 먼저 보여 주지 않고 바로 맹세(오프닝)부터
+  const [intro, setIntro] = useState<'pending' | 'oath' | 'role' | 'done'>('pending');
   const [pickingWatch, setPickingWatch] = useState(false);
   const [ending, setEnding] = useState<'none' | 'over' | 'review' | 'result'>('none');
   // 끝난 뒤 복기: 라운드별 / 경로만, 보고 있는 라운드, 자동 재생, 경로로 보여 줄 사람
@@ -709,6 +817,18 @@ export const MaraudersStage: React.FC<{
   const [routeSeats, setRouteSeats] = useState<number[] | null>(null);
   const [busy, setBusy] = useState(false);
   const seenLast = useRef<number>(-1);
+  // 지도 위 그 자리에 잠깐 떴다 사라지는 소식·효과 (목표·투옥·탈출), 계단이 움직이는 중
+  const [notes, setNotes] = useState<{ id: string; kind: string; text: string; x: number; y: number; delay: number }[]>([]);
+  const [bursts, setBursts] = useState<{ id: string; kind: 'goal' | 'jail' | 'escape'; x: number; y: number; delay: number; label: string }[]>([]);
+  const [stairsShift, setStairsShift] = useState(false);
+  const [sound, setSound] = useState(soundOn);
+  const toggleSound = useCallback(() => {
+    setSound((current) => {
+      try { window.localStorage.setItem(SOUND_KEY, current ? 'off' : 'on'); } catch { /* 저장이 막혀도 이번에는 바뀐다 */ }
+      return !current;
+    });
+  }, []);
+  const askedTurn = useRef<number>(-1);
 
   useEffect(() => {
     if (!view) return undefined;
@@ -721,11 +841,17 @@ export const MaraudersStage: React.FC<{
     seenInfo.current = known;
     setInfos((current) => [...current, ...fresh].slice(-60));
     if (first) return undefined;
-    setToasts((current) => [...current, ...fresh]);
-    const timer = window.setTimeout(() => { setToasts((current) => current.filter((toast) => !fresh.some((line) => line.id === toast.id))); }, 6_000);
+    const placed = new Set((view.last?.notes ?? []).map((note) => note.text));
+    const loose = fresh.filter((line) => !placed.has(line.text));
+    if (loose.length === 0) return undefined;
+    setToasts((current) => [...current, ...loose]);
+    const timer = window.setTimeout(() => { setToasts((current) => current.filter((toast) => !loose.some((line) => line.id === toast.id))); }, 6_000);
     return () => { window.clearTimeout(timer); };
   }, [view]);
   const introChecked = useRef(false);
+  // 맹세가 끝날 때 가장 최근 화면 (팀을 보고 역할 안내를 띄운다)
+  const viewRef = useRef<MView | null>(null);
+  viewRef.current = view;
   const stageRef = useRef<HTMLDivElement>(null);
 
   useStageLayout(true);
@@ -751,16 +877,18 @@ export const MaraudersStage: React.FC<{
   useEffect(() => {
     if (!view || introChecked.current) return;
     introChecked.current = true;
-    if (view.status !== 'active') return;
     // 구경하는 사람도 맹세로 시작한다 (역할 안내는 팀이 있는 사람만)
-    if (!view.team && view.turn > 1) return;
+    if (view.status !== 'active' || (!view.team && view.turn > 1)) {
+      setIntro('done');
+      return;
+    }
     let seen = false;
     try {
       seen = window.sessionStorage.getItem(`ssm:mm-intro:${sessionId}`) === '1';
     } catch {
       seen = false;
     }
-    if (!seen) setIntro(view.turn <= 1 ? 'oath' : view.team ? 'role' : 'done');
+    setIntro(seen ? 'done' : view.turn <= 1 ? 'oath' : view.team ? 'role' : 'done');
   }, [view, sessionId]);
 
   const finishIntro = useCallback((next: 'role' | 'done') => {
@@ -795,9 +923,50 @@ export const MaraudersStage: React.FC<{
       next.push(...stepsAlong(from, to, `${last.turn}-a${arrest.seat}`, 'student', 0.9, 0.24));
     });
     setStamps(next);
-    if (last.arrests.length > 0) window.setTimeout(thump, 500);
+    // 발소리: 찍히는 발자국에 맞춰 (너무 많으면 앞의 것만)
+    next.slice(0, 18).forEach((stamp) => { sfx.step(stamp.delay); });
+
+    // 소식: 방이면 그 방, 층·탑 구역이면 그 띠 가운데, 계단은 지도 위쪽. 같은 자리에 겹치면 위로 쌓는다
+    const zoneCenter = (zone: MZone) => (zone.kind === 'floor'
+      ? { x: geo.width / 2, y: PAD + ((geo.rows - 1 - (zone.y ?? 0)) * (CELL_H + GAP_Y)) + (CELL_H / 2) }
+      : { x: PAD + ((zone.x ?? 0) * (CELL_W + GAP_X)) + (CELL_W / 2), y: geo.height / 2 });
+    const stacked = new Map<string, number>();
+    const placed = (last.notes ?? []).map((note, index) => {
+      const point = note.room !== undefined ? geo.center(note.room) : note.zone ? zoneCenter(note.zone) : { x: geo.width / 2, y: geo.height * 0.12 };
+      const spot = `${Math.round(point.x)}:${Math.round(point.y)}`;
+      const level = stacked.get(spot) ?? 0;
+      stacked.set(spot, level + 1);
+      return { id: `${last.turn}-n${index}`, kind: note.kind, text: note.text, x: point.x, y: point.y - (level * 34), delay: 1.2 + (index * 0.7) };
+    });
+    setNotes(placed);
+    placed.forEach((note) => { if (note.kind !== 'stairs' && note.kind !== 'caught') sfx.note(note.delay); });
+
+    // 목표 장소 · 투옥 · 탈출 효과
+    const effects: { id: string; kind: 'goal' | 'jail' | 'escape'; x: number; y: number; delay: number; label: string }[] = [];
+    (last.goals ?? []).forEach((room, index) => {
+      const point = room === null ? { x: geo.width / 2, y: geo.height * 0.3 } : geo.center(room);
+      effects.push({ id: `${last.turn}-g${index}`, kind: 'goal', x: point.x, y: point.y, delay: 1.3 + (index * 0.4), label: '목표 달성!' });
+      sfx.goal(1.3 + (index * 0.4));
+    });
+    if (last.arrests.length > 0) {
+      const office = geo.center(view.map.office);
+      effects.push({ id: `${last.turn}-jail`, kind: 'jail', x: office.x, y: office.y, delay: 2.8, label: last.arrests.some((arrest) => arrest.out) ? '탈락!' : '투옥!' });
+      window.setTimeout(thump, 500);
+      sfx.jail(2.8);
+    }
+    if (last.rescued.length > 0) {
+      const office = geo.center(view.map.office);
+      effects.push({ id: `${last.turn}-esc`, kind: 'escape', x: office.x, y: office.y, delay: 1.4, label: '탈출!' });
+      sfx.escape(1.4);
+    }
+    setBursts(effects);
+    if (last.stairs) {
+      setStairsShift(true);
+      sfx.stairs(0.6);
+    }
     const timer = window.setTimeout(() => { setStamps([]); }, 3_800);
-    return () => { window.clearTimeout(timer); };
+    const clear = window.setTimeout(() => { setNotes([]); setBursts([]); setStairsShift(false); }, 2_000 + (Math.max(placed.length, 1) * 700) + 5_000);
+    return () => { window.clearTimeout(timer); window.clearTimeout(clear); };
   }, [view, geo]);
 
   // 끝났다 → '장난 끝' → 리플레이 → 결과 (이미 끝난 방에 들어오면 바로 결과)
@@ -878,8 +1047,15 @@ export const MaraudersStage: React.FC<{
   }, [view, pickingWatch, send]);
 
   const selecting = Boolean(view && (pickingWatch || (isPlayer && view.my_turn && !view.submitted && view.moves.length > 0)));
+  const turnNow = view?.turn ?? -1;
+  useEffect(() => {
+    if (!selecting || intro !== 'done' || askedTurn.current === turnNow) return;
+    askedTurn.current = turnNow;
+    sfx.turn();
+  }, [selecting, intro, turnNow]);
 
-  if (!view) return null;
+  // 첫 화면을 받기 전·맹세를 할지 정하기 전에는 빈 무대만 (지도가 잠깐 보였다가 오프닝이 덮지 않게)
+  if (!view || intro === 'pending') return createPortal(<div className='game-stage mm-stage' role='region' aria-label={name} />, document.body);
 
   const myToken = view.me !== null ? view.tokens.find((token) => token.seat === view.me) : undefined;
   const here = myToken?.room ?? null;
@@ -921,6 +1097,7 @@ export const MaraudersStage: React.FC<{
         <span className='mm-chip'><FormattedMessage id='mm.goals' defaultMessage='Goals {done}/{total}' values={{ done: view.targets_done, total: view.targets_total }} /></span>
         {view.team && <span className={`mm-chip mm-chip--${view.team}`}>{names}</span>}
         {view.spectator && <span className='mm-chip mm-chip--dim'><FormattedMessage id='mm.spectating' defaultMessage='Spectating' /></span>}
+        <button type='button' className={sound ? 'mm-sound' : 'mm-sound is-off'} onClick={toggleSound} title={sound ? '소리 끄기' : '소리 켜기'} aria-pressed={sound}><TIcon name={sound ? 'volume' : 'volume-off'} size={16} /></button>
         <button type='button' className='mm-exit' onClick={() => { history.push('/system/group'); }}><FormattedMessage id='mm.exit' defaultMessage='Exit' /></button>
       </header>
 
@@ -934,7 +1111,7 @@ export const MaraudersStage: React.FC<{
           {jailed && <li className='is-warn'><FormattedMessage id='mm.jailed' defaultMessage="You were caught and locked in the prefects' room. You can only use the team chat until a teammate rescues you." /></li>}
           {out && <li className='is-warn'><FormattedMessage id='mm.out' defaultMessage='You were caught twice and are out. Watching the rest.' /></li>}
         </ul>
-        <div className='mm-board' style={{ aspectRatio: `${geo.width} / ${geo.height}` }}>
+        <div className={stairsShift ? 'mm-board is-shifting' : 'mm-board'} style={{ aspectRatio: `${geo.width} / ${geo.height}` }}>
           <MapSvg view={view} geo={geo} reachable={reachable} here={here} planned={planned} pickingWatch={pickingWatch} draw={intro === 'oath' || (ending === 'none' && view.turn <= 1)} fade={false} onPick={pick} />
 
           {/* 구역 공개(사감 팀): 대략적인 층/탑이 잉크로 번진다 */}
@@ -988,9 +1165,31 @@ export const MaraudersStage: React.FC<{
               >
                 <FootGlyph team={token.team} />
                 <NameTag player={player} team={token.team} me={token.seat === view.me} label={token.status === 'jailed' ? <TIcon name='lock' size={14} /> : token.status === 'out' ? '탈락' : undefined} cloaked={Boolean(player?.cloaked)} />
+                {token.seat === view.me && selecting && intro === 'done' && (
+                  <motion.span className='mm-token__ask' initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: [0, 4, 0] }} transition={{ y: { duration: 1.4, repeat: Infinity } }}>
+                    {pickingWatch ? '감시할 방을 고르세요!' : '갈 곳을 고르세요!'}
+                  </motion.span>
+                )}
               </motion.div>
             );
           })}
+
+          {/* 지도 위 그 자리에 잠깐 뜨는 소식 */}
+          <AnimatePresence>
+            {notes.map((note) => (
+              <motion.div key={note.id} className={`mm-note mm-note--${note.kind}`} style={pct({ x: note.x, y: note.y })} initial={{ opacity: 0, y: 10, scale: 0.85 }} animate={{ opacity: [0, 1, 1, 0], y: [10, -6, -10, -18], scale: [0.85, 1, 1, 0.98] }} transition={{ delay: note.delay, duration: 5.2, times: [0, 0.1, 0.85, 1] }}>
+                {note.text}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {/* 목표 달성 · 투옥 · 탈출 효과 */}
+          {bursts.map((burst) => (
+            <motion.div key={burst.id} className={`mm-burst mm-burst--${burst.kind}`} style={pct({ x: burst.x, y: burst.y })} initial={{ opacity: 0, scale: 0.3 }} animate={{ opacity: [0, 1, 1, 0], scale: [0.3, 1.25, 1, 1.05] }} transition={{ delay: burst.delay, duration: 2.6, times: [0, 0.2, 0.8, 1] }}>
+              <i aria-hidden />
+              <strong>{burst.label}</strong>
+            </motion.div>
+          ))}
 
           {/* 전체 공개 말풍선 */}
           <AnimatePresence>
@@ -1011,7 +1210,7 @@ export const MaraudersStage: React.FC<{
       </div>
 
       {/* 맹세(오프닝)는 메뉴 띠까지 덮는 전체 화면, 끝나면 아이콘 메뉴가 있는 지도 화면 */}
-      {createPortal(<AnimatePresence>{intro === 'oath' && <Oath key='oath' onDone={() => { finishIntro(view.team ? 'role' : 'done'); }} />}</AnimatePresence>, document.body)}
+      {createPortal(<AnimatePresence>{intro === 'oath' && <Oath key='oath' onDone={() => { finishIntro(viewRef.current?.team ? 'role' : 'done'); }} />}</AnimatePresence>, document.body)}
 
       {selecting && (
         <div className='mm-prompt'>

@@ -1660,3 +1660,170 @@ $mm-title: 'Chosunilbo Myeongjo', 'Noto Serif KR', 'Nanum Myeongjo', serif;
     box-shadow: none;
   }
 }
+
+// ── 소리 켜기·끄기 (나가기 버튼 왼쪽) ──
+.mm-sound {
+  position: absolute;
+  top: 12px;
+  right: 92px;
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 26px;
+  border: 1px solid rgb(255 241 205 / 40%);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+
+  &.is-off {
+    opacity: 0.5;
+  }
+}
+
+// 내 토큰 아래: 고를 차례 안내
+.mm-token__ask {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  z-index: 8;
+  margin-top: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #2b1b07;
+  box-shadow: 0 0 0 2px #ffd56a, 0 4px 12px rgb(0 0 0 / 45%);
+  color: #ffe9a6;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  pointer-events: none;
+  translate: -50% 0;
+  zoom: calc(1 / var(--mm-k, 1)); // 지도가 작아져도 글자는 읽히게
+}
+
+// 지도 위 그 자리에 잠깐 뜨는 소식
+.mm-note {
+  position: absolute;
+  z-index: 9;
+  max-width: 220px;
+  padding: 5px 11px;
+  border: 1px solid rgb(201 162 74 / 75%);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgb(58 38 22 / 95%), rgb(32 20 12 / 95%));
+  box-shadow: 0 5px 14px rgb(0 0 0 / 45%);
+  color: #f6e3a1;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  pointer-events: none;
+  translate: -50% -130%;
+
+  &--caught,
+  &--out { border-color: #e07a6a; color: #ffd0c0; }
+
+  &--rescue { border-color: #9fe08a; color: #d9f7cf; }
+
+  &--stairs { border-color: #8fb7e0; color: #d6e7ff; }
+
+  &--zone { border-style: dashed; }
+}
+
+// 목표 달성 · 투옥 · 탈출: 빛 고리가 퍼지며 글자
+.mm-burst {
+  position: absolute;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  translate: -50% -50%;
+
+  i {
+    position: absolute;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    animation: mm-burst-ring 1.4s ease-out 2;
+  }
+
+  strong {
+    position: relative;
+    padding: 4px 12px;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 900;
+    white-space: nowrap;
+    text-shadow: 0 2px 6px rgb(0 0 0 / 60%);
+  }
+
+  &--goal {
+    i { box-shadow: 0 0 0 4px #ffd56a, 0 0 30px 10px rgb(255 213 106 / 70%); }
+
+    strong { background: #b8860b; }
+  }
+
+  &--jail {
+    i { box-shadow: 0 0 0 4px #c0392b, 0 0 26px 8px rgb(192 57 43 / 60%); }
+
+    strong { background: #8e1d12; }
+  }
+
+  &--escape {
+    i { box-shadow: 0 0 0 4px #7ed27e, 0 0 26px 8px rgb(126 210 126 / 60%); }
+
+    strong { background: #2d6b3f; }
+  }
+}
+
+@keyframes mm-burst-ring {
+  from { opacity: 1; transform: scale(0.3); }
+  to { opacity: 0; transform: scale(1.6); }
+}
+
+// 계단이 움직이는 동안: 계단이 깜빡이며 흔들린다
+.mm-board.is-shifting .mm-stairs {
+  animation: mm-stairs-shift 0.5s ease-in-out 4;
+}
+
+@keyframes mm-stairs-shift {
+  0%, 100% { stroke: currentColor; transform: translateY(0); }
+  50% { stroke: #8fb7e0; stroke-width: 7px; transform: translateY(-2px); }
+}
+
+// 채팅 탭: 안 본 메시지 수
+.mm-chat__badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  margin-inline-start: 5px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #e0533e;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  vertical-align: 1px;
+}
+
+// 역할 안내 2쪽: 빛나는 방 그림 (실제 지도와 같은 모양)
+.mm-modal__room {
+  display: block;
+  width: min(220px, 100%);
+  margin: 4px auto 10px;
+
+  .mm-room__shape {
+    fill: rgb(255 214 110 / 70%);
+    stroke: #a8620d;
+    stroke-width: 4.5;
+    animation: mm-glow 1.4s ease-in-out infinite;
+  }
+}
+
+// 역할 안내의 [이전]: 양피지 위라 어두운 글자로
+.mm-modal__actions .mm-button--ghost {
+  border-color: rgb(90 58 26 / 50%);
+  background: transparent;
+  color: #5a3a1a;
+}

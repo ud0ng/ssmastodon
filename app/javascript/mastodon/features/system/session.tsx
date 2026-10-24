@@ -467,7 +467,8 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
       <>
         {/* 안내는 둘로 나뉜다: 대기방에 들어오면 수락·준비 완료, 게임방에 들어오면 경로 선택 등 */}
         {data?.lobby && (data.player || data.lobby.can_respond) && <StageTutorial key='lobby-tutorial' kind={data.kind} phase='lobby' />}
-        {data?.status === 'active' && data.player && ['flying', 'marauders_map'].includes(data.kind) && <StageTutorial key='game-tutorial' kind={data.kind} phase='game' />}
+        {/* 도둑 지도는 맹세 → 역할 안내(2쪽: 갈 곳 고르기)가 대신한다 */}
+        {data?.status === 'active' && data.player && ['flying'].includes(data.kind) && <StageTutorial key='game-tutorial' kind={data.kind} phase='game' />}
         {data && flyingRoom && (
           <FlyingStage
             sessionId={data.id}
@@ -516,7 +517,7 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
 
   return (
     <Column bindToDocument={!multiColumn} label={title}>
-      {data?.status === 'active' && data.player && ['maze', 'marauders_map', 'secret_chamber', 'flying'].includes(data.kind) && <StageTutorial kind={data.kind} />}
+      {data?.status === 'active' && data.player && ['maze', 'secret_chamber', 'flying'].includes(data.kind) && <StageTutorial kind={data.kind} />}
       {data && flyingRoom && (
         <FlyingStage
           sessionId={data.id}

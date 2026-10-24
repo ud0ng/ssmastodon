@@ -434,6 +434,7 @@ module Game
         from = state['positions'].dup
         plans = state['moves']
         log = []
+        @notes = [] # 화면이 지도 위 그 자리에 띄우는 소식 (log 와 같은 글 + 방·구역)
         last = { 'turn' => turn, 'moves' => {}, 'arrests' => [], 'rescued' => [], 'secret' => [], 'stairs' => (turn % config['stairs_every'].to_i.clamp(1, 10)).zero? }
 
         # 1) 이동
@@ -450,7 +451,10 @@ module Game
         # 2) 목표 장소
         moved.each do |player|
           room = state['positions'][player.seat.to_s]
-          state['done'] << room if state['targets'].include?(room) && state['done'].exclude?(room)
+          next unless state['targets'].include?(room) && state['done'].exclude?(room)
+
+          state['done'] << room
+          last['goals'] = (last['goals'] || []) << room # 이번 턴에 이룬 목표 (화면 효과)
         end
 
         # 3) 발자국: 목표 장소 도착·비밀 통로 사용 (투명 망토를 쓰면 없다). 감시 중인 방에 들어와도 위치가 공개된다
@@ -464,7 +468,7 @@ module Game
             footprint!(player, room, turn, log)
           elsif state['watch'] && state['watch']['room'] == room && state['watch']['until'] >= turn && from[seat] != room
             state['clues'] << { 'turn' => turn, 'kind' => 'watch', 'seat' => player.seat, 'room' => room }
-            log << render(config['msg_watch'], room: room_name(room), player: player)
+            note(log, render(config['msg_watch'], room: room_name(room), player: player), 'watch', room: room)
           end
         end
 
@@ -477,13 +481,13 @@ module Game
           room = state['positions'][seat]
           if state['rescued_count'][seat].to_i >= 1
             state['status_of'][seat] = 'out'
-            log << render(config['msg_out'], player: student)
+            note(log, render(config['msg_out'], player: student), 'out', room: state['positions'][seat])
           else
             state['status_of'][seat] = 'jailed'
           end
           state['positions'][seat] = office
           last['arrests'] << { 'seat' => student.seat, 'by' => catcher.seat, 'room' => room, 'out' => state['status_of'][seat] == 'out' }
-          log << render(config['msg_caught'], prefect: catcher, room: room_name(room), player: student)
+          note(log, render(config['msg_caught'], prefect: catcher, room: room_name(room), player: student), 'caught', room: room)
         end
 
         # 5) 구출: 사무실에 들어온 자유로운 학생이 있으면 갇힌 학생이 전원 구출 (구출자는 반드시 발자국을 남긴다)
@@ -496,7 +500,7 @@ module Game
             last['rescued'] << player.seat
           end
           rescuers.each { |player| footprint!(player, office, turn, log) }
-          log << render(config['msg_rescue'], player: rescuers.first, players: jailed.map(&:name).join(', '))
+          note(log, render(config['msg_rescue'], player: rescuers.first, players: jailed.map(&:name).join(', ')), 'rescue', room: office)
         end
 
         # 6) 정찰자: 주변 N칸 안 학생 수
@@ -517,11 +521,12 @@ module Game
           picked.each do |player|
             zone = L.zone(map, state['positions'][player.seat.to_s])
             state['clues'] << { 'turn' => turn, 'kind' => 'zone', 'seat' => player.seat, 'zone' => zone }
-            log << render(config['msg_zone'], player: player, zone: zone['name'])
+            note(log, render(config['msg_zone'], player: player, zone: zone['name']), 'zone', zone: zone)
           end
         end
 
-        log << render(config['msg_stairs']) if last['stairs']
+        note(log, render(config['msg_stairs']), 'stairs') if last['stairs']
+        last['notes'] = @notes
         state['clues'] = state['clues'].last(60)
         state['last'] = last
         state['log'] = log
@@ -544,7 +549,13 @@ module Game
 
       def footprint!(player, room, turn, log)
         state['clues'] << { 'turn' => turn, 'kind' => 'footprint', 'seat' => player.seat, 'room' => room }
-        log << render(config['msg_footprint'], room: room_name(room), player: player)
+        note(log, render(config['msg_footprint'], room: room_name(room), player: player), 'footprint', room: room)
+      end
+
+      # 결과 글 한 줄: 툿·로그에 넣고, 화면이 지도 위 그 자리(방·구역)에 잠깐 띄울 수 있게 함께 적는다
+      def note(log, text, kind, room: nil, zone: nil)
+        log << text
+        (@notes ||= []) << { 'kind' => kind, 'text' => text, 'room' => room, 'zone' => zone }.compact
       end
 
       def finish_game!(who, text)
@@ -643,7 +654,9 @@ module Game
           player = players.find { |each| each.seat.to_s == seat }
           !student?(player) || last['arrests'].any? { |arrest| arrest['seat'].to_s == seat } || state['clues'].any? { |clue| clue['turn'] == last['turn'] && clue['seat'].to_s == seat }
         end
-        last.merge('moves' => moves)
+        view = last.merge('moves' => moves)
+        view = view.merge('goals' => Array(last['goals']).map { nil }) if hide_students # 사감은 어느 방인지 모르고 몇 개인지만
+        view
       end
 
       def items_for(player, team)
