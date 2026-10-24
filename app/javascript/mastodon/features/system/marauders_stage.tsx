@@ -66,6 +66,8 @@ interface MView {
   targets_done: number;
   targets_total: number;
   cloak_turns: number;
+  // 몇 턴마다 학생 흔적(구역 공개)
+  hint_every?: number;
   cloaks_left?: number | null;
   tokens: MToken[];
   clues: MClue[];
@@ -158,6 +160,9 @@ const MapSvg: React.FC<{
   fade: boolean;
   onPick: (room: number) => void;
 }> = ({ view, geo, reachable, here, planned, pickingWatch, draw, fade, onPick }) => {
+  // 감시할 방을 고르는 중: 마우스를 올린 방
+  const [hoverRoom, setHoverRoom] = useState<number | null>(null);
+  useEffect(() => { if (!pickingWatch) setHoverRoom(null); }, [pickingWatch]);
   const { map } = view;
   const targets = new Map(view.targets.map((target) => [target.room, target.done]));
 
@@ -280,7 +285,7 @@ const MapSvg: React.FC<{
         const isPlan = planned === room.id;
         const isWatched = view.watch?.room === room.id;
         const isVia = (view.planned?.path ?? []).includes(room.id);
-        const classes = ['mm-room', room.kind === 'tower' && 'mm-room--tower', room.kind === 'office' && 'mm-room--office', canGo && 'is-go', isHere && 'is-here', isPlan && 'is-plan', isVia && 'is-via', isWatched && 'is-watched', pickingWatch && 'is-pick', target !== undefined && 'is-goal', target && 'is-done'].filter(Boolean).join(' ');
+        const classes = ['mm-room', room.kind === 'tower' && 'mm-room--tower', room.kind === 'office' && 'mm-room--office', canGo && 'is-go', isHere && 'is-here', isPlan && 'is-plan', isVia && 'is-via', isWatched && 'is-watched', pickingWatch && 'is-pick', pickingWatch && hoverRoom === room.id && 'is-hover', target !== undefined && 'is-goal', target && 'is-done'].filter(Boolean).join(' ');
         return (
           <motion.g
             key={room.id}
@@ -290,6 +295,8 @@ const MapSvg: React.FC<{
             transition={{ duration: 0.6, delay: draw ? 1.2 + ((index % 30) * 0.07) : 0 }}
             style={{ transformOrigin: `${box.x + (box.w / 2)}px ${box.y + (box.h / 2)}px` }}
             onClick={() => { if (canGo || pickingWatch) onPick(room.id); }}
+            onMouseEnter={pickingWatch ? () => { setHoverRoom(room.id); } : undefined}
+            onMouseLeave={pickingWatch ? () => { setHoverRoom((current) => (current === room.id ? null : current)); } : undefined}
           >
             <rect x={box.x} y={box.y} width={box.w} height={box.h} rx={8} className='mm-room__base' />
             <rect x={box.x} y={box.y} width={box.w} height={box.h} rx={8} className='mm-room__shape' filter='url(#mm-ink)' />
@@ -303,23 +310,43 @@ const MapSvg: React.FC<{
         );
       })}
 
-      {/* 비밀 통로 문: 반짝이는 보라 별. 방 위에 그려서 잘 보이게 */}
+      {/* 감시할 방 고르는 중: 마우스를 올린 방 위에 눈 + 방 이름 */}
+      {pickingWatch && hoverRoom !== null && (() => {
+        const box = geo.rect(hoverRoom);
+        const room = view.map.rooms.find((each) => each.id === hoverRoom);
+        return (
+          <g className='mm-pick-hint' pointerEvents='none'>
+            <rect x={box.x + (box.w / 2) - 62} y={box.y - 32} width={124} height={26} rx={13} className='mm-pick-hint__bg' />
+            <SvgTIcon name='eye' x={box.x + (box.w / 2) - 56} y={box.y - 29} size={20} className='mm-pick-hint__icon' />
+            <text x={box.x + (box.w / 2) + 10} y={box.y - 14} textAnchor='middle' className='mm-pick-hint__text'>{room?.name ?? ''} 감시</text>
+          </g>
+        );
+      })()}
+
+      {/* 비밀 통로 문: 보라 별. 처음엔 서서히 나타나고(지도를 그리는 중이면 방이 다 그려진 뒤) 그다음 은은하게 반짝인다. 방 위에 그린다 */}
       <g className='mm-doors'>
         {view.secret.flatMap((passage) => [passage.a, passage.b].map((room, index) => {
           const point = geo.center(room);
+          const appear = (draw ? 3.8 : 0.3) + (index * 0.4);
           return (
-            <motion.text
+            <motion.g
               key={`${passage.a}-${passage.b}-${index}`}
-              x={point.x + 36}
-              y={point.y - 18}
-              className='mm-door'
-              textAnchor='middle'
-              animate={{ opacity: [0.55, 1, 0.55], scale: [0.9, 1.2, 0.9] }}
-              transition={{ duration: 1.8, repeat: Infinity, delay: index * 0.5 }}
-              style={{ transformOrigin: `${point.x + 36}px ${point.y - 26}px` }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 2.2, delay: appear, ease: 'easeInOut' }}
             >
-              ✦
-            </motion.text>
+              <motion.text
+                x={point.x + 36}
+                y={point.y - 18}
+                className='mm-door'
+                textAnchor='middle'
+                animate={{ opacity: [0.6, 1, 0.6], scale: [0.92, 1.1, 0.92] }}
+                transition={{ duration: 2.2, repeat: Infinity, delay: appear + (index * 0.3) }}
+                style={{ transformOrigin: `${point.x + 36}px ${point.y - 24}px` }}
+              >
+                ✦
+              </motion.text>
+            </motion.g>
           );
         }))}
       </g>
@@ -359,6 +386,7 @@ const SvgTIcon: React.FC<{ name: string; x: number; y: number; size?: number; cl
 // ── 지도 양 옆 팀 열: 아바타 · 이름 · 배지(선택 완료·갇힘·망토·남은 능력) ──
 const TeamSide: React.FC<{ view: MView; team: 'student' | 'prefect' }> = ({ view, team }) => (
   <ul className={`mm-side mm-side--${team}`}>
+    <li className={`mm-side__team mm-side__team--${team}`}>{team === 'student' ? view.student_name : view.prefect_name}</li>
     {team === 'student' && view.cloaks_left != null && <li className='mm-side__cloaks' title='cloaks'><TIcon name='eye-off' size={14} /> ×{view.cloaks_left}</li>}
     {view.players.filter((player) => player.team === team).map((player) => (
       <li key={player.seat} className={['mm-side__player', player.chosen && 'is-chosen', player.status === 'jailed' && 'is-jailed', player.status === 'out' && 'is-out', player.seat === view.me && 'is-me'].filter(Boolean).join(' ')}>
@@ -462,6 +490,33 @@ const MapLegend: React.FC<{ view: MView }> = ({ view }) => {
       </AnimatePresence>
     </aside>
     </div>
+  );
+};
+
+// ── 지도 오른쪽 아래: 다음 일까지 남은 턴 (이번 턴 끝에 일어나면 1) ──
+//   계단 2/3: 움직이는 계단이 바뀔 때까지, 흔적 2/3: 학생 흔적(구역 공개)까지
+const turnsLeft = (turn: number, every: number) => every - ((Math.max(turn, 1) - 1) % every);
+
+const TurnGauge: React.FC<{ view: MView }> = ({ view }) => {
+  const rows = [
+    { key: 'stairs', label: '계단', hint: '움직이는 계단이 바뀔 때까지', every: Math.max(view.map.stairs_every, 1) },
+    { key: 'trace', label: '흔적', hint: '학생 흔적(구역 공개)까지', every: Math.max(view.hint_every ?? 0, 0) },
+  ].filter((row) => row.every > 0);
+  return (
+    <aside className='mm-gauge' aria-label='turns left'>
+      {rows.map((row) => {
+        const left = turnsLeft(view.turn, row.every);
+        return (
+          <div key={row.key} className={left === 1 ? `mm-gauge__row mm-gauge__row--${row.key} is-soon` : `mm-gauge__row mm-gauge__row--${row.key}`} title={row.hint}>
+            <b>{row.label}</b>
+            <span className='mm-gauge__dots' aria-hidden>
+              {Array.from({ length: row.every }, (_, index) => <i key={index} className={index < left ? 'is-on' : undefined} />)}
+            </span>
+            <strong>{left}/{row.every}</strong>
+          </div>
+        );
+      })}
+    </aside>
   );
 };
 
@@ -582,7 +637,7 @@ const sfx = {
 };
 const thump = sfx.thump;
 
-// ── 끝: 승리 팀 (이긴 팀 아바타·이름, 아래에 얻은 것 배지) → [다음] → 오늘의 MVP (그 장면을 지도에서 다시 틀어 줌) → [종료] → 장난 끝 ──
+// ── 끝: 장난 끝 → 승리 팀 (이긴 팀 아바타·이름, 아래에 얻은 것 배지) → [다음] → 오늘의 MVP (지도로 돌아가 그 장면을 다시 틀어 줌) → [종료] 나가기 ──
 const RewardBadges: React.FC<{ view: MView; seat: number }> = ({ view, seat }) => {
   const reward = view.finish?.rewards[String(seat)];
   if (view.finish?.test) return <span className='mm-badges'><span className='mm-badge mm-badge--dim'><FormattedMessage id='mm.test' defaultMessage='Test play: no rewards' /></span></span>;
@@ -679,10 +734,10 @@ const MvpScreen: React.FC<{ view: MView; index: number; onIndex: (index: number)
   );
 };
 
-// [종료]: 맹세(오프닝)처럼 '장난 끝' 글이 써지고 지도가 접히며 배경 음악이 줄어든 뒤 방을 나간다
+// 판이 끝나면(진행 중이던 방): 지도가 접히고 맹세(오프닝)처럼 양피지에 '장난 끝'이 써진다 → 결과
 const CLOSING = '장난 끝';
 const Closing: React.FC = () => (
-  <motion.div className='mm-oath mm-oath--closing' initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 1.2 }}>
+  <motion.div className='mm-oath mm-oath--closing' initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.8, delay: 1.2 } }} exit={{ opacity: 0, transition: { duration: 0.8 } }}>
     <p>
       {CLOSING.split('').map((char, index) => (
         <motion.span key={index} initial={{ opacity: 0, y: 6, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ delay: 1.6 + (index * 0.16), duration: 0.5 }}>{char}</motion.span>
@@ -991,7 +1046,7 @@ export const MaraudersStage: React.FC<{
   //        → role(설명 모달, [확인했습니다]) → done(본격 시작). 다시 들어온 방은 바로 done
   const [intro, setIntro] = useState<'pending' | 'oath' | 'drawing' | 'glow' | 'role' | 'done'>('pending');
   const [pickingWatch, setPickingWatch] = useState(false);
-  const [ending, setEnding] = useState<'none' | 'over' | 'review' | 'winner' | 'mvp' | 'closing'>('none');
+  const [ending, setEnding] = useState<'none' | 'over' | 'review' | 'winner' | 'mvp'>('none');
   // MVP: 보고 있는 장면 번호, 그 장면 턴을 되풀이할 때 지금 보여 주는 기록 번호(history 의 자리)
   const [mvpIndex, setMvpIndex] = useState(0);
   const [mvpFrame, setMvpFrame] = useState<number | null>(null);
@@ -1039,23 +1094,6 @@ export const MaraudersStage: React.FC<{
     bgm.current = null;
   }, []);
 
-  // [종료]: 배경 음악을 2초 동안 줄여 멈추고, 지도가 접힌 뒤 방을 나간다
-  useEffect(() => {
-    if (ending !== 'closing') return undefined;
-    const audioEl = bgm.current;
-    const start = audioEl?.volume ?? 0;
-    let step = 0;
-    const fade = window.setInterval(() => {
-      step += 1;
-      if (audioEl) audioEl.volume = Math.max(0, start * (1 - (step / 20)));
-      if (step >= 20) {
-        audioEl?.pause();
-        window.clearInterval(fade);
-      }
-    }, 100);
-    const leave = window.setTimeout(() => { history.push('/system/group'); }, 4_600);
-    return () => { window.clearInterval(fade); window.clearTimeout(leave); };
-  }, [ending, history]);
 
   useEffect(() => {
     if (!view) return undefined;
@@ -1280,20 +1318,32 @@ export const MaraudersStage: React.FC<{
     return () => { window.clearTimeout(timer); };
   }, [view, geo]);
 
-  // 끝났다 → '장난 끝' → 리플레이 → 결과 (이미 끝난 방에 들어오면 바로 결과)
+  // 끝났다 → (마지막 턴 결과가 다 보인 뒤) '장난 끝' → 결과 → MVP → [종료]. 이미 끝난 방에 들어오면 바로 결과 ('장난 끝'·접히는 마무리 없음)
   const status = view?.status;
   const prevStatus = useRef<string | null>(null);
+  // 이 화면을 보는 동안 판이 끝났다 (진행 중인 방에서만 장난 끝 연출)
+  const liveEnd = useRef(false);
   useEffect(() => {
-    if (!status) return;
-    if (status === 'finished') {
-      setEnding((current) => (current !== 'none' ? current : (prevStatus.current && prevStatus.current !== 'finished' ? 'over' : 'winner')));
-    }
+    if (!status) return undefined;
+    const before = prevStatus.current;
     prevStatus.current = status;
+    if (status !== 'finished') return undefined;
+    if (before && before !== 'finished') {
+      liveEnd.current = true;
+      // 마지막 턴: 발자국이 넘어가고(약 1~4초) 체포(2.8초부터)·목표(1.3초부터) 효과가 끝날 때까지 기다린다
+      const last = viewRef.current?.last;
+      const wait = last && (last.arrests.length > 0 || (last.goals?.length ?? 0) > 0 || last.rescued.length > 0) ? 6_200 : 4_400;
+      const timer = window.setTimeout(() => { setEnding((current) => (current === 'none' ? 'over' : current)); }, wait);
+      return () => { window.clearTimeout(timer); };
+    }
+    setEnding((current) => (current === 'none' ? 'winner' : current));
+    return undefined;
   }, [status]);
 
   useEffect(() => {
     if (ending !== 'over') return undefined;
-    const timer = window.setTimeout(() => { setEnding('winner'); }, 3_200);
+    // 지도가 접히고 '장난 끝'이 다 써진 뒤 결과
+    const timer = window.setTimeout(() => { setEnding('winner'); }, 4_600);
     return () => { window.clearTimeout(timer); };
   }, [ending]);
 
@@ -1358,6 +1408,8 @@ export const MaraudersStage: React.FC<{
   }, [view, geo, ending, reviewMode, reviewRound, mvpFrame]);
 
   const remaining = useRemaining(view);
+  // 시간 막대의 전체 = 이번 턴에 본 가장 큰 남은 시간 (아래에서 채운다)
+  const timerMax = useRef<{ turn: number; max: number }>({ turn: -1, max: 1 });
 
   const send = useCallback((command: string, args?: string) => {
     if (!view) return;
@@ -1402,7 +1454,11 @@ export const MaraudersStage: React.FC<{
   const out = view.my_status === 'out';
   const byseat = new Map(view.players.map((player) => [player.seat, player]));
   const names = view.team === 'student' ? view.student_name : view.prefect_name;
-  const total = 45;
+  // 시간 막대의 전체 = 이번 턴에 본 가장 큰 남은 시간 (첫 턴은 추가 시간만큼 길다)
+  if (remaining !== null && (timerMax.current.turn !== view.turn || remaining > timerMax.current.max)) {
+    timerMax.current = { turn: view.turn, max: Math.max(remaining, timerMax.current.turn === view.turn ? timerMax.current.max : 1) };
+  }
+  const total = timerMax.current.max;
 
   // 능력(감시·정찰·추격)을 지금 쓸 수 있다: 남은 횟수 · 내 차례 · 이번 턴에 아직 안 씀
   const abilityReady = view.team === 'prefect' && (view.items.ability ?? 0) > 0 && canAct && !view.planned?.ability;
@@ -1442,10 +1498,12 @@ export const MaraudersStage: React.FC<{
       </header>
 
       {/* 지도 (양피지) + 양 옆 팀 열 */}
-      <div className={ending === 'closing' ? 'mm-arena is-folding' : 'mm-arena'}>
+      {/* 끝: 장난 끝 동안 지도가 접히고, 결과 다음(MVP)에는 다시 펼쳐진다 */}
+      <div className={ending === 'over' ? 'mm-arena is-folding' : (ending === 'mvp' ? 'mm-arena is-unfolding' : 'mm-arena')}>
         <TeamSide view={view} team='student' />
       <div className='mm-parchment' style={{ '--mm-k': Math.max(0.5, Math.min(1, 1000 / geo.width)) } as React.CSSProperties}>
         {mapReady && <MapLegend view={view} />}
+        {mapReady && view.status === 'active' && <TurnGauge view={view} />}
         {/* 안내글은 전부 지도 위에: 이동 선택 안내, 갇힘·탈락 안내, 소식(누가 어디에 있는지·계단 변화 등) */}
         <ul className='mm-notice' aria-live='polite'>
           {jailed && <li className='is-warn'><FormattedMessage id='mm.jailed' defaultMessage="You were caught and locked in the prefects' room. You can only use the team chat until a teammate rescues you." /></li>}
@@ -1453,6 +1511,19 @@ export const MaraudersStage: React.FC<{
         </ul>
         <div className={stairsShift ? 'mm-board is-shifting' : 'mm-board'} style={{ aspectRatio: `${geo.width} / ${geo.height}` }}>
           {intro !== 'oath' && <MapSvg view={view} geo={geo} reachable={reachable} here={here} planned={planned} pickingWatch={pickingWatch} draw={intro === 'drawing'} fade={false} onPick={pick} />}
+
+          {/* 움직이는 계단이 바뀔 때: 계단마다 소리가 퍼지듯 물결 고리 (덜컹거리는 소리와 함께) */}
+          {stairsShift && view.map.moving_stairs.map((stair) => {
+            const from = geo.center(stair.a);
+            const to = geo.center(stair.b);
+            return (
+              <div key={`wave-${stair.a}-${stair.b}`} className='mm-stair-wave' style={pct({ x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 })}>
+                <i />
+                <i />
+                <i />
+              </div>
+            );
+          })}
 
           {/* 감시 중(사감 팀만): 방 위에 눈이 깜빡이고 남은 턴 */}
           {view.watch && (
@@ -1605,13 +1676,9 @@ export const MaraudersStage: React.FC<{
         {intro === 'role' && view.team && <RoleModal key='role' view={view} onClose={() => { finishIntro('done'); }} />}
       </AnimatePresence>
 
-      {/* 끝: 장난 끝 → 리플레이 → 결과 */}
+      {/* 끝: (마지막 턴 효과 뒤) 지도가 접히며 장난 끝 → 결과 → [다음] 지도로 돌아가 MVP 장면 → [종료] 나가기 */}
       <AnimatePresence>
-        {ending === 'over' && (
-          <motion.div key='over' className='mm-over' initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.strong initial={{ scale: 2.6, opacity: 0, rotate: -6 }} animate={{ scale: 1, opacity: 1, rotate: -3 }} transition={{ type: 'spring', stiffness: 120, damping: 12 }}><FormattedMessage id='mm.mischief_over' defaultMessage='Mischief managed' /></motion.strong>
-          </motion.div>
-        )}
+        {ending === 'over' && <Closing key='over' />}
         {ending === 'review' && (
           <ReviewBar
             key='review'
@@ -1637,10 +1704,9 @@ export const MaraudersStage: React.FC<{
             index={mvpIndex}
             onIndex={setMvpIndex}
             onReplay={() => { setEnding('review'); setReviewMode('rounds'); setReviewRound(0); setPlaying(true); }}
-            onClose={() => { setEnding('closing'); }}
+            onClose={() => { history.push('/system/group'); }}
           />
         )}
-        {ending === 'closing' && <Closing key='closing' />}
       </AnimatePresence>
     </div>,
     document.body,

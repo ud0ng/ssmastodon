@@ -31,6 +31,7 @@ module Game
         F.new(key: 'hint_every', type: :integer, default: 3, group: 'rules', label: '구역 공개 주기 (턴)', hint: '무작위 학생 2명의 대략적인 구역이 공개되는 주기 (3 ↔ 4). 길수록 학생에게 유리합니다'),
         F.new(key: 'cloak_adjust', type: :integer, default: 0, group: 'rules', label: '투명 망토 개수 조절 (±)', hint: '기본은 학생 3명당 1개(최소 1개). 더하거나 뺍니다 (-1~2)'),
         F.new(key: 'cloak_turns', type: :integer, default: 2, group: 'rules', label: '투명 망토 지속 (턴)', hint: '이 동안 발자국·구역 공개가 없습니다'),
+        F.new(key: 'first_turn_bonus', type: :integer, default: 30, group: 'rules', label: '첫 턴 추가 시간 (초)', hint: '맹세·지도 그리기·설명 창을 보는 동안 첫 턴이 줄지 않게 더하는 시간 (0~120)'),
         F.new(key: 'secret_passages', type: :integer, default: 3, group: 'rules', label: '열려 있는 비밀 통로 수', hint: '판마다 후보 중 이 수만큼만 열립니다 (학생만 쓸 수 있습니다)'),
         F.new(key: 'stairs_every', type: :integer, default: 3, group: 'rules', label: '움직이는 계단이 바뀌는 주기 (턴)'),
         F.new(key: 'watch_turns', type: :integer, default: 3, group: 'rules', label: '감시 지속 (턴)', hint: '감시자가 방 하나를 감시하는 턴 수'),
@@ -389,10 +390,12 @@ module Game
       end
 
       # ── 턴 ──
+      # 첫 턴은 오프닝(맹세 → 지도 그리기 → 설명 창)을 보는 시간만큼 더 준다
       def begin_turn!
         state['moves'] = {}
         session.save!
-        wait_for_turn!
+        extra = session.turn == 1 ? config['first_turn_bonus'].to_i.clamp(0, 120) : 0
+        Game::Engine.set_deadline_in!(session, (Game::Config.turn_seconds + extra).seconds)
       end
 
       def submit_room!(player, room)
