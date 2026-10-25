@@ -4,6 +4,8 @@ import { Fragment, useCallback, useEffect, useState } from 'react';
 
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
+import { createPortal } from 'react-dom';
+
 import { Link, useHistory, useParams } from 'react-router-dom';
 
 import StarIcon from '@/styles/bird-theme-svg/star.svg?react';
@@ -253,9 +255,51 @@ export const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy:
   );
 };
 
+// 운영진: 방 목록에서 오른쪽 클릭하면 뜨는 조작 목록. 진행 중(모집·대기·진행) = 단계 넘기기·무승부 종료·취소, 끝난 판 = 삭제
+export type RoomOp = 'advance' | 'draw' | 'cancel' | 'delete';
+export interface RoomMenuState { row: SessionRow; x: number; y: number }
+
+const ROOM_OPS: Record<RoomOp, { label: string; title: string; message: string; dangerous: boolean }> = {
+  advance: { label: '단계 넘기기', title: '지금 단계를 넘길까요?', message: '시간이 다 된 것처럼 다음 단계로 넘어갑니다. (모집 중이면 모집을 끝내고, 대기실이면 바로 시작)', dangerous: false },
+  draw: { label: '무승부 종료', title: '무승부로 끝낼까요?', message: '이 판을 무승부로 끝냅니다. 점수와 보상은 없습니다.', dangerous: true },
+  cancel: { label: '취소', title: '이 판을 취소할까요?', message: '결과 없이 취소합니다. 점수와 보상은 없습니다.', dangerous: true },
+  delete: { label: '삭제', title: '', message: '', dangerous: true },
+};
+
+export const roomOps = (row: SessionRow): RoomOp[] => (row.status === 'finished' || row.status === 'cancelled' ? ['delete'] : ['advance', 'draw', 'cancel']);
+
+export const RoomMenu: React.FC<{ menu: RoomMenuState; onPick: (op: RoomOp, row: SessionRow) => void; onClose: () => void }> = ({ menu, onPick, onClose }) => {
+  useEffect(() => {
+    const close = () => { onClose(); };
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
+    window.addEventListener('click', close);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('click', close);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [onClose]);
+  // 화면 밖으로 나가지 않게
+  const left = Math.min(menu.x, window.innerWidth - 180);
+  const top = Math.min(menu.y, window.innerHeight - 140);
+  return (
+    <ul className='room-menu' role='menu' style={{ left, top }} onContextMenu={(event) => { event.preventDefault(); }}>
+      {roomOps(menu.row).map((op) => (
+        <li key={op}>
+          <button type='button' role='menuitem' className={ROOM_OPS[op].dangerous ? 'is-danger' : undefined} onClick={() => { onClose(); onPick(op, menu.row); }}>
+            {ROOM_OPS[op].label}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
 // 방 목록 카드: 참가자 아바타 · 이름 (VS) · 상태(턴·남은 시간 / 끝난 때). 내 방은 테마색 바탕.
 // 끝난 판은 승리자 아바타에 금빛 테두리 + 왕관, 이름은 테마색. 패배자는 흐리게, 무승부는 '무' 표시
-export const RoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRow) => void }> = ({ rows, onDelete }) => {
+export const RoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRow) => void; onMenu?: (menu: RoomMenuState) => void }> = ({ rows, onDelete, onMenu }) => {
   const intl = useIntl();
   return (
     <ul className='system-room-list'>
@@ -263,7 +307,7 @@ export const RoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRo
         const mine = row.players.some((player) => player.me);
         const versus = row.players.length === 2;
         return (
-          <li key={row.id} className={onDelete ? 'system-room-list__item system-room-list__item--deletable' : undefined}>
+          <li key={row.id} className={onDelete ? 'system-room-list__item system-room-list__item--deletable' : undefined} onContextMenu={onMenu ? (event) => { event.preventDefault(); onMenu({ row, x: event.clientX, y: event.clientY }); } : undefined}>
             <Link
               to={`/system/sessions/${row.id}`}
               className={`system-room-card system-room-card--${row.status}${mine ? ' system-room-card--mine' : ''}${versus ? '' : ' system-room-card--many'}`}
@@ -327,7 +371,7 @@ export const RoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRo
 };
 
 // 이벤트 방 목록 (여럿이 하는 컨텐츠): [모집중·진행중·완료 배지] | 참가 캐릭터 아바타(아래 이름) | 오른쪽: 모집 종료까지 / 라운드 / 끝난 때. 완료된 방은 승리자를 색으로 강조
-const EventRoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRow) => void }> = ({ rows, onDelete }) => {
+const EventRoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRow) => void; onMenu?: (menu: RoomMenuState) => void }> = ({ rows, onDelete, onMenu }) => {
   const intl = useIntl();
   return (
     <ul className='event-room-list'>
@@ -336,7 +380,7 @@ const EventRoomList: React.FC<{ rows: SessionRow[]; onDelete?: (row: SessionRow)
         const finished = row.status === 'finished' || row.status === 'cancelled';
         const mode = recruiting || row.waiting ? 'recruiting' : finished ? 'finished' : 'running';
         return (
-          <li key={row.id} className='event-room-list__item'>
+          <li key={row.id} className='event-room-list__item' onContextMenu={onMenu ? (event) => { event.preventDefault(); onMenu({ row, x: event.clientX, y: event.clientY }); } : undefined}>
             <Link to={`/system/sessions/${row.id}`} className={`event-room event-room--${mode}`}>
               <span className='event-room__badge'>
                 {row.test && <span role='img' aria-label='test play' title='Test play'>🔒 </span>}
@@ -607,6 +651,9 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
   const [failed, setFailed] = useState(false);
   const [tab, setTab] = useState<Tab>('rules');
   const [busyShown, setBusyShown] = useState(false);
+  // 운영진 오른쪽 클릭 조작 목록
+  const [menu, setMenu] = useState<RoomMenuState | null>(null);
+  const closeMenu = useCallback(() => { setMenu(null); }, []);
 
   const load = useCallback(() => {
     apiRequestGet<GameInfo>(`v1/system/games/${key}`)
@@ -650,6 +697,26 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
     }));
   }, [dispatch, intl, load]);
 
+  // 운영진 조작: 확인을 거쳐 단계 넘기기·무승부 종료·취소 (삭제는 원래 삭제 확인)
+  const handleOp = useCallback((op: RoomOp, row: SessionRow) => {
+    if (op === 'delete') { handleDelete(row); return; }
+    const info = ROOM_OPS[op];
+    dispatch(openModal({
+      modalType: 'CONFIRM',
+      modalProps: {
+        title: info.title,
+        message: info.message,
+        confirm: info.label,
+        dangerous: info.dangerous,
+        onConfirm: () => {
+          apiRequestPost(`v1/system/sessions/${row.id}/control`, { op })
+            .then(() => { load(); return undefined; })
+            .catch(() => { load(); });
+        },
+      },
+    }));
+  }, [dispatch, handleDelete, load]);
+
   const title = game?.name ?? intl.formatMessage(messages.title);
   const rooms = game && (tab === 'active' || tab === 'recent') ? game[tab] : [];
 
@@ -684,12 +751,13 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
         {tab === 'rules' && <div className='system-page system-game-page'><RulesBody game={game} /></div>}
         {tab === 'ranking' && <div className='system-page system-game-page'><RankingBody game={game} /></div>}
         {(tab === 'active' || tab === 'recent') && (stageRooms.length > 0 ? (
-          <EventRoomList rows={stageRooms} onDelete={game.staff && tab === 'recent' ? handleDelete : undefined} />
+          <EventRoomList rows={stageRooms} onDelete={game.staff && tab === 'recent' ? handleDelete : undefined} onMenu={game.staff ? setMenu : undefined} />
         ) : (
           <p className='system-page__empty'>
             {tab === 'active' ? <FormattedMessage id='system.active.empty' defaultMessage='No game in progress.' /> : <FormattedMessage id='system.game.no_finished' defaultMessage='No finished games yet.' />}
           </p>
         ))}
+        {menu && createPortal(<RoomMenu menu={menu} onPick={handleOp} onClose={closeMenu} />, document.body)}
       </StageIntro>
     );
   }
@@ -762,7 +830,7 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
               <RankingBody game={game} />
             </>
             ) : rooms.length > 0 ? (
-              <RoomList rows={rooms} onDelete={game.staff && tab === 'recent' ? handleDelete : undefined} />
+              <RoomList rows={rooms} onDelete={game.staff && tab === 'recent' ? handleDelete : undefined} onMenu={game.staff ? setMenu : undefined} />
             ) : (
               <p className='system-page__empty'>
                 {tab === 'active' ? (
@@ -775,6 +843,7 @@ const SystemGame: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => {
           </>
         )}
       </div>
+      {menu && createPortal(<RoomMenu menu={menu} onPick={handleOp} onClose={closeMenu} />, document.body)}
     </Column>
   );
 };

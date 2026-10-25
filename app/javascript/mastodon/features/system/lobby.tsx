@@ -83,6 +83,7 @@ const messages = defineMessages({
   placeholder: { id: 'lobby.placeholder', defaultMessage: 'Say something to the room' },
   send: { id: 'lobby.send', defaultMessage: 'Send' },
   joinFailed: { id: 'lobby.join_failed', defaultMessage: 'Could not join' },
+  actionFailed: { id: 'lobby.action_failed', defaultMessage: 'Could not do that' },
   ok: { id: 'lobby.ok', defaultMessage: 'OK' },
   noRewardTitle: { id: 'lobby.no_reward_title', defaultMessage: 'No points or rewards today' },
 });
@@ -248,10 +249,10 @@ export const LobbyStage: React.FC<{
         })
         .catch((reason: unknown) => {
           onChanged();
-          // 참가·수락이 막히면 (정원 초과·하루 제한 등) 서버가 보낸 이유를 모달로 알린다
+          // 참가·수락·참여 취소 등이 막히면 (정원 초과·하루 제한·카운트다운 중 등) 서버가 보낸 이유를 모달로 알린다
           const message = apiErrorMessage(reason);
-          if (message && ['join', 'accept', 'team', 'role'].includes(action)) {
-            dispatch(openModal({ modalType: 'CONFIRM', modalProps: { title: intl.formatMessage(messages.joinFailed), message, confirm: intl.formatMessage(messages.ok), hideCancel: true, onConfirm: () => undefined } }));
+          if (message && ['join', 'accept', 'team', 'role', 'leave'].includes(action)) {
+            dispatch(openModal({ modalType: 'CONFIRM', modalProps: { title: intl.formatMessage(['join', 'accept'].includes(action) ? messages.joinFailed : messages.actionFailed), message, confirm: intl.formatMessage(messages.ok), hideCancel: true, onConfirm: () => undefined } }));
           }
         })
         .finally(() => {

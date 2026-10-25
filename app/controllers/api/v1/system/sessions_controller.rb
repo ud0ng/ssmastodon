@@ -9,7 +9,7 @@ class Api::V1::System::SessionsController < Api::BaseController
   MESSAGE_LIMIT = 200
 
   before_action -> { doorkeeper_authorize! :read }, only: [:show, :view]
-  before_action -> { doorkeeper_authorize! :write }, only: [:move, :destroy, :ready, :cancel_start, :chat, :join, :leave, :start_now, :accept, :decline, :invite_more, :team, :role]
+  before_action -> { doorkeeper_authorize! :write }, only: [:move, :destroy, :ready, :cancel_start, :chat, :join, :leave, :start_now, :accept, :decline, :invite_more, :team, :role, :control]
   before_action :require_user!
   before_action :require_contents_open!
   before_action :set_session
@@ -171,6 +171,24 @@ class Api::V1::System::SessionsController < Api::BaseController
     return render json: { error: { full: '바꾸려는 팀의 정원이 가득 찼습니다.', closed: '지금은 팀을 바꿀 수 없습니다.' }.fetch(result) }, status: 422 unless result == :ok
 
     show
+  end
+
+  # 운영진: 이벤트 목록에서 오른쪽 클릭으로 다루기 (관리 화면의 진행 중 표와 같은 Game::SessionControl)
+  #   advance 단계 넘기기 / draw 무승부 종료 / cancel 취소
+  CONTROLS = { 'advance' => :advance!, 'draw' => :draw!, 'cancel' => :cancel! }.freeze
+
+  def control
+    return render json: { error: 'forbidden' }, status: 403 unless staff?
+
+    action = CONTROLS[params[:op].to_s]
+    return render json: { error: '없는 조작입니다.' }, status: 422 if action.nil?
+    return render json: { error: '이미 끝난 판입니다.' }, status: 422 unless @session.open?
+
+    Game::SessionControl.public_send(action, @session)
+    render json: { ok: true, status: @session.reload.status }
+  rescue StandardError => e
+    Rails.logger.warn { "Api::V1::System::SessionsController#control: #{e.class} #{e.message}" }
+    render json: { error: e.message }, status: 422
   end
 
   # 비밀의 방 대기방: 운영진이 참가자의 역할을 몰래 정해 둔다 (role 이 비면 무작위로 되돌림)

@@ -1564,6 +1564,7 @@
   "system.game.join_event_plain": "이벤트 참가하기",
   "flying.ring": "금빛 고리 +1",
   "flying.void": "모두 추락하게 되어 이 라운드는 무효예요!",
+  "lobby.action_failed": "할 수 없어요",
   "lobby.join_failed": "참가할 수 없어요",
   "lobby.ok": "확인",
   "system.session.cancelled_title": "이벤트가 취소됐어요",

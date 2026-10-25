@@ -81,6 +81,8 @@ export interface CsMessage {
 
 const REFRESH_MS = 2_500;
 const SOUND_KEY = 'ssm:cs-sound';
+const BGM_URL = '/sounds/chamber_bgm.mp3';
+const BGM_VOLUME = 0.35;
 const OPENING = '비밀의 방이 열렸다. 후계자의 적들이여, 조심하라.';
 
 // ── 효과음 (Web Audio, 소리 끄기 버튼을 따른다) ──
@@ -1707,6 +1709,30 @@ export const ChamberStage: React.FC<{
       try { window.localStorage.setItem(SOUND_KEY, current ? 'off' : 'on'); } catch { /* 이번만 */ }
       return !current;
     });
+  }, []);
+
+  // 배경 음악: 오프닝이 시작되면(다시 들어온 방은 바로) 반복 재생, 소리를 끄면 멈추고, 방을 나가면 끝 (도둑 지도와 같다)
+  const bgm = useRef<HTMLAudioElement | null>(null);
+  const bgmOn = sound && intro !== 'pending';
+  useEffect(() => {
+    if (!bgmOn) {
+      bgm.current?.pause();
+      return;
+    }
+    if (!bgm.current) {
+      bgm.current = new Audio(BGM_URL);
+      bgm.current.loop = true;
+      bgm.current.volume = BGM_VOLUME;
+    }
+    bgm.current.play().catch(() => {
+      // 자동 재생이 막히면 화면을 한 번 누를 때 시작
+      const resume = () => { void bgm.current?.play().catch(() => undefined); window.removeEventListener('pointerdown', resume); };
+      window.addEventListener('pointerdown', resume);
+    });
+  }, [bgmOn]);
+  useEffect(() => () => {
+    bgm.current?.pause();
+    bgm.current = null;
   }, []);
 
   // 밤 나들이: 밤에 할 일이 있는 사람(방주·오러·치유사)은 연출이 끝나면 몰래 일어나 문으로 나간다 → 할 일 → 돌아온다
