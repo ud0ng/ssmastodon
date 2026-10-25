@@ -854,11 +854,16 @@ module Game
           won = side != 'draw' && (side == 'dark') == DARK.include?(role_of(player.seat))
           player.update!(result: side == 'draw' ? 'draw' : (won ? 'win' : 'lose'))
           amount = (won ? config['points_win'].to_i : 0) + (alive?(player) ? config['points_survive'].to_i : 0)
-          amount = 0 if side == 'draw'
+          amount = 0 if side == 'draw' || session.test? # 테스트 플레이는 점수 없음
           point_lines << Game::Points.give(session, player, amount, reason: "event:#{self.class.key}") if amount.positive?
         end
         session.update!(status: 'finished', finished_at: Time.now.utc, deadline_at: nil)
-        point_lines.concat(give_rewards!)
+        # 테스트 플레이: 점수·보상 없이 결과 안내만 (다른 컨텐츠의 finish! 와 같다)
+        if session.test?
+          point_lines << '(테스트 플레이라 점수와 보상은 없습니다)'
+        else
+          point_lines.concat(give_rewards!)
+        end
 
         roles = players.map { |player| "#{player.name} — #{role_name(role_of(player.seat))}" }.join("\n")
         text = if side == 'draw'

@@ -319,6 +319,22 @@ RSpec.describe Game::Web::SecretChamber do
     expect(view[:awards].pluck(:key)).to include('survivor', 'disguise')
   end
 
+  it 'gives no house points or rewards in a test play' do
+    Game::Config.update!('secret_chamber', 'points_win' => '5', 'points_survive' => '2')
+    start_game!
+    current = session
+    current.state['test'] = true
+    current.save!
+    traitor = player_with('traitor')
+    players_without('traitor').each { |voter| act(voter.account, '고발', targets: [traitor.account]) }
+    session.with_lock { kind.timeout! } if session.reload.status == 'active'
+
+    expect(session.reload.status).to eq 'finished'
+    expect(GameHousePoint.where(game_session_id: session.id).count).to eq 0
+    expect(GameReward.where(game_session_id: session.id).count).to eq 0
+    expect(session.messages.where(account_id: nil).last.text).to include('테스트 플레이라 점수와 보상은 없습니다')
+  end
+
   it 'lets anyone watch, showing every role only to watching staff' do
     start_game!
 
