@@ -101,6 +101,9 @@ en:
         title: Activity log
         title_for: 'Activity log of %{name}'
       house_records:
+        delete: Delete record
+        delete_confirm: "Delete the %{house} %{points} record? It is also removed from the house points."
+        deleted: Record deleted.
         empty: No house point records.
         hint: 'House points gained or lost. The content is the reason.'
         house: House

@@ -103,6 +103,9 @@ ko:
         title: 활동 기록
         title_for: '%{name}의 활동 기록'
       house_records:
+        delete: 기록 삭제
+        delete_confirm: "%{house} %{points}점 기록을 지울까요? 소속 점수에서도 빠집니다."
+        deleted: 기록을 지웠습니다.
         empty: 소속 점수 기록이 없습니다.
         hint: '소속 점수를 얻거나 잃은 기록입니다. 내용은 사유(컨텐츠 이름 또는 운영진 조정 내용)입니다.'
         house: 소속

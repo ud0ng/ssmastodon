@@ -30,6 +30,7 @@
           %th= game_t('admin.games.records.character')
           %th.game-table__number= game_t('admin.games.house_records.points')
           %th= game_t('admin.games.activity_log.content')
+          %th
       %tbody
         - @points.each do |point|
           %tr
@@ -44,8 +45,11 @@
             %td.game-table__number
               %span.game-badge{ class: point.amount.negative? ? 'game-badge--lose' : 'game-badge--win' }= format('%+d', point.amount)
             %td.bot-sheet-table__text= point.reason.present? ? game_reward_reason(point.reason) : '—'
+            %td.bot-sheet-table__actions
+              = button_to admin_game_house_record_path(point, house: params[:house], q: params[:q], page: params[:page]), method: :delete, class: 'icon-button', form_class: 'bot-sheet-table__delete', title: game_t('admin.games.house_records.delete'), data: { confirm: game_t('admin.games.house_records.delete_confirm', house: point.house.label, points: format('%+d', point.amount)) } do
+                = material_symbol('delete')
         - if @points.empty?
           %tr
-            %td.bot-sheet-table__text{ colspan: 5 }= game_t('admin.games.house_records.empty')
+            %td.bot-sheet-table__text{ colspan: 6 }= game_t('admin.games.house_records.empty')
 
 = paginate @points

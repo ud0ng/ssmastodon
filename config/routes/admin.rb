@@ -153,6 +153,7 @@ namespace :admin do
   resources :game_character_stats, path: 'characters/stats', only: [:index, :create, :update, :destroy]
   get 'characters/activity_log', to: 'game_activity_logs#index', as: :game_activity_logs
   get 'characters/house_records', to: 'game_house_records#index', as: :game_house_records
+  delete 'characters/house_records/:id', to: 'game_house_records#destroy', as: :game_house_record
   get 'characters/records', to: 'game_records#index', as: :game_records
   resources :game_characters, path: 'characters', only: [:index, :edit, :update] do
     # 상세 > 인벤토리 카드: 아이템 더하기·고치기·지우기 (index = 인벤토리 안 순서)
