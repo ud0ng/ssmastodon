@@ -246,7 +246,8 @@ class Api::V1::System::SessionsController < Api::BaseController
   def build_view(kind, player)
     # 참가자(최대 24명)의 계정·캐릭터를 한 번에 읽어 둔다 (사람마다 조회하면 쿼리가 수십 개)
     Game::Lobby.preload_characters(@session)
-    view = kind.view_for(player)
+    # 관전하는 운영진에게만 모든 정체를 보여 주는 컨텐츠(비밀의 방)는 staff: 를 받는다
+    view = kind.method(:view_for).parameters.any? { |_, name| name == :staff } ? kind.view_for(player, staff: staff?) : kind.view_for(player)
     add_avatars!(view)
     view
   end

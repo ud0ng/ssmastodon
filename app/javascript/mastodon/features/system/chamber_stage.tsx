@@ -15,7 +15,7 @@ import { apiRequestGet, apiRequestPost } from 'mastodon/api';
 import { GameIcon } from 'mastodon/components/game_icons';
 
 import { sendCommand } from './board';
-import { BEAST_EYE, BED, CRYSTAL_BALL, DOOR, ENVELOPE, FOOTPRINT, LANTERN, OWL, SAND_SNAKE, SCROLL_TIED, SEA_SERPENT, SNAKE_SPIRAL, SNAKE_TONGUE } from './chamber_art';
+import { BEAST_EYE, BED, CRYSTAL_BALL, DOOR, ENVELOPE, FOOTPRINT, LANTERN, OWL, SAND_SNAKE, SCROLL_OPEN, SCROLL_TIED, SEA_SERPENT, SNAKE_SPIRAL, SNAKE_TONGUE } from './chamber_art';
 import { TokenAvatar } from './game_token';
 import { useStageLayout } from './lobby';
 
@@ -32,6 +32,7 @@ interface CPlayer {
   dark: boolean | null;
   votes: number;
   voted_by: string[];
+  abstained?: boolean;
 }
 
 interface COut { seat: number; role: string; by: 'vote' | 'petrify' | 'forfeit' | string; day: number; role_name: string; dark: boolean }
@@ -48,6 +49,8 @@ interface CView {
   me: number | null;
   alive_me: boolean;
   spectator: boolean;
+  // 관전하는 운영진: 모든 정체가 보인다
+  spectator_staff?: boolean;
   faction_light: string;
   faction_dark: string;
   traitor_name: string;
@@ -58,6 +61,14 @@ interface CView {
   players: CPlayer[];
   my_role: { key: string; name: string; faction: string; dark: boolean; how: string; mates: number[] } | null;
   my_vote: number | null;
+  // 살아 있는 사람이 모두 고발함 (5초 뒤 결과)
+  all_voted?: boolean;
+  // 밤: 역할이 있는 사람이 모두 행동함 (5초 뒤 아침)
+  all_acted?: boolean;
+  // 방주의 밤: 이 시각까지 표적, 그 뒤 예언 · 오늘 밤 예언을 보냈나 (예언자는 구슬이 빛난다)
+  night_half_at?: string | null;
+  prophecy_sent?: boolean;
+  seer_alive?: boolean;
   votes: Record<string, number>;
   night: { kind: 'petrify' | 'investigate' | 'protect'; picked: number | null; used?: boolean; blocked?: number | null } | null;
   petrify_picks: Record<string, number>;
@@ -67,6 +78,24 @@ interface CView {
   prophecy_kinds: { key: string; label: string; count: number }[];
   commands: Record<string, string>;
   out_log: COut[];
+  // 끝난 뒤: 낮·밤마다 일어난 일 (다시 보기)과 MVP 후보
+  history: CStep[];
+  awards: { key: string; title: string; text: string; seat: number; dark: boolean }[];
+  // 끝난 뒤: 판 전체의 대화 (방주방 포함, 시각순)
+  chat_log: { name: string; text: string; at: string; dark: boolean }[];
+}
+
+interface CStep {
+  phase: 'day' | 'night';
+  day: number;
+  votes?: Record<string, number>;
+  petrify?: Record<string, number>;
+  protect?: number | null;
+  looks?: Record<string, number>;
+  prophecy?: string | null;
+  out?: number | null;
+  from?: string | null;
+  to?: string | null;
 }
 
 export interface CsMessage {
@@ -80,6 +109,8 @@ export interface CsMessage {
 }
 
 const REFRESH_MS = 2_500;
+// 무효표 (서버 SecretChamber::ABSTAIN)
+const ABSTAIN_VOTE = -1;
 const SOUND_KEY = 'ssm:cs-sound';
 const BGM_URL = '/sounds/chamber_bgm.mp3';
 const BGM_VOLUME = 0.35;
@@ -298,30 +329,9 @@ const HogwartsHall: React.FC = () => (
 // ── 밤: 비밀의 방 — 늘어선 뱀 석상, 물에 잠긴 바닥, 안쪽 어둠 속 거대한 석상과 바실리스크의 눈 ──
 const ChamberHall: React.FC = () => (
   <motion.div className='cs-chamber' aria-hidden initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 1.4 }}>
+    {/* 맨 안쪽: 칠흑 같은 어둠 속에서 거대한 바실리스크의 노란 눈만 (몸은 보이지 않는다) */}
     <div className='cs-chamber__statue'>
-      {/* 살라자르 슬리데린 석상: 이마·눈두덩·코·벌어진 입(바실리스크가 나오는 곳)·길게 늘어진 수염 */}
-      <svg className='cs-chamber__face' viewBox='0 0 300 340' preserveAspectRatio='xMidYMin meet'>
-        <defs>
-          <linearGradient id='cs-statue' x1='0' y1='0' x2='0' y2='1'>
-            <stop offset='0' stopColor='#3a4640' />
-            <stop offset='0.5' stopColor='#222b26' />
-            <stop offset='1' stopColor='#0c100e' stopOpacity='0' />
-          </linearGradient>
-          <radialGradient id='cs-statue-light' cx='50%' cy='20%' r='60%'>
-            <stop offset='0' stopColor='#7fa58c' stopOpacity='0.35' />
-            <stop offset='1' stopColor='#7fa58c' stopOpacity='0' />
-          </radialGradient>
-        </defs>
-        <path d='M150 6 C 215 6 250 50 252 104 C 254 140 246 160 240 176 C 262 214 252 270 218 340 L 82 340 C 48 270 38 214 60 176 C 54 160 46 140 48 104 C 50 50 85 6 150 6 Z' fill='url(#cs-statue)' />
-        <path d='M150 6 C 215 6 250 50 252 104 C 254 140 246 160 240 176 C 262 214 252 270 218 340 L 82 340 C 48 270 38 214 60 176 C 54 160 46 140 48 104 C 50 50 85 6 150 6 Z' fill='url(#cs-statue-light)' />
-        {/* 눈두덩 그늘 · 코 */}
-        <path d='M84 104 C 104 92 128 96 138 108 C 120 118 100 118 84 104 Z M216 104 C 196 92 172 96 162 108 C 180 118 200 118 216 104 Z' fill='#070a08' opacity='0.45' />
-        <path d='M150 110 L 138 160 C 146 166 154 166 162 160 Z' fill='#151b18' />
-        {/* 벌어진 입 */}
-        <motion.path d='M118 186 C 132 178 168 178 182 186 C 176 206 124 206 118 186 Z' fill='#010201' animate={{ scaleY: [1, 1.5, 1] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }} style={{ transformOrigin: '150px 188px' }} />
-        {/* 수염 결 */}
-        {[96, 116, 136, 164, 184, 204].map((x) => <path key={x} d={`M${x} 214 C ${x + ((x - 150) * 0.1)} 260 ${x + ((x - 150) * 0.2)} 300 ${x + ((x - 150) * 0.25)} 340`} stroke='#0a0e0c' strokeWidth='3' fill='none' opacity='0.6' />)}
-      </svg>
+      <i className='cs-chamber__dark' />
       <BasiliskEyes />
     </div>
     <SerpentHall />
@@ -343,7 +353,7 @@ const DormRoom: React.FC = () => (
 
 // 뱀 (방주·석화 표시): 글자 크기·색을 따른다
 const SnakeIcon: React.FC = () => (
-  <svg className='game-icon cs-snake-icon' viewBox='0 0 512 512' width='1em' height='1em' aria-hidden>
+  <svg className='game-icon cs-snake-icon cs-fill' viewBox='0 0 512 512' width='1em' height='1em' aria-hidden>
     {SNAKE_TONGUE.map((d) => <path key={d} d={d} fill='currentColor' />)}
   </svg>
 );
@@ -401,7 +411,7 @@ const FireWords: React.FC<{ text: string; delay?: number; tone?: 'fire' | 'gold'
   </div>
 );
 
-// ── 오프닝 1: 어두운 돌벽에 핏빛 글씨가 한 글자씩 번지며 흘러내린다 → 2: 뱀이 새겨진 둥근 돌문이 열린다 ──
+// ── 오프닝 1: 어두운 돌벽에 핏빛 글씨가 써진다 → 2: 대연회장 문이 열린다 (밤에 방주가 여는 뱀 돌문은 SnakeDoor) ──
 // 돌문: 문을 가로지른 뱀들이 하나씩 미끄러져 물러나고, 가운데 고리가 돌아간 뒤 문이 좌우로 갈라지며 초록빛이 쏟아진다
 // 문테를 따라 감긴 뱀들의 각도 (도) — 하나씩 바깥으로 미끄러져 빠진다
 const DOOR_SNAKES = [-90, -30, 30, 90, 150, 210];
@@ -474,6 +484,42 @@ const SnakeDoor: React.FC = () => (
   </motion.div>
 );
 
+// 오프닝 2: 화면 가득 시꺼먼 대연회장 문 앞 → 두 짝이 안쪽으로 젖혀지며 열리고 → 쏟아지는 금빛 속으로 들어간다
+const HallDoor: React.FC = () => (
+  <motion.div className='cs-hall-door' initial={{ opacity: 0 }} animate={{ opacity: 1, scale: [1, 1, 1, 1.8] }} transition={{ opacity: { duration: 0.8 }, scale: { duration: 6, times: [0, 0.35, 0.62, 1], ease: 'easeIn' } }}>
+    <div className='cs-hall-door__arch'>
+      {/* 문 너머 대연회장: 금빛, 떠 있는 촛불, 긴 식탁 */}
+      <div className='cs-hall-door__inside' aria-hidden>
+        {Array.from({ length: 12 }, (_, index) => (
+          <motion.i
+            // eslint-disable-next-line react/no-array-index-key
+            key={index}
+            className='cs-candle'
+            style={{ left: `${8 + ((index * 41) % 84)}%`, top: `${10 + ((index * 17) % 34)}%` }}
+            animate={{ y: [0, -6, 0] }}
+            transition={{ duration: 2.6 + (index % 3), repeat: Infinity, ease: 'easeInOut' }}
+          />
+        ))}
+        <i className='cs-hall-door__table' />
+      </div>
+      {(['left', 'right'] as const).map((side) => (
+        <motion.div
+          key={side}
+          className={`cs-hall-door__leaf cs-hall-door__leaf--${side}`}
+          initial={{ rotateY: 0 }}
+          animate={{ rotateY: side === 'left' ? 100 : -100 }}
+          transition={{ delay: 1.8, duration: 2.2, ease: [0.55, 0, 0.35, 1] }}
+        >
+          <i className='cs-hall-door__band cs-hall-door__band--top' />
+          <i className='cs-hall-door__band cs-hall-door__band--bottom' />
+          <i className='cs-hall-door__ring' />
+        </motion.div>
+      ))}
+      <motion.i className='cs-hall-door__glow' initial={{ opacity: 0 }} animate={{ opacity: [0, 0, 0.7, 1] }} transition={{ delay: 1.8, duration: 4, times: [0, 0.05, 0.5, 1] }} />
+    </div>
+  </motion.div>
+);
+
 const Opening: React.FC<{ onDone: () => void }> = ({ onDone }) => {
   const done = useRef(onDone);
   done.current = onDone;
@@ -483,12 +529,13 @@ const Opening: React.FC<{ onDone: () => void }> = ({ onDone }) => {
     sfx.heartbeat(2.4);
     const toDoor = window.setTimeout(() => {
       setStage('door');
-      // 뱀이 물러날 때마다 쉿, 자물쇠가 돌고 문이 갈리며 열린다
-      DOOR_SNAKES.forEach((_, index) => { sfx.slither(1.2 + (index * 0.32)); });
-      sfx.hiss(1);
-      sfx.grind(3, 1.2);
-      sfx.grind(4, 1.8);
-      sfx.growl(4.6);
+      // 대연회장 문: 무거운 문이 삐걱이며 열리고, 쿵 — 안쪽의 종소리
+      sfx.thud(0.6);
+      sfx.creak(2.2);
+      sfx.creak(2.9);
+      sfx.grind(2.2, 2.2);
+      sfx.bell(4.4);
+      sfx.sparkle(4.8);
     }, 7_000);
     const finish = window.setTimeout(() => { done.current(); }, 13_000);
     return () => { window.clearTimeout(toDoor); window.clearTimeout(finish); };
@@ -503,10 +550,10 @@ const Opening: React.FC<{ onDone: () => void }> = ({ onDone }) => {
             <BloodText text={OPENING} delay={0.8} className='cs-opening__words' sound />
           </motion.div>
         ) : (
-          <SnakeDoor key='door' />
+          <HallDoor key='door' />
         )}
       </AnimatePresence>
-      <BasiliskEyes />
+      {stage === 'words' && <BasiliskEyes />}
     </motion.div>
   );
 };
@@ -514,7 +561,7 @@ const Opening: React.FC<{ onDone: () => void }> = ({ onDone }) => {
 // ── 역할 카드 모달: 뒤집으면 내 역할 (1쪽) → 하는 법 (2쪽) → [확인했습니다] ──
 const HOW_TO: Record<string, string[]> = {
   traitor: ['밤에 초상을 누르고 [석화]로 석화할 사람을 고릅니다 (동료와 가장 많이 고른 사람).', '오른쪽 [예언] 칸에서 예언자에게 보낼 예언을 정합니다 (사실인 것만).', '[밀담]으로 동료 방주와 몰래 이야기합니다.'],
-  auror: ['밤마다 초상을 누르고 [조사]하면 그 사람의 진영이 쪽지로 옵니다.'],
+  auror: ['밤마다 방문을 하나 골라 [조사]하면 그 사람이 방주인지 아닌지 쪽지로 옵니다.'],
   healer: ['밤마다 초상을 누르고 [보호]하면 그날 밤 석화를 막습니다 (같은 사람 이틀 연속은 안 됨).'],
   seer: ['밤이 끝날 때마다 방주가 전한 예언이 쪽지로 옵니다. 예언은 언제나 진실입니다.'],
   student: ['특별한 능력은 없지만, 토론과 고발로 방주를 찾아냅니다.'],
@@ -705,7 +752,7 @@ const PetrifyGaze: React.FC<{ cue: Extract<Cue, { kind: 'petrify' }>; view: CVie
     </motion.div>
     <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 5.8 }}>{cue.player.name}, 석화된 채 발견되다</motion.h2>
     <motion.div className={cue.dark ? 'cs-reveal is-dark' : 'cs-reveal'} initial={{ rotateY: 90, opacity: 0 }} animate={{ rotateY: 0, opacity: 1 }} transition={{ delay: 6.6, duration: 0.7 }}>
-      정체는 <b>「{cue.roleName}」</b> · {cue.dark ? view.faction_dark : view.faction_light} 진영
+      정체는 <b>「{cue.roleName}」</b>
     </motion.div>
   </motion.div>
 );
@@ -723,7 +770,7 @@ const ExpelScene: React.FC<{ cue: Extract<Cue, { kind: 'expel' }>; view: CView }
     </motion.div>
     <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.3 }}>{cue.player.name}</motion.h2>
     <motion.div className={cue.dark ? 'cs-reveal is-dark' : 'cs-reveal'} initial={{ rotateY: 90, opacity: 0 }} animate={{ rotateY: 0, opacity: 1 }} transition={{ delay: 4.6, duration: 0.7 }}>
-      정체는 <b>「{cue.roleName}」</b> · {cue.dark ? view.faction_dark : view.faction_light} 진영
+      정체는 <b>「{cue.roleName}」</b>
     </motion.div>
     {cue.dark && <FireWords text={`${view.traitor_name}를 찾아냈다!`} delay={5.2} className='cs-fire--reveal' />}
   </motion.div>
@@ -843,6 +890,7 @@ const Seat: React.FC<{
         {out && <em className='cs-seat__stamp'>{petrified ? '석화' : out.by === 'forfeit' ? '기권' : '퇴학'}</em>}
         {player.votes > 0 && view.phase === 'day' && <motion.b key={player.votes} className='cs-seat__votes' initial={{ scale: 1.8 }} animate={{ scale: 1 }}>{player.votes}</motion.b>}
         {myVote && <span className='cs-seat__mine cs-seat__mine--vote'><GameIcon name='check' /></span>}
+        {player.abstained && view.phase === 'day' && <motion.em className='cs-seat__abstain' initial={{ scale: 1.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>무효</motion.em>}
       </span>
       <span className='cs-seat__name'>{player.name}{me && <small> (나)</small>}</span>
       {player.role_name && <span className={player.dark ? 'cs-seat__role is-dark' : 'cs-seat__role'}>{player.role_name}</span>}
@@ -871,8 +919,13 @@ const GreatHall: React.FC<{
   selectable: (player: CPlayer) => boolean;
   bubbles: Record<string, Bubble>;
   onPick: (player: CPlayer) => void;
-}> = ({ view, size, selected, selectable, bubbles, onPick }) => {
+  // 낮의 할 일 안내 (첫 줄 자리 위에) · 고른 사람 바로 아래 버튼 (도둑 지도처럼 누를 곳 옆에서 안내)
+  hint?: React.ReactNode;
+  pickAction?: React.ReactNode;
+}> = ({ view, size, selected, selectable, bubbles, onPick, hint, pickAction }) => {
   const { spots, tables } = hallLayout(view.players.length);
+  const firstY = Math.min(...spots.map((spot) => spot.y), 50);
+  const pickedSpot = spots[view.players.findIndex((player) => player.seat === selected)];
   return (
     <motion.div className='cs-hall-scene' initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.8 } }} transition={{ duration: 1 }}>
       {tables.map((y, index) => (
@@ -893,6 +946,10 @@ const GreatHall: React.FC<{
           onPick={onPick}
         />
       ))}
+      <AnimatePresence>
+        {hint && <motion.div key='hint' className='cs-hall-hint' style={{ top: `${Math.max(firstY - 20, 2)}%` }} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>{hint}</motion.div>}
+        {pickAction && pickedSpot && <motion.div key={`pick-${selected}`} className='cs-hall-pick' style={{ left: `${pickedSpot.x}%`, top: `${pickedSpot.y + 13}%` }} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>{pickAction}</motion.div>}
+      </AnimatePresence>
     </motion.div>
   );
 };
@@ -947,7 +1004,7 @@ const Footsteps: React.FC<{ from: Spot; to: { x: number; y: number }; back?: boo
   );
 };
 
-const Bed: React.FC<{ player: CPlayer; view: CView; at: Spot; size: number; empty: boolean; dream: boolean; bubble?: Bubble }> = ({ player, view, at, size, empty, dream, bubble }) => {
+const Bed: React.FC<{ player: CPlayer; view: CView; at: Spot; size: number; empty: boolean; dream: boolean; lit?: boolean; bubble?: Bubble }> = ({ player, view, at, size, empty, dream, lit = false, bubble }) => {
   const out = player.out;
   const petrified = out?.by === 'petrify';
   const gone = Boolean(out) && !petrified;
@@ -981,7 +1038,7 @@ const Bed: React.FC<{ player: CPlayer; view: CView; at: Spot; size: number; empt
         </span>
       )}
       {dream && (
-        <motion.span className='cs-bed__dream' initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: 1, scale: [1, 1.06, 1] }} transition={{ opacity: { duration: 1 }, scale: { duration: 3, repeat: Infinity } }}>
+        <motion.span className={lit ? 'cs-bed__dream is-lit' : 'cs-bed__dream'} initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: 1, scale: [1, 1.06, 1] }} transition={{ opacity: { duration: 1 }, scale: { duration: 3, repeat: Infinity } }}>
           <Icon512 paths={CRYSTAL_BALL} />
         </motion.span>
       )}
@@ -992,7 +1049,7 @@ const Bed: React.FC<{ player: CPlayer; view: CView; at: Spot; size: number; empt
   );
 };
 
-const Dormitory: React.FC<{ view: CView; size: number; away: Away; dreaming: boolean; bubbles: Record<string, Bubble> }> = ({ view, size, away, dreaming, bubbles }) => {
+const Dormitory: React.FC<{ view: CView; size: number; away: Away; dreaming: boolean; lit?: boolean; bubbles: Record<string, Bubble> }> = ({ view, size, away, dreaming, lit = false, bubbles }) => {
   const spots = dormLayout(view.players.length);
   const myIndex = view.players.findIndex((player) => player.seat === view.me);
   const mySpot = spots[myIndex];
@@ -1015,6 +1072,7 @@ const Dormitory: React.FC<{ view: CView; size: number; away: Away; dreaming: boo
           // 나는 나가 있는 동안, 동료 방주도 비밀의 방에 함께 있는 동안 침대가 빈다
           empty={(player.seat === view.me && away !== 'bed') || (traitorOut && Boolean(view.my_role?.mates.includes(player.seat)))}
           dream={dreaming && player.seat === view.me}
+          lit={lit && player.seat === view.me}
           bubble={player.acct ? bubbles[player.acct] : undefined}
         />
       ))}
@@ -1042,90 +1100,154 @@ const Dormitory: React.FC<{ view: CView; size: number; away: Away; dreaming: boo
 };
 
 // ── 밤 나들이: 방주는 비밀의 방에서 표적을, 오러는 복도를 돌며 단서를, 치유사는 잠든 학생을 지킨다 ──
-const NightJourney: React.FC<{ view: CView; busy: boolean; onSend: (command: string, target: string | null) => void; onReturn: () => void }> = ({ view, busy, onSend, onReturn }) => {
+// 밤 나들이 배경: 무대 전체(우편함 뒤까지)를 채운다. 방주는 비밀의 방, 오러·치유사는 횃불 복도
+const JourneyBackdrop: React.FC<{ traitor: boolean }> = ({ traitor }) => (
+  <motion.div className={traitor ? 'cs-journey-bg cs-journey-bg--chamber' : 'cs-journey-bg cs-journey-bg--corridor'} aria-hidden initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
+    {traitor ? <ChamberHall /> : <div className='cs-corridor'>{Array.from({ length: 5 }, (_, index) => <i key={index} className='cs-corridor__torch' style={{ left: `${8 + (index * 21)}%` }} />)}</div>}
+  </motion.div>
+);
+
+const WHISPER = '열려라…';
+// 방주: 문 앞에서 서늘한 속삭임 → 뱀 돌문이 열린다 → 비밀의 방
+const WHISPER_MS = 2_600;
+const DOOR_MS = 5_600;
+
+const NightJourney: React.FC<{ view: CView; busy: boolean; hurry: string | null; onSend: (command: string, target: string | null) => void; onReturn: () => void; onDoor?: (open: boolean) => void }> = ({ view, busy, hurry, onSend, onReturn, onDoor }) => {
   const kind = view.night?.kind ?? 'protect';
   const traitor = kind === 'petrify';
-  const [stage, setStage] = useState<'enter' | 'inside'>(traitor ? 'enter' : 'inside');
+  const [stage, setStage] = useState<'whisper' | 'door' | 'inside'>(traitor ? 'whisper' : 'inside');
+  const doorRef = useRef(onDoor);
+  doorRef.current = onDoor;
+  useEffect(() => {
+    if (stage !== 'inside') {
+      doorRef.current?.(true);
+      return undefined;
+    }
+    // 문이 커지며 사라지는 동안(0.8초)은 화면을 계속 가린다
+    const timer = window.setTimeout(() => { doorRef.current?.(false); }, 900);
+    return () => { window.clearTimeout(timer); };
+  }, [stage]);
+  useEffect(() => () => { doorRef.current?.(false); }, []);
   const [pick, setPick] = useState<number | null>(view.night?.picked ?? null);
   useEffect(() => {
-    if (stage !== 'enter') return undefined;
-    // 비밀의 방 문 앞: 뱀의 말로 문을 연다
-    DOOR_SNAKES.forEach((_, index) => { sfx.slither(1.2 + (index * 0.32)); });
-    sfx.hiss(0.6);
-    sfx.grind(3, 1.2);
-    sfx.grind(4, 1.8);
-    const timer = window.setTimeout(() => { setStage('inside'); sfx.growl(0.2); }, 5_600);
-    return () => { window.clearTimeout(timer); };
+    if (stage === 'whisper') {
+      sfx.wind(0);
+      sfx.hiss(0.5);
+      const timer = window.setTimeout(() => { setStage('door'); }, WHISPER_MS);
+      return () => { window.clearTimeout(timer); };
+    }
+    if (stage === 'door') {
+      // 뱀의 말에 문의 뱀들이 물러나고 문이 갈라진다
+      DOOR_SNAKES.forEach((_, index) => { sfx.slither(1.2 + (index * 0.32)); });
+      sfx.grind(3, 1.2);
+      sfx.grind(4, 1.8);
+      const timer = window.setTimeout(() => { setStage('inside'); sfx.growl(0.2); }, DOOR_MS);
+      return () => { window.clearTimeout(timer); };
+    }
+    return undefined;
   }, [stage]);
   const mates = view.my_role?.mates ?? [];
   const candidates = view.players.filter((player) => player.alive && (kind === 'protect' || player.seat !== view.me) && !(traitor && mates.includes(player.seat)));
   const crew = view.players.filter((player) => player.seat === view.me || mates.includes(player.seat));
   const chosen = view.players.find((player) => player.seat === pick);
+  const sent = view.players.find((player) => player.seat === view.night?.picked);
   const done = view.night?.kind === 'investigate' && view.night.used;
   const command = traitor ? view.commands.petrify ?? '석화' : kind === 'investigate' ? view.commands.investigate ?? '조사' : view.commands.protect ?? '보호';
+  const verb = traitor ? '표적 지목' : kind === 'investigate' ? '방 살피기' : '지키기';
   const picksFor = (seat: number) => Object.values(view.petrify_picks).filter((target) => target === seat).length;
+  const ask = traitor ? '바실리스크에게 보낼 표적을 고르세요. 동료가 가장 많이 고른 사람이 아침에 석화됩니다.'
+    : kind === 'investigate' ? '등불을 들고 살펴볼 방문을 고르세요. 그 사람이 방주인지 드러납니다. (밤마다 한 명)'
+      : '오늘 밤 지켜 줄 방문을 고르세요. 그 방에는 바실리스크가 들어오지 못합니다.';
   return (
     <motion.div className={traitor ? 'cs-journey cs-journey--chamber' : 'cs-journey cs-journey--corridor'} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.6 } }} transition={{ duration: 0.8 }}>
-      {traitor ? <ChamberHall /> : <div className='cs-corridor' aria-hidden>{Array.from({ length: 4 }, (_, index) => <i key={index} className='cs-corridor__torch' style={{ left: `${12 + (index * 25)}%` }} />)}</div>}
       <AnimatePresence mode='wait'>
-        {stage === 'enter' ? (
-          <motion.div key='enter' className='cs-journey__door' exit={{ opacity: 0, scale: 1.4, transition: { duration: 0.8 } }}>
-            <motion.p className='cs-journey__whisper' initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>“열려라…” 뱀의 말로 속삭이자 문의 뱀들이 움직인다</motion.p>
+        {stage === 'whisper' && (
+          <motion.div key='whisper' className='cs-journey__door' exit={{ opacity: 0, transition: { duration: 0.6 } }}>
+            {/* 서늘한 속삭임: 입김처럼 번지며 한 글자씩, 차가운 초록빛 */}
+            <p className='cs-whisper' aria-label={WHISPER}>
+              {WHISPER.split('').map((char, index) => (
+                <motion.span
+                  // eslint-disable-next-line react/no-array-index-key
+                  key={index}
+                  initial={{ opacity: 0, filter: 'blur(14px)', y: 10, scale: 1.3 }}
+                  animate={{ opacity: [0, 1, 0.85], filter: 'blur(0px)', y: 0, scale: 1 }}
+                  transition={{ delay: 0.2 + (index * 0.28), duration: 1.1, ease: 'easeOut' }}
+                >
+                  {char}
+                </motion.span>
+              ))}
+            </p>
+            <motion.small className='cs-whisper__sub' initial={{ opacity: 0 }} animate={{ opacity: 0.8 }} transition={{ delay: 1.4 }}>뱀의 말로 속삭이자, 돌벽 속 뱀들이 꿈틀거린다</motion.small>
+            <i className='cs-whisper__frost' aria-hidden />
+          </motion.div>
+        )}
+        {stage === 'door' && (
+          <motion.div key='door' className='cs-journey__door' initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.4, transition: { duration: 0.8 } }}>
             <SnakeDoor />
           </motion.div>
-        ) : (
+        )}
+        {stage === 'inside' && (
           <motion.div key='inside' className='cs-journey__body' initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
             <h3 className='cs-journey__title'>
               {traitor ? <><SnakeIcon /> 오늘 밤의 표적</> : kind === 'investigate' ? <><Icon512 paths={LANTERN} className='cs-journey__icon' /> 기숙사를 돌며 단서 찾기</> : <><GameIcon name='shield' /> 잠든 학생 지키기</>}
             </h3>
-            <p className='cs-journey__lead'>
-              {traitor ? '동료와 의논해 바실리스크에게 보낼 표적을 고르세요. 가장 많이 고른 사람이 아침에 석화됩니다.'
-                : kind === 'investigate' ? '등불을 들고 잠든 기숙사 방문을 하나 엽니다. 그 사람의 진영이 드러납니다. (밤마다 한 명)'
-                  : '오늘 밤 지켜 줄 방문 앞에 섭니다. 그 방은 바실리스크가 들어오지 못합니다.'}
-            </p>
             {traitor && (
-              <div className='cs-journey__crew'>
-                {crew.map((member) => <span key={member.seat}>{member.avatar && <img src={member.avatar} alt='' />}{member.name}</span>)}
-              </div>
+              <ul className='cs-journey__crew'>
+                {crew.map((member) => (
+                  <li key={member.seat}>
+                    <span className='cs-journey__crew-face'>{member.avatar ? <img src={member.avatar} alt='' /> : null}</span>
+                    <b>{member.name}{member.seat === view.me ? ' (나)' : ''}</b>
+                  </li>
+                ))}
+              </ul>
             )}
-            {done ? (
-              <p className='cs-journey__done'>단서를 찾았습니다. 우편함의 쪽지를 확인하세요.</p>
-            ) : (
-              <div className={traitor ? 'cs-targets' : 'cs-targets cs-targets--doors'}>
-                {candidates.map((player, index) => {
-                  const blocked = kind === 'protect' && view.night?.blocked === player.seat;
-                  const picks = traitor ? picksFor(player.seat) : 0;
-                  return (
-                    <motion.button
-                      key={player.seat}
-                      type='button'
-                      className={['cs-target', pick === player.seat && 'is-on', view.night?.picked === player.seat && 'is-sent'].filter(Boolean).join(' ')}
-                      disabled={blocked || busy}
-                      initial={{ opacity: 0, y: 14 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.15 + (index * 0.05) }}
-                      whileHover={{ y: -4 }}
-                      onClick={() => { setPick(player.seat); sfx.pick(); }}
-                    >
-                      {!traitor && <Icon512 paths={DOOR} className='cs-target__door' />}
-                      <span className='cs-target__face'>{player.avatar ? <img src={player.avatar} alt='' /> : null}</span>
-                      <b>{player.name}{player.seat === view.me ? ' (나)' : ''}</b>
-                      {picks > 0 && <em className='cs-target__picks'><SnakeIcon />{picks}</em>}
-                      {blocked && <small>어젯밤 지킴</small>}
-                    </motion.button>
-                  );
-                })}
-              </div>
-            )}
-            <div className='cs-journey__actions'>
-              {!done && chosen && (
-                <button type='button' className='cs-button cs-button--night' disabled={busy} onClick={() => { onSend(command, chosen.acct); }}>
-                  {traitor ? `${chosen.name}에게 바실리스크를` : kind === 'investigate' ? `${chosen.name}의 방 살피기` : `${chosen.name} 지키기`}
-                </button>
+            {/* 가운데: 안내 → 표적들 → 지목 버튼 */}
+            <div className='cs-journey__stage'>
+              {done ? (
+                <p className='cs-journey__done'>단서를 찾았습니다. 우편함의 쪽지를 확인하세요.</p>
+              ) : (
+                <>
+                  <motion.p className='cs-journey__ask' initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                    {hurry ?? (sent ? `정한 사람: ${sent.name} · 바꿀 수 있어요` : ask)}
+                  </motion.p>
+                  <div className={traitor ? 'cs-targets' : 'cs-targets cs-targets--doors'}>
+                    {candidates.map((player, index) => {
+                      const blocked = kind === 'protect' && view.night?.blocked === player.seat;
+                      const picks = traitor ? picksFor(player.seat) : 0;
+                      return (
+                        <motion.button
+                          key={player.seat}
+                          type='button'
+                          className={['cs-target', pick === player.seat && 'is-on', view.night?.picked === player.seat && 'is-sent'].filter(Boolean).join(' ')}
+                          disabled={blocked || busy}
+                          initial={{ opacity: 0, y: 14 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.15 + (index * 0.05) }}
+                          whileHover={{ y: -4 }}
+                          onClick={() => { setPick(player.seat); sfx.pick(); }}
+                        >
+                          {!traitor && <Icon512 paths={DOOR} className='cs-target__door' />}
+                          <span className='cs-target__face'>{player.avatar ? <img src={player.avatar} alt='' /> : null}</span>
+                          <b>{player.name}{player.seat === view.me ? ' (나)' : ''}</b>
+                          {picks > 0 && <em className='cs-target__picks' title='동료가 고른 수'>{picks}</em>}
+                          {blocked && <small>어젯밤 지킴</small>}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                  <AnimatePresence>
+                    {chosen && chosen.seat !== view.night?.picked && (
+                      <motion.button key={chosen.seat} type='button' className='cs-button cs-button--night cs-journey__send' initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} disabled={busy} onClick={() => { onSend(command, chosen.acct); }}>
+                        {verb}
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </>
               )}
-              {view.night?.picked !== null && view.night?.picked !== undefined && !done && <span className='cs-journey__sent'>정한 사람: {view.players.find((player) => player.seat === view.night?.picked)?.name}</span>}
-              <button type='button' className='cs-button cs-button--ghost' onClick={onReturn}>기숙사로 돌아가기</button>
             </div>
+            <button type='button' className='cs-journey__return' onClick={onReturn}>
+              <Icon512 paths={DOOR} className='cs-journey__return-icon' /> 기숙사로 돌아가기
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1136,11 +1258,14 @@ const NightJourney: React.FC<{ view: CView; busy: boolean; onSend: (command: str
 // ── 부엉이 우편: 새 소식·쪽지는 부엉이가 물어 와 우편함에 떨어뜨린다. 눌러서 펼쳐 읽는다 ──
 interface Letter { id: string; kind: 'notice' | 'note' | 'secret'; seal: 'notice' | 'prophecy' | 'clue' | 'secret'; title: string; text: string; tone: LogTone }
 
+const LOBBY_NOTE = /^(대기방이 열렸습니다|모두 준비했습니다!|.+님이 (참가했습니다|참가를 취소했습니다|수락했습니다|거절했습니다|시작을 취소했습니다)|.+님을 초대했습니다)/;
+
 const LETTER_TITLE: Record<LogTone, string> = { day: '아침 공지', night: '밤 공지', petrify: '석화 소식', expel: '퇴학 소식', vote: '고발 결과', safe: '무사한 밤', end: '결과 발표', info: '알림' };
 
 const letterTitle = (text: string) => {
   const first = text.split('\n')[0]?.trim() ?? '';
-  return /^\d+일째/.test(first) && first.length <= 14 ? first : LETTER_TITLE[logTone(text)];
+  if (/^\d+일째/.test(first) && first.length <= 14) return first;
+  return /시작!/.test(first) ? '시작 알림' : LETTER_TITLE[logTone(text)];
 };
 
 const OwlFlight: React.FC<{ onDone: () => void }> = ({ onDone }) => {
@@ -1194,7 +1319,197 @@ const Mailbox: React.FC<{ letters: Letter[]; read: Set<string>; onOpen: (letter:
 );
 
 // 펼친 양피지: 말린 종이가 위아래로 풀리고 봉랍이 깨진다
-const LetterModal: React.FC<{ letter: Letter; onClose: () => void }> = ({ letter, onClose }) => {
+// 공지 본문을 그림으로: 사람 이름이 든 줄은 아바타로, 고발 결과·정체 공개·무사한 밤은 카드로 안내한다
+//   '참가자: a, b' · '남은 사람: a, b'  → 아바타 + 아래 이름
+//   'a 3표' 줄들 · '무효 2표'           → 아바타 + 이름 + 표 수 배지 (많은 순)
+//   '…퇴학되었습니다 / 석화된 채 발견되었습니다. 정체는 「역할」(진영)였습니다.' → 결과 카드 (도장 + 정체)
+//   '아무도 퇴학되지 않았습니다' · '아무 일도 없었습니다' → 결과 카드
+//   'a — 역할' 줄들 (끝났을 때)        → 아바타 + 이름 + 역할 칩
+const PEOPLE_LINE = /^(참가자|남은 사람)\s*:\s*(.+)$/;
+const TALLY_LINE = /^(.+?)\s(\d+)표$/;
+const ROLE_LINE = /^(.+?)\s—\s(.+)$/;
+const REVEAL = /정체는\s*「(.+?)」(?:\s*\((.+?)\))?/;
+// 오러의 조사 결과 'ron은 방주입니다.' · 'ron은 방주가 아닙니다.'
+const CLUE_LINE = /^(.+?)[은는]\s(.+?)(입니다|(?:이|가) 아닙니다)\.?$/;
+
+// 공지 한 줄을 카드로: 아이콘 · 큰 글 · 숫자 칩 · 작은 설명
+interface NoticeCardData { tone: 'start' | 'day' | 'night' | 'limit' | 'light' | 'dark' | 'draw' | 'hint'; icon: React.ReactNode; head: string; chips: string[]; text?: string }
+
+// '[고발] @누구 로 ' 같은 명령어 안내는 웹에서는 누르면 되니 글에서 뺀다
+const plain = (text: string) => text.replace(/\[[^\]]+\]\s*(@누구\s*)*(로|으로)?\s*/g, '').replace(/\s{2,}/g, ' ').trim();
+
+const noticeCard = (line: string, darkNames: string[]): NoticeCardData | null => {
+  let match = /^(.+?) 시작! 참가자 (\d+)명, 그중 (\d+)명이 (.+?)입니다\.?$/.exec(line);
+  if (match) return { tone: 'start', icon: <Icon512 paths={SCROLL_OPEN} />, head: `${match[1]} 시작!`, chips: [`참가자 ${match[2]}명`, `${match[4]} ${match[3]}명`] };
+  match = /^최대 (\d+)페이즈, (\d+)분 안에 끝납니다\.?$/.exec(line);
+  if (match) return { tone: 'start', icon: <GameIcon name='hourglass' />, head: '이번 판의 시간', chips: [`최대 ${match[1]}페이즈`, `전체 ${match[2]}분`] };
+  if (/역할 카드를 확인하세요/.test(line)) return { tone: 'hint', icon: <GameIcon name='star' />, head: line, chips: [] };
+  match = /^(\d+)일째 밤\.?\s*(\d+)분 동안 (.+)$/.exec(line);
+  if (match) return { tone: 'night', icon: <GameIcon name='moon' />, head: `${match[1]}일째 밤`, chips: [`밤 ${match[2]}분`], text: plain(match[3] ?? '') };
+  match = /^(\d+)분 동안 (.+)$/.exec(line);
+  if (match) return { tone: 'day', icon: <GameIcon name='sun' />, head: '토론하고 고발하세요', chips: [`낮 ${match[1]}분`], text: plain(match[2] ?? '') };
+  if (/시간이 다 되었습니다/.test(line)) return { tone: 'limit', icon: <GameIcon name='hourglass' />, head: '시간이 다 되었습니다', chips: [] };
+  match = /^(.+?) 종료!\s*(.+)$/.exec(line);
+  if (match) {
+    const draw = /무승부/.test(line);
+    const dark = !draw && darkNames.some((name) => (match?.[2] ?? '').includes(`${name}의 승리`));
+    return { tone: draw ? 'draw' : dark ? 'dark' : 'light', icon: draw ? <GameIcon name='hands' /> : dark ? <SnakeIcon /> : <GameIcon name='crown' />, head: draw ? '무승부' : (match[2] ?? '').split('. ').pop() ?? '', chips: [], text: draw ? '' : (match[2] ?? '').split('. ')[0] };
+  }
+  return null;
+};
+
+const NoticeCard: React.FC<{ card: NoticeCardData }> = ({ card }) => (
+  <div className={`cs-notice-card cs-notice-card--${card.tone}`}>
+    <span className='cs-notice-card__icon'>{card.icon}</span>
+    <b>{card.head}</b>
+    {card.chips.length > 0 && <span className='cs-notice-card__chips'>{card.chips.map((chip) => <em key={chip}>{chip}</em>)}</span>}
+    {card.text && <span className='cs-notice-card__text'>{card.text}</span>}
+  </div>
+);
+
+const Face: React.FC<{ player?: CPlayer; className?: string }> = ({ player, className }) => (
+  <span className={['cs-scroll__face', className].filter(Boolean).join(' ')}>{player?.avatar ? <img src={player.avatar} alt='' /> : null}</span>
+);
+
+const LetterBody: React.FC<{ text: string; players: CPlayer[]; darkNames: string[] }> = ({ text, players, darkNames }) => {
+  const byName = (name: string) => players.find((each) => each.name === name);
+  const blocks: React.ReactNode[] = [];
+  let buffer: string[] = [];
+  let tally: { name: string; count: number }[] = [];
+  let roles: { name: string; role: string }[] = [];
+  const flushText = (key: string) => {
+    if (buffer.join('').trim()) blocks.push(<p key={key}>{buffer.join('\n').trim()}</p>);
+    buffer = [];
+  };
+  const flushTally = (key: string) => {
+    if (tally.length === 0) return;
+    const rows = [...tally].sort((a, b) => b.count - a.count);
+    const top = rows.find((row) => row.name !== '무효')?.count ?? 0;
+    blocks.push(
+      <div key={key} className='cs-scroll__people cs-scroll__people--tally'>
+        <small>고발 결과</small>
+        <ul>
+          {rows.map((row) => (
+            <li key={row.name} className={row.name === '무효' ? 'is-abstain' : row.count === top ? 'is-top' : undefined}>
+              {row.name === '무효' ? <span className='cs-scroll__face cs-scroll__face--abstain'>✕</span> : <Face player={byName(row.name)} />}
+              <b>{row.name}</b>
+              <em className='cs-scroll__votes'>{row.count}표</em>
+            </li>
+          ))}
+        </ul>
+      </div>,
+    );
+    tally = [];
+  };
+  const flushRoles = (key: string) => {
+    if (roles.length === 0) return;
+    blocks.push(
+      <div key={key} className='cs-scroll__people cs-scroll__people--roles'>
+        <small>모든 정체</small>
+        <ul>
+          {roles.map((row) => (
+            <li key={row.name} className={darkNames.includes(row.role) ? 'is-dark' : undefined}>
+              <Face player={byName(row.name)} />
+              <b>{row.name}</b>
+              <em className='cs-scroll__role'>{row.role}</em>
+            </li>
+          ))}
+        </ul>
+      </div>,
+    );
+    roles = [];
+  };
+  const flushAll = (key: string) => { flushText(`${key}t`); flushTally(`${key}v`); flushRoles(`${key}r`); };
+
+  text.split('\n').forEach((raw, index) => {
+    const line = raw.trim();
+    const people = PEOPLE_LINE.exec(line);
+    const vote = TALLY_LINE.exec(line);
+    const role = ROLE_LINE.exec(line);
+    const reveal = REVEAL.exec(line);
+    if (vote && (vote[1] === '무효' || byName(vote[1] ?? ''))) {
+      flushText(`t${index}`);
+      tally.push({ name: vote[1] ?? '', count: Number(vote[2]) });
+      return;
+    }
+    if (role && byName(role[1] ?? '')) {
+      flushText(`t${index}`);
+      roles.push({ name: role[1] ?? '', role: role[2] ?? '' });
+      return;
+    }
+    if (people) {
+      flushAll(`a${index}`);
+      const names = (people[2] ?? '').split(',').map((name) => name.trim()).filter(Boolean);
+      blocks.push(
+        <div key={`g${index}`} className='cs-scroll__people'>
+          <small>{people[1]}</small>
+          <ul>{names.map((name) => <li key={name}><Face player={byName(name)} /><b>{name}</b></li>)}</ul>
+        </div>,
+      );
+      return;
+    }
+    if (reveal) {
+      flushAll(`a${index}`);
+      // 문장 속 이름으로 그 사람을 찾는다 (정체 앞부분에서 가장 긴 이름)
+      const head = line.slice(0, reveal.index);
+      const target = [...players].sort((a, b) => b.name.length - a.name.length).find((each) => head.includes(each.name));
+      const petrified = /석화/.test(head);
+      const dark = darkNames.includes(reveal[1] ?? '');
+      blocks.push(
+        <div key={`r${index}`} className={['cs-scroll__result', petrified ? 'is-stone' : 'is-expel', dark && 'is-dark'].filter(Boolean).join(' ')}>
+          <small>{petrified ? '밤사이 석화된 채 발견' : '가장 많이 고발되어 퇴학'}</small>
+          <span className='cs-scroll__result-face'>
+            <Face player={target} className={petrified ? 'is-stone' : 'is-expel'} />
+            <i className='cs-scroll__stamp'>{petrified ? '석화' : '퇴학'}</i>
+          </span>
+          <b>{target?.name ?? ''}</b>
+          <span className='cs-scroll__reveal'>정체 <em className='cs-scroll__role'>{reveal[1]}</em></span>
+        </div>,
+      );
+      return;
+    }
+    const clue = CLUE_LINE.exec(line);
+    if (clue && byName(clue[1] ?? '') && darkNames.includes(clue[2] ?? '')) {
+      flushAll(`a${index}`);
+      const caught = clue[3] === '입니다';
+      blocks.push(
+        <div key={`c${index}`} className={caught ? 'cs-scroll__result is-clue is-dark' : 'cs-scroll__result is-clue'}>
+          <small>등불 아래 드러난 사실</small>
+          <span className='cs-scroll__result-face'><Face player={byName(clue[1] ?? '')} /></span>
+          <b>{clue[1]}</b>
+          <span className='cs-scroll__reveal'><em className='cs-scroll__role'>{caught ? clue[2] : `${clue[2]} 아님`}</em></span>
+        </div>,
+      );
+      return;
+    }
+    if (/아무도 퇴학되지 않았습니다|아무 일도 없었습니다/.test(line)) {
+      flushAll(`a${index}`);
+      const night = /아무 일도/.test(line);
+      blocks.push(
+        <div key={`n${index}`} className={night ? 'cs-scroll__result is-safe' : 'cs-scroll__result is-none'}>
+          <span className='cs-scroll__result-icon'><GameIcon name={night ? 'shield' : 'hands'} /></span>
+          <b>{night ? '무사한 밤' : '아무도 퇴학되지 않았습니다'}</b>
+          <span className='cs-scroll__reveal'>{line}</span>
+        </div>,
+      );
+      return;
+    }
+    // 시작·낮·밤·시간 끝·결과 공지: 숫자는 칩으로, 문장은 카드로
+    const card = noticeCard(line, darkNames);
+    if (card) {
+      flushAll(`a${index}`);
+      blocks.push(<NoticeCard key={`k${index}`} card={card} />);
+      return;
+    }
+    // 다른 줄: 모아 둔 표·정체 목록 다음에 글로
+    if (line && (tally.length > 0 || roles.length > 0)) { flushTally(`v${index}`); flushRoles(`r${index}`); }
+    buffer.push(raw);
+  });
+  flushAll('end');
+  return <>{blocks}</>;
+};
+
+const LetterModal: React.FC<{ letter: Letter; players: CPlayer[]; darkNames: string[]; onClose: () => void }> = ({ letter, players, darkNames, onClose }) => {
   useEffect(() => { sfx.paper(0); if (letter.kind !== 'notice') sfx.crack(0.1); }, [letter]);
   const prophecy = letter.seal === 'prophecy';
   // 첫 줄이 제목과 같으면 본문에서 뺀다
@@ -1212,10 +1527,11 @@ const LetterModal: React.FC<{ letter: Letter; onClose: () => void }> = ({ letter
       >
         <i className='cs-scroll__roll cs-scroll__roll--top' />
         <div className='cs-scroll__paper'>
-          {letter.kind !== 'notice' && <motion.span className='cs-scroll__seal' initial={{ scale: 1.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.3 }}><SnakeIcon /></motion.span>}
+          {/* 비밀·단서·예언 쪽지는 붉은 잉크 도장 */}
+          {letter.kind !== 'notice' && <motion.i className='cs-scroll__seal' initial={{ scale: 2.4, opacity: 0, rotate: -24 }} animate={{ scale: 1, opacity: 1, rotate: -12 }} transition={{ delay: 0.35, type: 'spring', stiffness: 260, damping: 14 }}>{letter.kind === 'secret' ? '비밀' : prophecy ? '예언' : '단서'}</motion.i>}
           <small className='cs-scroll__eyebrow'>{letter.kind === 'notice' ? '호그와트 공지' : letter.kind === 'secret' ? '비밀 쪽지' : prophecy ? '꿈속의 예언' : '단서'}</small>
           <h3>{letter.title}</h3>
-          {prophecy ? <BloodText text={letter.text} delay={0.3} className='cs-scroll__blood' /> : <p>{body}</p>}
+          {prophecy ? <BloodText text={letter.text} delay={0.3} tone='dream' className='cs-scroll__oracle' /> : <LetterBody text={body} players={players} darkNames={darkNames} />}
         </div>
         <i className='cs-scroll__roll cs-scroll__roll--bottom' />
         <button type='button' className='cs-button cs-button--small cs-scroll__close' onClick={onClose}>접기</button>
@@ -1226,7 +1542,7 @@ const LetterModal: React.FC<{ letter: Letter; onClose: () => void }> = ({ letter
 
 // 작은 바실리스크 눈 (진행 기록의 석화 표시)
 const EyeIcon: React.FC = () => (
-  <svg className='game-icon' viewBox='0 0 512 512' width='1em' height='1em' aria-hidden>
+  <svg className='game-icon cs-fill' viewBox='0 0 512 512' width='1em' height='1em' aria-hidden>
     {BEAST_EYE.map((d) => <path key={d} d={d} fill='currentColor' />)}
   </svg>
 );
@@ -1320,51 +1636,64 @@ const LogList: React.FC<{ log: CsMessage[] }> = ({ log }) => (
 );
 
 // ── 오른쪽: 우편함(부엉이가 가져온 양피지·쪽지) · 예언 (방주끼리 이야기는 아래 채팅의 방주방) ──
-const SidePanel: React.FC<{ view: CView; letters: Letter[]; read: Set<string>; onOpen: (letter: Letter) => void; onSend: (command: string, args: string) => void; busy: boolean }> = ({ view, letters, read, onOpen, onSend, busy }) => {
-  const traitor = view.my_role?.key === 'traitor';
-  const [tab, setTab] = useState<'notes' | 'prophecy'>('notes');
-  const [kind, setKind] = useState('');
-  const [targets, setTargets] = useState<string[]>(['', '']);
-  const alive = view.players.filter((player) => player.alive);
-  const chosen = view.prophecy_kinds.find((item) => item.key === kind) ?? view.prophecy_kinds[0];
+const SidePanel: React.FC<{ view: CView; letters: Letter[]; read: Set<string>; onOpen: (letter: Letter) => void }> = ({ letters, read, onOpen }) => {
   const unread = letters.filter((letter) => !read.has(letter.id)).length;
   return (
     <aside className='cs-side'>
       <div className='cs-side__tabs'>
-        <button type='button' className={tab === 'notes' ? 'is-on' : undefined} onClick={() => { setTab('notes'); }}>우편함{unread > 0 && <em>{unread}</em>}</button>
-        {traitor && <button type='button' className={tab === 'prophecy' ? 'is-on is-dark' : 'is-dark'} onClick={() => { setTab('prophecy'); }}>예언</button>}
+        <span className='cs-side__title'>우편함{unread > 0 && <em>{unread}</em>}</span>
       </div>
-      {tab === 'notes' && <Mailbox letters={letters} read={read} onOpen={onOpen} />}
-      {tab === 'prophecy' && chosen && (
-        <div className='cs-side__prophecy'>
-          <p>밤마다 예언자에게 진실 하나를 전합니다. 사실이 아닌 예언은 전해지지 않습니다.</p>
-          {view.prophecy && <p className='cs-side__current'>정한 예언: <b>{view.prophecy}</b></p>}
-          <span className='cs-side__label'>무엇을 알릴까</span>
-          <CsPick value={chosen.key} placeholder='예언 종류' icon={<GameIcon name='sparkle' />} options={view.prophecy_kinds.map((item) => ({ value: item.key, label: item.label }))} onChange={setKind} />
-          <span className='cs-side__label'>{chosen.count > 1 ? '누구 둘' : '누구'}</span>
-          {Array.from({ length: chosen.count }, (_, index) => (
-            <CsPick
-              // eslint-disable-next-line react/no-array-index-key
-              key={index}
-              value={targets[index] ?? ''}
-              placeholder={chosen.count > 1 ? `${index + 1}번째 사람` : '사람 고르기'}
-              icon={<GameIcon name='scope' />}
-              options={alive.map((player) => ({ value: player.acct ?? '', label: player.name, avatar: player.avatar }))}
-              onChange={(value) => { const next = [...targets]; next[index] = value; setTargets(next); }}
-            />
-          ))}
+      <Mailbox letters={letters} read={read} onOpen={onOpen} />
+    </aside>
+  );
+};
+
+// ── 밤: 방주가 기숙사 침대로 돌아와 예언의 구슬 앞에서 예언을 고른다 (보내면 끝, 예언자의 구슬이 빛난다) ──
+const ProphecyOrb: React.FC<{ view: CView; busy: boolean; hurry: string | null; onSend: (command: string, args: string) => void }> = ({ view, busy, hurry, onSend }) => {
+  const [kind, setKind] = useState('');
+  const [targets, setTargets] = useState<string[]>(['', '', '']);
+  const alive = view.players.filter((player) => player.alive);
+  const chosen = view.prophecy_kinds.find((item) => item.key === kind) ?? view.prophecy_kinds[0];
+  const crew = (view.my_role?.mates.length ?? 0) > 0;
+  useEffect(() => { sfx.sparkle(0.2); sfx.wind(0.4); }, []);
+  if (!chosen) return null;
+  return (
+    <motion.div className={view.prophecy_sent ? 'cs-orb is-sent' : 'cs-orb'} initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ type: 'spring', stiffness: 120, damping: 14 }}>
+      <motion.span className='cs-orb__ball' animate={{ scale: [1, 1.06, 1], filter: ['brightness(1)', 'brightness(1.35)', 'brightness(1)'] }} transition={{ duration: 2.6, repeat: Infinity }} aria-hidden>
+        <Icon512 paths={CRYSTAL_BALL} />
+      </motion.span>
+      <h3 className='cs-journey__title'>예언의 구슬</h3>
+      {view.prophecy_sent ? (
+        <p className='cs-orb__sent'>예언이 예언자에게 전해졌습니다.<b>{view.prophecy}</b></p>
+      ) : (
+        <>
+          <p className='cs-journey__ask'>{hurry ?? '예언자에게 진실 하나를 보내세요. 보내면 바꿀 수 없고, 보내지 않으면 저절로 전해집니다.'}</p>
+          {crew && <small className='cs-orb__hint'>동료 {view.traitor_name}와 아래 방주방에서 상의하고 한 명이 보내세요.</small>}
+          <div className='cs-orb__form'>
+            <CsPick value={chosen.key} placeholder='예언 종류' icon={<GameIcon name='sparkle' />} options={view.prophecy_kinds.map((item) => ({ value: item.key, label: item.label }))} onChange={setKind} />
+            {Array.from({ length: chosen.count }, (_, index) => (
+              <CsPick
+                // eslint-disable-next-line react/no-array-index-key
+                key={index}
+                value={targets[index] ?? ''}
+                placeholder={chosen.count > 1 ? `${index + 1}번째 사람` : '사람 고르기'}
+                icon={<GameIcon name='scope' />}
+                options={alive.map((player) => ({ value: player.acct ?? '', label: player.name, avatar: player.avatar }))}
+                onChange={(value) => { const next = [...targets]; next[index] = value; setTargets(next); }}
+              />
+            ))}
+          </div>
           <button
             type='button'
-            className='cs-button cs-button--small'
-            disabled={busy || view.phase !== 'night' || targets.slice(0, chosen.count).some((each) => !each)}
+            className='cs-button cs-button--night'
+            disabled={busy || targets.slice(0, chosen.count).some((each) => !each)}
             onClick={() => { onSend(view.commands.prophecy ?? '예언', [chosen.key, ...targets.slice(0, chosen.count)].join('/')); }}
           >
-            예언 정하기
+            예언 보내기
           </button>
-          {view.phase !== 'night' && <small className='cs-side__hint'>예언은 밤에만 정할 수 있습니다.</small>}
-        </div>
+        </>
       )}
-    </aside>
+    </motion.div>
   );
 };
 
@@ -1385,7 +1714,7 @@ const ChatDock: React.FC<{
 }> = ({ sessionId, view, chat, log, canChat, busy, onDark, onSent }) => {
   const traitor = view.my_role?.key === 'traitor';
   const night = view.phase === 'night' && view.status === 'active';
-  const showDark = traitor || (view.spectator && view.dark_chat.length > 0);
+  const showDark = traitor || (Boolean(view.spectator_staff) && view.dark_chat.length > 0);
   const tabs: ChatTab[] = showDark ? ['all', 'dark', 'log'] : ['all', 'log'];
   const [tab, setTab] = useState<ChatTab>(traitor && night ? 'dark' : 'all');
   // 쓰는 곳: 방주는 전체/방주방 (밤엔 방주방만), 나머지는 전체만
@@ -1496,28 +1825,259 @@ const ChatDock: React.FC<{
   );
 };
 
-// ── 끝: 승리 진영 → 모든 정체 공개 ──
+// ── 끝: 승리 진영(모든 정체) → [다음] MVP → [다시 보기] 낮·밤마다 일어난 일 ──
+const AWARD_ICON: Record<string, React.ReactNode> = {
+  detective: <GameIcon name='scope' />,
+  lantern: <Icon512 paths={LANTERN} />,
+  guardian: <GameIcon name='shield' />,
+  basilisk: <EyeIcon />,
+  disguise: <SnakeIcon />,
+  survivor: <GameIcon name='star' />,
+};
+
+// 상마다 작은 장소 연출: 바실리스크(어둠 속 눈·석화) · 수호천사(침대 위 방패가 뱀을 튕김) · 명탐정(대연회장 돋보기)
+// 날카로운 등불(복도의 흔들리는 등불) · 완벽한 위장(망토 속 뱀) · 끝까지 살아남은(동트는 창)
+const AwardScene: React.FC<{ kind: string }> = ({ kind }) => (
+  <span className={`cs-award-scene cs-award-scene--${kind}`} aria-hidden>
+    {kind === 'basilisk' && <><i className='cs-award-scene__eye' /><i className='cs-award-scene__eye' /><b className='cs-award-scene__stone' /></>}
+    {kind === 'guardian' && <><Icon512 paths={BED} className='cs-award-scene__bed' /><span className='cs-award-scene__shield'><GameIcon name='shield' /></span><span className='cs-award-scene__snake'><SnakeIcon /></span></>}
+    {kind === 'detective' && <><i className='cs-award-scene__table' /><span className='cs-award-scene__glass'><GameIcon name='scope' /></span></>}
+    {kind === 'lantern' && <><Icon512 paths={DOOR} className='cs-award-scene__door' /><span className='cs-award-scene__lantern'><Icon512 paths={LANTERN} /></span></>}
+    {kind === 'disguise' && <><span className='cs-award-scene__cloak'><GameIcon name='cloak' /></span><span className='cs-award-scene__hidden'><SnakeIcon /></span></>}
+    {kind === 'survivor' && <><i className='cs-award-scene__sun' /><span className='cs-award-scene__star'><GameIcon name='star' /></span></>}
+  </span>
+);
+
+const MvpScene: React.FC<{ view: CView }> = ({ view }) => {
+  const [main, ...rest] = view.awards;
+  const playerOf = (seat: number) => view.players.find((player) => player.seat === seat);
+  useEffect(() => { sfx.drum(0); sfx.win(1.2); sfx.sparkle(1.6); }, []);
+  if (!main) {
+    return (
+      <motion.div className='cs-mvp' initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <h2>이번 판의 MVP</h2>
+        <p>모두가 끝까지 함께했습니다.</p>
+      </motion.div>
+    );
+  }
+  const star = playerOf(main.seat);
+  return (
+    <motion.div className={main.dark ? 'cs-mvp is-dark' : 'cs-mvp'} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <motion.small className='cs-mvp__eyebrow' initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>이번 판의 MVP</motion.small>
+      {/* 무대 조명 아래 주인공 */}
+      <motion.span className='cs-mvp__spot' initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6, duration: 0.8 }} aria-hidden />
+      <motion.span className='cs-mvp__face' initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.9, type: 'spring', stiffness: 140, damping: 11 }}>
+        {star?.avatar ? <img src={star.avatar} alt='' /> : null}
+        <i className='cs-mvp__badge'>{AWARD_ICON[main.key] ?? <GameIcon name='crown' />}</i>
+      </motion.span>
+      <FireWords text={main.title} delay={1.3} tone={main.dark ? 'fire' : 'gold'} className='cs-mvp__title' />
+      <motion.b className='cs-mvp__name' initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }}>{star?.name} · {star?.role_name}</motion.b>
+      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.2 }}>{main.text}</motion.p>
+      <motion.span className='cs-mvp__scene' initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2.4 }}><AwardScene kind={main.key} /></motion.span>
+      <Particles kind='spark' count={20} delay={1.2} />
+      {rest.length > 0 && (
+        <ul className='cs-mvp__others'>
+          {rest.map((award, index) => {
+            const who = playerOf(award.seat);
+            return (
+              <motion.li key={award.key} className={award.dark ? 'is-dark' : undefined} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2.6 + (index * 0.15) }}>
+                <AwardScene kind={award.key} />
+                <span className='cs-mvp__mini'>{who?.avatar ? <img src={who.avatar} alt='' /> : null}<i>{AWARD_ICON[award.key]}</i></span>
+                <b>{award.title}</b>
+                <small>{who?.name}</small>
+                <span>{award.text}</span>
+              </motion.li>
+            );
+          })}
+        </ul>
+      )}
+    </motion.div>
+  );
+};
+
+// 다시 보기: 낮·밤 한 단계씩 장소째 다시 연출한다
+//   낮(대연회장): 누가 누구를 고발했는지 화살이 날아가고 → 표 수 → 퇴학 도장
+//   밤(기숙사·비밀의 방): 방주의 뱀 화살이 표적에게 → 치유사의 방패 · 오러의 등불 → 석화(섬광·돌) 또는 막아 냄
+//   오른쪽에는 그 단계 동안의 대화 (전체 · 방주방)
+const replaySpots = (count: number) => {
+  const rows = count > 8 ? 2 : 1;
+  const perRow = Math.ceil(count / rows);
+  return Array.from({ length: count }, (_, index) => {
+    const row = Math.floor(index / perRow);
+    const inRow = row === rows - 1 ? count - (perRow * (rows - 1)) : perRow;
+    const at = index - (row * perRow);
+    return { x: 8 + ((84 / inRow) * (at + 0.5)), y: rows === 1 ? 62 : (row === 0 ? 40 : 78) };
+  });
+};
+
+const Arc: React.FC<{ from: { x: number; y: number }; to: { x: number; y: number }; tone: 'vote' | 'snake' | 'lantern'; delay: number }> = ({ from, to, tone, delay }) => {
+  const lift = 18 + (Math.abs(to.x - from.x) * 0.25);
+  const d = `M ${from.x} ${from.y - 8} Q ${(from.x + to.x) / 2} ${Math.min(from.y, to.y) - lift} ${to.x} ${to.y - 10}`;
+  return (
+    <g className={`cs-replay__arc is-${tone}`}>
+      <motion.path d={d} initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ delay, duration: 0.7, ease: 'easeInOut' }} />
+      <motion.circle cx={to.x} cy={to.y - 10} r={1.2} initial={{ scale: 0, opacity: 0 }} animate={{ scale: [0, 1.8, 1], opacity: 1 }} transition={{ delay: delay + 0.65, duration: 0.4 }} />
+    </g>
+  );
+};
+
+const Replay: React.FC<{ view: CView; onClose: () => void }> = ({ view, onClose }) => {
+  const steps = view.history;
+  const [index, setIndex] = useState(0);
+  const step = steps[index];
+  useEffect(() => {
+    if (!step) return;
+    if (step.phase === 'night') { sfx.wind(0); if (step.out !== null && step.out !== undefined) { sfx.flash(1.6); sfx.stone(1.9); } } else { sfx.drum(0); if (step.out !== null && step.out !== undefined) sfx.gavel(1.8); }
+  }, [index, step]);
+  if (!step) {
+    return (
+      <motion.div className='cs-replay' initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <p>다시 볼 기록이 없습니다.</p>
+        <button type='button' className='cs-button' onClick={onClose}>돌아가기</button>
+      </motion.div>
+    );
+  }
+  const gone = new Set(steps.slice(0, index).map((entry) => entry.out).filter((seat): seat is number => seat !== null && seat !== undefined));
+  const present = view.players.filter((player) => !gone.has(player.seat));
+  const spots = replaySpots(present.length);
+  const spotOf = (seat: number) => spots[present.findIndex((player) => player.seat === seat)];
+  const nameOf = (seat: number) => view.players.find((player) => player.seat === seat)?.name ?? '';
+  const night = step.phase === 'night';
+  const votes = step.votes ?? {};
+  const picks = step.petrify ?? {};
+  const looks = step.looks ?? {};
+  const out = step.out ?? null;
+  const saved = night && out === null && step.protect !== null && step.protect !== undefined && Object.values(picks).includes(step.protect);
+  // 화살: 낮은 고발, 밤은 방주의 표적 + 오러의 등불
+  const arcs = night
+    ? [...Object.entries(picks).map(([from, to]) => ({ from: Number(from), to, tone: 'snake' as const })), ...Object.entries(looks).map(([from, to]) => ({ from: Number(from), to, tone: 'lantern' as const }))]
+    : Object.entries(votes).filter(([, to]) => to !== ABSTAIN_VOTE).map(([from, to]) => ({ from: Number(from), to, tone: 'vote' as const }));
+  const resultAt = 0.4 + (arcs.length * 0.18) + 0.9;
+  const chat = view.chat_log.filter((line) => (!step.from || line.at >= step.from) && (!step.to || line.at <= step.to));
+  return (
+    <motion.div className={night ? 'cs-replay is-night' : 'cs-replay is-day'} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <header className='cs-replay__head'>
+        <GameIcon name={night ? 'moon' : 'sun'} />
+        <h3>{step.day}일째 {night ? '밤' : '낮'}</h3>
+        <small>{index + 1} / {steps.length} · {night ? '기숙사와 비밀의 방' : '대연회장'}</small>
+      </header>
+      <div className='cs-replay__body'>
+        <AnimatePresence mode='wait'>
+          <motion.div key={index} className={night ? 'cs-replay__scene is-night' : 'cs-replay__scene is-day'} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+            {night && <BasiliskEyes />}
+            <svg className='cs-replay__arcs' viewBox='0 0 100 100' preserveAspectRatio='none' aria-hidden>
+              {arcs.map((arc, order) => {
+                const from = spotOf(arc.from);
+                const to = spotOf(arc.to);
+                // eslint-disable-next-line react/no-array-index-key
+                return from && to ? <Arc key={`${arc.tone}-${order}`} from={from} to={to} tone={arc.tone} delay={0.4 + (order * 0.18)} /> : null;
+              })}
+            </svg>
+            {present.map((player, order) => {
+              const at = spots[order] ?? { x: 50, y: 50 };
+              const count = night ? Object.values(picks).filter((to) => to === player.seat).length : Object.values(votes).filter((to) => to === player.seat).length;
+              const abstained = !night && votes[String(player.seat)] === ABSTAIN_VOTE;
+              const isOut = out === player.seat;
+              const guarded = night && step.protect === player.seat;
+              return (
+                <div key={player.seat} className={['cs-replay__seat', player.dark && 'is-dark'].filter(Boolean).join(' ')} style={{ left: `${at.x}%`, top: `${at.y}%` }}>
+                  <motion.span
+                    className='cs-replay__face'
+                    animate={isOut ? { filter: ['grayscale(0)', 'grayscale(0)', night ? 'grayscale(1) contrast(1.3) brightness(0.8)' : 'grayscale(0.85) brightness(0.7)'], x: [0, 0, -3, 3, 0] } : undefined}
+                    transition={isOut ? { delay: resultAt, duration: 1.2 } : undefined}
+                  >
+                    {player.avatar ? <img src={player.avatar} alt='' /> : null}
+                    {count > 0 && <motion.em className={night ? 'cs-replay__count is-snake' : 'cs-replay__count'} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: resultAt - 0.5 }}>{count}</motion.em>}
+                    {guarded && <motion.i className='cs-replay__shield' initial={{ scale: 0, opacity: 0 }} animate={{ scale: [0, 1.3, 1], opacity: 1 }} transition={{ delay: 0.3, duration: 0.6 }}><GameIcon name='shield' /></motion.i>}
+                    {isOut && <motion.i className='cs-replay__stamp' initial={{ scale: 3, opacity: 0, rotate: -30 }} animate={{ scale: 1, opacity: 1, rotate: -14 }} transition={{ delay: resultAt + 0.4, type: 'spring', stiffness: 240, damping: 14 }}>{night ? '석화' : '퇴학'}</motion.i>}
+                    {saved && guarded && <motion.i className='cs-replay__block' initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: [0.4, 1.6, 2.2], opacity: [0, 1, 0] }} transition={{ delay: resultAt, duration: 1 }} />}
+                  </motion.span>
+                  <b>{player.name}</b>
+                  <small className='cs-replay__role'>{player.role_name}</small>
+                  {abstained && <small className='cs-replay__note'>무효표</small>}
+                </div>
+              );
+            })}
+            {night && out !== null && <motion.i className='cs-replay__flash' initial={{ opacity: 0 }} animate={{ opacity: [0, 0.9, 0] }} transition={{ delay: resultAt - 0.2, duration: 0.7 }} />}
+          </motion.div>
+        </AnimatePresence>
+        {/* 그 단계 동안의 대화 */}
+        <aside className='cs-replay__chat'>
+          <small>{night ? '밤의 대화' : '낮의 대화'}</small>
+          <ul>
+            {chat.map((line, order) => (
+              // eslint-disable-next-line react/no-array-index-key
+              <li key={order} className={line.dark ? 'is-dark' : undefined}>
+                {line.dark && <em>방주방</em>}
+                <b>{line.name}</b> {line.text}
+              </li>
+            ))}
+            {chat.length === 0 && <li className='is-empty'>이 단계에는 대화가 없었습니다.</li>}
+          </ul>
+        </aside>
+      </div>
+      <motion.p key={`summary-${index}`} className='cs-replay__summary' initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: resultAt + 0.6 }}>
+        {night
+          ? (out !== null ? `${nameOf(out)}이(가) 석화되었습니다.` : saved ? `치유사가 ${nameOf(step.protect ?? -1)}을(를) 지켜 냈습니다.` : '아무 일도 없었습니다.')
+          : (out !== null ? `${nameOf(out)}이(가) 퇴학되었습니다.` : '뜻이 모이지 않아 아무도 퇴학되지 않았습니다.')}
+        {night && step.prophecy && <span className='cs-replay__prophecy'>예언: {step.prophecy}</span>}
+      </motion.p>
+      <div className='cs-replay__nav'>
+        <button type='button' className='cs-button cs-button--ghost' disabled={index === 0} onClick={() => { setIndex(index - 1); sfx.paper(); }}>◀ 이전</button>
+        <span className='cs-replay__dots'>{steps.map((entry, dot) => <i key={`${entry.phase}-${entry.day}`} className={[dot === index && 'is-on', entry.phase === 'night' && 'is-night'].filter(Boolean).join(' ')} />)}</span>
+        {index < steps.length - 1
+          ? <button type='button' className='cs-button' onClick={() => { setIndex(index + 1); sfx.paper(); }}>다음 ▶</button>
+          : <button type='button' className='cs-button' onClick={onClose}>다 봤어요</button>}
+      </div>
+    </motion.div>
+  );
+};
+
 const EndScreen: React.FC<{ view: CView; onLeave: () => void }> = ({ view, onLeave }) => {
   const light = view.winner === 'light';
   const title = view.winner === 'draw' ? '무승부' : `${light ? view.faction_light : view.faction_dark} 진영 승리!`;
+  const [stage, setStage] = useState<'win' | 'mvp' | 'replay'>('win');
   useEffect(() => { sfx.win(0.3); }, []);
   return (
     <motion.div className={`cs-end cs-end--${view.winner ?? 'draw'}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <motion.span className='cs-end__crest' initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 90, damping: 11 }}>
-        {light ? <GameIcon name='crown' /> : <SnakeIcon />}
-      </motion.span>
-      <FireWords text={title} delay={0.5} tone={light ? 'gold' : 'fire'} className='cs-end__title' />
-      <p>{view.winner === 'draw' ? '시간이 다 되었습니다.' : light ? `숨어 있던 ${view.traitor_name}가 모두 퇴학되었습니다.` : `${view.traitor_name}가 학교를 장악했습니다.`}</p>
-      <ul className='cs-end__roles'>
-        {view.players.map((player, index) => (
-          <motion.li key={player.seat} className={player.dark ? 'is-dark' : undefined} initial={{ rotateY: 90, opacity: 0 }} animate={{ rotateY: 0, opacity: 1 }} transition={{ delay: 1 + (index * 0.12), duration: 0.5 }}>
-            {player.avatar && <img src={player.avatar} alt='' className={player.alive ? undefined : 'is-out'} />}
-            <b>{player.name}</b>
-            <span>{player.role_name}</span>
-          </motion.li>
-        ))}
-      </ul>
-      <button type='button' className='cs-button' onClick={onLeave}>나가기</button>
+      <AnimatePresence mode='wait'>
+        {stage === 'win' && (
+          <motion.div key='win' className='cs-end__stage' exit={{ opacity: 0, y: -20, transition: { duration: 0.4 } }}>
+            <motion.span className='cs-end__crest' initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 90, damping: 11 }}>
+              {light ? <GameIcon name='crown' /> : <SnakeIcon />}
+            </motion.span>
+            <FireWords text={title} delay={0.5} tone={light ? 'gold' : 'fire'} className='cs-end__title' />
+            <p>{view.winner === 'draw' ? '시간이 다 되었습니다.' : light ? `숨어 있던 ${view.traitor_name}가 모두 퇴학되었습니다.` : `${view.traitor_name}가 학교를 장악했습니다.`}</p>
+            <ul className='cs-end__roles'>
+              {view.players.map((player, index) => (
+                <motion.li key={player.seat} className={player.dark ? 'is-dark' : undefined} initial={{ rotateY: 90, opacity: 0 }} animate={{ rotateY: 0, opacity: 1 }} transition={{ delay: 1 + (index * 0.12), duration: 0.5 }}>
+                  {player.avatar && <img src={player.avatar} alt='' className={player.alive ? undefined : 'is-out'} />}
+                  <b>{player.name}</b>
+                  <span>{player.role_name}</span>
+                </motion.li>
+              ))}
+            </ul>
+            <div className='cs-end__actions'>
+              <button type='button' className='cs-button cs-button--ghost' onClick={() => { setStage('replay'); }}>다시 보기</button>
+              <button type='button' className='cs-button' onClick={() => { setStage('mvp'); }}>다음</button>
+            </div>
+          </motion.div>
+        )}
+        {stage === 'mvp' && (
+          <motion.div key='mvp' className='cs-end__stage' exit={{ opacity: 0, transition: { duration: 0.4 } }}>
+            <MvpScene view={view} />
+            <div className='cs-end__actions'>
+              <button type='button' className='cs-button cs-button--ghost' onClick={() => { setStage('replay'); }}>다시 보기</button>
+              <button type='button' className='cs-button' onClick={onLeave}>나가기</button>
+            </div>
+          </motion.div>
+        )}
+        {stage === 'replay' && (
+          <motion.div key='replay' className='cs-end__stage' exit={{ opacity: 0, transition: { duration: 0.3 } }}>
+            <Replay view={view} onClose={() => { setStage('mvp'); }} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
@@ -1561,8 +2121,11 @@ export const ChamberStage: React.FC<{
     introChecked.current = true;
     let seen = false;
     try { seen = window.sessionStorage.getItem(`ssm:cs-intro:${sessionId}`) === '1'; } catch { seen = false; }
-    if (seen || view.status === 'finished' || !view.my_role) setIntro('done');
-    else setIntro(view.day <= 1 && view.phase === 'day' ? 'opening' : 'role');
+    // 관전하는 사람(역할 없음)도 첫날 낮이면 오프닝을 보고, 역할 카드 없이 바로 본 화면으로
+    const firstDay = view.day <= 1 && view.phase === 'day' && view.status === 'active';
+    if (seen || view.status === 'finished') setIntro('done');
+    else if (!view.my_role) setIntro(firstDay ? 'opening' : 'done');
+    else setIntro(firstDay ? 'opening' : 'role');
   }, [view, sessionId]);
   const finishIntro = useCallback(() => {
     setIntro('done');
@@ -1615,14 +2178,15 @@ export const ChamberStage: React.FC<{
     if (!view) return [];
     const list: Letter[] = [];
     messages.forEach((message) => {
-      if (message.kind === 'system') list.push({ id: message.id, kind: 'notice', seal: 'notice', title: letterTitle(message.text), text: message.text, tone: logTone(message.text) });
+      // 대기실 안내(참가·준비·초대…)는 우편으로 넣지 않는다 (게임 시작 알림부터)
+      if (message.kind === 'system' && !LOBBY_NOTE.test(message.text)) list.push({ id: message.id, kind: 'notice', seal: 'notice', title: letterTitle(message.text), text: message.text, tone: logTone(message.text) });
     });
     view.notes.forEach((note, index) => {
       list.push({ id: `note-${index}`, kind: 'note', seal: seer ? 'prophecy' : 'clue', title: `${note.day}일째 밤의 ${seer ? '예언' : '단서'}`, text: seer ? note.text.replace(/^\d+일째 밤의 예언:\s*/, '') : note.text, tone: 'info' });
     });
     messages.forEach((message) => {
       // 방주끼리 밀담 전달은 밀담 창에서 보니 우편으로 넣지 않는다
-      if (message.kind !== 'secret' || message.text.startsWith('당신의 역할은') || message.text.startsWith('[밀담]')) return;
+      if (message.kind !== 'secret' || message.text.startsWith('당신의 역할은') || message.text.startsWith('[밀담]') || /^(접수했습니다|예언을 정했습니다)/.test(message.text)) return; // 화면에 이미 보이는 행동 확인은 우편으로 넣지 않는다
       // 쪽지(notes)로 이미 보이는 비밀 안내는 다시 넣지 않는다
       if (view.notes.some((note) => note.text === message.text || message.text.endsWith(note.text))) return;
       list.push({ id: message.id, kind: 'secret', seal: 'secret', title: '비밀 쪽지', text: message.text, tone: 'info' });
@@ -1739,13 +2303,21 @@ export const ChamberStage: React.FC<{
   const night = view?.phase === 'night';
   const nightActor = Boolean(view && isPlayer && view.alive_me && view.status === 'active' && night && view.night);
   const [away, setAway] = useState<Away>('bed');
+  // 방주가 비밀의 방 문 앞에 있는 동안 (속삭임·문 열림): 화면 가득
+  const [doorOpening, setDoorOpening] = useState(false);
   const leftOn = useRef<number | null>(null);
+  // 방주: 밤 앞 절반이 지나면 표적 고르기는 끝 (비밀의 방에서 기숙사로 돌아와 예언)
+  const traitorNight = Boolean(nightActor && view?.my_role?.key === 'traitor');
+  const halfPassed = Boolean(traitorNight && view?.night_half_at && now >= Date.parse(view.night_half_at));
+  useEffect(() => {
+    if (halfPassed && away === 'out') setAway('returning');
+  }, [halfPassed, away]);
   useEffect(() => {
     if (!nightActor) { if (away !== 'bed') setAway('bed'); return; }
-    if (intro !== 'done' || cue || away !== 'bed' || leftOn.current === view?.day) return;
+    if (intro !== 'done' || cue || away !== 'bed' || leftOn.current === view?.day || halfPassed) return;
     leftOn.current = view?.day ?? null;
     setAway('leaving');
-  }, [nightActor, intro, cue, away, view?.day]);
+  }, [nightActor, intro, cue, away, view?.day, halfPassed]);
   useEffect(() => {
     if (away !== 'leaving' && away !== 'returning') return undefined;
     [0.3, 0.6, 0.9, 1.2, 1.5, 1.8].forEach((at) => { sfx.step(at); });
@@ -1764,25 +2336,33 @@ export const ChamberStage: React.FC<{
   const playing = view.status === 'active' && (view.phase === 'day' || view.phase === 'night');
   // 낮에 할 일: 고발 (밤 행동은 밤 나들이 화면에서)
   const action = playing && alive && isPlayer && view.phase === 'day'
-    ? { command: view.commands.accuse ?? '고발', verb: '고발하기', ask: '토론하고, 수상한 사람을 눌러 고발하세요.', done: view.my_vote !== null ? `고발한 사람: ${view.players.find((each) => each.seat === view.my_vote)?.name ?? ''} (바꿀 수 있어요)` : null }
+    ? { command: view.commands.accuse ?? '고발', verb: '고발하기', ask: '토론하고, 수상한 사람을 눌러 고발하세요.', done: view.my_vote === ABSTAIN_VOTE ? '무효표를 냈습니다. (바꿀 수 있어요)' : view.my_vote !== null ? `고발한 사람: ${view.players.find((each) => each.seat === view.my_vote)?.name ?? ''} (바꿀 수 있어요)` : null }
     : null;
   const selectable = (player: CPlayer) => Boolean(action) && player.alive && player.seat !== view.me;
   const phaseEnds = view.deadline_at ? Date.parse(view.deadline_at) - now : 0;
   const allEnds = view.ends_at ? Date.parse(view.ends_at) - now : 0;
   const dreaming = night && seer && alive && view.status === 'active';
-  const idleText = !isPlayer || view.spectator ? '관전 중입니다. 모든 정체가 보입니다.'
+  // 방주: 표적을 고르고 돌아왔거나 앞 절반이 지나면 침대에서 예언의 구슬 (예언자가 살아 있을 때)
+  const orbStage = traitorNight && away === 'bed' && Boolean(view.seer_alive) && (halfPassed || (view.night?.picked !== null && view.night?.picked !== undefined));
+  const petrifyLeft = traitorNight && !halfPassed && view.night_half_at ? mmss(Date.parse(view.night_half_at) - now) : null;
+  // 모두 고발·행동을 마쳤을 때: N초 뒤 다음 단계
+  const hurryLeft = Math.max(0, Math.ceil(phaseEnds / 1000));
+  const hurryText = night && view.all_acted ? `모두 행동을 마쳤습니다! ${hurryLeft}초 뒤 아침이 밝습니다. (바꾸면 다시 5초)` : null;
+  const idleText = !isPlayer || view.spectator ? (view.spectator_staff ? '관전 중입니다. 모든 정체가 보입니다.' : '관전 중입니다. 정체는 탈락한 사람만 공개됩니다.')
     : !alive ? '탈락했습니다. 모든 정체를 보며 지켜보세요.'
       : night && dreaming ? '깊은 잠에 빠졌습니다… 꿈속에서 누군가 속삭이려 합니다.'
         : night && !view.night ? '모두 잠들었습니다… 아침이 밝기를 기다립니다.'
-          : night && away === 'bed' && nightActor ? '침대로 돌아왔습니다. 아직 밤입니다.'
+          : night && away === 'bed' && nightActor && !orbStage ? '침대로 돌아왔습니다. 아직 밤입니다.'
             : '';
 
   return createPortal(
-    <div className={night ? 'game-stage cs-stage cs-stage--night' : 'game-stage cs-stage cs-stage--day'} role='region' aria-label={name}>
+    // is-intro: 오프닝 동안 · is-door: 방주가 비밀의 방 문을 여는 동안 — 머리줄·우편함·채팅을 숨기고 연출만 화면 가득
+    <div className={['game-stage cs-stage', night ? 'cs-stage--night' : 'cs-stage--day', intro === 'opening' && 'is-intro', doorOpening && 'is-door'].filter(Boolean).join(' ')} role='region' aria-label={name}>
       {/* 배경: 낮은 대연회장(창·깃발·떠 있는 촛불), 밤은 불 꺼진 기숙사 */}
       <div className='cs-backdrop' aria-hidden>
         <AnimatePresence>
           {night ? <DormRoom key='dorm' /> : <HogwartsHall key='hogwarts' />}
+          {night && nightActor && away === 'out' && <JourneyBackdrop key='journey-bg' traitor={view.night?.kind === 'petrify'} />}
         </AnimatePresence>
         {night && <i className='cs-fog cs-fog--a' />}
       </div>
@@ -1807,7 +2387,7 @@ export const ChamberStage: React.FC<{
         <div className='cs-scene'>
           <AnimatePresence mode='wait'>
             {night
-              ? <Dormitory key={`dorm-${view.day}`} view={view} size={seatSize} away={away} dreaming={dreaming} bubbles={bubbles} />
+              ? (nightActor && away === 'out' ? null : <Dormitory key={`dorm-${view.day}`} view={view} size={seatSize} away={away} dreaming={dreaming || orbStage} lit={Boolean(view.prophecy_sent)} bubbles={bubbles} />)
               : (
                 <GreatHall
                   key={`hall-${view.day}`}
@@ -1817,42 +2397,49 @@ export const ChamberStage: React.FC<{
                   selectable={selectable}
                   bubbles={bubbles}
                   onPick={(picked) => { setSelected((current) => (current === picked.seat ? null : picked.seat)); }}
+                  hint={action && (
+                    <>
+                      <span className='cs-hall-hint__text'>{action.done ?? action.ask}</span>
+                      <button type='button' className='cs-button cs-button--small cs-button--ghost' disabled={busy || view.my_vote === ABSTAIN_VOTE} onClick={() => { send(view.commands.abstain ?? '무효'); setSelected(null); }}>무효표</button>
+                    </>
+                  )}
+                  pickAction={action && target && selectable(target) ? (
+                    <button type='button' className='cs-button cs-button--small' disabled={busy} onClick={() => { send(action.command, { target: target.acct }); setSelected(null); }}>{action.verb}</button>
+                  ) : null}
                 />
               )}
           </AnimatePresence>
+          <AnimatePresence>
+            {night && orbStage && <ProphecyOrb key={`orb-${view.day}`} view={view} busy={busy} hurry={hurryText} onSend={(command, args) => { send(command, { args }); }} />}
+          </AnimatePresence>
+          {/* 밤 나들이: 배경은 무대 전체, 내용은 장면 가운데 (우편함은 그 위에 떠 있다) */}
           <AnimatePresence>
             {night && nightActor && away === 'out' && (
               <NightJourney
                 key={`journey-${view.day}`}
                 view={view}
                 busy={busy}
+                hurry={hurryText ?? (petrifyLeft ? `표적 고르기 남은 시간 ${petrifyLeft} · 그 뒤 기숙사에서 예언을 고릅니다` : null)}
                 onSend={(command, picked) => { send(command, { target: picked }); }}
                 onReturn={() => { setAway('returning'); }}
+                onDoor={setDoorOpening}
               />
             )}
           </AnimatePresence>
         </div>
 
-        <SidePanel view={view} letters={letters} read={read} onOpen={openOne} busy={busy} onSend={(command, args) => { send(command, { args }); }} />
+        <SidePanel view={view} letters={letters} read={read} onOpen={openOne} />
       </div>
 
       {/* 할 일 띠: 낮은 고발, 밤은 지금 내 처지 */}
-      <div className={action || (night && nightActor && away === 'bed') ? 'cs-action is-on' : 'cs-action'}>
+      <div className={(action && view.all_voted) || hurryText || (night && nightActor && away === 'bed') ? 'cs-action is-on' : 'cs-action'}>
         {action ? (
-          <>
-            <span className='cs-action__ask'>{action.done ?? action.ask}</span>
-            <AnimatePresence>
-              {target && selectable(target) && (
-                <motion.button key={target.seat} type='button' className='cs-button' initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} disabled={busy} onClick={() => { send(action.command, { target: target.acct }); setSelected(null); }}>
-                  {target.name} {action.verb}
-                </motion.button>
-              )}
-            </AnimatePresence>
-          </>
+          // 낮의 안내·버튼은 대연회장 자리 옆에. 여기는 모두 고발했을 때 카운트다운만
+          view.all_voted ? <span className='cs-action__ask cs-action__ask--hurry'>모두 고발했습니다! {Math.max(0, Math.ceil(phaseEnds / 1000))}초 뒤 결과가 나옵니다. (바꾸면 다시 5초)</span> : null
         ) : (
           <>
-            {idleText && <span className='cs-action__ask'>{idleText}</span>}
-            {night && nightActor && away === 'bed' && intro === 'done' && !cue && <button type='button' className='cs-button cs-button--night' onClick={() => { setAway('leaving'); }}>다시 몰래 나가기</button>}
+            {hurryText ? <span className='cs-action__ask cs-action__ask--hurry'>{hurryText}</span> : idleText && <span className='cs-action__ask'>{idleText}</span>}
+            {night && nightActor && away === 'bed' && intro === 'done' && !cue && !orbStage && !halfPassed && <button type='button' className='cs-button cs-button--night' onClick={() => { setAway('leaving'); }}>다시 몰래 나가기</button>}
           </>
         )}
       </div>
@@ -1874,13 +2461,13 @@ export const ChamberStage: React.FC<{
       {/* 부엉이 · 펼친 양피지 */}
       {owls.map((id) => <OwlFlight key={id} onDone={() => { setOwls((current) => current.filter((each) => each !== id)); }} />)}
       <AnimatePresence>
-        {openLetter && <LetterModal key={openLetter.id} letter={openLetter} onClose={() => { setOpenLetter(null); }} />}
+        {openLetter && <LetterModal key={openLetter.id} letter={openLetter} players={view.players} darkNames={[view.traitor_name, view.faction_dark]} onClose={() => { setOpenLetter(null); }} />}
       </AnimatePresence>
 
       {/* 오프닝 · 역할 카드 · 연출 · 결과 */}
       {createPortal(
         <AnimatePresence>
-          {intro === 'opening' && <Opening key='opening' onDone={() => { setIntro('role'); }} />}
+          {intro === 'opening' && <Opening key='opening' onDone={() => { if (view.my_role) setIntro('role'); else finishIntro(); }} />}
         </AnimatePresence>,
         document.body,
       )}

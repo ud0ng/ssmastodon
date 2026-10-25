@@ -26,7 +26,7 @@ module Game
 
       ROLES = %w(traitor auror healer seer student).freeze
       DARK = %w(traitor).freeze
-      CHAT_KEEP = 40
+      CHAT_KEEP = 400
       CHAT_LENGTH = 200
       # 사람이 많으면 웹 고발 버튼은 생략 (웹 지도 화면에서는 아바타를 눌러 고발)
       MAX_ACCUSE_BUTTONS = 12
@@ -49,6 +49,7 @@ module Game
         F.new(key: 'faction_light', type: :string, default: '호그와트', group: 'roles', label: '선한 진영 이름'),
         F.new(key: 'faction_dark', type: :string, default: '어둠', group: 'roles', label: '어둠 진영 이름'),
         F.new(key: 'cmd_accuse', type: :string, default: '고발', group: 'commands', label: '고발 (낮)', hint: '[고발] @누구'),
+        F.new(key: 'cmd_abstain', type: :string, default: '무효', group: 'commands', label: '무효표 (낮)', hint: '[무효] 아무도 고발하지 않는다'),
         F.new(key: 'cmd_petrify', type: :string, default: '석화', group: 'commands', label: '석화 (방주, 밤)'),
         F.new(key: 'cmd_investigate', type: :string, default: '조사', group: 'commands', label: '조사 (오러, 밤)'),
         F.new(key: 'cmd_protect', type: :string, default: '보호', group: 'commands', label: '보호 (치유사, 밤)'),
@@ -60,35 +61,43 @@ module Game
               default: "당신의 역할은 「%{role}」입니다. (%{faction})\n%{how}"),
         F.new(key: 'msg_how_traitor', type: :text, group: 'messages', label: '방주 할 일',
               default: "밤마다 [%{petrify}] @누구 로 석화할 사람을 고르고, 예언자에게 전할 예언을 정하세요. 예언은 사실인 내용만 전할 수 있습니다.\n[%{prophecy}/호그와트] @누구 · [%{prophecy}/어둠] @누구 · [%{prophecy}/역할] @누구 · [%{prophecy}/둘중] @A @B\n[%{chat}/내용] 으로 동료끼리만 상의할 수 있습니다. 동료 %{traitor}: %{mates}"),
-        F.new(key: 'msg_how_auror', type: :text, group: 'messages', label: '오러 할 일', default: '밤마다 이 DM 에 [%{investigate}] @누구 로 그 사람의 진영을 알아낼 수 있습니다.'),
+        F.new(key: 'msg_how_auror', type: :text, group: 'messages', label: '오러 할 일', default: '밤마다 이 DM 에 [%{investigate}] @누구 로 그 사람이 %{traitor}인지 알아낼 수 있습니다.'),
         F.new(key: 'msg_how_healer', type: :text, group: 'messages', label: '치유사 할 일', default: '밤마다 이 DM 에 [%{protect}] @누구 로 그날 밤 석화를 막을 수 있습니다. (같은 사람 이틀 연속은 안 됩니다)'),
         F.new(key: 'msg_how_seer', type: :text, group: 'messages', label: '예언자 할 일', default: '밤이 끝날 때마다 %{traitor}들이 전하는 예언을 이 DM 으로 받습니다. 예언은 언제나 진실입니다.'),
         F.new(key: 'msg_how_student', type: :text, group: 'messages', label: '학생 할 일', default: '낮마다 토론하고 [%{accuse}] @누구 로 수상한 사람을 고발하세요.'),
         F.new(key: 'msg_day', type: :text, group: 'messages', label: '낮 시작',
               default: "%{day}일째 낮\n%{minutes}분 동안 토론하고 [%{accuse}] @누구 로 고발해 주세요. 가장 많이 고발된 사람은 퇴학됩니다.\n\n남은 사람: %{names}"),
         F.new(key: 'msg_vote_ok', type: :text, group: 'messages', label: '고발 접수', default: '%{player}{이가} %{target}{을를} 고발했습니다.'),
+        F.new(key: 'msg_abstain_ok', type: :text, group: 'messages', label: '무효표 접수', default: '%{player}{이가} 무효표를 냈습니다.'),
         F.new(key: 'msg_expelled', type: :text, group: 'messages', label: '퇴학',
-              default: "%{day}일째 고발 결과\n%{tally}\n\n%{target}{이가} 퇴학되었습니다. 정체는 「%{role}」(%{faction})였습니다."),
+              default: "%{day}일째 고발 결과\n%{tally}\n\n%{target}{이가} 퇴학되었습니다. 정체는 「%{role}」였습니다."),
         F.new(key: 'msg_no_expel', type: :text, group: 'messages', label: '퇴학 없음', default: "%{day}일째 고발 결과\n%{tally}\n\n뜻이 모이지 않아 아무도 퇴학되지 않았습니다."),
         F.new(key: 'msg_night', type: :text, group: 'messages', label: '밤 시작',
               default: '%{day}일째 밤. %{minutes}분 동안 역할이 있는 사람만 몰래 움직입니다. 모두 조용히…'),
         F.new(key: 'msg_petrified', type: :text, group: 'messages', label: '석화',
-              default: '아침이 밝았습니다. 밤사이 %{target}{이가} 석화된 채 발견되었습니다. 정체는 「%{role}」(%{faction})였습니다.'),
+              default: '아침이 밝았습니다. 밤사이 %{target}{이가} 석화된 채 발견되었습니다. 정체는 「%{role}」였습니다.'),
         F.new(key: 'msg_saved', type: :text, group: 'messages', label: '아무도 석화되지 않음', default: '아침이 밝았습니다. 지난밤은 아무 일도 없었습니다.'),
         F.new(key: 'msg_action_ok', type: :text, group: 'messages', label: '밤 행동 접수 (DM)', default: '접수했습니다: %{target}'),
-        F.new(key: 'msg_investigated', type: :text, group: 'messages', label: '조사 결과 (DM)', default: '%{target}의 진영은 「%{faction}」입니다.'),
+        F.new(key: 'msg_investigated', type: :text, group: 'messages', label: '조사 결과 (DM)', default: '%{target}{은는} %{verdict}'),
         F.new(key: 'msg_prophecy_ok', type: :text, group: 'messages', label: '예언 접수 (DM, 방주)', default: '예언을 정했습니다: %{text}'),
         F.new(key: 'msg_prophesied', type: :text, group: 'messages', label: '예언 (DM, 예언자)', default: '%{day}일째 밤의 예언: %{text}'),
         F.new(key: 'msg_prophecy_none', type: :text, group: 'messages', label: '예언 없음 (DM, 예언자)', default: '%{day}일째 밤, 전해진 예언이 없습니다.'),
         F.new(key: 'msg_chat', type: :text, group: 'messages', label: '방주 단톡 전달 (DM)', default: '[밀담] %{player}: %{text}'),
         F.new(key: 'msg_wrong_time', type: :text, group: 'messages', label: '지금은 못 함', default: '지금은 할 수 없는 행동입니다.'),
         F.new(key: 'msg_need_target', type: :text, group: 'messages', label: '대상 없음', default: '살아 있는 참가자를 @로 태그해 주세요.'),
-        F.new(key: 'msg_prophecy_light', type: :text, group: 'messages', label: '예언: 호그와트 진영', default: '%{target}{은는} %{faction} 진영입니다.'),
+        F.new(key: 'msg_prophecy_light', type: :text, group: 'messages', label: '예언: 방주가 아님', default: '%{target}{은는} %{traitor}{이가} 아닙니다.'),
         F.new(key: 'msg_prophecy_dark', type: :text, group: 'messages', label: '예언: 방주', default: '%{target}{은는} %{traitor}입니다.'),
         F.new(key: 'msg_prophecy_role', type: :text, group: 'messages', label: '예언: 역할', default: '%{target}의 역할은 「%{role}」입니다.'),
         F.new(key: 'msg_prophecy_pair', type: :text, group: 'messages', label: '예언: 둘 중 한 명', default: '%{player_a}{과와} %{player_b} 중 적어도 한 명은 %{traitor}입니다.'),
+        F.new(key: 'msg_prophecy_trio', type: :text, group: 'messages', label: '예언: 셋 중 한 명', default: '%{player_a}, %{player_b}, %{player_c} 중 적어도 한 명은 %{traitor}입니다.'),
+        F.new(key: 'msg_prophecy_same', type: :text, group: 'messages', label: '예언: 같은 편', default: '%{player_a}{과와} %{player_b}{은는} 같은 편입니다.'),
+        F.new(key: 'msg_prophecy_diff', type: :text, group: 'messages', label: '예언: 다른 편', default: '%{player_a}{과와} %{player_b}{은는} 서로 다른 편입니다.'),
+        F.new(key: 'msg_prophecy_count', type: :text, group: 'messages', label: '예언: 남은 방주 수', default: '지금 학교에 남은 %{traitor}{은는} %{count}명입니다.'),
+        F.new(key: 'msg_prophecy_sent', type: :text, group: 'messages', label: '예언은 한 번만 (DM, 방주)', default: '오늘 밤의 예언은 이미 보냈습니다.'),
+        F.new(key: 'msg_prophecy_auto', type: :text, group: 'messages', label: '예언 자동 전달 (방주 밀담)', default: '시간이 다 되어 예언이 저절로 전해졌습니다: %{text}'),
+        F.new(key: 'msg_petrify_over', type: :text, group: 'messages', label: '표적 고르기 끝 (DM, 방주)', default: '표적을 고르는 시간이 끝났습니다. 이제 예언을 골라 주세요.'),
         F.new(key: 'msg_prophecy_usage', type: :text, group: 'messages', label: '예언 형식 안내 (DM, 방주)',
-              default: "예언 형식: [%{prophecy}/%{light}] @누구 · [%{prophecy}/%{dark}] @누구 · [%{prophecy}/역할] @누구 · [%{prophecy}/둘중] @A @B"),
+              default: "예언 형식: [%{prophecy}/%{light}] @누구 · [%{prophecy}/%{dark}] @누구 · [%{prophecy}/역할] @누구 · [%{prophecy}/둘중] @A @B · [%{prophecy}/셋중] @A @B @C · [%{prophecy}/같은편] @A @B · [%{prophecy}/다른편] @A @B · [%{prophecy}/남은수]"),
         F.new(key: 'msg_prophecy_false', type: :text, group: 'messages', label: '거짓 예언 (DM, 방주)', default: '사실이 아닌 예언은 전할 수 없습니다. 사실에 맞는 예언만 골라 주세요.'),
         F.new(key: 'msg_need_text', type: :text, group: 'messages', label: '내용 없음', default: '내용을 함께 보내 주세요.'),
         F.new(key: 'msg_no_repeat', type: :text, group: 'messages', label: '연속 보호 안 됨', default: '같은 사람을 이틀 연속 보호할 수 없습니다.'),
@@ -112,6 +121,16 @@ module Game
         # 7~20명이 하는 컨텐츠라 여럿이 하는 컨텐츠로 센다 (신청이 아니라 이벤트로 연다)
         def max_opponents
           [config['event_max_players'].to_i - 1, 2].max
+        end
+
+        # 참가하지 않은 사람도 관전한다 (운영진이 아니면 정체는 공개된 것만)
+        def spectatable?
+          true
+        end
+
+        # 다시 보기에서 판 전체의 대화를 보여 주니 채팅을 넉넉히 남긴다 (Game::Lobby.chat!)
+        def chat_keep
+          1_000
         end
 
         def invite_error(_total, _args = [])
@@ -159,7 +178,7 @@ module Game
       end
 
       def handle(player, command, args, status)
-        action = { config['cmd_accuse'] => :accuse, config['cmd_petrify'] => :petrify, config['cmd_investigate'] => :investigate,
+        action = { config['cmd_accuse'] => :accuse, config['cmd_abstain'] => :abstain, config['cmd_petrify'] => :petrify, config['cmd_investigate'] => :investigate,
                    config['cmd_protect'] => :protect, config['cmd_prophecy'] => :prophecy, config['cmd_chat'] => :chat }[command]
         return false if action.nil?
         return true unless alive?(player)
@@ -204,8 +223,8 @@ module Game
       end
 
       # 이 사람에게 보이는 비밀의 방 (웹 진행 화면). 탈락했거나 끝났으면 모든 역할이 보인다.
-      # player 가 nil 이면 구경하는 운영진(테스트 플레이 관전): 모든 역할이 보인다.
-      def view_for(player)
+      # player 가 nil 이면 관전: 운영진(staff)은 모든 역할이 보이고, 참가하지 않은 다른 사람은 공개된 것(탈락자의 정체)만 본다.
+      def view_for(player, staff: false)
         seat = player&.seat
         roles = state['roles'] || {}
         started = state['phase'].present? && state['phase'] != 'recruit'
@@ -213,7 +232,8 @@ module Game
         alive = players.map(&:seat) - out.keys
         role = roles[seat.to_s]
         mine_out = player && started && !alive.include?(seat)
-        reveal = session.status == 'finished' || mine_out || player.nil?
+        watching_staff = player.nil? && staff
+        reveal = session.status == 'finished' || mine_out || watching_staff
         mates = player && role.present? && DARK.include?(role) ? players.select { |other| other.id != player.id && DARK.include?(role_of(other.seat)) }.map(&:seat) : []
         counts = tally_counts
         votes = state['votes'] || {}
@@ -221,7 +241,7 @@ module Game
         {
           phase: state['phase'], day: state['day'].to_i, phase_no: state['phase_no'].to_i, max_phases: config['max_phases'].to_i,
           deadline_at: session.deadline_at&.iso8601, ends_at: state['ends_at'], status: session.status,
-          winner: state['winner'], me: seat, alive_me: player.present? && (!started || alive.include?(seat)), spectator: player.nil?,
+          winner: state['winner'], me: seat, alive_me: player.present? && (!started || alive.include?(seat)), spectator: player.nil?, spectator_staff: watching_staff,
           started_at: state['started_at'], total_minutes: config['total_minutes'].to_i, day_minutes: config['day_minutes'].to_i, night_minutes: config['night_minutes'].to_i,
           faction_light: config['faction_light'], faction_dark: config['faction_dark'], traitor_name: role_name('traitor'), traitor_count: roles.values.count('traitor'),
           role_names: ROLES.to_h { |key| [key, role_name(key)] },
@@ -235,27 +255,45 @@ module Game
               dark: known && roles[other.seat.to_s] ? DARK.include?(roles[other.seat.to_s]) : nil,
               votes: counts[other.seat.to_s].to_i,
               voted_by: votes.select { |_, target| target == other.seat }.keys.filter_map { |from| players.find { |p| p.seat.to_s == from }&.name },
+              # 이 사람이 무효표를 냈는가 (고발은 공개라 무효표도 공개)
+              abstained: votes[other.seat.to_s] == ABSTAIN,
             }
           end,
           my_role: role && { key: role, name: role_name(role), faction: faction_name(role), dark: DARK.include?(role), how: role_how(player), mates: mates },
           my_vote: seat && votes[seat.to_s],
           votes: votes.transform_keys(&:to_s),
+          # 살아 있는 사람이 모두 고발했다 (5초 뒤 결과, 바꾸면 다시 5초)
+          all_voted: all_voted?,
+          # 밤: 역할이 있는 사람이 모두 행동함 (5초 뒤 아침)
+          all_acted: night_done?,
           night: player && night_view(player, role),
           # 방주끼리: 이번 밤에 동료들이 석화하려고 고른 사람 {자리 => 대상 자리}
           petrify_picks: role == 'traitor' && state['phase'] == 'night' ? (state.dig('night', 'petrify') || {}) : {},
           notes: seat ? Array(state.dig('notes', seat.to_s)) : [],
-          dark_chat: role == 'traitor' || (player.nil? && Array(state['dark_chat']).any?) ? Array(state['dark_chat']) : [],
+          dark_chat: role == 'traitor' || (watching_staff && Array(state['dark_chat']).any?) ? Array(state['dark_chat']) : [],
           # 지금까지 일어난 일 (퇴학·석화·무사): 화면 효과와 다시 보기
           out_log: Array(state['out']).map { |entry| entry.merge('role_name' => role_name(entry['role']), 'dark' => DARK.include?(entry['role'])) },
           prophecy: role == 'traitor' ? state.dig('night', 'prophecy', 'text') : nil,
           prophecy_kinds: role == 'traitor' ? [
-            { key: config['faction_light'], label: "#{config['faction_light']} 진영이다", count: 1 },
+            { key: config['faction_light'], label: "#{role_name('traitor')}가 아니다", count: 1 },
             { key: config['faction_dark'], label: "#{role_name('traitor')}다", count: 1 },
             { key: '역할', label: '역할은 ○○다', count: 1 },
             { key: '둘중', label: "둘 중 한 명 이상이 #{role_name('traitor')}다", count: 2 },
+            { key: '셋중', label: "셋 중 한 명 이상이 #{role_name('traitor')}다", count: 3 },
+            { key: '같은편', label: '두 사람은 같은 편이다', count: 2 },
+            { key: '다른편', label: '두 사람은 서로 다른 편이다', count: 2 },
+            { key: '남은수', label: "남은 #{role_name('traitor')}는 몇 명이다", count: 0 },
           ] : [],
-          commands: %w(accuse petrify investigate protect prophecy chat join).to_h { |key| [key, config["cmd_#{key}"]] },
+          # 방주의 밤: 이 시각까지 표적, 그 뒤는 예언 · 오늘 밤 예언을 보냈나 (예언자는 구슬이 빛난다)
+          night_half_at: state['phase'] == 'night' && (role == 'traitor' || player.nil?) ? state.dig('night', 'half_at') : nil,
+          prophecy_sent: state['phase'] == 'night' && %w(traitor seer).include?(role) && state.dig('night', 'prophecy').present?,
+          seer_alive: seer_alive?,
+          commands: %w(accuse abstain petrify investigate protect prophecy chat join).to_h { |key| [key, config["cmd_#{key}"]] },
           min_players: min_players, max_players: max_players,
+          # 끝난 뒤에만: 다시 보기(낮·밤마다 일어난 일)와 MVP
+          history: session.status == 'finished' ? Array(state['history']) : [],
+          awards: awards,
+          chat_log: session.status == 'finished' ? chat_log : [],
         }
       end
 
@@ -377,6 +415,7 @@ module Game
         return finish_limit! if limit_reached?
 
         state['phase'] = 'day'
+        state['phase_started_at'] = Time.current.iso8601(3)
         state['phase_no'] = state['phase_no'].to_i + 1
         state['votes'] = {}
         session.save!
@@ -393,16 +432,47 @@ module Game
         state['votes'][player.seat.to_s] = target.seat
         session.save!
         reply(status, render(config['msg_vote_ok'], player: player, target: target))
+        hurry_if_all_voted!
       end
 
-      # {seat => 표 수}
+      # [무효]: 아무도 고발하지 않는다 (누구의 표로도 세지 않는다)
+      ABSTAIN = -1
+
+      def abstain(player, status, _args)
+        return reply(status, render(config['msg_wrong_time'])) unless state['phase'] == 'day'
+
+        state['votes'][player.seat.to_s] = ABSTAIN
+        session.save!
+        reply(status, render(config['msg_abstain_ok'], player: player))
+        hurry_if_all_voted!
+      end
+
+      # 살아 있는 사람이 모두 고발(무효표 포함)하면 5초 뒤 결과 (낮 시간이 남아도). 그사이 누가 바꾸면 다시 5초
+      ALL_VOTED_SECONDS = 5
+
+      def hurry_if_all_voted!
+        votes = state['votes'] || {}
+        return unless alive_players.all? { |each| votes.key?(each.seat.to_s) }
+
+        Game::Engine.set_deadline_in!(session, ALL_VOTED_SECONDS.seconds)
+      end
+
+      def all_voted?
+        votes = state['votes'] || {}
+        state['phase'] == 'day' && alive_players.all? { |each| votes.key?(each.seat.to_s) }
+      end
+
+      # {seat => 표 수} (무효표는 빼고)
       def tally_counts
-        (state['votes'] || {}).values.tally.transform_keys(&:to_s)
+        (state['votes'] || {}).values.reject { |target| target == ABSTAIN }.tally.transform_keys(&:to_s)
       end
 
       def end_day!
         counts = tally_counts
-        tally = counts.sort_by { |_, count| -count }.map { |seat, count| "#{players.find { |p| p.seat.to_s == seat }&.name} #{count}표" }.join("\n").presence || '-'
+        abstained = (state['votes'] || {}).values.count(ABSTAIN)
+        lines = counts.sort_by { |_, count| -count }.map { |seat, count| "#{players.find { |p| p.seat.to_s == seat }&.name} #{count}표" }
+        lines << "무효 #{abstained}표" if abstained.positive?
+        tally = lines.join("\n").presence || '-'
         best = counts.values.max
         leaders = counts.select { |_, count| count == best }.keys
         target_seat = if leaders.size == 1
@@ -419,6 +489,7 @@ module Game
         else
           post(render(config['msg_no_expel'], day: state['day'], tally: tally))
         end
+        record_history!('phase' => 'day', 'day' => state['day'].to_i, 'votes' => (state['votes'] || {}).dup, 'out' => target_seat&.to_i)
         return if finish_if_decided!
 
         begin_night!
@@ -428,11 +499,20 @@ module Game
         return finish_limit! if limit_reached?
 
         state['phase'] = 'night'
+        state['phase_started_at'] = Time.current.iso8601(3)
         state['phase_no'] = state['phase_no'].to_i + 1
         state['night'] = { 'petrify' => {}, 'protect' => nil, 'investigated' => [], 'prophecy' => nil }
         session.save!
         post(render(config['msg_night'], day: state['day'], minutes: config['night_minutes']))
         set_phase_deadline!(config['night_minutes'])
+        # 방주의 밤은 둘로 나뉜다: 앞 절반은 비밀의 방에서 표적, 뒤 절반은 기숙사에서 예언
+        state['night']['half_at'] = (Time.current + ((session.deadline_at - Time.current) / 2)).iso8601
+        session.save!
+      end
+
+      def petrify_open?
+        half = state.dig('night', 'half_at')
+        half.blank? || Time.zone.parse(half) > Time.current
       end
 
       def night_action?(player, status, role)
@@ -449,6 +529,7 @@ module Game
 
       def petrify(player, status, args)
         return unless night_action?(player, status, 'traitor')
+        return dm(player, render(config['msg_petrify_over'])) unless petrify_open?
 
         target = target_in(status, player, args: args)
         return dm(player, render(config['msg_need_target'])) if target.nil?
@@ -456,6 +537,7 @@ module Game
         state['night']['petrify'][player.seat.to_s] = target.seat
         session.save!
         dm(player, render(config['msg_action_ok'], target: target))
+        hurry_if_night_done!
       end
 
       def investigate(player, status, args)
@@ -466,10 +548,15 @@ module Game
         return dm(player, render(config['msg_need_target'])) if target.nil?
 
         state['night']['investigated'] << player.seat
-        text = render(config['msg_investigated'], target: target, faction: faction_name(role_of(target.seat)))
+        state['night']['looks'] = (state['night']['looks'] || {}).merge(player.seat.to_s => target.seat) # 다시 보기
+        # 진영 대신 '방주입니다 / 방주가 아닙니다'로 알려 준다
+        traitor = role_name('traitor')
+        verdict = DARK.include?(role_of(target.seat)) ? "#{traitor}입니다." : "#{traitor}#{Game::Text.particle(traitor[-1], '이가')} 아닙니다."
+        text = render(config['msg_investigated'], target: target, verdict: verdict, faction: faction_name(role_of(target.seat)))
         add_note!(player, text)
         session.save!
         dm(player, text)
+        hurry_if_night_done!
       end
 
       def protect(player, status, args)
@@ -482,6 +569,26 @@ module Game
         state['night']['protect'] = target.seat
         session.save!
         dm(player, render(config['msg_action_ok'], target: target))
+        hurry_if_night_done!
+      end
+
+      # 밤: 역할이 있는 사람(살아 있는 방주·오러·치유사)이 모두 행동하면 5초 뒤 아침 (밤 시간이 남아도). 그사이 바꾸면 다시 5초
+      def night_done?
+        return false unless state['phase'] == 'night'
+
+        night = state['night'] || {}
+        alive_players.all? do |each|
+          case role_of(each.seat)
+          when 'traitor' then (night['petrify'] || {}).key?(each.seat.to_s) && (night['prophecy'].present? || !seer_alive?)
+          when 'auror' then Array(night['investigated']).include?(each.seat)
+          when 'healer' then !night['protect'].nil?
+          else true
+          end
+        end
+      end
+
+      def hurry_if_night_done!
+        Game::Engine.set_deadline_in!(session, ALL_VOTED_SECONDS.seconds) if night_done?
       end
 
       # 예언자가 받는 예언은 언제나 진실이다. 방주는 사실에 맞는 예언만 골라 전할 수 있다 (거짓이면 시스템이 막는다).
@@ -498,10 +605,31 @@ module Game
         text, error = build_prophecy(kind, targets)
         return dm(player, render(config[error], **prophecy_words)) if error
 
+        return dm(player, render(config['msg_prophecy_sent'])) if state.dig('night', 'prophecy').present?
+
         state['night']['prophecy'] = { 'text' => text, 'by' => player.seat }
         session.save!
         dm(player, render(config['msg_prophecy_ok'], text: text))
         relay_chat(player, "(#{config['cmd_prophecy']}) #{text}")
+        # 보내는 순간 예언자의 구슬이 빛나고 목소리가 들린다
+        deliver_prophecy!
+        hurry_if_night_done!
+      end
+
+      # 밤이 끝날 때까지 예언을 보내지 않았으면 사실인 예언 하나가 저절로 전해진다 (예언은 건너뛸 수 없다)
+      def auto_prophecy!
+        return if state.dig('night', 'prophecy').present? || !seer_alive?
+
+        target = alive_players.sample
+        text = render(config['msg_prophecy_role'], target: target, role: role_name(role_of(target.seat)))
+        state['night']['prophecy'] = { 'text' => text, 'by' => nil, 'auto' => true }
+        traitor = alive_players.find { |each| role_of(each.seat) == 'traitor' }
+        relay_chat(traitor, render(config['msg_prophecy_auto'], text: text)) if traitor
+        deliver_prophecy!
+      end
+
+      def seer_alive?
+        alive_players.any? { |each| role_of(each.seat) == 'seer' }
       end
 
       def prophecy_words
@@ -510,7 +638,7 @@ module Game
 
       # 예언 종류 말 → light / dark / role / pair
       def prophecy_kind(token)
-        { config['faction_light'] => 'light', config['faction_dark'] => 'dark', '역할' => 'role', '둘중' => 'pair' }[token]
+        { config['faction_light'] => 'light', config['faction_dark'] => 'dark', '역할' => 'role', '둘중' => 'pair', '셋중' => 'trio', '같은편' => 'same', '다른편' => 'diff', '남은수' => 'count' }[token]
       end
 
       # [문구, nil] 또는 [nil, 오류 문구 키]
@@ -521,7 +649,7 @@ module Game
           return [nil, 'msg_prophecy_usage'] if first.nil?
           return [nil, 'msg_prophecy_false'] if role_of(first.seat) == 'traitor'
 
-          [render(config['msg_prophecy_light'], target: first, faction: config['faction_light']), nil]
+          [render(config['msg_prophecy_light'], target: first, traitor: role_name('traitor'), faction: config['faction_light']), nil]
         when 'dark'
           return [nil, 'msg_prophecy_usage'] if first.nil?
           return [nil, 'msg_prophecy_false'] unless role_of(first.seat) == 'traitor'
@@ -536,6 +664,22 @@ module Game
           return [nil, 'msg_prophecy_false'] unless [first, second].any? { |other| role_of(other.seat) == 'traitor' }
 
           [render(config['msg_prophecy_pair'], player_a: first, player_b: second, traitor: role_name('traitor')), nil]
+        when 'trio'
+          third = targets[2]
+          return [nil, 'msg_prophecy_usage'] if third.nil?
+          return [nil, 'msg_prophecy_false'] unless [first, second, third].any? { |other| role_of(other.seat) == 'traitor' }
+
+          [render(config['msg_prophecy_trio'], player_a: first, player_b: second, player_c: third, traitor: role_name('traitor')), nil]
+        when 'same', 'diff'
+          return [nil, 'msg_prophecy_usage'] if second.nil?
+
+          same = DARK.include?(role_of(first.seat)) == DARK.include?(role_of(second.seat))
+          return [nil, 'msg_prophecy_false'] unless same == (kind == 'same')
+
+          [render(config["msg_prophecy_#{kind}"], player_a: first, player_b: second), nil]
+        when 'count'
+          count = alive_players.count { |other| role_of(other.seat) == 'traitor' }
+          [render(config['msg_prophecy_count'], traitor: role_name('traitor'), count: count), nil]
         else
           [nil, 'msg_prophecy_usage']
         end
@@ -552,7 +696,7 @@ module Game
       end
 
       def relay_chat(player, text)
-        state['dark_chat'] = (Array(state['dark_chat']) + [{ 'name' => player.name, 'text' => text }]).last(CHAT_KEEP)
+        state['dark_chat'] = (Array(state['dark_chat']) + [{ 'name' => player.name, 'text' => text, 'at' => Time.current.iso8601(3) }]).last(CHAT_KEEP)
         session.save!
         alive_players.select { |other| other.id != player.id && role_of(other.seat) == 'traitor' }.each do |other|
           dm(other, render(config['msg_chat'], player: player, text: text))
@@ -586,7 +730,10 @@ module Game
         else
           post(render(config['msg_saved']))
         end
-        deliver_prophecy!
+        out_seat = Array(state['out']).last&.then { |entry| entry['by'] == 'petrify' && entry['day'].to_i == state['day'].to_i ? entry['seat'] : nil }
+        record_history!('phase' => 'night', 'day' => state['day'].to_i, 'petrify' => (night['petrify'] || {}).dup, 'protect' => night['protect'],
+                        'looks' => (night['looks'] || {}).dup, 'prophecy' => night.dig('prophecy', 'text'), 'out' => out_seat)
+        auto_prophecy!
         return if finish_if_decided!
 
         state['day'] = state['day'].to_i + 1
@@ -604,6 +751,72 @@ module Game
         when 'auror' then { kind: 'investigate', picked: nil, used: night['investigated'].to_a.include?(player.seat) }
         when 'healer' then { kind: 'protect', picked: night['protect'], blocked: config['healer_repeat'] ? nil : state['last_protect'] }
         end
+      end
+
+      # 다시 보기: 낮(고발)·밤(석화·보호·조사·예언)마다 일어난 일. 끝난 뒤에만 화면에 보낸다
+      def record_history!(entry)
+        state['history'] = Array(state['history']) + [entry.merge('from' => state['phase_started_at'], 'to' => Time.current.iso8601(3))]
+      end
+
+      # 다시 보기: 판 전체의 대화 (전체 채팅은 GameMessage, 방주방은 state['dark_chat']). 끝난 뒤에만
+      def chat_log
+        names = players.index_by(&:account_id)
+        public = session.messages.where(kind: 'chat').includes(:author).order(:id).map do |message|
+          { name: names[message.author_id]&.name || message.author&.display_name.presence || message.author&.username.to_s, text: message.text, at: message.created_at.iso8601(3), dark: false }
+        end
+        dark = Array(state['dark_chat']).filter_map { |line| line['at'] && { name: line['name'], text: line['text'], at: line['at'], dark: true } }
+        (public + dark).sort_by { |line| line[:at] }
+      end
+
+      # 끝난 뒤 MVP 후보 (이긴 진영 먼저). [{ key, title, text, seat, dark }]
+      #   명탐정: 방주를 가장 많이 고발한 호그와트 / 날카로운 등불: 방주를 조사로 찾아낸 오러 / 수호천사: 석화를 막아 낸 치유사
+      #   바실리스크의 주인: 석화를 가장 많이 성공시킨 방주 / 완벽한 위장: 고발을 가장 적게 받은 방주 / 끝까지 살아남은: 마지막까지 버틴 호그와트
+      def awards
+        return [] unless session.status == 'finished'
+
+        roles = state['roles'] || {}
+        dark_seats = roles.select { |_, role| DARK.include?(role) }.keys.map(&:to_i)
+        history = Array(state['history'])
+        days = history.select { |entry| entry['phase'] == 'day' }
+        nights = history.select { |entry| entry['phase'] == 'night' }
+        traitor = role_name('traitor')
+        list = []
+
+        hits = Hash.new(0)
+        days.each { |entry| entry['votes'].to_h.each { |from, to| hits[from.to_i] += 1 if dark_seats.include?(to) && !dark_seats.include?(from.to_i) } }
+        best = hits.max_by { |_, count| count }
+        list << award('detective', '명탐정', "#{traitor}#{Game::Text.particle(traitor[-1], '을를')} #{best[1]}번 고발했습니다.", best[0]) if best
+
+        looks = Hash.new(0)
+        nights.each { |entry| entry['looks'].to_h.each { |from, to| looks[from.to_i] += 1 if dark_seats.include?(to) } }
+        best = looks.max_by { |_, count| count }
+        list << award('lantern', '날카로운 등불', "조사로 #{traitor}#{Game::Text.particle(traitor[-1], '을를')} #{best[1]}번 찾아냈습니다.", best[0]) if best
+
+        saves = nights.count { |entry| entry['out'].nil? && entry['protect'] && entry['petrify'].to_h.values.include?(entry['protect']) }
+        healer = roles.key('healer')
+        list << award('guardian', '수호천사', "바실리스크에게서 #{saves}번 학생을 지켜 냈습니다.", healer.to_i) if healer && saves.positive?
+
+        kills = Hash.new(0)
+        nights.each { |entry| entry['petrify'].to_h.each { |from, to| kills[from.to_i] += 1 if entry['out'] && to == entry['out'] } }
+        best = kills.max_by { |_, count| count }
+        list << award('basilisk', '바실리스크의 주인', "#{best[1]}명을 돌로 만들었습니다.", best[0]) if best
+
+        received = dark_seats.index_with { |seat| days.sum { |entry| entry['votes'].to_h.values.count(seat) } }
+        if (sly = received.min_by { |_, count| count })
+          list << award('disguise', '완벽한 위장', sly[1].zero? ? '한 번도 의심받지 않았습니다.' : "고발을 #{sly[1]}표만 받았습니다.", sly[0])
+        end
+
+        survivors = Array(state['alive']).reject { |seat| dark_seats.include?(seat) }
+        list << award('survivor', '끝까지 살아남은', '마지막까지 석화되지도 퇴학되지도 않았습니다.', survivors.first) if survivors.any?
+
+        winner_dark = state['winner'] == 'dark'
+        list.compact.sort_by { |item| item[:dark] == winner_dark ? 0 : 1 }
+      end
+
+      def award(key, title, text, seat)
+        return if seat.nil? || players.none? { |player| player.seat == seat }
+
+        { key: key, title: title, text: text, seat: seat, dark: DARK.include?(role_of(seat)) }
       end
 
       def knock_out!(seat, by)

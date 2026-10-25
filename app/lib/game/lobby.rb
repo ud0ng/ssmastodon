@@ -93,7 +93,9 @@ module Game
       return if text.blank?
 
       message = GameMessage.create!(session: session, kind: 'chat', author: account, text: text, payload: team ? { 'team' => team } : {})
-      old = session.messages.where(kind: 'chat').order(id: :desc).offset(CHAT_KEEP).pluck(:id)
+      # 다시 보기에 채팅을 모두 보여 주는 컨텐츠(비밀의 방)는 더 많이 남긴다
+      keep = session.kind_class.respond_to?(:chat_keep) ? session.kind_class.chat_keep : CHAT_KEEP
+      old = session.messages.where(kind: 'chat').order(id: :desc).offset(keep).pluck(:id)
       GameMessage.where(id: old).delete_all if old.any?
       message
     end

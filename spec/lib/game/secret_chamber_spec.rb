@@ -128,7 +128,7 @@ RSpec.describe Game::Web::SecretChamber do
     auror = player_with('auror')
 
     act(auror.account, '조사', targets: [traitor.account])
-    expect(secret_texts_for(auror.account)).to include(a_string_including('진영은 「어둠」'))
+    expect(secret_texts_for(auror.account)).to include(a_string_including('방주입니다'))
 
     act(traitor.account, '석화', targets: [student.account])
     session.with_lock { kind.timeout! }
@@ -186,13 +186,50 @@ RSpec.describe Game::Web::SecretChamber do
     # 사실인 예언: 이름(인자)으로 대상을 고른다
     act(traitor.account, '예언', ['둘중', student.account.username, traitor.account.username])
     expect(session.reload.state.dig('night', 'prophecy', 'text')).to include('적어도 한 명은 방주')
+    # 보내는 순간 예언자에게 전해지고, 그날 밤에는 다시 보낼 수 없다
+    expect(session.reload.state.dig('notes', seer.seat.to_s).last['text']).to include('적어도 한 명은 방주')
+    act(traitor.account, '예언', ['역할', student.account.username])
+    expect(secret_texts_for(traitor.account).last).to include('이미 보냈습니다')
     session.with_lock { kind.timeout! }
 
-    expect(session.reload.state.dig('notes', seer.seat.to_s).last['text']).to include('적어도 한 명은 방주')
+    expect(session.reload.state.dig('notes', seer.seat.to_s).size).to eq 1
     expect(kind.view_for(seer)[:notes].size).to eq 1
     expect(kind.view_for(seer)[:dark_chat]).to eq []
     expect(kind.view_for(traitor)[:my_role][:name]).to eq '방주'
-    expect(kind.view_for(traitor)[:prophecy_kinds].size).to eq 4
+    expect(kind.view_for(traitor)[:prophecy_kinds].size).to eq 8
+  end
+
+  it 'splits the traitor night, never skips the prophecy and knows more kinds' do
+    start_game!
+    session.with_lock { kind.timeout! }
+    traitor = player_with('traitor')
+    seer = player_with('seer')
+    student = player_with('student')
+    other = players_without('traitor').find { |p| p.seat != student.seat }
+
+    # 같은편 · 다른편: 사실이 아니면 막힌다
+    act(traitor.account, '예언', ['같은편', student.account.username, traitor.account.username])
+    expect(session.reload.state.dig('night', 'prophecy')).to be_nil
+    act(traitor.account, '예언', ['같은편', student.account.username, other.account.username])
+    expect(session.reload.state.dig('night', 'prophecy', 'text')).to include('같은 편')
+
+    # 앞 절반이 지나면 표적을 고를 수 없다
+    current = session
+    current.state['night']['half_at'] = 1.minute.ago.iso8601
+    current.save!
+    act(traitor.account, '석화', targets: [student.account])
+    expect(session.reload.state.dig('night', 'petrify')).to eq({})
+    expect(secret_texts_for(traitor.account).last).to include('표적을 고르는 시간이 끝났습니다')
+
+    # 다음 밤에 예언을 안 보내고 끝나도 예언자는 사실인 예언을 받는다
+    session.with_lock { kind.timeout! } # 아침
+    session.with_lock { kind.timeout! } # 밤
+    expect(session.reload.state['phase']).to eq 'night'
+    before = Array(session.state.dig('notes', seer.seat.to_s)).size
+    session.with_lock { kind.timeout! }
+    notes = Array(session.reload.state.dig('notes', seer.seat.to_s))
+    expect(notes.size).to eq before + 1
+    expect(notes.last['text']).to include('역할은')
   end
 
   it 'accepts night targets by name' do
@@ -217,6 +254,81 @@ RSpec.describe Game::Web::SecretChamber do
     expect(kind.view_for(student)[:players].map { |p| p[:role_name] }).to all(be_present)
     other = players_without('traitor').find { |p| p.seat != student.seat && session.state['alive'].include?(p.seat) }
     expect(kind.view_for(other)[:players].reject { |p| p[:seat] == other.seat || p[:out] }.map { |p| p[:role_name] }.compact).to eq []
+  end
+
+  it 'counts abstain votes for no one and ends the day 5 seconds after everyone votes' do
+    start_game!
+    alive = session.reload.players.to_a
+    target = players_without('traitor').last # 방주가 퇴학되면 바로 끝나니 호그와트 쪽을
+    alive.first(3).each { |voter| act(voter.account, '고발', targets: [target.account]) }
+    act(alive[3].account, '무효')
+
+    expect(session.reload.state['votes'][alive[3].seat.to_s]).to eq described_class::ABSTAIN
+    expect(kind.view_for(alive[3])[:players].find { |p| p[:seat] == alive[3].seat }[:abstained]).to be true
+    expect(kind.view_for(alive.first)[:all_voted]).to be false
+    long_deadline = session.deadline_at
+    expect(long_deadline).to be > 1.minute.from_now
+
+    (alive - alive.first(4)).each { |voter| act(voter.account, '무효') }
+    expect(kind.view_for(alive.first)[:all_voted]).to be true
+    expect(session.reload.deadline_at).to be <= 6.seconds.from_now
+
+    session.with_lock { kind.timeout! }
+    expect(session.reload.state['phase']).to eq 'night'
+    expect(session.state['out'].last).to include('seat' => target.seat, 'by' => 'vote')
+    expect(session.messages.where(account_id: nil).map(&:text).join).to include('무효 4표')
+  end
+
+  it 'ends the night 5 seconds after every role has acted' do
+    start_game!
+    session.with_lock { kind.timeout! } # 1일째 낮 → 밤
+    expect(session.reload.state['phase']).to eq 'night'
+    traitor = player_with('traitor')
+    auror = player_with('auror')
+    healer = player_with('healer')
+    victim = player_with('student')
+
+    act(traitor.account, '석화', targets: [victim.account])
+    act(auror.account, '조사', targets: [traitor.account])
+    expect(kind.view_for(traitor)[:all_acted]).to be false
+    expect(session.reload.deadline_at).to be > 1.minute.from_now
+
+    act(healer.account, '보호', targets: [healer.account])
+    expect(kind.view_for(traitor)[:all_acted]).to be false # 예언자가 살아 있으면 예언까지 보내야 끝난다
+    act(traitor.account, '예언', ['남은수'])
+    expect(kind.view_for(traitor)[:all_acted]).to be true
+    expect(session.reload.deadline_at).to be <= 6.seconds.from_now
+    expect(session.state.dig('night', 'looks')).to eq(auror.seat.to_s => traitor.seat)
+  end
+
+  it 'records each day and night for the replay and picks MVPs when it ends' do
+    start_game!
+    traitor = player_with('traitor')
+    lights = players_without('traitor')
+    # 1일째 낮: 모두 방주를 고발 → 퇴학 → 호그와트 승리
+    lights.each { |voter| act(voter.account, '고발', targets: [traitor.account]) }
+    act(traitor.account, '고발', targets: [lights.first.account])
+    expect(kind.view_for(traitor)[:history]).to eq [] # 진행 중에는 보내지 않는다
+
+    session.with_lock { kind.timeout! } if session.reload.status == 'active'
+
+    expect(session.reload.status).to eq 'finished'
+    view = kind.view_for(lights.first)
+    expect(view[:history].first).to include('phase' => 'day', 'day' => 1, 'out' => traitor.seat)
+    expect(view[:awards].first).to include(key: 'detective', title: '명탐정', dark: false)
+    expect(view[:awards].pluck(:key)).to include('survivor', 'disguise')
+  end
+
+  it 'lets anyone watch, showing every role only to watching staff' do
+    start_game!
+
+    expect(described_class.spectatable?).to be true
+    member_view = kind.view_for(nil)
+    expect(member_view).to include(spectator: true, spectator_staff: false, dark_chat: [])
+    expect(member_view[:players].filter_map { |p| p[:role_name] }).to eq []
+    staff_view = kind.view_for(nil, staff: true)
+    expect(staff_view[:spectator_staff]).to be true
+    expect(staff_view[:players].map { |p| p[:role_name] }).to all(be_present)
   end
 
   it 'ends when the phase limit is reached, with the dark side winning by default' do
