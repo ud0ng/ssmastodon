@@ -39,6 +39,11 @@
               input_html: { type: 'number', min: StatusLengthValidator::MAX_CHARS_RANGE.min, max: StatusLengthValidator::MAX_CHARS_RANGE.max },
               wrapper: :with_block_label
 
+  .fields-group
+    = f.input :status_min_characters,
+              input_html: { type: 'number', min: StatusLengthValidator::MIN_CHARS_RANGE.min, max: StatusLengthValidator::MIN_CHARS_RANGE.max },
+              wrapper: :with_block_label
+
   %h4= t('admin.settings.community.search')
 
   .fields-group

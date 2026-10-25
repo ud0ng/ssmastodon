@@ -136,4 +136,70 @@ RSpec.describe StatusLengthValidator do
   def activemodel_errors
     instance_double(ActiveModel::Errors, add: nil)
   end
+
+  # 최소 글자수 (서버 설정 > 운영): 멘션·띄어쓰기는 세지 않고, 운영 계정과 [명령어]만 쓴 툿은 뺀다
+  describe 'minimum length' do
+    let(:member) { Fabricate(:account, username: 'harry') }
+    let(:friend) { Fabricate(:account, username: 'ron') }
+
+    before { Setting.status_min_characters = 5 }
+
+    def build(account, text, spoiler_text: '')
+      Status.new(account: account, text: text, spoiler_text: spoiler_text)
+    end
+
+    def short?(status)
+      subject.validate(status)
+      status.errors[:text].any?
+    end
+
+    it 'blocks posts shorter than the minimum, not counting mentions and spaces' do
+      expect(short?(build(member, "@#{friend.username} 안 녕"))).to be true
+      expect(short?(build(member, "@#{friend.username} 안녕하세요"))).to be false
+      expect(short?(build(member, '가 나 다 라 마'))).to be false
+    end
+
+    it 'does not block command-only posts or staff accounts' do
+      expect(short?(build(member, "@system @#{friend.username} [고발]"))).to be false
+      expect(short?(build(member, '@system [예언/호그와트]'))).to be false
+      expect(short?(build(member, '@system 응응'))).to be true # 명령어 없이 짧은 글은 막는다
+
+      admin = Fabricate(:user, role: Fabricate(:user_role, name: 'Boss', permissions: UserRole::FLAGS[:administrator])).account
+      expect(short?(build(admin, '네'))).to be false
+    end
+
+    it 'does not block posts with media or polls' do
+      with_media = build(member, '네')
+      with_media.media_attachments = [Fabricate(:media_attachment, account: member)]
+      expect(short?(with_media)).to be false
+
+      with_poll = build(member, '골라')
+      with_poll.poll = Poll.new(account: member, options: %w(하나 둘), expires_at: 1.day.from_now)
+      expect(short?(with_poll)).to be false
+    end
+
+    it 'does not block content, event and bot commands even with other words' do
+      system = Fabricate(:account, username: 'system')
+      allow(Game::System).to receive(:account).and_return(system)
+      Fabricate(:account, username: 'shopbot', actor_type: 'Service')
+
+      expect(short?(build(member, "@system [젤리빈] @#{friend.username} 한판"))).to be false
+      expect(short?(build(member, '@shopbot [구매/버터맥주] 줘'))).to be false
+      # 봇이 아닌 사람에게 쓴 대괄호는 명령어가 아니다
+      expect(short?(build(member, "@#{friend.username} [ㅋ] 응"))).to be true
+    end
+
+    it 'is off at zero and only checks new or edited text' do
+      Setting.status_min_characters = 0
+      expect(short?(build(member, '네'))).to be false
+
+      Setting.status_min_characters = 0
+      status = Fabricate(:status, account: member, text: '네')
+      Setting.status_min_characters = 5
+      status.reload.sensitive = true
+      expect(short?(status)).to be false
+      status.text = '응'
+      expect(short?(status)).to be true
+    end
+  end
 end

@@ -3005,6 +3005,7 @@ en:
     errors:
       in_reply_not_found: The post you are trying to reply to does not appear to exist.
     over_character_limit: character limit of %{max} exceeded
+    under_character_limit: posts must have at least %{min} characters, not counting mentions and spaces
     pin_errors:
       direct: Posts that are only visible to mentioned users cannot be pinned
       limit: You have already pinned the maximum number of posts

@@ -2979,6 +2979,7 @@ ko:
     errors:
       in_reply_not_found: 답장하려는 게시물이 존재하지 않습니다.
     over_character_limit: 최대 %{max}자까지 입력할 수 있습니다
+    under_character_limit: 툿은 멘션과 띄어쓰기를 빼고 최소 %{min}자 이상 써야 합니다
     pin_errors:
       direct: 멘션된 사용자들에게만 보이는 게시물은 고정될 수 없습니다
       limit: 이미 너무 많은 게시물을 고정했습니다

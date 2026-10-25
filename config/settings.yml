@@ -11,6 +11,7 @@ defaults: &defaults
   site_contact_email: ''
   registrations_mode: 'none'
   status_max_characters: 1000
+  status_min_characters: 0
   status_search_enabled: false
   status_search_scope: following
   community_theme_enabled: false
