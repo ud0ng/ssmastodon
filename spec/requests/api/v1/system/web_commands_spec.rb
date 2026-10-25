@@ -38,13 +38,16 @@ RSpec.describe 'Web-only content commands' do
     expect(Status.where(account_id: [harry.account_id, ron.account_id, system.id]).count).to eq toots # 툿이 늘지 않는다
     expect(session.reload.state['moves'].keys).to include(session.player_for(harry.account).seat.to_s)
 
+    # 갈 수 없는 길을 보내면 나에게만 비밀 안내가 온다
+    post '/api/v1/system/commands', headers: headers_for(harry), params: { session_id: session.id, command: '이동', args: '북/북/북/북' }
+
     get "/api/v1/system/sessions/#{session.id}", headers: headers_for(harry)
     messages = response.parsed_body['messages']
-    expect(messages.pluck('id').grep(/\Am\d+\z/).size).to be >= 2
-    expect(messages.count { |message| message['secret'] }).to eq 2 # 내게 온 비밀 안내(이동 안내·접수)
+    expect(messages.pluck('id').grep(/\Am\d+\z/).size).to be >= 1
+    expect(messages.count { |message| message['secret'] }).to eq 1
 
     get "/api/v1/system/sessions/#{session.id}", headers: headers_for(ron)
-    expect(response.parsed_body['messages'].count { |message| message['secret'] }).to eq 1 # 남의 비밀 안내는 안 보인다
+    expect(response.parsed_body['messages'].count { |message| message['secret'] }).to eq 0 # 남의 비밀 안내는 안 보인다
   end
 
   it 'ignores commands from someone who is not in the game' do

@@ -37,7 +37,7 @@ import { StageFrame } from './stage_page';
 import { StageTutorial } from './stage_tutorial';
 import type { MmChatMessage } from './marauders_stage';
 import { MaraudersStage } from './marauders_stage';
-import { MazePlay } from './maze';
+import { MazeStage, type MzChat } from './maze_stage';
 import type { CsMessage } from './chamber_stage';
 import { ChamberStage } from './chamber_stage';
 import { ChamberPlay } from './secret_chamber';
@@ -359,16 +359,17 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   const mapRoom = data?.kind === 'marauders_map' && ['active', 'finished'].includes(data.status);
   // 비밀의 방 게임방 (참가자·관전하는 운영진)
   const chamberRoom = data?.kind === 'secret_chamber' && ['active', 'finished'].includes(data.status);
+  const mazeRoom = data?.kind === 'maze' && ['active', 'finished'].includes(data.status);
 
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, inLobby || flyingRoom || mapRoom || chamberRoom ? LOBBY_REFRESH_MS : REFRESH_MS);
+    const timer = window.setInterval(load, inLobby || flyingRoom || mapRoom || chamberRoom || mazeRoom ? LOBBY_REFRESH_MS : REFRESH_MS);
     const pending = timers.current;
     return () => {
       window.clearInterval(timer);
       pending.forEach((each) => { window.clearTimeout(each); });
     };
-  }, [load, inLobby, flyingRoom, mapRoom, chamberRoom]);
+  }, [load, inLobby, flyingRoom, mapRoom, chamberRoom, mazeRoom]);
 
   // 새 메시지가 오면 메시지 칸만 맨 아래로
   useLayoutEffect(() => {
@@ -512,7 +513,17 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
             onChanged={load}
           />
         )}
-        {(!data || (!flyingRoom && !mapRoom && !chamberRoom && !data.lobby)) && (
+        {data && mazeRoom && (
+          <MazeStage
+            sessionId={data.id}
+            name={data.name}
+            chat={data.messages.filter((message) => message.chat).map((message): MzChat => ({ id: message.id, mine: message.mine, name: message.name, acct: message.acct, avatar: message.avatar, text: message.text, team: message.team ?? null }))}
+            staff={Boolean(data.staff)}
+            isPlayer={data.player}
+            onChanged={load}
+          />
+        )}
+        {(!data || (!flyingRoom && !mapRoom && !chamberRoom && !mazeRoom && !data.lobby)) && (
           <StageFrame back='/system/group' label={title}>
             {(data || failed) && (
               <p className='stage-notice'>
@@ -575,7 +586,6 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
         <div className={['maze', 'secret_chamber'].includes(data.kind) ? 'system-page game-room__status game-room__status--maze' : 'system-page game-room__status'}>
           {current && !boardShown && <ContentCardView card={current} variant='room' />}
           {boardShown && data.kind === 'secret_chamber' && <ChamberPlay sessionId={data.id} onMoved={load} />}
-          {boardShown && data.kind === 'maze' && <MazePlay sessionId={data.id} onMoved={load} />}
         </div>
       )}
 

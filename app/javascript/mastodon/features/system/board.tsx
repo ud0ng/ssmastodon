@@ -13,7 +13,6 @@ import { ContentCardView } from 'mastodon/components/content_card';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 
-import { MazePlay } from './maze';
 
 const messages = defineMessages({
   commandPlaceholder: { id: 'system.board.command_placeholder', defaultMessage: 'Command, e.g. brew/dragon blood bat wing' },
@@ -123,7 +122,6 @@ export const GameBoard: React.FC<{ sessionId: string; onChanged?: () => void; sh
 
   return (
     <div className='system-board'>
-      {data.kind === 'maze' && data.status === 'active' && <MazePlay sessionId={data.id} onMoved={load} />}
 
       {last && <ContentCardView card={last.card} onAction={busy ? undefined : handleAction} />}
 
