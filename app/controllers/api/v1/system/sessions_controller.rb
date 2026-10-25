@@ -9,7 +9,7 @@ class Api::V1::System::SessionsController < Api::BaseController
   MESSAGE_LIMIT = 200
 
   before_action -> { doorkeeper_authorize! :read }, only: [:show, :view]
-  before_action -> { doorkeeper_authorize! :write }, only: [:move, :destroy, :ready, :cancel_start, :chat, :join, :leave, :start_now, :accept, :decline, :invite_more, :team]
+  before_action -> { doorkeeper_authorize! :write }, only: [:move, :destroy, :ready, :cancel_start, :chat, :join, :leave, :start_now, :accept, :decline, :invite_more, :team, :role]
   before_action :require_user!
   before_action :require_contents_open!
   before_action :set_session
@@ -169,6 +169,18 @@ class Api::V1::System::SessionsController < Api::BaseController
 
     result = @session.with_lock { kind.new(@session.reload).change_team!(@session.players.find(player.id), force: force) }
     return render json: { error: { full: '바꾸려는 팀의 정원이 가득 찼습니다.', closed: '지금은 팀을 바꿀 수 없습니다.' }.fetch(result) }, status: 422 unless result == :ok
+
+    show
+  end
+
+  # 비밀의 방 대기방: 운영진이 참가자의 역할을 몰래 정해 둔다 (role 이 비면 무작위로 되돌림)
+  def role
+    player = @session.players.find_by(account_id: params[:account_id])
+    kind = @session.kind_class
+    return render json: { error: 'forbidden' }, status: 403 if !staff? || player.nil? || !(kind.respond_to?(:lobby_roles?) && kind.lobby_roles?)
+
+    result = @session.with_lock { kind.new(@session.reload).preset_role!(@session.players.find(player.id), params[:role].to_s) }
+    return render json: { error: { closed: '지금은 역할을 정할 수 없습니다.', invalid: '없는 역할입니다.' }.fetch(result) }, status: 422 unless result == :ok
 
     show
   end

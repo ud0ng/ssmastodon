@@ -56,6 +56,8 @@ export interface LobbyData {
   // 초대한 이벤트: 운영진·연 사람은 캐릭터를 더 초대할 수 있다
   can_invite?: boolean;
   teams?: LobbyTeams | null;
+  // 운영진만: 몰래 정해 둘 수 있는 역할(비밀의 방)과 정해 둔 역할 {계정 번호 => 역할}. 정하지 않으면 시작할 때 무작위
+  roles?: { options: { key: string; name: string }[]; picks: Record<string, string> } | null;
   // 정원 초과·동시 진행·하루 제한으로 참가할 수 없을 때의 이유 (버튼이 '참가 불가'로 보이고 누르면 모달)
   join_block?: string | null;
   // 초대한 이벤트: 초대받은 사람은 대기방에서 [수락][거절]
@@ -126,7 +128,10 @@ const PlayerCard: React.FC<{
   // 운영진: 이 참가자를 다른 팀으로 (버튼 글자 = 옮길 팀 이름)
   moveTo?: string;
   onMove?: (player: LobbyPlayer) => void;
-}> = ({ player, mine, canToggle, busy, bubble, onToggle, moveTo, onMove }) => (
+  // 운영진: 몰래 역할 정하기
+  roles?: LobbyData['roles'];
+  onRole?: (player: LobbyPlayer, role: string) => void;
+}> = ({ player, mine, canToggle, busy, bubble, onToggle, moveTo, onMove, roles, onRole }) => (
   <li className={['game-stage__player', player.ready && 'game-stage__player--ready', mine && 'game-stage__player--me'].filter(Boolean).join(' ')}>
     {bubble && <span className='game-stage__speech' key={bubble}>{bubble}</span>}
     <span className='game-stage__avatar'>
@@ -149,8 +154,40 @@ const PlayerCard: React.FC<{
         <FormattedMessage id='lobby.move_team' defaultMessage='To {team}' values={{ team: moveTo }} />
       </button>
     )}
+    {roles && onRole && !player.waiting && <RolePick options={roles.options} value={roles.picks[player.account_id] ?? ''} busy={busy} onPick={(role) => { onRole(player, role); }} />}
   </li>
 );
+
+// 운영진: 참가자 역할을 몰래 정해 둔다 (참가자에게는 보이지 않는다). 펼쳐지는 목록, 맨 위는 무작위
+const RolePick: React.FC<{ options: { key: string; name: string }[]; value: string; busy: boolean; onPick: (role: string) => void }> = ({ options, value, busy, onPick }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = (event: MouseEvent) => { if (!ref.current?.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', close);
+    return () => { document.removeEventListener('mousedown', close); };
+  }, [open]);
+  const current = options.find((option) => option.key === value);
+  return (
+    <div ref={ref} className={['lobby-role', current && 'is-set', open && 'is-open'].filter(Boolean).join(' ')}>
+      <button type='button' className='lobby-role__face' disabled={busy} onClick={() => { setOpen((now) => !now); }} title='운영진에게만 보입니다'>
+        <span aria-hidden>🔒</span> {current ? current.name : <FormattedMessage id='lobby.role_random' defaultMessage='Random role' />} <i aria-hidden>▾</i>
+      </button>
+      {open && (
+        <ul className='lobby-role__list'>
+          {[{ key: '', name: '' }, ...options].map((option) => (
+            <li key={option.key || 'random'}>
+              <button type='button' className={option.key === value ? 'is-on' : undefined} onClick={() => { setOpen(false); if (option.key !== value) onPick(option.key); }}>
+                {option.key ? option.name : <FormattedMessage id='lobby.role_random' defaultMessage='Random role' />}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
 
 export const LobbyStage: React.FC<{
   sessionId: string;
@@ -213,7 +250,7 @@ export const LobbyStage: React.FC<{
           onChanged();
           // 참가·수락이 막히면 (정원 초과·하루 제한 등) 서버가 보낸 이유를 모달로 알린다
           const message = apiErrorMessage(reason);
-          if (message && ['join', 'accept', 'team'].includes(action)) {
+          if (message && ['join', 'accept', 'team', 'role'].includes(action)) {
             dispatch(openModal({ modalType: 'CONFIRM', modalProps: { title: intl.formatMessage(messages.joinFailed), message, confirm: intl.formatMessage(messages.ok), hideCancel: true, onConfirm: () => undefined } }));
           }
         })
@@ -319,6 +356,8 @@ export const LobbyStage: React.FC<{
               busy={busy || counting}
               bubble={bubbles[player.acct]}
               onToggle={toggle}
+              roles={lobby.can_manage && !counting ? lobby.roles : null}
+              onRole={(target, role) => { post('role', { account_id: target.account_id, role }); }}
             />
           ))}
         </ul>

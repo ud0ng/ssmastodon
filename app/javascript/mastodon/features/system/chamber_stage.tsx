@@ -1317,11 +1317,10 @@ const LogList: React.FC<{ log: CsMessage[] }> = ({ log }) => (
   </>
 );
 
-// ── 오른쪽: 우편함(부엉이가 가져온 양피지·쪽지) · 밀담 · 예언 ──
+// ── 오른쪽: 우편함(부엉이가 가져온 양피지·쪽지) · 예언 (방주끼리 이야기는 아래 채팅의 방주방) ──
 const SidePanel: React.FC<{ view: CView; letters: Letter[]; read: Set<string>; onOpen: (letter: Letter) => void; onSend: (command: string, args: string) => void; busy: boolean }> = ({ view, letters, read, onOpen, onSend, busy }) => {
   const traitor = view.my_role?.key === 'traitor';
-  const [tab, setTab] = useState<'notes' | 'dark' | 'prophecy'>('notes');
-  const [text, setText] = useState('');
+  const [tab, setTab] = useState<'notes' | 'prophecy'>('notes');
   const [kind, setKind] = useState('');
   const [targets, setTargets] = useState<string[]>(['', '']);
   const alive = view.players.filter((player) => player.alive);
@@ -1331,25 +1330,9 @@ const SidePanel: React.FC<{ view: CView; letters: Letter[]; read: Set<string>; o
     <aside className='cs-side'>
       <div className='cs-side__tabs'>
         <button type='button' className={tab === 'notes' ? 'is-on' : undefined} onClick={() => { setTab('notes'); }}>우편함{unread > 0 && <em>{unread}</em>}</button>
-        {traitor && <button type='button' className={tab === 'dark' ? 'is-on is-dark' : 'is-dark'} onClick={() => { setTab('dark'); }}>밀담</button>}
         {traitor && <button type='button' className={tab === 'prophecy' ? 'is-on is-dark' : 'is-dark'} onClick={() => { setTab('prophecy'); }}>예언</button>}
       </div>
       {tab === 'notes' && <Mailbox letters={letters} read={read} onOpen={onOpen} />}
-      {tab === 'dark' && (
-        <>
-          <ul className='cs-side__list is-dark'>
-            {view.dark_chat.map((line, index) => (
-              // eslint-disable-next-line react/no-array-index-key
-              <li key={`d${index}`}><b>{line.name}</b> {line.text}</li>
-            ))}
-            {view.dark_chat.length === 0 && <li className='is-empty'>동료 {view.traitor_name}와 몰래 이야기하세요.</li>}
-          </ul>
-          <form className='cs-side__form' onSubmit={(event) => { event.preventDefault(); if (text.trim()) { onSend(view.commands.chat ?? '밀담', text.trim()); setText(''); } }}>
-            <input value={text} maxLength={200} placeholder='밀담 (동료만 봄)' onChange={(event) => { setText(event.target.value); }} />
-            <button type='submit' className='cs-button cs-button--small' disabled={busy || !text.trim()}>보내기</button>
-          </form>
-        </>
-      )}
       {tab === 'prophecy' && chosen && (
         <div className='cs-side__prophecy'>
           <p>밤마다 예언자에게 진실 하나를 전합니다. 사실이 아닌 예언은 전해지지 않습니다.</p>
@@ -1383,47 +1366,129 @@ const SidePanel: React.FC<{ view: CView; letters: Letter[]; read: Set<string>; o
   );
 };
 
-// ── 아래: 전체 채팅 / 진행 기록 ──
-const ChatDock: React.FC<{ sessionId: string; chat: CsMessage[]; log: CsMessage[]; canChat: boolean; onSent: () => void }> = ({ sessionId, chat, log, canChat, onSent }) => {
-  const [tab, setTab] = useState<'chat' | 'log'>('chat');
+// ── 아래: 채팅 (도둑 지도처럼 탭으로 보는 곳, 입력칸 앞 고르기로 쓰는 곳) ──
+//   탭: 대화(전체) · 방주방(방주·관전) · 진행 기록. 쓰는 곳: 낮에는 전체/방주방, 밤에는 모두 잠들어 방주방만 (방주가 아니면 밤엔 채팅창이 없다)
+type ChatTab = 'all' | 'dark' | 'log';
+type WriteTo = 'all' | 'dark';
+
+const ChatDock: React.FC<{
+  sessionId: string;
+  view: CView;
+  chat: CsMessage[];
+  log: CsMessage[];
+  canChat: boolean;
+  busy: boolean;
+  onDark: (text: string) => void;
+  onSent: () => void;
+}> = ({ sessionId, view, chat, log, canChat, busy, onDark, onSent }) => {
+  const traitor = view.my_role?.key === 'traitor';
+  const night = view.phase === 'night' && view.status === 'active';
+  const showDark = traitor || (view.spectator && view.dark_chat.length > 0);
+  const tabs: ChatTab[] = showDark ? ['all', 'dark', 'log'] : ['all', 'log'];
+  const [tab, setTab] = useState<ChatTab>(traitor && night ? 'dark' : 'all');
+  // 쓰는 곳: 방주는 전체/방주방 (밤엔 방주방만), 나머지는 전체만
+  const writeOptions: WriteTo[] = traitor && view.alive_me && view.status === 'active' ? (night ? ['dark'] : ['all', 'dark']) : canChat && !night ? ['all'] : [];
+  const [writeTo, setWriteTo] = useState<WriteTo>(traitor && night ? 'dark' : 'all');
+  const target: WriteTo | null = writeOptions.includes(writeTo) ? writeTo : (writeOptions[0] ?? null);
+  const [pickOpen, setPickOpen] = useState(false);
   const [text, setText] = useState('');
   const listRef = useRef<HTMLUListElement>(null);
-  const shown = tab === 'chat' ? chat : log;
+
+  // 밤이 되면 방주는 방주방으로
+  useEffect(() => {
+    if (traitor && night) { setTab('dark'); setWriteTo('dark'); }
+  }, [traitor, night]);
+
+  // 안 본 수 (보고 있는 탭은 0)
+  const counts: Record<ChatTab, number> = { all: chat.length, dark: view.dark_chat.length, log: log.length };
+  const seen = useRef<Record<ChatTab, number>>({ ...counts });
+  seen.current[tab] = counts[tab];
+  const unread = (each: ChatTab) => Math.max(0, counts[each] - seen.current[each]);
+  const label = (each: ChatTab) => (each === 'all' ? '전체' : each === 'dark' ? `${view.traitor_name}방` : '진행 기록');
+
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [shown.length, tab]);
+  }, [chat.length, view.dark_chat.length, log.length, tab]);
+
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const value = text.trim();
+    if (!value || !target) return;
+    setText('');
+    if (target === 'dark') {
+      onDark(value);
+      return;
+    }
+    apiRequestPost(`v1/system/sessions/${sessionId}/chat`, { text: value })
+      .then(() => { onSent(); return true; })
+      .catch(() => { onSent(); });
+  };
+
+  const me = view.players.find((player) => player.seat === view.me);
   return (
-    <section className='cs-chat'>
+    <section className={tab === 'dark' ? 'cs-chat cs-chat--dark' : 'cs-chat'}>
       <div className='cs-chat__tabs'>
-        <button type='button' className={tab === 'chat' ? 'is-on' : undefined} onClick={() => { setTab('chat'); }}>대화</button>
-        <button type='button' className={tab === 'log' ? 'is-on' : undefined} onClick={() => { setTab('log'); }}>진행 기록</button>
+        {tabs.map((each) => (
+          <button key={each} type='button' className={[`is-${each}`, tab === each && 'is-on'].filter(Boolean).join(' ')} onClick={() => { setTab(each); }}>
+            {each === 'dark' && <SnakeIcon />} {label(each)}
+            {tab !== each && unread(each) > 0 && <b className='cs-chat__badge'>{unread(each) > 99 ? '99+' : unread(each)}</b>}
+          </button>
+        ))}
       </div>
       <ul ref={listRef} className={tab === 'log' ? 'cs-chat__list is-log' : 'cs-chat__list'}>
         {tab === 'log' && <LogList log={log} />}
-        {tab === 'chat' && shown.map((message) => (
-          <li key={message.id} className={[message.mine && 'is-mine', message.kind === 'system' && 'is-system'].filter(Boolean).join(' ')}>
-            {message.kind === 'chat' && message.avatar && <img src={message.avatar} alt='' />}
-            {message.kind === 'chat' && <strong>{message.name}</strong>}
-            <span>{message.kind === 'chat' ? `: ${message.text}` : message.text}</span>
+        {tab === 'all' && chat.map((message) => (
+          <li key={message.id} className={message.mine ? 'is-mine' : undefined}>
+            {message.avatar && <img src={message.avatar} alt='' />}
+            <strong>{message.name}</strong>
+            <span>: {message.text}</span>
           </li>
         ))}
+        {tab === 'all' && night && <li className='is-system'>밤에는 모두 잠들어 대화할 수 없습니다.</li>}
+        {tab === 'dark' && view.dark_chat.map((line, index) => {
+          const speaker = view.players.find((player) => player.name === line.name);
+          return (
+            // eslint-disable-next-line react/no-array-index-key
+            <li key={index} className={speaker && speaker.seat === me?.seat ? 'is-mine' : undefined}>
+              {speaker?.avatar && <img src={speaker.avatar} alt='' />}
+              <strong>{line.name}</strong>
+              <span>: {line.text}</span>
+            </li>
+          );
+        })}
+        {tab === 'dark' && view.dark_chat.length === 0 && <li className='is-system'>동료 {view.traitor_name}와 몰래 의논하세요. 다른 사람에게는 보이지 않습니다.</li>}
       </ul>
-      {canChat ? (
-        <form onSubmit={(event) => {
-          event.preventDefault();
-          const value = text.trim();
-          if (!value) return;
-          setText('');
-          apiRequestPost(`v1/system/sessions/${sessionId}/chat`, { text: value })
-            .then(() => { onSent(); return true; })
-            .catch(() => { onSent(); });
-        }}
-        >
-          <input type='text' value={text} maxLength={200} placeholder='토론하기…' onChange={(event) => { setText(event.target.value); }} />
-          <button type='submit' className='cs-button cs-button--small' disabled={!text.trim()}>보내기</button>
+      {target ? (
+        <form onSubmit={submit}>
+          {writeOptions.length > 1 ? (
+            // 보낼 곳 고르기: 누르면 위로 목록이 펼쳐진다
+            <span className='cs-chat__pick'>
+              <button type='button' className={`cs-chat__to is-${target}`} aria-haspopup='listbox' aria-expanded={pickOpen} aria-label='채팅 보낼 곳' onClick={() => { setPickOpen((value) => !value); }}>
+                {target === 'dark' && <SnakeIcon />} {label(target)} <span aria-hidden>{pickOpen ? '▾' : '▴'}</span>
+              </button>
+              <AnimatePresence>
+                {pickOpen && (
+                  <motion.ul className='cs-chat__menu' role='listbox' initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.15 }}>
+                    {writeOptions.map((option) => (
+                      <li key={option}>
+                        <button type='button' role='option' aria-selected={option === target} className={['cs-chat__option', `is-${option}`, option === target && 'is-on'].filter(Boolean).join(' ')} onClick={() => { setWriteTo(option); setPickOpen(false); setTab(option); }}>
+                          <b>{option === 'dark' && <SnakeIcon />} {label(option)}</b>
+                          <small>{option === 'dark' ? `동료 ${view.traitor_name}에게만` : '모두에게'}</small>
+                        </button>
+                      </li>
+                    ))}
+                  </motion.ul>
+                )}
+              </AnimatePresence>
+            </span>
+          ) : (
+            <span className={`cs-chat__to is-${target}`}>{target === 'dark' && <SnakeIcon />} {label(target)}</span>
+          )}
+          <input type='text' value={text} maxLength={200} placeholder={target === 'dark' ? '동료에게 속삭이기…' : '토론하기…'} onChange={(event) => { setText(event.target.value); }} />
+          <button type='submit' className={target === 'dark' ? 'cs-button cs-button--small cs-button--night' : 'cs-button cs-button--small'} disabled={!text.trim() || (target === 'dark' && busy)}>보내기</button>
         </form>
       ) : (
-        <p className='cs-chat__muted'>탈락한 사람은 말할 수 없습니다. 조용히 지켜보세요.</p>
+        <p className='cs-chat__muted'>{view.my_role && !view.alive_me ? '탈락한 사람은 말할 수 없습니다. 조용히 지켜보세요.' : night ? '밤에는 모두 잠들어 대화할 수 없습니다.' : '관전 중에는 말할 수 없습니다.'}</p>
       )}
     </section>
   );
@@ -1554,7 +1619,8 @@ export const ChamberStage: React.FC<{
       list.push({ id: `note-${index}`, kind: 'note', seal: seer ? 'prophecy' : 'clue', title: `${note.day}일째 밤의 ${seer ? '예언' : '단서'}`, text: seer ? note.text.replace(/^\d+일째 밤의 예언:\s*/, '') : note.text, tone: 'info' });
     });
     messages.forEach((message) => {
-      if (message.kind !== 'secret' || message.text.startsWith('당신의 역할은')) return;
+      // 방주끼리 밀담 전달은 밀담 창에서 보니 우편으로 넣지 않는다
+      if (message.kind !== 'secret' || message.text.startsWith('당신의 역할은') || message.text.startsWith('[밀담]')) return;
       // 쪽지(notes)로 이미 보이는 비밀 안내는 다시 넣지 않는다
       if (view.notes.some((note) => note.text === message.text || message.text.endsWith(note.text))) return;
       list.push({ id: message.id, kind: 'secret', seal: 'secret', title: '비밀 쪽지', text: message.text, tone: 'info' });
@@ -1765,13 +1831,19 @@ export const ChamberStage: React.FC<{
         )}
       </div>
 
-      <ChatDock
-        sessionId={sessionId}
-        chat={messages.filter((message) => message.kind === 'chat')}
-        log={messages.filter((message) => message.kind === 'system')}
-        canChat={isPlayer && (alive || view.status !== 'active')}
-        onSent={onChanged}
-      />
+      {/* 채팅: 밤에는 모두 잠들어 방주만 (방주방), 나머지는 채팅창이 없다 */}
+      {!(night && playing && !(view.my_role?.key === 'traitor' && alive && isPlayer)) && (
+        <ChatDock
+          sessionId={sessionId}
+          view={view}
+          chat={messages.filter((message) => message.kind === 'chat')}
+          log={messages.filter((message) => message.kind === 'system')}
+          canChat={isPlayer && (alive || view.status !== 'active')}
+          busy={busy}
+          onDark={(text) => { send(view.commands.chat ?? '밀담', { args: text }); }}
+          onSent={onChanged}
+        />
+      )}
 
       {/* 부엉이 · 펼친 양피지 */}
       {owls.map((id) => <OwlFlight key={id} onDone={() => { setOwls((current) => current.filter((each) => each !== id)); }} />)}

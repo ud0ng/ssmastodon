@@ -117,6 +117,33 @@ module Game
         def invite_error(_total, _args = [])
           '비밀의 방은 운영진이 이벤트로 엽니다. 모집 안내를 기다려 주세요.'
         end
+
+        # 대기실에서 운영진이 몰래 역할을 정해 둘 수 있다 (Game::Lobby, 정하지 않은 사람은 무작위)
+        def lobby_roles?
+          true
+        end
+      end
+
+      # 대기실 운영진 화면: 고를 수 있는 역할과 정해 둔 역할 {계정 번호 => 역할} (참가자에게는 보내지 않는다)
+      def lobby_roles_view
+        presets = preset_roles.slice(*players.map { |player| player.account_id.to_s })
+        { options: ROLES.map { |role| { key: role, name: role_name(role) } }, picks: presets }
+      end
+
+      # 운영진이 정한 역할 (빈 값이면 무작위로 되돌린다). :ok / :closed / :invalid
+      def preset_role!(player, role)
+        return :closed unless session.lobby? && !Game::Lobby.counting?(session)
+        return :invalid if role.present? && ROLES.exclude?(role)
+
+        presets = preset_roles.dup
+        role.present? ? presets[player.account_id.to_s] = role : presets.delete(player.account_id.to_s)
+        state['preset_roles'] = presets
+        session.save!
+        :ok
+      end
+
+      def preset_roles
+        state['preset_roles'].is_a?(Hash) ? state['preset_roles'] : {}
       end
 
       def start!
@@ -233,10 +260,11 @@ module Game
       end
 
       # 웹 채팅: 진행 중에는 살아 있는 사람만 (탈락자는 관전만). 시작 전·끝난 뒤는 누구나
+      # 전체 채팅: 진행 중에는 살아 있는 사람이 낮에만 (밤에는 모두 잠들어 방주끼리 [밀담]만 한다)
       def can_chat?(player)
         return true unless session.status == 'active' && %w(day night).include?(state['phase'])
 
-        player.present? && alive?(player)
+        player.present? && alive?(player) && state['phase'] == 'day'
       end
 
       protected
@@ -251,14 +279,25 @@ module Game
         event_max_players
       end
 
+      # 역할 나누기: 운영진이 대기실에서 정해 둔 사람은 그 역할 그대로, 나머지는 남은 자리(방주 수·특수 역할)를 무작위로.
+      # 정해 둔 역할이 원래 수보다 많으면 그대로 따르고, 방주가 한 명도 없게 되면 정하지 않은 사람(없으면 아무나) 한 명을 방주로
       def deal_roles
-        seats = players.map(&:seat).shuffle
+        seats = players.map(&:seat)
         traitor_count = [(seats.size * config['traitor_percent'].to_i / 100.0).floor, 1].max
         traitor_count = [traitor_count, ((seats.size - 1) / 2.0).floor].min.clamp(1, seats.size - 1)
         special = %w(auror healer seer).first([seats.size - traitor_count - 1, 0].max)
-        list = Array.new(traitor_count, 'traitor') + special
-        list += Array.new(seats.size - list.size, 'student')
-        seats.zip(list).to_h { |seat, role| [seat.to_s, role] }
+
+        presets = players.filter_map { |player| (role = preset_roles[player.account_id.to_s]) && ROLES.include?(role) ? [player.seat, role] : nil }.to_h
+        free = (seats - presets.keys).shuffle
+        list = Array.new([traitor_count - presets.values.count('traitor'), 0].max, 'traitor') + (special - presets.values)
+        list = list.first(free.size)
+        list += Array.new(free.size - list.size, 'student')
+        roles = presets.merge(free.zip(list).to_h).to_h { |seat, role| [seat.to_s, role] }
+        unless roles.value?('traitor')
+          seat = free.first || seats.sample
+          roles[seat.to_s] = 'traitor'
+        end
+        roles
       end
 
       def role_of(seat)

@@ -298,6 +298,8 @@ module Game
         recruit_ends_at: recruiting?(session) ? session.deadline_at&.iso8601(3) : nil,
         me: session.player_for(viewer)&.account_id&.to_s,
         teams: teams_view(session, kind, viewer),
+        # 운영진만: 몰래 정해 둔 역할 (비밀의 방)
+        roles: staff && kind.class.respond_to?(:lobby_roles?) && kind.class.lobby_roles? ? kind.lobby_roles_view : nil,
         players: session.players.map do |player|
           account = player.account
           house = player.character.group

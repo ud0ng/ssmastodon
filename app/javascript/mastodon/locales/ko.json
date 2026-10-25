@@ -1575,6 +1575,7 @@
   "lobby.my_team": "내 팀",
   "lobby.team_full": "팀 변경 불가",
   "lobby.change_team": "팀 변경",
+  "lobby.role_random": "무작위 역할",
   "lobby.move_team": "{team} 팀으로",
   "mm.chat_all": "전체",
   "mm.chat_team": "팀",

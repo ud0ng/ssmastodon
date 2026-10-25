@@ -70,6 +70,31 @@ RSpec.describe Game::Web::SecretChamber do
     expect(Status.find(session.root_status_id).text).to include('[참가]') # 모집은 툿
   end
 
+  it 'keeps the roles staff set secretly in the lobby and deals the rest at random' do
+    open_event!
+    accounts.each { |account| toot(account, '@system [참가]') }
+    session.with_lock { kind.recruitment_over! }
+    harry, ron, hermione = session.players.order(:seat).first(3)
+    expect(kind.preset_role!(harry, 'seer')).to eq :ok
+    expect(kind.preset_role!(ron, 'traitor')).to eq :ok
+    expect(kind.preset_role!(hermione, 'traitor')).to eq :ok
+    expect(kind.preset_role!(hermione, 'wizard')).to eq :invalid
+    expect(kind.lobby_roles_view[:picks]).to eq(harry.account_id.to_s => 'seer', ron.account_id.to_s => 'traitor', hermione.account_id.to_s => 'traitor')
+    # 운영진만 보인다
+    expect(Game::Lobby.view(session.reload, accounts.first, staff: false)[:roles]).to be_nil
+    expect(Game::Lobby.view(session.reload, accounts.first, staff: true)[:roles][:options].pluck(:key)).to include('traitor', 'seer')
+    # 무작위로 되돌리기
+    expect(kind.preset_role!(hermione, '')).to eq :ok
+
+    Game::Lobby.start!(session)
+    roles = session.reload.state['roles']
+    expect(roles[harry.seat.to_s]).to eq 'seer'
+    expect(roles[ron.seat.to_s]).to eq 'traitor'
+    expect(roles.values.tally).to include('traitor' => 1, 'seer' => 1, 'auror' => 1, 'healer' => 1, 'student' => 3)
+    # 시작한 뒤에는 못 바꾼다
+    expect(kind.preset_role!(harry, 'auror')).to eq :closed
+  end
+
   it 'cancels when too few join, telling it on the web only' do
     open_event!
     toot(accounts.second, '@system [참가]')
