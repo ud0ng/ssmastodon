@@ -42,7 +42,7 @@ interface MView {
   spells: { key: string; name: string }[];
   lumos_turns: number;
   steps: number;
-  finish: { ranks: MRank[]; team_ranks: MTeamRank[]; reached: number[]; test: boolean } | null;
+  finish: { ranks: MRank[]; team_ranks: MTeamRank[]; reached: (number | string)[]; test: boolean } | null;
   me: number | null;
   spectator: boolean;
   full: boolean;
@@ -326,10 +326,33 @@ const MazeBoard: React.FC<{
   const playerOf = (seat: number) => view.players.find((player) => player.seat === seat);
   const myTrail = view.me !== null ? (view.trails[String(view.me)] ?? []) : [];
   const trailSet = new Set(myTrail.map(([x, y]) => `${x},${y}`));
-  const width = ((x1 - x0) + 1) * CELL;
-  const height = ((y1 - y0) + 1) * CELL;
+  let kx0 = x1;
+  let kx1 = x0;
+  let ky0 = y1;
+  let ky1 = y0;
+  for (let y = y0; y <= y1; y += 1) {
+    for (let x = x0; x <= x1; x += 1) {
+      if (!known(x, y)) continue;
+      kx0 = Math.min(kx0, x);
+      kx1 = Math.max(kx1, x);
+      ky0 = Math.min(ky0, y);
+      ky1 = Math.max(ky1, y);
+    }
+  }
+  if (kx0 > kx1) { kx0 = x0; kx1 = x1; ky0 = y0; ky1 = y1; }
+  // 너무 확대되지 않게 최소 6칸, 가장자리에 반 칸 여유
+  const spanX = Math.max(kx1 - kx0 + 1, 6);
+  const spanY = Math.max(ky1 - ky0 + 1, 6);
+  const midX = (kx0 + kx1 + 1) / 2;
+  const midY = (ky0 + ky1 + 1) / 2;
+  const view0 = {
+    x: ((midX - (spanX / 2) - 0.5 - x0) * CELL) - THICK,
+    y: ((midY - (spanY / 2) - 0.5 - y0) * CELL) + WALL,
+    w: ((spanX + 1) * CELL) + (THICK * 2),
+    h: ((spanY + 1) * CELL) + WALL,
+  };
   const pos = (x: number, y: number) => [(x - x0) * CELL, ((y - y0) * CELL) + WALL] as const;
-  const lastPath = (seat: number) => view.last?.moves[String(seat)];
+  const lastPath = (seat: number) => view.last?.moves?.[String(seat)];
 
   const rows = [];
   for (let y = y0; y <= y1; y += 1) {
@@ -417,16 +440,16 @@ const MazeBoard: React.FC<{
   const hint = view.hint && view.position ? view.hint : null;
   return (
     <div className='mz-board'>
-      <svg className='mz-board__svg' viewBox={`${-THICK} 0 ${width + (THICK * 2)} ${height + WALL}`} preserveAspectRatio='xMidYMid meet'>
+      <svg className='mz-board__svg' viewBox={`${view0.x} ${view0.y} ${view0.w} ${view0.h}`} preserveAspectRatio='xMidYMid meet'>
         <defs>
-          <radialGradient id='mz-fog' cx='50%' cy='50%' r='60%'>
-            <stop offset='55%' stopColor='#000' stopOpacity='0' />
-            <stop offset='100%' stopColor='#000' stopOpacity='0.85' />
+          <radialGradient id='mz-fog' gradientUnits='userSpaceOnUse' cx={view0.x + (view0.w / 2)} cy={view0.y + (view0.h / 2)} r={Math.max(view0.w, view0.h) * 0.62}>
+            <stop offset='45%' stopColor='#04100a' stopOpacity='0' />
+            <stop offset='100%' stopColor='#04100a' stopOpacity='0.96' />
           </radialGradient>
         </defs>
         {rows}
         {bottom}
-        {!view.full && <rect x={-THICK} y={0} width={width + (THICK * 2)} height={height + WALL} fill='url(#mz-fog)' pointerEvents='none' />}
+        {!view.full && <rect x={view0.x - view0.w} y={view0.y - view0.h} width={view0.w * 3} height={view0.h * 3} fill='url(#mz-fog)' pointerEvents='none' />}
       </svg>
       {hint && (
         <motion.span className='mz-hint' initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} title={`${hint.turn}턴에 포인트 미가 가리킨 방향`}>
@@ -615,7 +638,8 @@ const EndScreen: React.FC<{ view: MView; onLeave: () => void }> = ({ view, onLea
   useEffect(() => { sfx.fanfare(0.3); }, []);
   if (!finish) return null;
   const who = (seat: number) => view.players.find((player) => player.seat === seat);
-  const winners = finish.ranks.filter((row) => finish.reached.includes(row.seat));
+  const reachedSeat = (seat: number) => finish.reached.some((reached) => String(reached) === String(seat));
+  const winners = finish.ranks.filter((row) => reachedSeat(row.seat));
   const title = winners.length === 0 ? '우승자 없음' : view.team_mode ? `${finish.team_ranks[0]?.name ?? ''} 팀 우승!` : `${winners.map((row) => who(row.seat)?.name).join(' · ')} 우승!`;
   return (
     <motion.div className='mz-end' initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -635,7 +659,7 @@ const EndScreen: React.FC<{ view: MView; onLeave: () => void }> = ({ view, onLea
         {finish.ranks.map((row, index) => {
           const player = who(row.seat);
           return (
-            <motion.li key={row.seat} className={[row.rank === 1 && finish.reached.includes(row.seat) && 'is-winner', row.out && 'is-out'].filter(Boolean).join(' ')} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1.2 + (index * 0.1) }}>
+            <motion.li key={row.seat} className={[row.rank === 1 && reachedSeat(row.seat) && 'is-winner', row.out && 'is-out'].filter(Boolean).join(' ')} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1.2 + (index * 0.1) }}>
               <em>{row.rank}</em>
               <span className='mz-end__face'>{player?.avatar ? <img src={player.avatar} alt='' /> : null}</span>
               <b>{player?.name}</b>
@@ -741,7 +765,7 @@ export const MazeStage: React.FC<{ sessionId: string; name: string; chat: MzChat
     seenTurn.current = view.last.turn;
     if (before === null || before === view.last.turn) return;
     const mine = (event: MEvent) => view.full || event.seat === view.me || (event.seats ?? []).includes(view.me ?? -1) || event.target === view.me || event.kind === 'cup';
-    const next: Cue[] = view.last.events.filter(mine).map((event, index) => ({ id: `${view.last?.turn}-${index}`, kind: event.kind as Cue['kind'], event }));
+    const next: Cue[] = (view.last.events ?? []).filter(mine).map((event, index) => ({ id: `${view.last?.turn}-${index}`, kind: event.kind as Cue['kind'], event }));
     if (next.length > 0) setCues((current) => [...current, ...next]);
     [0.1, 0.4, 0.7].forEach((at) => { sfx.step(at); });
   }, [view]);

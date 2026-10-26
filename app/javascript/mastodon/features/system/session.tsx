@@ -542,7 +542,7 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
 
   return (
     <Column bindToDocument={!multiColumn} label={title}>
-      {data?.status === 'active' && data.player && ['maze', 'secret_chamber', 'flying'].includes(data.kind) && <StageTutorial kind={data.kind} />}
+      {data?.status === 'active' && data.player && ['secret_chamber', 'flying'].includes(data.kind) && <StageTutorial kind={data.kind} />}
       {data && flyingRoom && (
         <FlyingStage
           sessionId={data.id}

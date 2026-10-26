@@ -853,9 +853,12 @@ module Game
         players.each do |player|
           won = side != 'draw' && (side == 'dark') == DARK.include?(role_of(player.seat))
           player.update!(result: side == 'draw' ? 'draw' : (won ? 'win' : 'lose'))
-          amount = (won ? config['points_win'].to_i : 0) + (alive?(player) ? config['points_survive'].to_i : 0)
-          amount = 0 if side == 'draw' || session.test? # 테스트 플레이는 점수 없음
-          point_lines << Game::Points.give(session, player, amount, reason: "event:#{self.class.key}") if amount.positive?
+          # 점수는 다른 컨텐츠와 같은 공통 처리: 하루 보상 횟수 제한·판수제(이긴 판마다 1점)·토너먼트 기간을 따른다. 테스트 플레이·무승부는 점수 없음
+          next if side == 'draw' || session.test? || reward_capped?(player)
+
+          point_lines << Game::Points.award(session, player, config['points_win'].to_i, outcome: 'win') if won
+          survive = alive?(player) && !Game::Points.games_mode? ? config['points_survive'].to_i : 0
+          point_lines << Game::Points.give(session, player, survive, reason: "event:#{self.class.key}") if survive.positive?
         end
         session.update!(status: 'finished', finished_at: Time.now.utc, deadline_at: nil)
         # 테스트 플레이: 점수·보상 없이 결과 안내만 (다른 컨텐츠의 finish! 와 같다)
