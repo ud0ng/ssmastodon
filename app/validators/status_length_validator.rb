@@ -34,6 +34,7 @@ class StatusLengthValidator < ActiveModel::Validator
   def too_short?(status)
     min = self.class.min_chars
     return false if min.zero? || exempt_from_minimum?(status.account)
+    return false if excluded_by_kind?(status)
     # 새 툿이나 글을 고칠 때만 (예전 짧은 툿의 다른 값을 바꿀 때 막히지 않게)
     return false unless status.new_record? || status.text_changed? || status.spoiler_text_changed?
     return false if status.media_attachments.any? || status.poll.present?
@@ -43,6 +44,13 @@ class StatusLengthValidator < ActiveModel::Validator
     return false if command_only?(text)
 
     countable_length([status.spoiler_text, text].join.gsub(/\s+/, '')) < min
+  end
+
+  # 서버 설정 > 운영: [퍼블툿 제외] 답 툿이 아닌 툿(DM 제외)은 안 받는다 / [디엠 제외] DM 툿은 안 받는다
+  def excluded_by_kind?(status)
+    return Setting.status_min_exclude_dm if status.direct_visibility?
+
+    Setting.status_min_exclude_public && status.in_reply_to_id.blank?
   end
 
   # 시스템 계정(컨텐츠·이벤트 명령어)이나 봇 계정(상점봇 등)을 멘션하고 [명령어]가 들어 있는 툿

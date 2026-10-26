@@ -44,6 +44,8 @@ class Form::AdminSettings
     wordmark_light
     status_max_characters
     status_min_characters
+    status_min_exclude_public
+    status_min_exclude_dm
     status_search_enabled
     status_search_scope
     community_theme_enabled
@@ -78,6 +80,8 @@ class Form::AdminSettings
   ).freeze
 
   BOOLEAN_KEYS = %i(
+    status_min_exclude_public
+    status_min_exclude_dm
     timeline_preview
     activity_api_enabled
     peers_api_enabled

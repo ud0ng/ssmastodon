@@ -99,6 +99,8 @@ en:
         site_terms: Use your own privacy policy or leave blank to use the default. Can be structured with Markdown syntax.
         site_title: How people may refer to your server besides its domain name.
         status_max_characters: Maximum number of characters in a single post. (100 – 10,000, default 1,000)
+        status_min_exclude_dm: When on, direct messages are not held to the minimum length.
+        status_min_exclude_public: When on, posts that are not replies (direct messages aside) are not held to the minimum length. Replies still are.
         status_min_characters: Minimum number of characters in a post. Mentions and spaces are not counted. Staff accounts, posts with media or polls, and command posts ([commands] to the system or bot accounts, or only [commands]) are exempt. (0 – 1,000, 0 turns it off)
         status_page_url: URL of a page where people can see the status of this server during an outage
         status_search_enabled: Search post text and content warnings using the database, without Elasticsearch. Your own posts, posts mentioning you and posts you favourited or bookmarked are always searchable.
@@ -297,6 +299,8 @@ en:
         site_title: Server name
         status_max_characters: Maximum post length
         status_min_characters: Minimum post length
+        status_min_exclude_dm: Exclude direct messages from the minimum length
+        status_min_exclude_public: Exclude non-reply posts from the minimum length
         status_page_url: Status page URL
         status_search_enabled: Enable full-text post search
         status_search_scope: Search scope

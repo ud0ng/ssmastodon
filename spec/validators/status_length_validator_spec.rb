@@ -153,6 +153,24 @@ RSpec.describe StatusLengthValidator do
       status.errors[:text].any?
     end
 
+    it 'can leave out toots that are not replies, and direct messages, with the two options' do
+      reply = Status.new(account: member, text: '안녕', in_reply_to_id: Fabricate(:status).id)
+      plain = build(member, '안녕')
+      direct = Status.new(account: member, text: '안녕', visibility: :direct)
+      direct_reply = Status.new(account: member, text: '안녕', visibility: :direct, in_reply_to_id: reply.in_reply_to_id)
+      expect([plain, reply, direct].map { |status| short?(status) }).to eq [true, true, true]
+
+      Setting.status_min_exclude_public = true
+      expect([build(member, '안녕'), Status.new(account: member, text: '안녕', in_reply_to_id: reply.in_reply_to_id), Status.new(account: member, text: '안녕', visibility: :direct)].map { |status| short?(status) }).to eq [false, true, true]
+
+      Setting.status_min_exclude_public = false
+      Setting.status_min_exclude_dm = true
+      expect([build(member, '안녕'), Status.new(account: member, text: '안녕', in_reply_to_id: reply.in_reply_to_id), Status.new(account: member, text: '안녕', visibility: :direct), direct_reply].map { |status| short?(status) }).to eq [true, true, false, false]
+    ensure
+      Setting.status_min_exclude_public = false
+      Setting.status_min_exclude_dm = false
+    end
+
     it 'blocks posts shorter than the minimum, not counting mentions and spaces' do
       expect(short?(build(member, "@#{friend.username} 안 녕"))).to be true
       expect(short?(build(member, "@#{friend.username} 안녕하세요"))).to be false

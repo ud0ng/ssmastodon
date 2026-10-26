@@ -44,6 +44,15 @@
               input_html: { type: 'number', min: StatusLengthValidator::MIN_CHARS_RANGE.min, max: StatusLengthValidator::MIN_CHARS_RANGE.max },
               wrapper: :with_block_label
 
+  .fields-group
+    = f.input :status_min_exclude_public,
+              as: :boolean,
+              wrapper: :with_label
+
+    = f.input :status_min_exclude_dm,
+              as: :boolean,
+              wrapper: :with_label
+
   %h4= t('admin.settings.community.search')
 
   .fields-group
