@@ -53,6 +53,25 @@
               as: :boolean,
               wrapper: :with_label
 
+  -# 퍼블툿 제한: [간격][단위]에 [개수]개. 간격 0 이면 제한 없음
+  .fields-row.fields-row--thirds
+    .fields-row__column.fields-group
+      = f.input :status_public_limit_interval,
+                input_html: { type: 'number', min: 0, max: 10_000 },
+                wrapper: :with_block_label
+
+    .fields-row__column.fields-group
+      = f.input :status_public_limit_unit,
+                collection: PublicPostLimit::UNITS.keys,
+                include_blank: false,
+                label_method: ->(unit) { I18n.t("admin.settings.community.public_limit_units.#{unit}") },
+                wrapper: :with_block_label
+
+    .fields-row__column.fields-group
+      = f.input :status_public_limit_count,
+                input_html: { type: 'number', min: 0, max: 1_000 },
+                wrapper: :with_block_label
+
   %h4= t('admin.settings.community.search')
 
   .fields-group

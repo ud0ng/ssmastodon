@@ -158,7 +158,7 @@ class Notification < ApplicationRecord
     end
 
     # 컨텐츠 알림 빼기 (웹): 시스템 계정이 보낸 알림(기본 명령어에 단 답장은 보임), 시스템 계정을 멘션하며 컨텐츠 명령어를 쓴 툿의 멘션 알림,
-    # 그 컨텐츠 대화(명령어 툿과 같은 대화)에서 캐릭터들끼리 나눈 멘션 알림.
+    # 컨텐츠 툿(시스템의 컨텐츠 툿, 컨텐츠를 연 명령어 툿)에 바로 단 답의 멘션 알림. 같은 스레드의 다른 이야기까지 숨기지는 않는다.
     # 기본 명령어(도움말·점수·내전적·사용)와 명령어 없는 단순 멘션은 그대로 보인다 (Game::System.hidden_notification? 과 같은 판단)
     def without_game
       system = Game::System.account
@@ -194,14 +194,18 @@ class Notification < ApplicationRecord
             SELECT 1
               FROM mentions
               INNER JOIN statuses ON statuses.id = mentions.status_id
-              INNER JOIN statuses AS game_toots ON game_toots.conversation_id = statuses.conversation_id
-              INNER JOIN mentions AS game_toot_mentions ON game_toot_mentions.status_id = game_toots.id
+              INNER JOIN statuses AS game_toots ON game_toots.id = statuses.in_reply_to_id
              WHERE notifications.activity_type = 'Mention'
                AND mentions.id = notifications.activity_id
-               AND statuses.conversation_id IS NOT NULL
-               AND game_toot_mentions.account_id = :system_id
-               AND #{format(first_command, 'game_toots.text')} <> ''
-               AND #{format(first_command, 'game_toots.text')} NOT IN (:basic)
+               AND (
+                 EXISTS (SELECT 1 FROM game_events WHERE game_events.status_id = game_toots.id)
+                 OR EXISTS (SELECT 1 FROM game_sessions WHERE game_sessions.root_status_id = game_toots.id)
+                 OR (
+                   EXISTS (SELECT 1 FROM mentions command_mentions WHERE command_mentions.status_id = game_toots.id AND command_mentions.account_id = :system_id)
+                   AND #{format(first_command, 'game_toots.text')} <> ''
+                   AND #{format(first_command, 'game_toots.text')} NOT IN (:basic)
+                 )
+               )
           )
         SQL
         system_id: system.id, basic: Game::System.basic_commands

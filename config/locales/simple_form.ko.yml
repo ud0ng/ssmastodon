@@ -100,6 +100,9 @@ ko:
         status_max_characters: 툿 하나에 쓸 수 있는 최대 글자수입니다. (100 ~ 10,000, 기본 1,000)
         status_min_exclude_dm: 켜면 디엠 툿은 최소 글자수 제한을 받지 않습니다.
         status_min_exclude_public: 켜면 답 툿이 아닌 툿(디엠 제외)은 최소 글자수 제한을 받지 않습니다. 답 툿은 계속 제한을 받습니다.
+        status_public_limit_count: 간격 안에 쓸 수 있는 퍼블툿 개수입니다. 이 개수를 넘으면 퍼블툿 제한에 걸렸다고 안내하고 남은 시간을 세어 줍니다.
+        status_public_limit_interval: '퍼블툿(답 툿·DM이 아닌 툿)을 몇 분·시간·일에 몇 개까지 쓸 수 있게 할지 정합니다. 예: 3시간 간격으로 4개 → 3시간 안에 4개까지, 5개째부터 막힙니다. 0이면 제한이 없습니다. 운영 계정은 제한을 받지 않습니다.'
+        status_public_limit_unit: 간격 단위입니다.
         status_min_characters: 툿 하나에 꼭 써야 하는 최소 글자수입니다. 멘션(@아이디)과 띄어쓰기는 세지 않습니다. 운영 계정, 사진·투표가 붙은 툿, 명령어 툿(시스템·봇 계정에 [명령어]를 쓴 툿, [명령어]만 쓴 툿)은 제외합니다. (0 ~ 1,000, 0이면 끔)
         status_page_url: 이 서버가 중단된 동안 사람들이 서버의 상태를 볼 수 있는 페이지 URL
         status_search_enabled: Elasticsearch 없이 서버 DB로 툿 본문과 CW를 검색합니다. 내 툿, 나를 멘션한 툿, 좋아요·북마크한 툿은 범위와 관계없이 검색됩니다.
@@ -293,6 +296,9 @@ ko:
         site_title: 서버 이름
         status_max_characters: 툿 최대 글자수
         status_min_characters: 툿 최소 글자수
+        status_public_limit_count: 퍼블툿 제한 개수
+        status_public_limit_interval: 퍼블툿 제한 간격
+        status_public_limit_unit: 간격 단위
         status_min_exclude_dm: 최소 글자수에서 디엠 제외
         status_min_exclude_public: 최소 글자수에서 퍼블툿 제외
         status_page_url: 상태 페이지 URL

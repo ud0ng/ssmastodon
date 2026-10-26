@@ -101,6 +101,9 @@ en:
         status_max_characters: Maximum number of characters in a single post. (100 – 10,000, default 1,000)
         status_min_exclude_dm: When on, direct messages are not held to the minimum length.
         status_min_exclude_public: When on, posts that are not replies (direct messages aside) are not held to the minimum length. Replies still are.
+        status_public_limit_count: How many public posts fit in the interval. Past that, posting is refused with a countdown of the time left.
+        status_public_limit_interval: 'How often public posts (not replies, not direct messages) are allowed: N posts per interval. E.g. 3 hours and 4 posts means 4 within 3 hours, the 5th is blocked. 0 means no limit. Staff accounts are exempt.'
+        status_public_limit_unit: Unit of the interval.
         status_min_characters: Minimum number of characters in a post. Mentions and spaces are not counted. Staff accounts, posts with media or polls, and command posts ([commands] to the system or bot accounts, or only [commands]) are exempt. (0 – 1,000, 0 turns it off)
         status_page_url: URL of a page where people can see the status of this server during an outage
         status_search_enabled: Search post text and content warnings using the database, without Elasticsearch. Your own posts, posts mentioning you and posts you favourited or bookmarked are always searchable.
@@ -299,6 +302,9 @@ en:
         site_title: Server name
         status_max_characters: Maximum post length
         status_min_characters: Minimum post length
+        status_public_limit_count: Public post limit (posts)
+        status_public_limit_interval: Public post limit (interval)
+        status_public_limit_unit: Interval unit
         status_min_exclude_dm: Exclude direct messages from the minimum length
         status_min_exclude_public: Exclude non-reply posts from the minimum length
         status_page_url: Status page URL

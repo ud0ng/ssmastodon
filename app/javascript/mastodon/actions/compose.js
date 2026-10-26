@@ -1,4 +1,6 @@
-import { defineMessages } from 'react-intl';
+import { createElement } from 'react';
+
+import { defineMessages, FormattedMessage } from 'react-intl';
 
 import axios from 'axios';
 import { List as ImmutableList } from 'immutable';
@@ -6,6 +8,7 @@ import { throttle } from 'lodash';
 
 import api from 'mastodon/api';
 import { browserHistory } from 'mastodon/components/router';
+import { PublicLimitCountdown } from 'mastodon/features/compose/components/public_limit_countdown';
 import { search as emojiSearch } from 'mastodon/features/emoji/emoji_mart_search_light';
 import { tagHistory } from 'mastodon/settings';
 
@@ -99,6 +102,8 @@ const messages = defineMessages({
   scheduledUpdated: { id: 'compose.scheduled.updated', defaultMessage: 'Scheduled post updated.' },
   viewScheduled: { id: 'compose.scheduled.view', defaultMessage: 'View' },
   scheduledGone: { id: 'scheduled_statuses.gone', defaultMessage: 'That scheduled post was already published or removed.' },
+  publicLimitTitle: { id: 'compose.public_limit.title', defaultMessage: 'Public post limit' },
+  publicLimitOk: { id: 'compose.public_limit.ok', defaultMessage: 'OK' },
 });
 
 export const ensureComposeIsVisible = (getState) => {
@@ -346,6 +351,22 @@ export function submitCompose() {
       }));
     }).catch(function (error) {
       dispatch(submitComposeFail(error));
+
+      // 퍼블툿 제한(서버 설정 > 운영 > 글쓰기)에 걸렸다: 안내와 함께 남은 시간을 세어 준다
+      const limit = error.response?.data?.public_limit;
+
+      if (limit) {
+        dispatch(openModal({
+          modalType: 'CONFIRM',
+          modalProps: {
+            title: createElement(FormattedMessage, messages.publicLimitTitle),
+            message: createElement(PublicLimitCountdown, { message: error.response.data.error, retryAfter: limit.retry_after }),
+            confirm: createElement(FormattedMessage, messages.publicLimitOk),
+            hideCancel: true,
+            onConfirm: () => undefined,
+          },
+        }));
+      }
     });
   };
 }

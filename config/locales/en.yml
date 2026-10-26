@@ -1840,6 +1840,10 @@ en:
         title: Require new users to solve a CAPTCHA to confirm their account
       community:
         posting: Posting
+        public_limit_units:
+          day: days
+          hour: hours
+          minute: minutes
         search: Search
         search_scopes:
           all: Whole server (public posts from every account)
@@ -3008,6 +3012,11 @@ en:
     errors:
       in_reply_not_found: The post you are trying to reply to does not appear to exist.
     over_character_limit: character limit of %{max} exceeded
+    public_limit: 'Public post limit reached: %{count} public posts per %{interval}. You can post again in %{remaining}.'
+    public_limit_units:
+      day: "%{count} day(s)"
+      hour: "%{count} hour(s)"
+      minute: "%{count} minute(s)"
     under_character_limit: posts must have at least %{min} characters, not counting mentions and spaces
     pin_errors:
       direct: Posts that are only visible to mentioned users cannot be pinned

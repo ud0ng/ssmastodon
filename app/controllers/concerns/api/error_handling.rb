@@ -8,6 +8,11 @@ module Api::ErrorHandling
       render json: { error: e.to_s }, status: 422
     end
 
+    # 퍼블툿 제한: 남은 시간(초)을 함께 보내 웹이 카운트다운을 보여 준다
+    rescue_from PublicPostLimit::Error do |e|
+      render json: { error: e.message, public_limit: { retry_after: e.retry_after, limit: e.limit, interval: e.interval, unit: e.unit } }, status: 422
+    end
+
     rescue_from ActiveRecord::RecordNotUnique do
       render json: { error: 'Duplicate record' }, status: 422
     end

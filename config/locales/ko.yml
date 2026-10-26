@@ -1845,6 +1845,10 @@ ko:
         title: 새로운 사용자가 계정 확인을 위해서는 CAPTCHA를 풀어야 하도록 합니다
       community:
         posting: 글쓰기
+        public_limit_units:
+          day: 일
+          hour: 시간
+          minute: 분
         search: 검색
         search_scopes:
           all: 서버 전체 (모든 계정의 공개 툿 포함)
@@ -2982,6 +2986,11 @@ ko:
     errors:
       in_reply_not_found: 답장하려는 게시물이 존재하지 않습니다.
     over_character_limit: 최대 %{max}자까지 입력할 수 있습니다
+    public_limit: '퍼블툿 제한에 걸렸습니다. %{interval}에 퍼블툿은 %{count}개까지 쓸 수 있고, %{remaining} 뒤에 다시 쓸 수 있습니다.'
+    public_limit_units:
+      day: "%{count}일"
+      hour: "%{count}시간"
+      minute: "%{count}분"
     under_character_limit: 툿은 멘션과 띄어쓰기를 빼고 최소 %{min}자 이상 써야 합니다
     pin_errors:
       direct: 멘션된 사용자들에게만 보이는 게시물은 고정될 수 없습니다

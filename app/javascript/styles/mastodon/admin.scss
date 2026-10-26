@@ -5044,3 +5044,14 @@ button.game-token:focus-visible {
   gap: 2px;
   align-items: center;
 }
+
+// 한 줄에 같은 폭 세 칸 (퍼블툿 제한: 간격 · 단위 · 개수)
+.fields-row--thirds {
+  display: flex;
+
+  > .fields-row__column {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+  }
+}

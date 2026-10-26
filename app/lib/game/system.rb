@@ -58,15 +58,17 @@ module Game
       status.present? && game_conversation?(status)
     end
 
-    # 컨텐츠 명령어 툿이 있는 대화인가: 그 대화에서 캐릭터들이 나눈 말도 컨텐츠 안에서만 보인다 (Notification.without_game 의 SQL 과 같은 판단)
+    # 컨텐츠 툿에 바로 단 답인가: 시스템의 컨텐츠 툿(GameEvent)이나 컨텐츠를 연 툿, 시스템을 태그한 컨텐츠 명령어 툿에 단 답.
+    # 컨텐츠 안에서 캐릭터들이 나눈 말만 컨텐츠 쪽으로 보내고, 같은 스레드의 다른 이야기는 보인다 (Notification.without_game 의 SQL 과 같은 판단)
     def game_conversation?(status)
-      return false if status.conversation_id.nil?
+      return false if status.in_reply_to_id.nil?
 
-      basic = basic_commands
-      Status.where(conversation_id: status.conversation_id).joins(:mentions).where(mentions: { account_id: account.id }).any? do |toot|
-        command = command_of(toot.text)
-        command.present? && basic.exclude?(command)
-      end
+      parent = Status.unscoped.find_by(id: status.in_reply_to_id)
+      return false if parent.nil?
+      return true if GameEvent.exists?(status_id: parent.id) || GameSession.exists?(root_status_id: parent.id)
+
+      command = command_of(parent.text)
+      command.present? && basic_commands.exclude?(command) && parent.mentions.any? { |mention| mention.account_id == account.id }
     end
 
     # 게임 명령어로 처리할 툿 (Game::MentionWorker)

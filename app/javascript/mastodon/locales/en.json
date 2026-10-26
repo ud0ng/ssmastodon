@@ -1490,5 +1490,9 @@
   "mm.review_pause": "Pause",
   "mm.review_play": "Play",
   "mm.review_by_round": "By round",
-  "mm.review_routes_only": "Routes only"
+  "mm.review_routes_only": "Routes only",
+  "compose.public_limit.ok": "OK",
+  "compose.public_limit.ready": "You can post again now.",
+  "compose.public_limit.remaining": "Time left: {time}",
+  "compose.public_limit.title": "Public post limit"
 }

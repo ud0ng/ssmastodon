@@ -46,6 +46,9 @@ class Form::AdminSettings
     status_min_characters
     status_min_exclude_public
     status_min_exclude_dm
+    status_public_limit_interval
+    status_public_limit_unit
+    status_public_limit_count
     status_search_enabled
     status_search_scope
     community_theme_enabled
@@ -77,6 +80,8 @@ class Form::AdminSettings
     min_age
     status_max_characters
     status_min_characters
+    status_public_limit_interval
+    status_public_limit_count
   ).freeze
 
   BOOLEAN_KEYS = %i(
@@ -140,6 +145,9 @@ class Form::AdminSettings
   validates :min_age, numericality: { only_integer: true }, allow_blank: true, if: -> { defined?(@min_age) }
   validates :status_max_characters, numericality: { only_integer: true, in: StatusLengthValidator::MAX_CHARS_RANGE }, if: -> { defined?(@status_max_characters) }
   validates :status_min_characters, numericality: { only_integer: true, in: StatusLengthValidator::MIN_CHARS_RANGE }, if: -> { defined?(@status_min_characters) }
+  validates :status_public_limit_interval, numericality: { only_integer: true, in: 0..10_000 }, if: -> { defined?(@status_public_limit_interval) }
+  validates :status_public_limit_count, numericality: { only_integer: true, in: 0..1_000 }, if: -> { defined?(@status_public_limit_count) }
+  validates :status_public_limit_unit, inclusion: { in: PublicPostLimit::UNITS.keys }, if: -> { defined?(@status_public_limit_unit) }
   validates :status_search_scope, inclusion: { in: STATUS_SEARCH_SCOPES }, if: -> { defined?(@status_search_scope) }
   validates :community_theme_default, inclusion: { in: Themes::COMMUNITY_THEME_MODES }, if: -> { defined?(@community_theme_default) }
   validates :community_theme_main_light, :community_theme_point_light, :community_theme_main_dark, :community_theme_point_dark, format: { with: COMMUNITY_THEME_COLOR_FORMAT }, allow_blank: true

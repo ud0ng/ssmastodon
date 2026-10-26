@@ -20,6 +20,15 @@ class StatusLengthValidator < ActiveModel::Validator
     MIN_CHARS_RANGE.cover?(value) ? value : 0
   end
 
+  # 글자수·퍼블툿 제한을 받지 않는 운영 계정: 관리자, 컨텐츠 설정의 운영진 아이디, 시스템 계정
+  def self.exempt_account?(account)
+    return true if account.nil?
+    return true if account.id == Game::System.account&.id
+    return true if GameCharacter.staff_usernames.include?(account.username.downcase)
+
+    Game::Staff.web?(account.user)
+  end
+
   def validate(status)
     return unless status.local? && !status.reblog?
 
@@ -67,11 +76,7 @@ class StatusLengthValidator < ActiveModel::Validator
   end
 
   def exempt_from_minimum?(account)
-    return true if account.nil?
-    return true if account.id == Game::System.account&.id
-    return true if GameCharacter.staff_usernames.include?(account.username.downcase)
-
-    Game::Staff.web?(account.user)
+    self.class.exempt_account?(account)
   end
 
   # 멘션만 지운 글 (명령어 판단·글자수 세기)

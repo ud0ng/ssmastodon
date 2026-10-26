@@ -46,6 +46,7 @@ class PostStatusService < BaseService
 
     validate_media!
     preprocess_attributes!
+    check_public_limit!
 
     if scheduled?
       schedule_status!
@@ -66,6 +67,13 @@ class PostStatusService < BaseService
   end
 
   private
+
+  # 퍼블툿 제한 (서버 설정 > 운영 > 글쓰기). 시스템이 올리는 툿(with_rate_limit: false)과 예약 툿 만들기는 막지 않는다
+  def check_public_limit!
+    return if scheduled? || @options[:with_rate_limit] == false
+
+    PublicPostLimit.check!(@account, visibility: @visibility, in_reply_to: @in_reply_to)
+  end
 
   def preprocess_attributes!
     @sensitive    = (@options[:sensitive].nil? ? @account.user&.setting_default_sensitive : @options[:sensitive]) || @options[:spoiler_text].present?
