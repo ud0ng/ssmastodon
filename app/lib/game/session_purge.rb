@@ -27,7 +27,13 @@ module Game
       ids = session.events.pluck(:status_id)
 
       root = Status.unscoped.find_by(id: session.root_status_id)
-      ids += Status.unscoped.where(conversation_id: root.conversation_id, id: root.id.., account_id: account_ids).pluck(:id) if root
+      if root
+        # 신청 툿과 그 아래로 이어진 답 중 참가자·시스템 것만 (신청 툿이 남의 대화 안에 있어도 그 대화의 다른 답은 건드리지 않는다)
+        rows = Status.unscoped.where(conversation_id: root.conversation_id, id: root.id..).order(:id).pluck(:id, :in_reply_to_id, :account_id)
+        thread = Set[root.id]
+        rows.each { |id, parent, _| thread << id if thread.include?(parent) }
+        ids += rows.filter_map { |id, _, account_id| id if thread.include?(id) && account_ids.include?(account_id) }
+      end
 
       since = session.created_at - DM_MARGIN
       till = (session.finished_at || session.updated_at) + DM_MARGIN

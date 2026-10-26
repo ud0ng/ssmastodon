@@ -350,7 +350,8 @@ class Api::V1::System::SessionsController < Api::BaseController
     root = Status.find_by(id: @session.root_status_id)
     return [] if root.nil?
 
-    statuses = Status.where(conversation_id: root.conversation_id, id: root.id..).includes(:account).to_a
+    # 신청 툿과 그 아래로 이어진 답만 (신청 툿이 남의 대화 안에 있으면 같은 대화의 다른 답은 이 판과 상관없다)
+    statuses = thread_from(root, Status.where(conversation_id: root.conversation_id, id: root.id..).includes(:account).reorder(:id).to_a)
     statuses += secret_statuses if @session.player_for(current_account) && @session.visibility != 'direct'
     statuses = statuses.uniq(&:id).sort_by(&:id).last(MESSAGE_LIMIT)
 
@@ -374,6 +375,12 @@ class Api::V1::System::SessionsController < Api::BaseController
         card: event && (event.id == last_event&.id ? event.current_payload : event.payload.merge('live' => false)),
       }
     end
+  end
+
+  # root 에서 답으로 이어진 툿만 (id 순이라 부모가 먼저 나온다)
+  def thread_from(root, statuses)
+    kept = Set[root.id]
+    statuses.select { |status| status.id == root.id || (kept.include?(status.in_reply_to_id) && kept.add(status.id)) }
   end
 
   # 이 판에서 시스템과 주고받은 DM: 시스템이 내게 보낸 DM 스레드(Kinds::Base#dm 이 이어 보낸다)의 툿
