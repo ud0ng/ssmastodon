@@ -13,9 +13,9 @@ export interface GameFxShape {
   skin?: string;
 }
 
-// 기숙사전 승리 보상은 흰 반짝이를 더 많이 그린다 (18개, Game::Fx.particle_count 와 같다)
+// 기숙사전 승리 보상은 반짝이를 더 많이 그린다 (30개, 스킨만 19번부터도 쓴다. Game::Fx.particle_count 와 같다)
 const MANY_PARTICLES = new Set(['gryffindor', 'hufflepuff', 'slytherin', 'ravenclaw']);
-const particleIndexes = (preset: string) => Array.from({ length: MANY_PARTICLES.has(preset) ? 18 : 6 }, (_, index) => index);
+const particleIndexes = (preset: string) => Array.from({ length: MANY_PARTICLES.has(preset) ? 30 : 6 }, (_, index) => index);
 
 // 떠다니는 그림 겹 (보통 6개). slot: card(소속 카드) · title(칭호) · deco(데코) · skin(스킨)
 export const GameFx: React.FC<{ slot: 'card' | 'title' | 'deco' | 'skin'; preset: string }> = ({ slot, preset }) => (

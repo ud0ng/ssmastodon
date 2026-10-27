@@ -19821,35 +19821,25 @@ body.app-body.layout-game-room.layout-single-column {
   text-align: center;
 }
 
-.house-points__rank {
-  position: relative;
-  z-index: 2;
-  display: inline-flex;
-  gap: 2px;
-  align-items: center;
-  padding: 1px 7px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--sys-gold) 14%, transparent);
-  color: var(--sys-gold);
-  font-size: 11px;
+// 점수 자리에 최종 순위를 크게: 1·2·3위는 금·은·동빛 글자 (효과가 붙은 칸은 효과 글자색을 따른다)
+// 1위만 크게 금빛, 2위부터는 작고 흐리게 (덜 강조)
+.house-points__value .house-points__rank {
+  font-size: 14px;
   font-weight: 700;
-  line-height: 16px;
+  line-height: 1;
+  opacity: 0.75;
+}
 
-  &--1 {
-    background: linear-gradient(100deg, #f6c445, #fff1a8, #e8a800);
-    color: #5a3a00;
-    box-shadow: 0 0 6px rgb(246 196 69 / 70%);
-  }
-
-  &--2 {
-    background: linear-gradient(100deg, #c9d0d8, #f4f6f8, #aab3bd);
-    color: #3a424c;
-  }
-
-  &--3 {
-    background: linear-gradient(100deg, #d6955a, #f3c99f, #b8743a);
-    color: #4a2a10;
-  }
+.house-points__value .house-points__rank--1 {
+  background: linear-gradient(100deg, #c98a00, #ffd84d, #fff3b8, #e8a800) 0 0 / 200% 100%;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  opacity: 1;
+  filter: drop-shadow(0 1px 0 rgb(0 0 0 / 25%));
 }
 
 // 소속 점수 화면: 시즌 종료 배지와 내역 맨 위 '시즌 종료' 줄

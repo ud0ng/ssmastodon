@@ -109,9 +109,9 @@ module Game
       Game::Config.for('currency')['effects_enabled'] != false
     end
 
-    # 떠다니는 그림 수: 기숙사전 승리 보상은 흰 반짝이를 더 그려 18개 (웹 components/game_fx.tsx 와 같다)
+    # 떠다니는 그림 수: 기숙사전 승리 보상은 반짝이를 더 그려 30개 (스킨만 19번부터도 쓴다, 웹 components/game_fx.tsx 와 같다)
     def particle_count(preset)
-      HOUSE_VICTORY.key?(preset.to_s) ? 18 : 6
+      HOUSE_VICTORY.key?(preset.to_s) ? 30 : 6
     end
 
     def preset_label(slot, preset)

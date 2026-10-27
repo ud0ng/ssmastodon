@@ -15,27 +15,27 @@ import { useChanged } from 'mastodon/features/system/wallet_changes';
 
 import { GoldFx, HOUSE_FX_CLASS, PoopFx } from './house_fx';
 
-const RANK_MEDALS = ['🥇', '🥈', '🥉'];
-
 const HouseCard: React.FC<{ house: Wallet['houses'][number]; wallet: Wallet; classes: string }> = ({ house, wallet, classes }) => {
   const changed = useChanged('house', wallet, house.id);
+  // 시즌 종료 상태: 점수 자리에 최종 순위를 크게 (점수는 마우스를 올리면)
+  const rank = wallet.season_closed && house.rank ? house.rank : null;
 
   return (
-    <Link to={`/system/houses/${house.id}`} className={classes}>
+    <Link to={`/system/houses/${house.id}`} className={classes} title={rank ? `${house.name} ${house.total.toLocaleString()}` : undefined}>
       <ChangeBadge show={changed} />
       {house.fx === 'gold' && <GoldFx />}
       {house.fx === 'poop' && <PoopFx />}
       {house.fx && !HOUSE_FX_CLASS[house.fx] && <GameFx slot='card' preset={house.fx} />}
-      {wallet.season_closed && house.rank && (
-        <span className={`house-points__rank house-points__rank--${house.rank}`}>
-          {RANK_MEDALS[house.rank - 1] ?? ''}
-          <FormattedMessage id='house.rank' defaultMessage='#{rank}' values={{ rank: house.rank }} />
-        </span>
-      )}
       <span className='house-points__name'>{house.name}</span>
       <span className='house-points__value'>
         <Crest house={{ ...house, emoji: '' }} />
-        <strong>{house.total.toLocaleString()}</strong>
+        {rank ? (
+          <strong className={`house-points__rank house-points__rank--${rank}`}>
+            <FormattedMessage id='house.rank' defaultMessage='#{rank}' values={{ rank }} />
+          </strong>
+        ) : (
+          <strong>{house.total.toLocaleString()}</strong>
+        )}
       </span>
     </Link>
   );
