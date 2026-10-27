@@ -37,7 +37,7 @@ module Admin
       redirect_to admin_game_houses_path, notice: t('admin.games.seasons.posted')
     end
 
-    # 시즌 종료: 최종 점수를 툿으로 발표하고 소속 점수를 0부터 다시
+    # 시즌 종료: 최종 점수를 툿으로 발표. 새 시즌을 만들 때까지 소속 점수를 얻지 못하고 최종 순위가 보인다 (GameSeason.closed?)
     def finish
       authorize :settings, :update?
 

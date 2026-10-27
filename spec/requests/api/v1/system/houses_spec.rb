@@ -55,12 +55,20 @@ RSpec.describe 'GET /api/v1/system/houses/:id' do
     expect(response.parsed_body['records'].pluck('amount')).to eq [-2, -7]
   end
 
-  it 'only counts points since the last finished season' do
+  it 'shows the final points with the season end until a new season starts, then only counts the new season' do
     GameSeason.create!(name: '1학기', starts_on: 10.days.ago.to_date, ends_on: 1.day.ago.to_date, status: 'finished', finished_at: 1.hour.from_now)
 
     get "/api/v1/system/houses/#{house.id}", headers: headers
+    body = response.parsed_body
+    expect(body['house']['total']).to eq 10
+    expect(body['house']['season']).to include('name' => '1학기', 'rank' => 1)
 
+    travel 2.hours
+    GameSeason.create!(name: '2학기')
+
+    get "/api/v1/system/houses/#{house.id}", headers: headers
     expect(response.parsed_body['house']['total']).to eq 0
+    expect(response.parsed_body['house']['season']).to be_nil
     expect(response.parsed_body['top_gain']).to be_nil
   end
 

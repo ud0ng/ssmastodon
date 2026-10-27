@@ -44,18 +44,41 @@ RSpec.describe Game::Points do
     expect([gryffindor.total, slytherin.total]).to eq [1, 0]
   end
 
-  it 'starts counting again after a season ends' do
+  it 'keeps the final scores and gives no points after a season ends, then starts from zero in a new season' do
     first = finished_session
     described_class.award(first, first.players.first, 10)
     season = GameSeason.create!(name: '1학기')
     Game::Summary.season_final!(season)
 
-    expect(gryffindor.total).to eq 0
     expect(season.reload).to have_attributes(status: 'finished')
     expect(season.results.first).to include('name' => '그리핀도르', 'total' => 10)
+
+    # 시즌 종료 상태: 최종 점수가 그대로 보이고, 점수 대신 '시즌 종료' 안내
+    expect(GameSeason.closed?).to be true
+    expect(gryffindor.total).to eq 10
+    late = finished_session
+    expect { expect(described_class.award(late, late.players.first, 5)).to include('시즌이 끝나') }.to_not change(GameHousePoint, :count)
+    expect(described_class.give(late, late.players.first, 3, reason: 'event')).to include('시즌이 끝나')
+    expect(described_class.board).to include('1학기 시즌 종료', '1. 그리핀도르 10점')
+    expect(gryffindor.total).to eq 10
+
+    # 새 시즌: 0부터
+    travel 1.second
+    GameSeason.create!(name: '2학기')
+    expect(GameSeason.closed?).to be false
+    expect(gryffindor.total).to eq 0
     later = finished_session
     described_class.award(later, later.players.first, 5)
     expect(gryffindor.total).to eq 5
+  end
+
+  it 'blocks manito, counter and item house points while the season is closed' do
+    GameSeason.create!(name: '1학기', status: 'finished', finished_at: 1.minute.ago)
+    counter = GameCounter.create!(name: '시험 벌점', affects_house: true, house_amount: -1, house_interval_minutes: 60, house_applied_at: 3.hours.ago)
+    GameCharacter.for(alice).update!(counters: { counter.id.to_s => 2 })
+
+    expect { counter.apply_house_points! }.to_not change(GameHousePoint, :count)
+    expect(counter.reload.house_applied_at).to be > 61.minutes.ago
   end
 
   it 'uses the configured name for houses (e.g. 진영 for the adult period)' do

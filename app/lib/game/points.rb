@@ -10,6 +10,17 @@ module Game
       Game::Config.for('common')['scoring_mode'] == 'games'
     end
 
+    # 시즌 종료 상태 (GameSeason.closed?): 소속 점수를 얻지 못한다
+    def closed?
+      GameSeason.closed?
+    end
+
+    # 시즌 종료라 점수를 못 받았다는 안내 (컨텐츠 결과 등)
+    def closed_message(player)
+      common = Game::Config.for('common')
+      Game::Text.render(common['msg_season_closed'], player: player, term: common['house_term'])
+    end
+
     # 게임 결과로 점수를 준다. outcome: 'win' / 'draw' / 'lose'. 지급 안내 문구를 돌려준다 (안 줬으면 nil)
     def award(session, player, amount, outcome: 'win')
       amount = games_mode? ? (outcome == 'win' ? 1 : 0) : amount.to_i
@@ -20,10 +31,11 @@ module Game
       give(session, player, amount, reason: session.kind)
     end
 
-    # 상대 없이 주는 점수 (마법 수업·이벤트 등)
+    # 상대 없이 주는 점수 (마법 수업·이벤트 등). 시즌 종료 상태면 주지 않고 '시즌 종료' 안내
     def give(session, player, amount, reason:)
       return if amount.to_i <= 0
       return if Game::Tournament.scoring_mode?
+      return closed_message(player) if closed?
 
       common = Game::Config.for('common')
       house = player.character.group
@@ -33,10 +45,12 @@ module Game
       Game::Text.render(common['msg_points'], emoji: house.emoji, house: house.name, amount: amount.to_i, player: player, term: common['house_term'])
     end
 
-    # [점수] 답장 (이번 시즌 점수)
+    # [점수] 답장 (이번 시즌 점수, 시즌 종료 상태면 끝난 시즌의 최종 순위)
     def board
       common = Game::Config.for('common')
-      ([Game::Text.render(common['msg_board'], term: common['house_term'])] + ranking_lines).join("\n")
+      head = Game::Text.render(common['msg_board'], term: common['house_term'])
+      head = "#{head} (#{GameSeason.points_season&.name} 시즌 종료)" if closed?
+      ([head] + ranking_lines).join("\n")
     end
 
     # 소속 순위 줄 ("1. 그리핀도르 120점")

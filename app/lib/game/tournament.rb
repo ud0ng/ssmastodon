@@ -109,7 +109,7 @@ module Game
       tournament.update!(status: 'finished', finished_at: Time.now.utc, winner_house: champion)
       return if champion.nil?
 
-      GameHousePoint.create!(house: champion, amount: tournament.reward, reason: "tournament:#{tournament.id}") if tournament.reward.positive?
+      GameHousePoint.create!(house: champion, amount: tournament.reward, reason: "tournament:#{tournament.id}") if tournament.reward.positive? && !GameSeason.closed?
 
       common = Game::Config.for('common')
       tally = wins.sort_by { |_, count| -count }.map { |house, count| "#{house.label} #{count}승" }.join("\n")

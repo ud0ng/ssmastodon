@@ -66,8 +66,23 @@ RSpec.describe 'API V1 System wallet' do
 
     body = response.parsed_body
     expect(body).to include('house_term' => '기숙사', 'my_house_id' => house.id.to_s)
-    expect(body['houses']).to include('id' => house.id.to_s, 'name' => house.name, 'color' => house.color, 'total' => 12, 'counters' => 0, 'fx' => nil, 'fx_until' => nil)
+    expect(body['houses']).to include('id' => house.id.to_s, 'name' => house.name, 'color' => house.color, 'total' => 12, 'rank' => 1, 'counters' => 0, 'fx' => nil, 'fx_until' => nil)
     expect(body['houses'].size).to eq GameHouse.houses.count
+    expect(body['season_closed']).to be_nil
+  end
+
+  it 'shows the ended season name and the final ranking until a new season starts' do
+    GameHouse.ensure_defaults!
+    house = GameHouse.houses.first
+    GameHousePoint.create!(house: house, amount: 12, reason: 'test')
+    GameSeason.create!(name: '1학년', status: 'finished', finished_at: 1.minute.from_now)
+
+    get '/api/v1/system/wallet', headers: headers
+
+    body = response.parsed_body
+    expect(body['season_closed']).to eq '1학년'
+    expect(body['houses'].find { |row| row['id'] == house.id.to_s }).to include('total' => 12, 'rank' => 1)
+    expect(body['houses'].pluck('rank').sort).to eq [1, 2, 2, 2]
   end
 
   it 'sums the result values of the house point counters per house so a change can raise the badge' do

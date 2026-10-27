@@ -57,7 +57,10 @@ export interface Wallet {
   my_house_id: string | null;
   // fx: 아이템으로 붙은 소속 카드 효과 모양 (상점 설정 > 효과 목록, 꺼져 있으면 null)
   // counters: 그 소속 캐릭터들의 누적 수치 결과값 합계 (바뀌면 소속 점수 카드에 알림 배지)
-  houses: { id: string; name: string; color: string; total: number; counters?: number; fx?: string | null; fx_until?: string | null }[];
+  // rank: 순위 (같은 점수는 같은 순위)
+  houses: { id: string; name: string; color: string; total: number; rank?: number; counters?: number; fx?: string | null; fx_until?: string | null }[];
+  // 시즌 종료 상태면 끝난 시즌 이름 (새 시즌이 시작될 때까지 카드에 최종 순위), 아니면 null
+  season_closed?: string | null;
   invites: number;
   // 내가 행동해야 하는 판 (수락 대기·내 차례). 알림 소리·메뉴 배지의 기준
   todo?: { session_id: string; name: string; event?: boolean }[];

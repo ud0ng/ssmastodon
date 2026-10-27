@@ -130,7 +130,8 @@ module Game
         Game::Wallet.apply!([{ account: pair.account, money: money, items: items.to_h { |item| [item['name'], item['count']] }, other: pair.target_account, other_dir: 'to' }],
                             kind: 'manito', detail: '마니또 단어 사용', actor: 'manito')
       end
-      house = points.positive? ? GameCharacter.for(pair.account).group : nil
+      # 시즌 종료 상태면 소속 점수는 주지 않는다 (GameSeason.closed?)
+      house = points.positive? && !GameSeason.closed? ? GameCharacter.for(pair.account).group : nil
       GameHousePoint.create!(house: house, account: pair.account, amount: points, reason: 'manito') if house
       { money: [money, 0].max, items: items, points: house ? points : 0 }
     end
@@ -165,7 +166,7 @@ module Game
       end
 
       points = settings['manito_wrong_points'].to_i
-      house = points.positive? ? GameCharacter.for(guesser).group : nil
+      house = points.positive? && !GameSeason.closed? ? GameCharacter.for(guesser).group : nil
       GameManitoLog.transaction do
         Game::Wallet.apply!([{ account: guesser, money: -penalty, other: accused, other_dir: 'to' }], kind: 'manito', detail: '마니또 오답 벌금', actor: 'manito') if penalty.positive?
         GameHousePoint.create!(house: house, account: guesser, amount: -points, reason: 'manito') if house
@@ -200,7 +201,8 @@ module Game
       thief = pair.target_account
       money = logs.sum(&:money)
       items = logs.flat_map { |log| Array(log.items) }.each_with_object(Hash.new(0)) { |item, sum| sum[item['name']] += item['count'].to_i }.select { |_, count| count.positive? }
-      points = logs.sum(&:points)
+      # 시즌 종료 상태면 소속 점수는 옮기지 않는다
+      points = GameSeason.closed? ? 0 : logs.sum(&:points)
 
       take_from_victim!(pair.account, thief, money, items) if money.positive? || items.any?
       Game::Wallet.apply!([{ account: thief, money: money, items: items, other: pair.account, other_dir: 'from' }], kind: 'manito', detail: '마니또 정답', actor: 'manito') if money.positive? || items.any?
@@ -259,7 +261,7 @@ module Game
       end.to_h
       Game::Wallet.apply!([{ account: log.account, money: -money, items: items }], kind: 'manito', detail: '마니또 툿 삭제', actor: 'manito') if money.positive? || items.any?
       house = character.group
-      GameHousePoint.create!(house: house, account: log.account, amount: -log.points, reason: 'manito') if house && log.points.positive?
+      GameHousePoint.create!(house: house, account: log.account, amount: -log.points, reason: 'manito') if house && log.points.positive? && !GameSeason.closed?
     end
 
     # ── 시작 안내 DM (관리 > 마니또 > 설정 > 해금의 [DM 발송], Game::ManitoWorker) ──

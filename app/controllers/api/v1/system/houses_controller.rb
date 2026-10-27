@@ -62,7 +62,16 @@ class Api::V1::System::HousesController < Api::BaseController
 
   def house_json
     common = Game::Config.for('common')
-    { id: @house.id.to_s, name: @house.name, color: @house.color, total: @house.total, term: common['house_term'], currency: common['currency_name'], summary: summary_json }
+    { id: @house.id.to_s, name: @house.name, color: @house.color, total: @house.total, term: common['house_term'], currency: common['currency_name'], summary: summary_json, season: season_json }
+  end
+
+  # 시즌 종료 상태면 끝난 시즌 이름·끝난 때·이 소속 최종 순위 (내역 맨 위에 '시즌 종료'), 아니면 nil
+  def season_json
+    return unless GameSeason.closed?
+
+    season = GameSeason.points_season
+    totals = GameHouse.active.map(&:total)
+    { name: season&.name, finished_at: season&.finished_at&.iso8601, rank: totals.count { |total| total > @house.total } + 1 }
   end
 
   def counter_log_json(log, counter, people)

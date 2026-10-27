@@ -19809,6 +19809,58 @@ body.app-body.layout-game-room.layout-single-column {
   z-index: 2;
 }
 
+// 시즌 종료 상태 (새 시즌 전): 맨 위 '○○ 시즌 종료 · 최종 순위' 줄과 칸마다 순위 배지 (house_points.tsx)
+.house-points__season {
+  grid-column: 1 / -1;
+  padding: 6px 8px;
+  border-bottom: 1px dashed var(--sys-gold-soft);
+  color: var(--sys-gold);
+  font-family: var(--sys-serif);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.house-points__rank {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sys-gold) 14%, transparent);
+  color: var(--sys-gold);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+
+  &--1 {
+    background: linear-gradient(100deg, #f6c445, #fff1a8, #e8a800);
+    color: #5a3a00;
+    box-shadow: 0 0 6px rgb(246 196 69 / 70%);
+  }
+
+  &--2 {
+    background: linear-gradient(100deg, #c9d0d8, #f4f6f8, #aab3bd);
+    color: #3a424c;
+  }
+
+  &--3 {
+    background: linear-gradient(100deg, #d6955a, #f3c99f, #b8743a);
+    color: #4a2a10;
+  }
+}
+
+// 소속 점수 화면: 시즌 종료 배지와 내역 맨 위 '시즌 종료' 줄
+.house-page__season-end {
+  font-weight: 700;
+}
+
+.house-page__season-row .house-page__icon {
+  font-size: 20px;
+}
+
 // 블링블링(gold)·똥(poop) 소속 카드 효과: 예전 1등·꼴등 효과 모양 그대로 (house_points.tsx GoldFx·PoopFx, 관리 화면 admin/game_effects/_preview)
 .house-points__fx {
   position: absolute;

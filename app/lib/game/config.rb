@@ -218,6 +218,7 @@ module Game
       # 일반 문구: 점수·보상·전적
       Field.new(key: 'msg_points', type: :text, group: 'messages_score', label: '점수 지급', default: "%{house}(%{player})가 +%{amount}점을 얻습니다!"),
       Field.new(key: 'msg_reward', type: :text, group: 'messages_score', label: '보상 지급', default: "%{player}{은는} %{rewards}{을를} 획득합니다."),
+      Field.new(key: 'msg_season_closed', type: :text, group: 'messages_score', label: '시즌 종료 (점수 없음)', default: '시즌이 끝나 %{player}{은는} %{term} 점수를 받지 못했습니다. (새 시즌이 시작되면 다시 쌓입니다)'),
       Field.new(key: 'msg_no_house', type: :text, group: 'messages_score', label: '소속 없음', default: '%{player}{은는} 아직 %{term}{이가} 없어 점수를 받지 못했습니다.'),
       Field.new(key: 'msg_board', type: :text, group: 'messages_score', label: '[점수] 머리말', default: "%{term} 점수"),
       Field.new(key: 'msg_record', type: :text, group: 'messages_score', label: '[내전적]', default: '%{player}의 전적: %{win}승 %{lose}패 %{draw}무'),

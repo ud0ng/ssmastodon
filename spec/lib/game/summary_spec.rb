@@ -23,12 +23,16 @@ RSpec.describe Game::Summary do
     expect(season.reload).to be_running
   end
 
-  it 'announces the final results and starts the points again' do
+  it 'announces the final results and keeps them until a new season starts from zero' do
     described_class.season_final!(season)
 
     status = Status.where(account: system).last
     expect(status.text).to include('1학기 종료', '우승 기숙사: 그리핀도르')
     expect(season.reload).to have_attributes(status: 'finished')
+    expect([gryffindor.total, slytherin.total]).to eq [10, 3]
+
+    travel 1.second
+    GameSeason.create!(name: '2학기')
     expect([gryffindor.total, slytherin.total]).to eq [0, 0]
   end
 end

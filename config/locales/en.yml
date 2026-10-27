@@ -271,7 +271,7 @@ en:
         empty: No seasons yet.
         ends_on: End date
         finish: End season
-        finish_confirm: End the season '%{name}'? The final scores are posted and points start again from zero.
+        finish_confirm: End the season '%{name}'? The final scores are posted. No more points are earned and the final ranking is shown until a new season starts, which begins from zero.
         finished: The season has ended and the final scores were posted.
         interim: Interim results
         interim_confirm: Post the scores so far?

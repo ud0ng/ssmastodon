@@ -1632,5 +1632,11 @@
   "compose.public_limit.ready": "이제 다시 쓸 수 있습니다.",
   "compose.public_limit.remaining": "남은 시간 {time}",
   "compose.public_limit.title": "퍼블툿 제한",
-  "house.sum_posts_season": "{season} 툿 (툿 / 글자)"
+  "house.sum_posts_season": "{season} 툿 (툿 / 글자)",
+  "house.rank": "{rank}위",
+  "house.season_closed": "{season} 시즌 종료 · 최종 순위",
+  "house.final": "{season} 최종 {term} 점수",
+  "house.season_end_rank": "시즌 종료 · {rank}위",
+  "house.season_end_title": "{season} 시즌 종료",
+  "house.season_end_hint": "새 시즌이 시작될 때까지 {term} 점수를 얻지 못합니다. 새 시즌은 0점부터 시작합니다."
 }

@@ -162,6 +162,9 @@ module Game
         delta = Game::Dice.amount(effect['value'])
         case effect['currency']
         when 'house_points'
+          # 시즌 종료 상태면 소속 점수는 반영하지 않는다 (GameSeason.closed?)
+          return "#{@house.name} 소속 점수: 시즌이 끝나 반영되지 않습니다" if GameSeason.closed?
+
           GameHousePoint.create!(house: @house, account: @account, amount: delta, reason: "#{@name} → #{@house.name}".truncate(200)) unless delta.zero?
           "#{@house.name} 소속 점수 #{format('%+d', delta)}"
         when 'item'

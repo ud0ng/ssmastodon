@@ -48,7 +48,9 @@ interface Member {
 }
 
 interface HouseData {
-  house: { id: string; name: string; color: string; total: number; term: string; currency: string; summary: { money: number; win: number; lose: number; draw: number; posts: number; chars: number; season?: string | null } };
+  house: { id: string; name: string; color: string; total: number; term: string; currency: string; summary: { money: number; win: number; lose: number; draw: number; posts: number; chars: number; season?: string | null };
+    // 시즌 종료 상태면 끝난 시즌·끝난 때·이 소속 최종 순위 (새 시즌이 시작될 때까지)
+    season?: { name: string; finished_at: string | null; rank: number } | null };
   top_gain: Person | null;
   top_loss: Person | null;
   counters: { id: string; name: string }[];
@@ -260,13 +262,22 @@ const HousePage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                 {fx && !HOUSE_FX_CLASS[fx] && <GameFx slot='card' preset={fx} />}
                 <span className='wallet-card__top'>
                   <span className='wallet-card__label'>
-                    <FormattedMessage id='house.current' defaultMessage='Current {term} points' values={{ term: data.house.term }} />
+                    {data.house.season ? (
+                      <FormattedMessage id='house.final' defaultMessage='{season} final {term} points' values={{ season: data.house.season.name, term: data.house.term }} />
+                    ) : (
+                      <FormattedMessage id='house.current' defaultMessage='Current {term} points' values={{ term: data.house.term }} />
+                    )}
                   </span>
                   <span className='house-page__pills'>
                     {fx && mine?.fx_until && (
                       <span className='wallet-card__gift house-page__name house-page__fx-time'>
                         <FormattedMessage id='house.fx_left' defaultMessage='Effect left' />
                         <Remaining until={mine.fx_until} />
+                      </span>
+                    )}
+                    {data.house.season && (
+                      <span className='wallet-card__gift house-page__name house-page__season-end'>
+                        <FormattedMessage id='house.season_end_rank' defaultMessage='Season ended · #{rank}' values={{ rank: data.house.season.rank }} />
                       </span>
                     )}
                     <span className='wallet-card__gift house-page__name'>{data.house.name}</span>
@@ -318,6 +329,33 @@ const HousePage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                 </button>
               ))}
             </div>
+
+            {/* 시즌 종료: 내역 맨 위에 '시즌 종료' 줄 (새 시즌이 시작되면 내역은 0부터) */}
+            {data.house.season && records !== null && !filter.startsWith('counter:') && (
+              <section className='wallet-page__day'>
+                {data.house.season.finished_at && (
+                  <h3 className='wallet-page__day-title'>
+                    <DayTitle iso={data.house.season.finished_at} />
+                  </h3>
+                )}
+                <ul className='wallet-page__records'>
+                  <li className='wallet-record house-page__season-row'>
+                    <span className='wallet-record__icon house-page__icon'>🏁</span>
+                    <div className='wallet-record__main'>
+                      <span className='wallet-record__title'>
+                        <FormattedMessage id='house.season_end_title' defaultMessage='{season} season ended' values={{ season: data.house.season.name }} />
+                      </span>
+                      <span className='wallet-record__meta'>
+                        <FormattedMessage id='house.season_end_hint' defaultMessage='No more {term} points until the next season. It starts from 0.' values={{ term: data.house.term }} />
+                      </span>
+                    </div>
+                    <span className='wallet-record__amount'>
+                      <strong><FormattedMessage id='house.rank' defaultMessage='#{rank}' values={{ rank: data.house.season.rank }} /></strong>
+                    </span>
+                  </li>
+                </ul>
+              </section>
+            )}
 
             {records === null ? (
               <LoadingIndicator />

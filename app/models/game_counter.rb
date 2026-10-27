@@ -71,6 +71,8 @@ class GameCounter < ApplicationRecord
     interval = house_interval_minutes.minutes
     ticks = ((now - house_applied_at) / interval).floor.clamp(0, MAX_CATCH_UP)
     return if ticks.zero?
+    # 시즌 종료 상태: 점수는 넣지 않고 반영 시각만 넘긴다 (새 시즌에 밀린 만큼 한꺼번에 들어가지 않게)
+    return update_columns(house_applied_at: house_applied_at + (interval * ticks)) if GameSeason.closed? # rubocop:disable Rails/SkipsModelValidations
 
     GameCharacter.visible.includes(:account).each do |character|
       value = net_for(character)

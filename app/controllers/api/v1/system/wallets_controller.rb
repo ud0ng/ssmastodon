@@ -44,6 +44,8 @@ class Api::V1::System::WalletsController < Api::BaseController
       # 글쓰기 패널 맨 아래 소속 점수 (점수 기준 소속, 이번 시즌)
       house_term: Game::Config.for('common')['house_term'],
       my_house_id: character.group_id&.to_s,
+      # 시즌 종료 상태면 끝난 시즌 이름 (새 시즌이 시작될 때까지 소속 점수 카드에 최종 순위를 보여 준다), 아니면 nil
+      season_closed: GameSeason.closed? ? GameSeason.points_season&.name.to_s : nil,
       # fx: 아이템으로 붙은 소속 카드 효과 모양 (Game::Fx, 효과가 꺼져 있으면 nil)
       houses: houses_json,
       inventory: Array(character.inventory).map { |item| inventory_json(item, shop_items[Game::Wallet.key(item['name'])]) },
@@ -96,9 +98,11 @@ class Api::V1::System::WalletsController < Api::BaseController
         sums[group.id] += counters.sum { |counter| counter.net_for(each) } if group
       end
     end
-    GameHouse.active.map do |house|
+    rows = GameHouse.active.map do |house|
       { id: house.id.to_s, name: house.name, color: house.color, total: house.total, counters: sums[house.id], fx: Game::Fx.house_preset(house), fx_until: Game::Fx.house_until(house) }
     end
+    # 순위 (같은 점수는 같은 순위): 시즌 종료 상태에서 카드에 1위·2위… 로 보인다
+    rows.each { |row| row[:rank] = rows.count { |other| other[:total] > row[:total] } + 1 }
   end
 
   def todo_sessions
