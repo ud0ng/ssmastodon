@@ -13,10 +13,14 @@ export interface GameFxShape {
   skin?: string;
 }
 
-// 떠다니는 그림 6개 겹. slot: card(소속 카드) · title(칭호) · deco(데코) · skin(스킨)
+// 기숙사전 승리 보상은 흰 반짝이를 더 많이 그린다 (18개, Game::Fx.particle_count 와 같다)
+const MANY_PARTICLES = new Set(['gryffindor', 'hufflepuff', 'slytherin', 'ravenclaw']);
+const particleIndexes = (preset: string) => Array.from({ length: MANY_PARTICLES.has(preset) ? 18 : 6 }, (_, index) => index);
+
+// 떠다니는 그림 겹 (보통 6개). slot: card(소속 카드) · title(칭호) · deco(데코) · skin(스킨)
 export const GameFx: React.FC<{ slot: 'card' | 'title' | 'deco' | 'skin'; preset: string }> = ({ slot, preset }) => (
   <span className={`game-fx game-fx--${slot} game-fx--${preset}`} aria-hidden>
-    {[0, 1, 2, 3, 4, 5].map((index) => <span key={index} className='game-fx__p' />)}
+    {particleIndexes(preset).map((index) => <span key={index} className='game-fx__p' />)}
   </span>
 );
 

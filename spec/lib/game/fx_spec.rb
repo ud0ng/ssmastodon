@@ -23,6 +23,7 @@ RSpec.describe Game::Fx do
     expect(defaults.find { |item| item[:slot] == 'title' && item[:preset] == 'slytherin' }).to include(kind: 'character', name: '슬리데린 승리 칭호')
     expect(defaults.find { |item| item[:slot] == 'card' && item[:preset] == 'ravenclaw' }).to include(kind: 'house', name: '래번클로 승리')
     expect(defaults.pluck(:description)).to all(include('승리 보상'))
+    expect([described_class.particle_count('ravenclaw'), described_class.particle_count('gold')]).to eq [18, 6]
 
     GameEffect.seed_missing!
     expect(GameEffect.where(preset: houses).count).to eq 16

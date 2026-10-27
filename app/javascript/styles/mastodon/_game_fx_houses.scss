@@ -64,28 +64,27 @@
   to { background-position: 0 200%; }
 }
 
-// 흩뿌려진 흰 반짝이 가루: 크기·간격이 다른 점 네 겹이 서로 다른 방향으로 휘날린다 (한 바퀴에 타일 크기의 배수만큼 움직여 끊김 없이 돈다)
-@keyframes game-fx-house-dust {
-  from { background-position: 0 0, 11px 7px, 5px 17px, 19px 3px, 3px 9px; }
-  to { background-position: 52px -44px, -30px -76px, 72px -100px, -57px -102px, 23px -138px; }
-}
+// 흰 반짝이 파티클 (7~18번째, 기숙사 승리 효과만 18개를 그린다: components/game_fx.tsx·admin/game_effects/_layer)
+// 앞 8개는 여기저기서 반짝 터지고, 뒤 4개는 흰 파티클이 비스듬히 휘날린다. [가로, 세로, 지연, 주기, 크기]
+$house-sparks: (
+  (12%, 22%, -0.1s, 1.1s, 11px), (30%, 70%, -0.6s, 0.9s, 9px), (44%, 26%, -0.35s, 1.3s, 12px), (58%, 78%, -0.8s, 1s, 10px),
+  (70%, 16%, -0.2s, 1.2s, 9px), (86%, 52%, -0.5s, 0.8s, 12px), (22%, 46%, -0.95s, 1.15s, 8px), (52%, 8%, -0.4s, 0.95s, 10px),
+  (8%, 82%, -0.3s, 2.6s, 7px), (38%, 90%, -1.4s, 3s, 6px), (64%, 60%, -2.1s, 2.8s, 7px), (80%, 86%, -0.9s, 3.2s, 6px)
+);
 
-@keyframes game-fx-house-dust-glint {
-  0%, 100% { filter: brightness(1); }
-  30% { filter: brightness(1.6); }
-  60% { filter: brightness(0.9); }
-}
+// 아바타 둘레 12곳 (원 바깥 가장자리, 30도마다) [가로, 세로]
+$house-ring-sparks: (
+  (110%, 50%), (101%, 79%), (79%, 101%), (50%, 110%), (21%, 101%), (-1%, 79%),
+  (-10%, 50%), (-1%, 21%), (21%, -1%), (50%, -10%), (79%, -1%), (101%, 21%)
+);
 
-@mixin house-dust($tint, $duration: 5s) {
-  background-image:
-    radial-gradient(circle at 30% 40%, #fff 0 1px, transparent 1.6px),
-    radial-gradient(circle at 70% 20%, rgb(255 255 255 / 95%) 0 1.2px, rgb(255 255 255 / 35%) 2px, transparent 2.6px),
-    radial-gradient(circle at 50% 80%, $tint 0 1px, transparent 1.6px),
-    radial-gradient(circle at 20% 60%, #fff 0 1.4px, rgb(255 255 255 / 45%) 2.4px, transparent 3.4px),
-    radial-gradient(circle at 60% 50%, rgb(255 255 255 / 80%) 0 0.8px, transparent 1.3px);
-  background-repeat: repeat;
-  background-size: 26px 22px, 30px 38px, 36px 50px, 57px 51px, 23px 23px;
-  animation: game-fx-house-dust $duration linear infinite, game-fx-house-dust-glint 1.3s ease-in-out infinite;
+// 흰 파티클이 비스듬히 휘날린다
+@keyframes game-fx-house-flutter {
+  0% { opacity: 0; transform: translate(-14px, 10px) rotate(0deg) scale(0.6); }
+  20% { opacity: 1; }
+  50% { transform: translate(4px, -6px) rotate(140deg) scale(1); }
+  80% { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(24px, -24px) rotate(280deg) scale(0.7); }
 }
 
 @mixin house-victory($key, $a1, $a2, $a3, $b1, $b2, $b3, $mascot, $glyph, $spark, $motion, $duration, $ring, $pattern, $outline) {
@@ -102,6 +101,42 @@
   .game-fx--#{$key}:not(.game-fx--deco) .game-fx__p {
     animation-name: $motion;
     animation-duration: $duration;
+  }
+
+  // 7~18번: 흰 반짝이 (✦·✧) 가 여기저기서 반짝, 뒤 4개는 흰 파티클이 휘날린다
+  .game-fx--#{$key} .game-fx__p:nth-child(n + 7)::before {
+    content: '✦';
+    color: #fff;
+    text-shadow: 0 0 4px #fff, 0 0 8px $b2;
+  }
+
+  .game-fx--#{$key} .game-fx__p:nth-child(3n + 8)::before { content: '✧'; }
+  .game-fx--#{$key} .game-fx__p:nth-child(n + 15)::before { content: '•'; text-shadow: 0 0 5px #fff, 0 0 10px #fff; }
+
+  @for $i from 1 through length($house-sparks) {
+    $x: nth(nth($house-sparks, $i), 1);
+    $y: nth(nth($house-sparks, $i), 2);
+    $delay: nth(nth($house-sparks, $i), 3);
+    $time: nth(nth($house-sparks, $i), 4);
+    $size: nth(nth($house-sparks, $i), 5);
+    $index: $i + 6;
+
+    .game-fx--#{$key}:not(.game-fx--deco) .game-fx__p:nth-child(#{$index}) {
+      top: $y;
+      bottom: auto;
+      inset-inline-start: $x;
+      font-size: $size;
+      animation-duration: $time;
+      animation-delay: $delay;
+
+      @if $index > 14 {
+        animation-name: game-fx-house-flutter;
+        animation-timing-function: linear;
+      } @else {
+        animation-name: game-fx-sparkle;
+        animation-timing-function: ease-in-out;
+      }
+    }
   }
 
   // 글자를 감싸는 빛 (두 색이 번갈아 번쩍)
@@ -170,24 +205,13 @@
     animation: game-fx-house-sweep 2.4s ease-in-out infinite;
   }
 
-  // 흩뿌려진 흰 반짝이 가루 (카드·칭호·스킨의 효과 겹 바탕)
-  .game-fx--card.game-fx--#{$key},
-  .game-fx--skin.game-fx--#{$key} {
-    @include house-dust($b3);
-  }
-
-  .game-fx--title.game-fx--#{$key} {
-    inset: -6px -10px;
-    @include house-dust($b3, 4s);
-  }
-
   // 소속 점수 화면 큰 카드: 상징·그림을 크게, 글자는 흰색 + 진한 외곽선, 점수는 금속빛으로 번쩍
   .house-page__total--#{$key} { --hp-ink: #fff; --hp-gain: #b9ffcb; --hp-loss: #ffc4c4; }
 
   .house-page__total.game-fx-host--#{$key} {
     .game-fx__p { font-size: 24px; }
     .game-fx--card::before { inset-inline-end: 3%; font-size: 120px; opacity: 0.4; }
-    .game-fx { background-size: 39px 33px, 45px 57px, 54px 75px, 85px 76px, 34px 34px; }
+    .game-fx__p:nth-child(n + 7) { font-size: 16px !important; }
 
     .wallet-card__label,
     .wallet-card__stats > span,
@@ -240,7 +264,10 @@
     animation: game-fx-shimmer 2s linear infinite, game-fx-#{$key}-text 1.8s ease-in-out infinite;
   }
 
-  .game-fx--title.game-fx--#{$key} .game-fx__p:nth-child(n + 5) { display: none; }
+  .game-fx--title.game-fx--#{$key} .game-fx__p:nth-child(5),
+  .game-fx--title.game-fx--#{$key} .game-fx__p:nth-child(6) { display: none; }
+
+  .game-fx--title.game-fx--#{$key} .game-fx__p:nth-child(n + 7) { font-size: 8px !important; }
   .game-fx--title.game-fx--#{$key} .game-fx__p:nth-child(3n + 1) { font-size: 10px !important; }
 
   // ── 데코: 두 색 고리가 돌며 빛나고, 바깥에 금속빛 살 고리가 거꾸로 돌고, 상징이 둘레를 돈다 ──
@@ -256,24 +283,47 @@
     inset: -10px;
     z-index: 2;
     border-radius: 50%;
-    // 아바타 둘레에 흩뿌려진 흰 반짝이 가루가 거꾸로 돌며 반짝인다
-    background-image:
-      radial-gradient(circle at 30% 40%, #fff 0 0.9px, transparent 1.5px),
-      radial-gradient(circle at 70% 70%, $b3 0 1px, transparent 1.6px),
-      radial-gradient(circle at 50% 20%, #fff 0 1.3px, rgb(255 255 255 / 40%) 2.2px, transparent 3px);
-    background-size: 9px 8px, 11px 13px, 17px 15px;
-    mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 7px), #000 calc(100% - 1px), transparent 100%);
+    background: repeating-conic-gradient(from 0deg, $b3 0 3deg, transparent 3deg 12deg);
+    mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
     pointer-events: none;
-    animation: game-fx-spin 9s linear infinite reverse, game-fx-house-dust-glint 0.9s ease-in-out infinite;
+    animation: game-fx-spin 8s linear infinite reverse, game-fx-twinkle 1.2s ease-in-out infinite;
   }
 
   .game-fx--deco.game-fx--#{$key} .game-fx__p {
-    &:nth-child(n + 5) { display: none; }
+    &:nth-child(5),
+    &:nth-child(6) { display: none; }
+
+    // 7~18번: 아바타 둘레 12곳에서 흰 반짝이가 제자리에서 반짝 (돌지 않는다)
+    &:nth-child(n + 7) {
+      width: auto;
+      height: auto;
+      margin: -5px 0 0 -5px;
+      opacity: 0;
+      font-size: 9px;
+      line-height: 1;
+      transform-origin: center;
+      animation: game-fx-sparkle 0.9s ease-in-out infinite;
+
+      &::before { animation: none; }
+    }
     &:nth-child(1) { animation-delay: 0s; }
     &:nth-child(2) { animation-delay: -1s; }
     &:nth-child(3) { animation-delay: -2s; }
     &:nth-child(4) { animation-delay: -3s; }
     &:nth-child(3n + 1) { font-size: 13px; }
+  }
+
+  @for $i from 1 through length($house-ring-sparks) {
+    $x: nth(nth($house-ring-sparks, $i), 1);
+    $y: nth(nth($house-ring-sparks, $i), 2);
+    $index: $i + 6;
+
+    .game-fx--deco.game-fx--#{$key} .game-fx__p:nth-child(#{$index}) {
+      top: $y;
+      left: $x;
+      animation-delay: -#{$index * 0.13}s;
+      animation-duration: #{0.7 + ($index % 4) * 0.15}s;
+    }
   }
 
   // 둘레에서 반짝 터지는 금속빛 가루
@@ -400,12 +450,3 @@ $silver-light: #fbfcfe;
   #1a3480
 );
 
-// 움직임 줄이기: 반짝이 가루도 멈춘다
-@media (prefers-reduced-motion: reduce) {
-  .game-fx--gryffindor,
-  .game-fx--hufflepuff,
-  .game-fx--slytherin,
-  .game-fx--ravenclaw {
-    animation: none !important;
-  }
-}
