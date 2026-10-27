@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_19_001000) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_27_000300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -618,6 +618,43 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_19_001000) do
     t.index ["target_account_id"], name: "index_follows_on_target_account_id"
   end
 
+  create_table "game_activity_days", force: :cascade do |t|
+    t.date "day", null: false
+    t.bigint "account_id", null: false
+    t.integer "posts", default: 0, null: false
+    t.bigint "post_chars", default: 0, null: false
+    t.integer "dms", default: 0, null: false
+    t.bigint "dm_chars", default: 0, null: false
+    t.integer "public_posts", default: 0, null: false
+    t.bigint "public_chars", default: 0, null: false
+    t.integer "reply_posts", default: 0, null: false
+    t.bigint "reply_chars", default: 0, null: false
+    t.integer "reply_turns", default: 0, null: false
+    t.integer "media", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "skipped", default: 0, null: false
+    t.index ["account_id"], name: "index_game_activity_days_on_account_id"
+    t.index ["day", "account_id"], name: "index_game_activity_days_on_day_and_account_id", unique: true
+  end
+
+  create_table "game_activity_pairs", force: :cascade do |t|
+    t.date "day", null: false
+    t.bigint "account_id", null: false
+    t.bigint "other_account_id", null: false
+    t.integer "reply_posts", default: 0, null: false
+    t.bigint "reply_chars", default: 0, null: false
+    t.integer "reply_media", default: 0, null: false
+    t.integer "reply_turns", default: 0, null: false
+    t.integer "dms", default: 0, null: false
+    t.bigint "dm_chars", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "skipped", default: 0, null: false
+    t.index ["account_id", "other_account_id"], name: "index_game_activity_pairs_on_account_id_and_other_account_id"
+    t.index ["day", "account_id", "other_account_id"], name: "index_game_activity_pairs_on_day_and_accounts", unique: true
+  end
+
   create_table "game_character_fields", force: :cascade do |t|
     t.string "name", null: false
     t.string "kind", default: "select", null: false
@@ -652,6 +689,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_19_001000) do
     t.jsonb "effects", default: [], null: false
     t.integer "reports_count", default: 0, null: false
     t.jsonb "counters", default: {}, null: false
+    t.jsonb "extra_group_ids", default: {}, null: false
     t.index ["account_id"], name: "index_game_characters_on_account_id", unique: true
     t.index ["game_faction_id"], name: "index_game_characters_on_game_faction_id"
     t.index ["game_house_id"], name: "index_game_characters_on_game_house_id"
@@ -675,6 +713,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_19_001000) do
     t.string "actor", default: "", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "source_account_id"
     t.index ["account_id"], name: "index_game_counter_logs_on_account_id"
     t.index ["created_at"], name: "index_game_counter_logs_on_created_at"
     t.index ["game_counter_id"], name: "index_game_counter_logs_on_game_counter_id"
@@ -700,6 +739,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_19_001000) do
     t.datetime "updated_at", null: false
     t.integer "max_count"
     t.bigint "opposite_id"
+    t.boolean "affects_house", default: false, null: false
+    t.integer "house_interval_minutes", default: 60, null: false
+    t.integer "house_amount", default: 1, null: false
+    t.datetime "house_applied_at"
   end
 
   create_table "game_effects", force: :cascade do |t|
@@ -745,6 +788,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_19_001000) do
     t.string "reason", default: "", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "game_counter_id"
     t.index ["account_id"], name: "index_game_house_points_on_account_id"
     t.index ["game_house_id"], name: "index_game_house_points_on_game_house_id"
     t.index ["game_session_id"], name: "index_game_house_points_on_game_session_id"
@@ -759,6 +803,59 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_19_001000) do
     t.datetime "updated_at", null: false
     t.string "category", default: "house", null: false
     t.jsonb "effects", default: [], null: false
+  end
+
+  create_table "game_manito_logs", force: :cascade do |t|
+    t.string "kind", null: false
+    t.bigint "account_id", null: false
+    t.bigint "other_account_id", null: false
+    t.string "word", default: "", null: false
+    t.bigint "status_id"
+    t.boolean "rewarded", default: false, null: false
+    t.integer "money", default: 0, null: false
+    t.jsonb "items", default: [], null: false
+    t.integer "points", default: 0, null: false
+    t.datetime "stolen_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "kind", "created_at"], name: "index_game_manito_logs_on_account_id_and_kind_and_created_at"
+    t.index ["account_id"], name: "index_game_manito_logs_on_account_id"
+    t.index ["other_account_id"], name: "index_game_manito_logs_on_other_account_id"
+    t.index ["status_id", "other_account_id", "kind"], name: "idx_on_status_id_other_account_id_kind_3913d48e3c", unique: true, where: "(status_id IS NOT NULL)"
+  end
+
+  create_table "game_manito_words", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "target_account_id", null: false
+    t.jsonb "words", default: [], null: false
+    t.integer "uses", default: 0, null: false
+    t.datetime "caught_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "last_status_id"
+    t.index ["account_id", "target_account_id"], name: "index_game_manito_words_on_account_id_and_target_account_id", unique: true
+    t.index ["account_id"], name: "index_game_manito_words_on_account_id"
+    t.index ["target_account_id"], name: "index_game_manito_words_on_target_account_id"
+  end
+
+  create_table "game_messages", force: :cascade do |t|
+    t.bigint "game_session_id", null: false
+    t.bigint "account_id"
+    t.text "text", default: "", null: false
+    t.jsonb "payload", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "kind", default: "system", null: false
+    t.bigint "author_id"
+    t.index ["account_id"], name: "index_game_messages_on_account_id"
+    t.index ["game_session_id"], name: "index_game_messages_on_game_session_id"
+  end
+
+  create_table "game_notices", force: :cascade do |t|
+    t.bigint "status_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["status_id"], name: "index_game_notices_on_status_id", unique: true
   end
 
   create_table "game_players", force: :cascade do |t|
@@ -784,6 +881,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_19_001000) do
     t.string "kind", default: "content", null: false
     t.jsonb "stats", default: {}, null: false
     t.string "actor", default: "", null: false
+    t.bigint "other_account_id"
+    t.string "other_dir", default: "", null: false
     t.index ["account_id", "kind", "created_at"], name: "index_game_rewards_on_account_id_and_kind_and_created_at"
     t.index ["account_id"], name: "index_game_rewards_on_account_id"
     t.index ["game_session_id"], name: "index_game_rewards_on_game_session_id"
@@ -841,6 +940,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_19_001000) do
     t.string "wear_label", default: "", null: false
     t.boolean "permanent", default: false, null: false
     t.jsonb "item_effects", default: [], null: false
+    t.boolean "block_same_house", default: false, null: false
     t.index ["game_shop_id"], name: "index_game_shop_items_on_game_shop_id"
     t.index ["name"], name: "index_game_shop_items_on_name", unique: true
   end
@@ -1728,6 +1828,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_19_001000) do
   add_foreign_key "game_house_points", "accounts", on_delete: :nullify
   add_foreign_key "game_house_points", "game_houses", on_delete: :cascade
   add_foreign_key "game_house_points", "game_sessions", on_delete: :nullify
+  add_foreign_key "game_manito_logs", "accounts", column: "other_account_id", on_delete: :cascade
+  add_foreign_key "game_manito_logs", "accounts", on_delete: :cascade
+  add_foreign_key "game_manito_words", "accounts", column: "target_account_id", on_delete: :cascade
+  add_foreign_key "game_manito_words", "accounts", on_delete: :cascade
+  add_foreign_key "game_messages", "accounts", on_delete: :cascade
+  add_foreign_key "game_messages", "game_sessions", on_delete: :cascade
   add_foreign_key "game_players", "accounts", on_delete: :cascade
   add_foreign_key "game_players", "game_sessions", on_delete: :cascade
   add_foreign_key "game_rewards", "accounts", on_delete: :cascade
