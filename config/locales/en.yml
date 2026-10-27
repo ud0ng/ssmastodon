@@ -1857,6 +1857,25 @@ en:
           all: Whole server (public posts from every account)
           following: Me and people I follow
         title: Community options
+      design_presets:
+        apply: Apply
+        applied: "Design changed to preset %{name}."
+        capture: Save current design
+        capture_hint: Saves every light/dark theme colour setting and the light/dark logos and backgrounds into this preset.
+        clear_hint: Empty images keep the current image when applied. Check to remove it instead.
+        clear_label: "Remove %{name} if empty"
+        delete: Delete
+        delete_confirm: "Delete preset %{name}?"
+        edit: Edit preset
+        hint: Clicking a preset immediately replaces every design setting (all light/dark colours, logos, backgrounds) with its values. Save the current design first.
+        images: Logos and backgrounds
+        keep: Unchanged
+        name: Name
+        none: No presets yet.
+        overwrite: Overwrite with current design
+        overwrite_confirm: Overwrite this preset with the current design settings?
+        overwritten: "Preset %{name} overwritten with the current design."
+        title: Presets
       community_theme:
         dm_details: Chat (DM) screen
         colors: Colours

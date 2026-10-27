@@ -1,0 +1,34 @@
+-# 디자인 프리셋 (DesignPreset): 카드를 누르면 디자인의 모든 설정이 그 프리셋 값으로 바로 바뀐다. 디자인 폼 밖에 둔다 (폼 안에 폼을 넣을 수 없다)
+- presets = DesignPreset.includes(:images).to_a
+- current_values = DesignPreset.current_values
+- scope = 'admin.settings.design_presets'
+- image_label = ->(var) { t("simple_form.labels.form_admin_settings.#{var}") }
+
+- add = button_tag safe_join([material_symbol('save'), t("#{scope}.capture")]), type: :button, class: 'button', data: { modal_open: 'design-preset-add' }
+= render layout: 'admin/ui/section', locals: { title: t("#{scope}.title"), hint: t("#{scope}.hint"), actions: add } do
+  = render 'admin/ui/preset_cards', empty: t("#{scope}.none"),
+    items: presets.map { |preset| { name: preset.name, panels: preset.preview_panels, current: preset.current?(current_values),
+                                    apply_url: apply_admin_settings_design_preset_path(preset), apply_label: t("#{scope}.apply"),
+                                    edit_modal: "design-preset-#{preset.id}", edit_label: t("#{scope}.edit"),
+                                    delete_url: admin_settings_design_preset_path(preset), delete_label: t("#{scope}.delete"), delete_confirm: t("#{scope}.delete_confirm", name: preset.name) } }
+
+= render layout: 'admin/ui/modal', locals: { id: 'design-preset-add', title: t("#{scope}.capture") } do
+  = form_tag admin_settings_design_presets_path, method: :post, class: 'simple_form' do
+    %p.hint= t("#{scope}.capture_hint")
+    = render 'admin/ui/field', label: t("#{scope}.name"), name: 'design_preset[name]', required: true, wide: true, html: { maxlength: 30 }
+    = render 'admin/ui/modal_actions', submit: t("#{scope}.capture")
+
+- presets.each do |preset|
+  = render layout: 'admin/ui/modal', locals: { id: "design-preset-#{preset.id}", title: t("#{scope}.edit") } do
+    = form_tag admin_settings_design_preset_path(preset), method: :patch, multipart: true, class: 'simple_form' do
+      = render 'admin/ui/field', label: t("#{scope}.name"), name: 'design_preset[name]', id: "design_preset_name_#{preset.id}", value: preset.name, required: true, wide: true, html: { maxlength: 30 }
+      %h5.ui-subtitle= t("#{scope}.images")
+      .ui-preset-images
+        - DesignPreset::IMAGE_VARS.each do |var|
+          = render 'admin/ui/image_picker', name: "design_preset[images][#{var}]", remove_name: "design_preset[remove_images][#{var}]", id: "design_preset_#{preset.id}_#{var}",
+                                            label: image_label.call(var), image: preset.image(var)&.file&.url, accept: SiteUpload::WORDMARK_VARS.include?(var) ? SiteUpload::WORDMARK_MIME_TYPES.join(',') : 'image/png,image/jpeg,image/gif,image/webp'
+      %p.hint= t("#{scope}.clear_hint")
+      = render 'admin/ui/checks', id_suffix: preset.id, items: DesignPreset::IMAGE_VARS.map { |var| [t("#{scope}.clear_label", name: image_label.call(var)), "design_preset[clear][#{var}]", preset.clear_images.include?(var)] }
+      = render 'admin/ui/modal_actions'
+    = button_to admin_settings_design_preset_path(preset, overwrite: '1'), method: :patch, class: 'button button-secondary', data: { confirm: t("#{scope}.overwrite_confirm") } do
+      = safe_join([material_symbol('save'), t("#{scope}.overwrite")])

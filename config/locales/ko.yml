@@ -1862,6 +1862,25 @@ ko:
           all: 서버 전체 (모든 계정의 공개 툿 포함)
           following: 나와 팔로우한 사람
         title: 커뮤니티 옵션
+      design_presets:
+        apply: 적용
+        applied: "%{name} 프리셋으로 디자인을 바꿨습니다."
+        capture: 지금 디자인 저장
+        capture_hint: 낮·밤 테마 색 설정 전부와 낮·밤 로고·배경을 이 프리셋에 저장합니다.
+        clear_hint: 비어 있는 이미지는 적용해도 지금 이미지를 그대로 둡니다. 체크하면 적용할 때 지웁니다.
+        clear_label: "%{name} 없으면 지우기"
+        delete: 삭제
+        delete_confirm: "%{name} 프리셋을 지울까요?"
+        edit: 프리셋 고치기
+        hint: 누르면 디자인의 모든 설정(낮·밤 색 전부, 로고, 배경)이 그 프리셋 값으로 바로 바뀝니다. 바꾸기 전에 지금 디자인을 저장해 두세요.
+        images: 로고·배경
+        keep: 그대로
+        name: 이름
+        none: 프리셋이 없습니다.
+        overwrite: 지금 디자인으로 덮어쓰기
+        overwrite_confirm: 이 프리셋을 지금 디자인 설정으로 덮어쓸까요?
+        overwritten: "%{name} 프리셋을 지금 디자인으로 덮어썼습니다."
+        title: 프리셋
       community_theme:
         dm_details: 채팅(DM) 화면
         colors: 색

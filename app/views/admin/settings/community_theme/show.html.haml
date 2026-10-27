@@ -8,6 +8,8 @@
 - auto = CommunityTheme::MODES.index_with { |mode| community_theme.auto_palette(mode) }
 - placeholders = { 'main_light' => CommunityTheme::DEFAULT_COLOR, 'point_light' => t('admin.settings.community_theme.same_as_main'), 'main_dark' => t('admin.settings.community_theme.same_as_light'), 'point_dark' => t('admin.settings.community_theme.lighter_main') }
 
+= render 'admin/settings/community_theme/presets'
+
 = simple_form_for @admin_settings, url: admin_settings_community_theme_path, html: { id: 'edit_admin_settings', method: :patch } do |f|
   = render 'shared/error_messages', object: @admin_settings
 

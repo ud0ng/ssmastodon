@@ -70,6 +70,9 @@ namespace :admin do
     resource :discovery, only: [:show, :update], controller: 'discovery'
     resource :community, only: [:show, :update], controller: 'community'
     resource :community_theme, only: [:show, :update], controller: 'community_theme'
+    resources :design_presets, only: [:create, :update, :destroy] do
+      post :apply, on: :member
+    end
   end
 
   # 자동봇 시트 (관리 > 시트 설정)

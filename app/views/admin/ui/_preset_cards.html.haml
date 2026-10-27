@@ -1,0 +1,25 @@
+-# 프리셋 카드 목록: 카드를 누르면 바로 적용(POST), 아래 [고치기]·[삭제]. 지금 값과 같은 카드는 테두리로 표시. 규칙: docs/관리화면-컴포넌트.md
+-#   = render 'admin/ui/preset_cards', empty: '없음', items: [{ name:, apply_url:, apply_label:, current:, edit_modal:, edit_label:, delete_url:, delete_label:, delete_confirm:,
+-#                                                     panels: [{ background: 색, image: 주소 또는 nil, colors: [색, …] }, …] }]
+.ui-preset-cards
+  - items.each do |item|
+    .ui-preset-card{ class: ('ui-preset-card--current' if item[:current]) }
+      = button_to item[:apply_url], method: :post, class: 'ui-preset-card__apply', form_class: 'ui-preset-card__form', title: item[:apply_label], 'aria-label': "#{item[:name]} #{item[:apply_label]}" do
+        %span.ui-preset-card__panels
+          - item[:panels].each do |panel|
+            %span.ui-preset-card__panel{ style: ["background-color:#{panel[:background]}", ("background-image:url(\"#{panel[:image]}\")" if panel[:image])].compact.join(';') }
+              %span.ui-preset-card__swatches
+                - panel[:colors].each do |color|
+                  %span.ui-preset-card__swatch{ style: "background:#{color}" }
+        %span.ui-preset-card__name
+          - if item[:current]
+            = material_symbol('check')
+          = item[:name]
+      .ui-preset-card__actions
+        - if item[:edit_modal]
+          = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: item[:edit_label], 'aria-label': item[:edit_label], data: { modal_open: item[:edit_modal] }
+        - if item[:delete_url]
+          = button_to item[:delete_url], method: :delete, class: 'icon-button', form_class: 'ui-preset-card__delete', title: item[:delete_label], 'aria-label': item[:delete_label], data: { confirm: item[:delete_confirm] } do
+            = material_symbol('delete')
+  - if items.empty?
+    %p.ui-preset-cards__empty= local_assigns[:empty]

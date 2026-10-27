@@ -14,6 +14,20 @@ RSpec.describe Game::Fx do
     expect(described_class::PRESETS['deco']).to include('debut')
   end
 
+  it 'has house victory looks (card, title, deco, skin) for all four houses in the default effect list' do
+    houses = %w(gryffindor hufflepuff slytherin ravenclaw)
+    %w(card title deco skin).each { |slot| expect(described_class::PRESETS[slot].keys).to include(*houses) }
+
+    defaults = described_class.defaults.select { |item| houses.include?(item[:preset]) }
+    expect(defaults.size).to eq 16
+    expect(defaults.find { |item| item[:slot] == 'title' && item[:preset] == 'slytherin' }).to include(kind: 'character', name: '슬리데린 승리 칭호')
+    expect(defaults.find { |item| item[:slot] == 'card' && item[:preset] == 'ravenclaw' }).to include(kind: 'house', name: '래번클로 승리')
+    expect(defaults.pluck(:description)).to all(include('승리 보상'))
+
+    GameEffect.seed_missing!
+    expect(GameEffect.where(preset: houses).count).to eq 16
+  end
+
   it 'makes permanent entries that stay active' do
     entry = described_class.entry(effect, 10, permanent: true)
 

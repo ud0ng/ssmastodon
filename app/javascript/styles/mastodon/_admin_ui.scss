@@ -1385,3 +1385,116 @@ textarea.ui-input {
     opacity: 1;
   }
 }
+
+// ── 프리셋 카드 목록 (admin/ui/_preset_cards): 누르면 바로 적용, 낮·밤 미리보기 두 칸 + 이름 + [고치기]·[삭제] ──
+.ui-preset-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 12px;
+
+  &__empty {
+    color: $darker-text-color;
+    font-size: 13px;
+  }
+}
+
+.ui-preset-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--background-border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--input-background-color, transparent);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+
+  &:hover,
+  &:focus-within {
+    border-color: $ui-highlight-color;
+    box-shadow: 0 4px 14px rgb(0 0 0 / 12%);
+    transform: translateY(-1px);
+  }
+
+  &--current {
+    border-color: $ui-highlight-color;
+    box-shadow: 0 0 0 2px $ui-highlight-color;
+  }
+
+  &__form {
+    display: block;
+  }
+
+  &__apply {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  &__panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 72px;
+  }
+
+  &__panel {
+    display: flex;
+    align-items: flex-end;
+    padding: 8px;
+    background-position: center;
+    background-size: cover;
+  }
+
+  &__swatches {
+    display: flex;
+    gap: 4px;
+  }
+
+  &__swatch {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgb(255 255 255 / 85%);
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 35%);
+  }
+
+  &__name {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 8px 10px 0;
+    font-weight: 700;
+    font-size: 14px;
+
+    svg {
+      width: 18px;
+      height: 18px;
+      color: $ui-highlight-color;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 2px;
+    padding: 0 4px 4px;
+  }
+
+  &__delete {
+    display: inline-flex;
+  }
+}
+
+// 프리셋 고치기 모달의 이미지 고르기 줄
+.ui-preset-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}

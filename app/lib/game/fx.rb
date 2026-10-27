@@ -9,16 +9,20 @@ module Game
     SLOTS = { 'house' => %w(card), 'character' => %w(title deco skin) }.freeze
 
     PRESETS = {
-      'card' => { 'gold' => '블링블링', 'poop' => '똥', 'fire' => '불꽃', 'snow' => '눈송이', 'hearts' => '하트', 'rainbow' => '무지개', 'sparkle' => '반짝이' },
+      'card' => { 'gold' => '블링블링', 'poop' => '똥', 'fire' => '불꽃', 'snow' => '눈송이', 'hearts' => '하트', 'rainbow' => '무지개', 'sparkle' => '반짝이',
+                'gryffindor' => '그리핀도르 승리', 'hufflepuff' => '후플푸프 승리', 'slytherin' => '슬리데린 승리', 'ravenclaw' => '래번클로 승리' },
       'title' => {
         'gold' => '금빛 반짝', 'rainbow' => '무지개 글자', 'fire' => '불타는 글자', 'poop' => '똥파리', 'glitch' => '지지직', 'hearts' => '하트', 'sparkle' => '반짝이',
-        'dung1' => '똥 한 덩이', 'dung2' => '똥똥', 'dung3' => '똥덩어리 악취', 'flash' => '번쩍', 'halo' => '천사 고리', 'angel' => '엔젤', 'debut' => '데뷔탕트', 'debut2' => '데뷔탕트 2 (키스)'
+        'dung1' => '똥 한 덩이', 'dung2' => '똥똥', 'dung3' => '똥덩어리 악취', 'flash' => '번쩍', 'halo' => '천사 고리', 'angel' => '엔젤', 'debut' => '데뷔탕트', 'debut2' => '데뷔탕트 2 (키스)',
+        'gryffindor' => '그리핀도르 승리', 'hufflepuff' => '후플푸프 승리', 'slytherin' => '슬리데린 승리', 'ravenclaw' => '래번클로 승리'
       },
       'deco' => {
         'gold' => '금빛 고리', 'rainbow' => '무지개 고리', 'fire' => '불꽃 고리', 'poop' => '똥 공전', 'hearts' => '하트 공전', 'snow' => '눈 결정', 'sparkle' => '반짝이',
-        'dung1' => '똥 한 덩이', 'dung2' => '똥똥', 'dung3' => '똥덩어리 악취', 'flash' => '번쩍', 'halo' => '천사 고리', 'angel' => '엔젤', 'debut' => '데뷔탕트', 'debut2' => '데뷔탕트 2 (키스)'
+        'dung1' => '똥 한 덩이', 'dung2' => '똥똥', 'dung3' => '똥덩어리 악취', 'flash' => '번쩍', 'halo' => '천사 고리', 'angel' => '엔젤', 'debut' => '데뷔탕트', 'debut2' => '데뷔탕트 2 (키스)',
+        'gryffindor' => '그리핀도르 승리', 'hufflepuff' => '후플푸프 승리', 'slytherin' => '슬리데린 승리', 'ravenclaw' => '래번클로 승리'
       },
-      'skin' => { 'debut' => '데뷔탕트', 'debut2' => '데뷔탕트 2 (키스)' },
+      'skin' => { 'debut' => '데뷔탕트', 'debut2' => '데뷔탕트 2 (키스)',
+                  'gryffindor' => '그리핀도르 승리', 'hufflepuff' => '후플푸프 승리', 'slytherin' => '슬리데린 승리', 'ravenclaw' => '래번클로 승리' },
     }.freeze
 
     # 효과 목록 기본: 모든 모양 하나씩 (GameEffect.ensure_defaults!, 20261019000200_seed_all_game_effects)
@@ -54,12 +58,33 @@ module Game
         'debut2' => '툿과 멘션 알림 배경 전체가 핫핑크와 진홍빛으로 번쩍 나타나 일렁이고, 입술빛 물결 위에서 키스 마크와 하트가 쪽쪽 터지며 눈웃음치듯 빛이 스윽 훑고 지나갑니다. 섹시·앙큼 테마, 신규 회원용 가장 화려한 배경.' },
     }.freeze
 
+    # 기숙사전 승리 보상 (1학년 시즌): 기숙사마다 [색, 상징, 움직임] (styles/mastodon/_game_fx_houses.scss)
+    HOUSE_VICTORY = {
+      'gryffindor' => ['밝은 진홍·금빛', '사자', '불꽃이 솟아오릅니다'],
+      'hufflepuff' => ['해바라기 노랑·금빛', '오소리', '오소리와 꽃이 통통 뜁니다'],
+      'slytherin' => ['에메랄드·은빛', '뱀', '뱀이 스르륵 기어갑니다'],
+      'ravenclaw' => ['하늘빛 파랑·은빛', '독수리', '깃털이 흩날리고 별이 반짝입니다'],
+    }.freeze
+
+    def self.description(slot, preset)
+      return DESCRIPTIONS.dig(slot, preset).to_s unless HOUSE_VICTORY.key?(preset)
+
+      colors, mascot, motion = HOUSE_VICTORY[preset]
+      body = {
+        'card' => "소속 카드 칸에 #{colors} 바탕과 무늬가 흐르고 테두리가 빛나며, 커다란 #{mascot}가 포효하고 금속빛이 훑고 지나갑니다. #{motion}.",
+        'title' => "이름이 #{colors}으로 흐르며 번쩍이고, 위아래로 #{mascot}와 반짝이가 떠다닙니다. #{motion}.",
+        'deco' => "아바타 둘레에 #{colors} 고리가 돌며 빛나고, 바깥 살 고리가 거꾸로 돌며 #{mascot}가 둘레를 돕니다.",
+        'skin' => "툿과 멘션 알림 배경에 #{colors} 물결과 빛줄기가 퍼지고, 왼쪽 깃발 띠가 흐르며 커다란 #{mascot}가 포효합니다. #{motion}.",
+      }[slot]
+      "#{body} 기숙사전 승리 보상, 가장 화려한 효과."
+    end
+
     def self.defaults
       PRESETS.flat_map do |slot, presets|
         kind = SLOTS.find { |_, slots| slots.include?(slot) }.first
         presets.map do |preset, label|
           name = slot == 'card' ? label : "#{label} #{{ 'title' => '칭호', 'deco' => '데코', 'skin' => '스킨' }[slot]}"
-          { kind: kind, slot: slot, preset: preset, name: name, description: DESCRIPTIONS.dig(slot, preset).to_s }
+          { kind: kind, slot: slot, preset: preset, name: name, description: description(slot, preset) }
         end
       end
     end
