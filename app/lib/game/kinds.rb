@@ -17,6 +17,7 @@ module Game
         'marauders_map' => Game::Web::MaraudersMap,
         'secret_chamber' => Game::Web::SecretChamber,
         'dumbledores_army' => Game::Web::DumbledoresArmy,
+        'greengotts' => Game::Web::Greengotts,
       }
     end
 
