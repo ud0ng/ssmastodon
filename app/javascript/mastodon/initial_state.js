@@ -17,6 +17,7 @@
  * @property {boolean} events_enabled
  * @property {string=} system_acct
  * @property {string=} system_account_id
+ * @property {string[]=} game_basic_commands
  * @property {string[]=} bot_account_ids
  * @property {string} admin
  * @property {boolean=} boost_modal
@@ -101,6 +102,7 @@ export const contentsEnabled = getMeta('contents_enabled') !== false;
 export const eventsEnabled = getMeta('events_enabled') !== false;
 export const systemAcct = getMeta('system_acct');
 export const systemAccountId = getMeta('system_account_id');
+export const gameBasicCommands = getMeta('game_basic_commands') ?? [];
 export const botAccountIds = getMeta('bot_account_ids') ?? [];
 export const deleteModal = getMeta('delete_modal');
 export const missingAltTextModal = getMeta('missing_alt_text_modal');

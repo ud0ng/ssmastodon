@@ -19,6 +19,7 @@ class REST::StatusSerializer < ActiveModel::Serializer
   has_many :filtered, serializer: REST::FilterResultSerializer, if: :current_user?
 
   attribute :content, unless: :source_requested?
+  attribute :game_notice, if: :game_notice? # 시스템 계정이 올렸지만 웹에서도 숨기지 않는 안내 툿 (호울러, GameNotice)
   attribute :game_card, if: :game_card? # 시스템 계정의 컨텐츠 툿 (PC 웹이 카드로 그린다, Game::Card)
   attribute :text, if: :source_requested?
 
@@ -160,6 +161,25 @@ class REST::StatusSerializer < ActiveModel::Serializer
       current_user.account_id == object.account_id &&
       !object.reblog? &&
       %w(public unlisted private).include?(object.visibility)
+  end
+
+  # 시스템 계정이 올렸어도 웹에서 숨기지 않는 툿: 아무도 태그하지 않고 올린 툿(호울러 연회장 문구·결산 공지 등, 컨텐츠 카드가 아닌 것)과 표시해 둔 안내(GameNotice, 태그된 호울러 DM)
+  def game_notice?
+    return false unless object.account_id == Game::System.cached_account_id
+
+    GameNotice.exists?(status_id: object.id) || (object.game_event.nil? && object.active_mentions.empty?) || answers_basic_command?
+  end
+
+  # 시스템이 [점수]·[도움말] 같은 기본 명령어 툿에 단 답
+  def answers_basic_command?
+    return false if object.in_reply_to_id.nil?
+
+    parent = Status.unscoped.find_by(id: object.in_reply_to_id)
+    parent.present? && Game::System.basic_commands.include?(Game::System.command_of(parent.text))
+  end
+
+  def game_notice
+    true
   end
 
   def game_card?

@@ -7,11 +7,13 @@ RSpec.describe Game::ItemUse do
   let!(:system) { Fabricate(:account, username: 'system') }
   let!(:harry) { Fabricate(:account, username: 'harry') }
   let!(:ron) { Fabricate(:account, username: 'ron') }
+  let!(:store) { Fabricate(:account, username: 'store') }
   let!(:howler) { GameShop.create!(name: '가게').items.create!(name: '호울러', price: 1, item_effects: [{ type: 'special', kind: 'rumor', text: '연회장에 호울러가 울린다' }]) }
 
   before do
     allow(Game::System).to receive(:account).and_return(system)
     GameCharacter.for(ron)
+    Game::Config.update!('common', 'bot_usernames' => 'store')
     Game::Wallet.apply!([{ account: harry, items: { '호울러' => 1 } }], kind: 'admin')
   end
 
@@ -24,13 +26,14 @@ RSpec.describe Game::ItemUse do
     dm('[사용/호울러/교장실 앞에 용이 나타났다]')
 
     expect(GameCharacter.for(harry).reload.inventory).to eq []
-    hall = system.statuses.reorder(:id).to_a.find { |status| status.text.include?('연회장에 호울러가 울린다') }
+    hall = store.statuses.reorder(:id).to_a.find { |status| status.text.include?('연회장에 호울러가 울린다') }
     expect(hall).to have_attributes(visibility: 'private')
     expect(hall.mentions).to be_empty
-    rumor = system.statuses.reorder(:id).to_a.find { |status| status.text.include?('용이 나타났다') && status.mentions.any? { |mention| mention.account_id == ron.id } }
+    rumor = store.statuses.reorder(:id).to_a.find { |status| status.text.include?('용이 나타났다') && status.mentions.any? { |mention| mention.account_id == ron.id } }
     expect(rumor).to be_present
     expect(rumor).to have_attributes(visibility: 'direct')
     expect(rumor.text).to include("연회장에 호울러가 울린다\n\n교장실 앞에 용이 나타났다")
+    expect(system.statuses.where(id: [hall.id, rumor.id])).to be_empty # 시스템 계정이 아니라 상점 봇 계정이 올린다
   end
 
   it 'asks for the text and for an item that is owned' do

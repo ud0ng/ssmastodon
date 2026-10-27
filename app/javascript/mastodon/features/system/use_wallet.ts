@@ -48,6 +48,8 @@ export interface Wallet {
   spent: number;
   posts: number;
   post_chars: number;
+  // 시즌별 내 툿 (최근 시즌이 위)
+  seasons?: { name: string; running: boolean; posts: number; chars: number }[];
   item_count: number;
   record: { win: number; lose: number; draw: number };
   inventory: WalletItem[];

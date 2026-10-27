@@ -1494,5 +1494,6 @@
   "compose.public_limit.ok": "OK",
   "compose.public_limit.ready": "You can post again now.",
   "compose.public_limit.remaining": "Time left: {time}",
-  "compose.public_limit.title": "Public post limit"
+  "compose.public_limit.title": "Public post limit",
+  "house.sum_posts_season": "{season} toots (toots / chars)"
 }

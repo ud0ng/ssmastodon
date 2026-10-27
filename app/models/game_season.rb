@@ -22,8 +22,29 @@ class GameSeason < ApplicationRecord
     finished.maximum(:finished_at)
   end
 
+  # 시즌마다 활동을 세는 날짜 범위 [[시즌, 시작일, 종료일]] (오래된 시즌부터). 시작·종료 날짜를 안 적은 시즌은 앞 시즌이 끝난 다음 날부터,
+  # 끝난 시즌은 끝낸 날까지. 진행 중이고 끝 날짜가 없으면 종료일이 nil (오늘 쓰는 툿까지 실시간으로 쌓인다)
+  def self.dated
+    seasons = order(:id).to_a
+    seasons.each_with_index.map do |season, index|
+      from = season.starts_on || end_day(index.positive? ? seasons[index - 1] : nil)&.next
+      to = season.ends_on || (season.finished? ? end_day(season) : nil)
+      [season, from, to]
+    end
+  end
+
+  def self.end_day(season)
+    return if season.nil?
+
+    season.ends_on || season.finished_at&.in_time_zone(Game::ActivitySnapshot::ZONE)&.to_date
+  end
+
   def running?
     status == 'running'
+  end
+
+  def finished?
+    status == 'finished'
   end
 
   def period

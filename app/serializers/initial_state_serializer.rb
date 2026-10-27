@@ -124,6 +124,8 @@ class InitialStateSerializer < ActiveModel::Serializer
       # 컨텐츠 툿(시스템 계정 툿·시스템에게 보낸 명령어 툿)은 웹 홈·타임라인·알림에서 숨기고 컨텐츠 메뉴에서만 본다
       system_acct: Game::System.username,
       system_account_id: Game::System.account&.id&.to_s,
+      # 시스템 계정을 태그해도 웹에서 숨기지 않는 기본 명령어 ([점수]·[도움말]…): 그 밖의 [명령어]만 컨텐츠로 본다
+      game_basic_commands: Game::System.basic_commands,
       # 자동봇(상점) 계정 (컨텐츠 설정 > 설정 > 봇 계정): 웹 '답장할 멘션'에 넣지 않는다
       bot_account_ids: Game::Gift.bot_accounts.map { |account| account.id.to_s },
     }

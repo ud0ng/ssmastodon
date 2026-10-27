@@ -48,7 +48,7 @@ interface Member {
 }
 
 interface HouseData {
-  house: { id: string; name: string; color: string; total: number; term: string; currency: string; summary: { money: number; win: number; lose: number; draw: number; posts: number; chars: number } };
+  house: { id: string; name: string; color: string; total: number; term: string; currency: string; summary: { money: number; win: number; lose: number; draw: number; posts: number; chars: number; season?: string | null } };
   top_gain: Person | null;
   top_loss: Person | null;
   counters: { id: string; name: string }[];
@@ -299,7 +299,11 @@ const HousePage: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
                     <strong><FormattedMessage id='wallet.record_summary' defaultMessage='{win}W {lose}L {draw}D' values={data.house.summary} /></strong>
                   </span>
                   <span className='house-page__summary-cell'>
-                    <FormattedMessage id='house.sum_posts' defaultMessage='Total toots' />
+                    {data.house.summary.season ? (
+                      <FormattedMessage id='house.sum_posts_season' defaultMessage='{season} toots' values={{ season: data.house.summary.season }} />
+                    ) : (
+                      <FormattedMessage id='house.sum_posts' defaultMessage='Total toots' />
+                    )}
                     <strong>{data.house.summary.posts.toLocaleString()} / {data.house.summary.chars.toLocaleString()}</strong>
                   </span>
                 </span>

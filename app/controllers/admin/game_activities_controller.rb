@@ -9,7 +9,7 @@ module Admin
     include Admin::GameGiveForm
 
     RECORDS = 30
-    VIEWS = %w(character house total).freeze
+    VIEWS = %w(character house season total).freeze
     RANGES = %w(all today yesterday week month custom).freeze
     SORTS = %w(name posts chars dms dm_chars replies media last_reply partners public_posts public_chars reply_posts reply_chars skipped).freeze
     # 표 칸 → 스냅샷 열
@@ -35,12 +35,15 @@ module Admin
       scope = @filter_house ? @characters.select { |character| character.group == @filter_house } : @characters
       ids = scope.map(&:account_id)
       @criteria = Game::Activity.criteria
+      load_season_context
       case view_name
       when 'total'
         @daily = Game::ActivitySnapshot.daily(ids, from: range_from, to: range_to)
         @total = @daily.reduce(Game::ActivitySnapshot::Totals.empty) { |sum, (_, row)| sum + row }
         @chart_days = chart_days(@daily)
         @daily = sort_table(:days, @daily, DAY_SORTS, default: 'date', default_dir: 'desc') { |(day, row), key| key == 'date' ? day : [row[SORT_FIELDS.fetch(key)].to_i, day] }
+      when 'season'
+        load_season_rows(ids)
       when 'house'
         load_house_rows(Game::ActivitySnapshot.totals(@characters.map(&:account_id), from: range_from, to: range_to))
       else
@@ -234,6 +237,20 @@ module Admin
       Date.parse(value.to_s)
     rescue Date::Error
       nil
+    end
+
+    # 시즌별 합계 (캐릭터 관리 > 소속 > 시즌): 시즌의 날짜 범위만큼의 일일 활동 스냅샷을 더한다 → 시즌마다 0부터 시작한다.
+    # 진행 중인 시즌(또는 끝나는 날이 없는 시즌)은 오늘 쓰는 툿까지 실시간으로 쌓인다. 시작·종료 날짜를 안 적은 시즌은 앞 시즌이 끝난 다음 날부터, 끝난 시즌은 끝낸 날까지.
+    # 값: [[시즌, 시작일, 종료일, Totals]] 최근 시즌이 위
+    # 시즌 줄에서 들어온 캐릭터별: 그 시즌의 날짜 범위를 기간으로 쓴다
+    def load_season_context
+      return unless view_name == 'character' && params[:season].present?
+
+      @season, @season_from, @season_to = GameSeason.dated.find { |each, *| each.id == params[:season].to_i }
+    end
+
+    def load_season_rows(ids)
+      @season_rows = Game::ActivitySnapshot.by_season(ids).reverse
     end
 
     # 소속별 합계 (소속 없음 포함): [[소속 또는 nil, 인원, Totals]]

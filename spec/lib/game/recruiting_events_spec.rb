@@ -45,6 +45,7 @@ RSpec.describe Game::Events::Opening do
     expect(root.text).to include('트라이위저드 미로가 열렸습니다', '[참가]')
     expect(root.mentions).to be_empty # 모집 툿은 아무도 태그하지 않는다 (알림은 웹 이벤트 메뉴 배지)
     expect(root.text).to_not include('@')
+    expect(GameNotice.exists?(status_id: root.id)).to be true # 모집 툿은 웹에서도 숨기지 않는 안내
   end
 
   it 'lets only staff open events unless the event settings let everyone, and then only the allowed kinds of opening' do

@@ -6,8 +6,9 @@ module Game
     module_function
 
     # mentions: 멘션할 계정들 (알림이 가도록), thread: 답장할 툿
-    def post(text, mentions:, thread:, visibility:)
-      system = Game::System.account
+    # from: 시스템 계정 대신 이 계정으로 올린다 (호울러는 상점 봇 계정으로). notice: true 면 웹 타임라인에서도 숨기지 않는 안내 툿으로 표시한다 (GameNotice)
+    def post(text, mentions:, thread:, visibility:, notice: false, from: nil)
+      system = from || Game::System.account
       return if system.nil?
 
       prefix = mentions.uniq.reject { |account| account.id == system.id }.map { |account| "@#{account.acct}" }.join(' ')
@@ -20,6 +21,7 @@ module Game
         media_ids: media_ids.presence,
         with_rate_limit: false
       )
+      GameNotice.find_or_create_by!(status_id: status.id) if notice && status
       redistribute_after_commit(status)
       status
     end

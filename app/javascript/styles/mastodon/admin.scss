@@ -5055,3 +5055,26 @@ button.game-token:focus-visible {
     max-width: none;
   }
 }
+
+// 시즌 줄에서 들어온 캐릭터별 위쪽 띠: 시즌 이름 · 기간 · 돌아가기
+.game-season-banner {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  margin-bottom: 14px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(128, 128, 128, 0.09);
+}
+
+.game-season-banner .link {
+  margin-left: auto;
+}
+
+.game-table__nowrap {
+  white-space: nowrap;
+}
+
+.game-houses__badge {
+  white-space: nowrap;
+}

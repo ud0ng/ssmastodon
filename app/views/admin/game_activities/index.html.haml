@@ -11,7 +11,16 @@
 - if Game::ActivitySnapshot.built_through.nil?
   %p.hint= game_t('admin.games.activity.building')
 
-= render 'admin/game_activities/range', url: admin_game_activities_path, keep: { view: view_name, house: @filter_house&.id }
+-# 시즌별은 시즌의 날짜 범위로 센다 (기간을 고르지 않는다). 시즌 줄에서 들어온 캐릭터별은 시즌 이름과 되돌아가기를 보여 준다
+- if view_name == 'season'
+  -# (기간 없음)
+- elsif @season
+  .game-season-banner
+    %strong= @season.name
+    %span.hint= [@season_from, @season_to].map { |day| day ? l(day, format: '%Y-%m-%d') : '…' }.join(' ~ ')
+    = link_to game_t('admin.games.activity.back_to_seasons'), admin_game_activities_path(view: 'season'), class: 'link'
+- else
+  = render 'admin/game_activities/range', url: admin_game_activities_path, keep: { view: view_name, house: @filter_house&.id }
 
 - backfill = button_to game_t('admin.games.activity.backfill'), backfill_admin_game_activities_path, method: :post, class: 'button button-secondary', form_class: 'inline-form', data: { confirm: game_t('admin.games.activity.backfill_confirm') }
 - give = button_tag safe_join([material_symbol('celebration'), game_t('admin.games.activity.give')]), type: :button, class: 'button', data: { modal_open: 'activity-give' }
@@ -40,6 +49,31 @@
           - if @daily.empty?
             %tr
               %td.bot-sheet-table__text{ colspan: 7 }= game_t('admin.games.activity.no_data')
+
+- elsif view_name == 'season'
+  -# 시즌별: 소속 > 시즌에 등록한 시즌마다 그 날짜 범위의 활동량. 줄을 누르면 그 기간의 캐릭터별
+  = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.activity.season_title'), hint: game_t('admin.games.activity.season_hint'), actions: backfill } do
+    .bot-sheet-table.game-table.game-table--scroll
+      %table.table
+        %thead
+          %tr
+            %th= game_t('admin.games.activity.season_name')
+            %th= game_t('admin.games.activity.season_period')
+            = render 'admin/game_activities/totals_head'
+        %tbody
+          - @season_rows.each do |season, from, to, totals|
+            - path = admin_game_activities_path(view: 'character', range: 'custom', from: from, to: to, season: season.id)
+            %tr.game-table__row{ data: { href: path } }
+              %td.bot-sheet-table__text
+                = link_to path, class: 'game-table__name' do
+                  %strong= season.name
+                  - if season.running?
+                    %span.game-houses__badge= game_t('admin.games.activity.season_running')
+              %td.bot-sheet-table__text.game-table__time.game-table__nowrap= [from, to].map { |day| day ? l(day, format: '%Y-%m-%d') : '…' }.join(' ~ ')
+              = render 'admin/game_activities/totals_cells', totals: totals
+          - if @season_rows.empty?
+            %tr
+              %td.bot-sheet-table__text{ colspan: 9 }= game_t('admin.games.activity.season_none')
 
 - elsif view_name == 'house'
   = render layout: 'admin/ui/section', locals: { title: game_t('admin.games.activity.house_title'), hint: game_t('admin.games.activity.house_hint'), actions: backfill } do

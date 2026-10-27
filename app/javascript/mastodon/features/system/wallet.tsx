@@ -197,6 +197,12 @@ const MoneyView: React.FC<{ wallet: Wallet }> = ({ wallet }) => {
             <span>
               <FormattedMessage id='wallet.total_posts' defaultMessage='Toots (toots / chars)' />
               <strong>{wallet.posts.toLocaleString()} / {wallet.post_chars.toLocaleString()}</strong>
+              {/* 시즌별: 합계 아래 작은 회색 글씨 */}
+              {(wallet.seasons ?? []).map((season) => (
+                <small key={season.name} className='wallet-card__season'>
+                  {season.name} · {season.posts.toLocaleString()} / {season.chars.toLocaleString()}
+                </small>
+              ))}
             </span>
           </span>
         </div>

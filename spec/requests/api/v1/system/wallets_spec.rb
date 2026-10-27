@@ -40,6 +40,22 @@ RSpec.describe 'API V1 System wallet' do
     expect(response.parsed_body).not_to have_key('activity')
   end
 
+  it 'shows my toots per season under the total, each season over its own dates' do
+    today = Game::ActivitySnapshot.today
+    GameSeason.create!(name: '시즌1', status: 'finished', starts_on: today - 6, ends_on: today - 4, finished_at: Time.current)
+    GameSeason.create!(name: '시즌2', status: 'running', starts_on: today - 3)
+    GameActivityDay.create!(day: today - 5, account_id: user.account.id, posts: 10, post_chars: 900)
+    GameActivityDay.create!(day: today - 1, account_id: user.account.id, posts: 8, post_chars: 560, dms: 1, dm_chars: 20)
+    GameActivityDay.create!(day: today, account_id: user.account.id, posts: 3, post_chars: 210)
+
+    get '/api/v1/system/wallet', headers: headers
+
+    expect(response.parsed_body['seasons']).to eq([
+      { 'name' => '시즌2', 'running' => true, 'posts' => 12, 'chars' => 790 },
+      { 'name' => '시즌1', 'running' => false, 'posts' => 10, 'chars' => 900 },
+    ])
+  end
+
   it 'shows the group points for the bottom of the compose panel' do
     GameHouse.ensure_defaults!
     house = GameHouse.houses.first

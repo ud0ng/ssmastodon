@@ -19,6 +19,21 @@ RSpec.describe 'GET /api/v1/system/houses/:id' do
     GameHousePoint.create!(house: house, account: user.account, amount: -2, reason: '운영진 조정')
   end
 
+  it 'counts the toot summary over the running season only, and over everything while no season runs' do
+    today = Game::ActivitySnapshot.today
+    GameActivityDay.create!(day: today - 9, account_id: user.account.id, posts: 50, post_chars: 5_000)
+    GameActivityDay.create!(day: today, account_id: user.account.id, posts: 2, post_chars: 40)
+    house_character = GameCharacter.for(user.account)
+    house_character.update!(house: house)
+
+    get "/api/v1/system/houses/#{house.id}", headers: headers
+    expect(response.parsed_body.dig('house', 'summary')).to include('posts' => 52, 'season' => nil)
+
+    GameSeason.create!(name: '시즌2', status: 'running', starts_on: today - 3)
+    get "/api/v1/system/houses/#{house.id}", headers: headers
+    expect(response.parsed_body.dig('house', 'summary')).to include('posts' => 2, 'chars' => 40, 'season' => '시즌2')
+  end
+
   it 'shows the season total, the top earner, the top loser and the history' do
     get "/api/v1/system/houses/#{house.id}", headers: headers
 

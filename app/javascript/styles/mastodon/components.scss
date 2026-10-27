@@ -20660,3 +20660,13 @@ body.app-body.layout-game-room.layout-single-column {
     object-fit: cover;
   }
 }
+
+// 재화 화면: 툿 합계 아래 시즌별 툿 (작은 회색 글씨)
+.wallet-card__season {
+  display: block;
+  margin-top: 2px;
+  color: var(--ct-text-muted, #{$darker-text-color});
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.8;
+}

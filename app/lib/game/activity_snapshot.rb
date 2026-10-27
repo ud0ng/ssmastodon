@@ -356,6 +356,15 @@ module Game
       rows.sort_by(&:first).reverse.map { |day, *values| [day, Totals.new(**COLUMNS.zip(values.map(&:to_i)).to_h)] }
     end
 
+    # 시즌별 합계 [[시즌, 시작일, 종료일, Totals]] (오래된 시즌부터): 캐릭터들의 날짜별 합계를 한 번 읽어 시즌 날짜 범위마다 더한다 (시즌이 여럿이어도 쿼리는 한 번)
+    def by_season(account_ids)
+      by_day = daily(account_ids).to_h
+      GameSeason.dated.map do |season, from, to|
+        total = by_day.select { |day, _| (from.nil? || day >= from) && (to.nil? || day <= to) }.values.reduce(Totals.empty, :+)
+        [season, from, to, total]
+      end
+    end
+
     # 상대 캐릭터 id => PairTotals (이 캐릭터 한 명의 기간 합계)
     def pairs(account_id, from: nil, to: nil)
       result = {}

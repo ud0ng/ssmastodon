@@ -183,6 +183,13 @@ en:
         backfill_started: Loading past records. Reload in a moment.
         building: Building the daily activity snapshots for the first time. Reload in a moment to see the past records.
         date: Date
+        back_to_seasons: Back to seasons
+        season_hint: Activity per season registered under Characters > Houses > Seasons, counting only the toots written in that season's dates. The running season builds up live as toots are written, and the next season starts from 0. Click a row to see the characters' activity for that period.
+        season_name: Season
+        season_none: No seasons yet. Add one under Characters > Houses.
+        season_period: Period
+        season_running: Running
+        season_title: Activity by season
         house_hint: Toots of each house's characters added together. Click a house for its daily statistics.
         house_name: House
         house_title: By house
@@ -210,6 +217,7 @@ en:
         views:
           character: By character
           house: By house
+          season: By season
           total: Daily total
         all_chars: Total characters
         all_posts: Total posts

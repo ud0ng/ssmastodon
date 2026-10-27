@@ -1631,5 +1631,6 @@
   "compose.public_limit.ok": "확인",
   "compose.public_limit.ready": "이제 다시 쓸 수 있습니다.",
   "compose.public_limit.remaining": "남은 시간 {time}",
-  "compose.public_limit.title": "퍼블툿 제한"
+  "compose.public_limit.title": "퍼블툿 제한",
+  "house.sum_posts_season": "{season} 툿 (툿 / 글자)"
 }

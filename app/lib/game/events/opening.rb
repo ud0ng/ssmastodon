@@ -30,6 +30,8 @@ module Game
         session = GameSession.create!(kind: kind.key, status: 'pending', visibility: 'private', state: { 'mode' => 'event', 'opened_by' => account.id, 'staff_open' => Game::Staff.web?(account.user) })
         kind.new(session).open!
         session.update!(root_status_id: session.last_status_id) if session.root_status_id.nil?
+        # 운영진이 연 이벤트의 모집 툿은 웹 타임라인에서도 숨기지 않는다 (컨텐츠 카드이지만 모두에게 알리는 글)
+        GameNotice.find_or_create_by!(status_id: session.root_status_id) if session.root_status_id
         session
       end
 

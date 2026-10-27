@@ -33,6 +33,8 @@ class Api::V1::System::WalletsController < Api::BaseController
       # 내 툿 합계 (DM 포함 전체 툿 수 / 글자 수): 재화 화면 누적 사용 옆
       posts: totals.all_posts,
       post_chars: totals.all_chars,
+      # 시즌별 내 툿 (시즌 이름 · 툿 수 / 글자 수): 합계 아래 작은 글씨. 시즌 날짜 범위의 일일 활동 기록을 더한다
+      seasons: Game::ActivitySnapshot.by_season([current_account.id]).reverse.map { |season, _, _, sum| { name: season.name, running: season.running?, posts: sum.all_posts, chars: sum.all_chars } },
       item_count: character.item_count,
       record: { win: results['win'].to_i, lose: results['lose'].to_i, draw: results['draw'].to_i },
       # 왼쪽 컨텐츠 메뉴 배지: 받고 아직 수락하지 않은 신청 수
