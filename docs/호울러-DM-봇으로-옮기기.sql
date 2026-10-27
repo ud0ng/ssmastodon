@@ -1,6 +1,6 @@
 -- 호울러 소문 DM 을 시스템 계정에서 상점 봇 계정으로 옮긴다 (이미 올라간 것). 연회장 문구 툿은 앞 마이그레이션에서 옮겨졌다.
 -- 시스템이 올린 DM 은 맨 앞에 받는 사람 태그 줄이 붙어 있어("@ron\n연회장 문구\n\n소문 내용") 그 줄을 빼고 호울러 문구로 시작하는 DM 만 옮긴다.
--- 계정 아이디가 다르면 아래 'system' / 'bot' 을 바꾼다. 먼저 ROLLBACK 으로 끝나게 두고 개수를 본 뒤, 맞으면 맨 아래 ROLLBACK 을 COMMIT 으로 바꿔 다시 돌린다.
+-- 계정 아이디가 다르면 아래 'system' / 'bot' 을 바꾼다. 맨 아래가 COMMIT 이라 돌리면 바로 반영된다 (개수만 보려면 맨 아래 COMMIT 을 ROLLBACK 으로 바꿔 돌린다).
 -- (DB 는 PostgreSQL 11 이상: sha256 내장 함수를 쓴다)
 BEGIN;
 
@@ -70,4 +70,4 @@ UPDATE dm_rooms r SET last_status_id = h.last_status_id, updated_at = now()
 
 SELECT count(*) AS moved_dms, (SELECT count(*) FROM howler_rooms) AS rooms FROM howler_dms;
 
-ROLLBACK; -- 개수가 맞으면 COMMIT; 으로 바꿔서 다시 돌린다
+COMMIT;
