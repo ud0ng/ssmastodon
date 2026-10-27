@@ -43,7 +43,7 @@ RSpec.describe 'API V1 System games' do
     expect(groups['duel']).to include('jellybean', 'duel')
     expect(groups['group']).to include('flying', 'maze', 'marauders_map')
     expect(groups['group']).to_not include('quidditch')
-    expect(groups['group']).to include('secret_chamber')
+    expect(groups['group']).to include('secret_chamber', 'dumbledores_army')
     expect(groups.keys).to eq %w(duel group)
   end
 

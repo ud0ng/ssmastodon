@@ -222,8 +222,8 @@ RSpec.describe Game::Events::Opening do
     expect(Game::Lobby.view(session.reload, accounts.first, staff: false)).to include(can_join: true, join_block: '참가 인원이 가득 찼습니다.')
   end
 
-  # 대기실은 모든 이벤트(미로·도둑 지도·비행 대결·비밀의 방)가 같은 규칙과 화면을 쓴다
-  [Game::Web::Maze, Game::Web::MaraudersMap, Game::Kinds::Flying, Game::Web::SecretChamber].each do |kind|
+  # 대기실은 모든 이벤트(미로·도둑 지도·비행 대결·비밀의 방·덤블도어의 군대)가 같은 규칙과 화면을 쓴다
+  [Game::Web::Maze, Game::Web::MaraudersMap, Game::Kinds::Flying, Game::Web::SecretChamber, Game::Web::DumbledoresArmy].each do |kind|
     it "gives the #{kind.key} waiting room the same join limits, notices and invites" do
       Game::Config.merge!('events', 'event_daily_limit' => 1)
       allow(GameCharacter).to receive(:eligible_accounts).and_return(Account.where(id: accounts.map(&:id)))

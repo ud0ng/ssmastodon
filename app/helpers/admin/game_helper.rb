@@ -9,7 +9,7 @@ module Admin::GameHelper
   # 컨텐츠·과목 그림 (웹 컨텐츠 카드 content_card.tsx 와 같게)
   GAME_ICONS = {
     'jellybean' => '🍬', 'gobstones' => '🔮', 'duel' => '⚡', 'potion' => '⚗️',
-    'levitation' => '🪶', 'flying' => '🧹', 'transfiguration' => '🐈', 'practice' => '✨', 'secret_chamber' => '🐍', 'maze' => '🏆', 'marauders_map' => '🗺️',
+    'levitation' => '🪶', 'flying' => '🧹', 'transfiguration' => '🐈', 'practice' => '✨', 'secret_chamber' => '🐍', 'maze' => '🏆', 'marauders_map' => '🗺️', 'dumbledores_army' => '⚡',
   }.freeze
 
   # 보상 사유 'game:jellybean' → 컨텐츠 이름

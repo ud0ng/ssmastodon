@@ -38,12 +38,13 @@ import { StageTutorial } from './stage_tutorial';
 import type { MmChatMessage } from './marauders_stage';
 import { MaraudersStage } from './marauders_stage';
 import { MazeStage, type MzChat } from './maze_stage';
+import { ArmyStage, type ArmyChat } from './army_stage';
 import type { CsMessage } from './chamber_stage';
 import { ChamberStage } from './chamber_stage';
 import { ChamberPlay } from './secret_chamber';
 
 // 무대 화면으로만 보이는 이벤트 (옛 채팅방 화면 없음)
-const EVENT_KINDS = ['flying', 'maze', 'marauders_map', 'secret_chamber'];
+const EVENT_KINDS = ['flying', 'maze', 'marauders_map', 'secret_chamber', 'dumbledores_army'];
 
 const messages = defineMessages({
   title: { id: 'system.session.title', defaultMessage: 'Game' },
@@ -360,16 +361,18 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   // 비밀의 방 게임방 (참가자·관전하는 운영진)
   const chamberRoom = data?.kind === 'secret_chamber' && ['active', 'finished'].includes(data.status);
   const mazeRoom = data?.kind === 'maze' && ['active', 'finished'].includes(data.status);
+  // 덤블도어의 군대 게임방 (필요의 방 테이블 화면)
+  const armyRoom = data?.kind === 'dumbledores_army' && ['active', 'finished'].includes(data.status);
 
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, inLobby || flyingRoom || mapRoom || chamberRoom || mazeRoom ? LOBBY_REFRESH_MS : REFRESH_MS);
+    const timer = window.setInterval(load, inLobby || flyingRoom || mapRoom || chamberRoom || mazeRoom || armyRoom ? LOBBY_REFRESH_MS : REFRESH_MS);
     const pending = timers.current;
     return () => {
       window.clearInterval(timer);
       pending.forEach((each) => { window.clearTimeout(each); });
     };
-  }, [load, inLobby, flyingRoom, mapRoom, chamberRoom, mazeRoom]);
+  }, [load, inLobby, flyingRoom, mapRoom, chamberRoom, mazeRoom, armyRoom]);
 
   // 새 메시지가 오면 메시지 칸만 맨 아래로
   useLayoutEffect(() => {
@@ -523,7 +526,17 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
             onChanged={load}
           />
         )}
-        {(!data || (!flyingRoom && !mapRoom && !chamberRoom && !mazeRoom && !data.lobby)) && (
+        {data && armyRoom && (
+          <ArmyStage
+            sessionId={data.id}
+            name={data.name}
+            chat={data.messages.filter((message) => message.chat).map((message): ArmyChat => ({ id: message.id, mine: message.mine, name: message.name, acct: message.acct, avatar: message.avatar, text: message.text, team: message.team ?? null }))}
+            staff={Boolean(data.staff)}
+            isPlayer={data.player}
+            onChanged={load}
+          />
+        )}
+        {(!data || (!flyingRoom && !mapRoom && !chamberRoom && !mazeRoom && !armyRoom && !data.lobby)) && (
           <StageFrame back='/system/group' label={title}>
             {(data || failed) && (
               <p className='stage-notice'>

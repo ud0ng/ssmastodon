@@ -16,6 +16,7 @@ module Game
         'maze' => Game::Web::Maze,
         'marauders_map' => Game::Web::MaraudersMap,
         'secret_chamber' => Game::Web::SecretChamber,
+        'dumbledores_army' => Game::Web::DumbledoresArmy,
       }
     end
 
@@ -41,7 +42,7 @@ module Game
       matches.select { |kind| kind.max_opponents == 1 }
     end
 
-    # 여럿이 하는 컨텐츠 (비행 대결, 미로, 도둑 지도, 비밀의 방)
+    # 여럿이 하는 컨텐츠 (비행 대결, 미로, 도둑 지도, 비밀의 방, 덤블도어의 군대)
     def group_games
       matches.select { |kind| kind.max_opponents > 1 }
     end
