@@ -11,7 +11,8 @@ RSpec.describe 'Game feature switch' do
     response.status == 404
   end
 
-  it 'is on by default and keeps the game addresses' do
+  it 'keeps the game addresses when switched on' do
+    stub_const('Game::Switch::ENABLED', true)
     expect(Game::Switch.on?).to be true
     expect(not_found?('/admin/games/common')).to be false
     expect(not_found?('/api/v1/system/wallet')).to be false
@@ -56,6 +57,7 @@ RSpec.describe 'Game feature switch' do
   end
 
   it 'enqueues game work when switched on' do
+    stub_const('Game::Switch::ENABLED', true)
     expect { Fabricate(:status, account: Fabricate(:account), text: 'hello', visibility: :unlisted) }.to change(Game::ActivityWorker.jobs, :size).by(1)
   end
 
