@@ -10,6 +10,20 @@
   isolation: isolate;
 }
 
+// 화면 밖의 칭호·데코·소속 카드(GameFx 가 .is-offscreen 표시)는 이름 글자·고리·바탕의 애니메이션도 멈춘다.
+// 움직임을 멈출 뿐 모양은 그대로이고, 화면에 들어오면 다시 움직인다.
+.game-fx-title:has(.game-fx.is-offscreen),
+.game-fx-title:has(.game-fx.is-offscreen) *,
+.game-fx-deco:has(.game-fx.is-offscreen),
+.game-fx-deco:has(.game-fx.is-offscreen) *,
+.game-fx-deco:has(.game-fx.is-offscreen)::before,
+.game-fx-host:has(> .game-fx.is-offscreen),
+.game-fx-host:has(> .game-fx.is-offscreen) *,
+.game-fx-host:has(> .game-fx.is-offscreen)::before,
+.game-fx-host:has(> .game-fx.is-offscreen)::after {
+  animation-play-state: paused !important;
+}
+
 .game-fx {
   position: absolute;
   inset: 0;

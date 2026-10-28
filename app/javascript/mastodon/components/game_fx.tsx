@@ -18,11 +18,17 @@ const MANY_PARTICLES = new Set(['gryffindor', 'hufflepuff', 'slytherin', 'ravenc
 const particleIndexes = (preset: string) => Array.from({ length: MANY_PARTICLES.has(preset) ? 30 : 6 }, (_, index) => index);
 
 // 떠다니는 그림 겹 (보통 6개). slot: card(소속 카드) · title(칭호) · deco(데코) · skin(스킨)
-export const GameFx: React.FC<{ slot: 'card' | 'title' | 'deco' | 'skin'; preset: string }> = ({ slot, preset }) => (
-  <span className={`game-fx game-fx--${slot} game-fx--${preset}`} aria-hidden>
-    {particleIndexes(preset).map((index) => <span key={index} className='game-fx__p' />)}
-  </span>
-);
+//   칭호·데코·소속 카드는 화면 밖이면 그림을 빼고 이름·고리 애니메이션도 멈춘다 (.is-offscreen, _game_fx.scss). 스킨은 SkinLayer 가 한다.
+export const GameFx: React.FC<{ slot: 'card' | 'title' | 'deco' | 'skin'; preset: string }> = ({ slot, preset }) => {
+  const [ref, visible] = useOnScreen();
+  const shown = slot === 'skin' || visible;
+
+  return (
+    <span ref={ref} className={`game-fx game-fx--${slot} game-fx--${preset}${shown ? '' : ' is-offscreen'}`} aria-hidden>
+      {shown && particleIndexes(preset).map((index) => <span key={index} className='game-fx__p' />)}
+    </span>
+  );
+};
 
 // ── 효과 목록 저장소 (계정 번호 → 효과) ──
 const REFRESH_MS = 60_000;
