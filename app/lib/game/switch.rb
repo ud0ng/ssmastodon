@@ -4,7 +4,7 @@
 # 끄면 컨텐츠·이벤트·소속·재화·상점·RP(마니또)·시트 설정이 사용자 화면·관리 메뉴·주소·API·백그라운드 작업에서 모두 막힌다.
 # 데이터는 지우지 않으니 다시 켜면 그대로 돌아온다. 컨텐츠 테이블이 없어도 안전하다.
 module Game::Switch
-  ENABLED = false
+  ENABLED = true
 
   module_function
 
