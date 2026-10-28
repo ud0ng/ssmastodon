@@ -992,6 +992,20 @@
   pointer-events: none;
 
   .game-fx { inset: 0; }
+
+  // 안쪽 겹(흐르는 바탕·빛 번짐)은 기숙사 승리 스킨(_game_fx_houses.scss)만 쓴다
+  &__flow,
+  &__glow { display: none; }
+
+  // 화면 밖의 스킨(components/game_fx 의 SkinLayer 가 표시)은 CSS 애니메이션도 멈춘다
+  &.is-offscreen,
+  &.is-offscreen *,
+  &.is-offscreen::before,
+  &.is-offscreen::after,
+  &.is-offscreen *::before,
+  &.is-offscreen *::after {
+    animation-play-state: paused !important;
+  }
 }
 
 .status:has(> .game-fx-skin),

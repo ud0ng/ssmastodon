@@ -2,7 +2,7 @@
 //   캐릭터 효과는 한 곳(/api/v1/system/fx, 지금 효과가 붙은 캐릭터 목록)에서만 받아 모든 화면이 같은 것을 본다.
 //   1분마다·창으로 돌아올 때·재화·아이템이 바뀌었을 때(아이템 사용 등) 새로 받는다.
 //   데코(아바타 둘레)는 components/avatar, 칭호(이름 글자)는 components/display_name 이 알아서 붙인다.
-import { useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import { apiRequestGet } from 'mastodon/api';
 import { me } from 'mastodon/initial_state';
@@ -69,13 +69,49 @@ export const useAccountFx = (accountId: string | undefined | null): GameFxShape 
   return (accountId ? all[accountId] : undefined) ?? NONE;
 };
 
+// 스킨 안쪽 겹: 흐르는 바탕(flow)·빛 번짐(glow). 기숙사 승리 스킨만 CSS 로 보이게 한다 (배경 위치·그림자를 매 프레임 다시 그리는 대신 옆으로 밀고 투명도만 바꾼다)
+export const SkinInner: React.FC = () => (
+  <>
+    <span className='game-fx-skin__flow' />
+    <span className='game-fx-skin__glow' />
+  </>
+);
+
+// 화면에 보이는 스킨만 움직이게 한다: 스킨 수십 개가 한꺼번에 도는 것이 렉의 원인이라, 한 관찰자를 모든 스킨이 같이 쓴다.
+// (마스토돈은 화면 위아래 3화면 분량의 툿을 그려 둔다. 안 보이는 스킨은 떠다니는 그림을 그리지 않고 CSS 애니메이션도 멈춘다)
+const watchers = new Map<Element, (visible: boolean) => void>();
+let observer: IntersectionObserver | null = null;
+const watchVisible = (element: Element, callback: (visible: boolean) => void) => {
+  observer ??= new IntersectionObserver((entries) => {
+    entries.forEach((entry) => { watchers.get(entry.target)?.(entry.isIntersecting); });
+  }, { rootMargin: '120px 0px' });
+  watchers.set(element, callback);
+  observer.observe(element);
+  return () => {
+    watchers.delete(element);
+    observer?.unobserve(element);
+  };
+};
+
+const useOnScreen = () => {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [visible, setVisible] = useState(typeof IntersectionObserver === 'undefined');
+  useEffect(() => {
+    const element = ref.current;
+    return element && typeof IntersectionObserver !== 'undefined' ? watchVisible(element, setVisible) : undefined;
+  }, []);
+  return [ref, visible] as const;
+};
+
 // 스킨: 그 캐릭터가 쓴 툿·멘션 알림의 배경 전체를 채우는 겹 (위 칸의 맨 앞 자식으로 넣는다. 안 칸은 CSS 가 그 위로 올린다)
 export const SkinLayer: React.FC<{ accountId: string | undefined | null }> = ({ accountId }) => {
   const fx = useAccountFx(accountId);
+  const [ref, visible] = useOnScreen();
 
   return fx.skin ? (
-    <span className={`game-fx-skin game-fx-skin--${fx.skin}`} aria-hidden>
-      <GameFx slot='skin' preset={fx.skin} />
+    <span ref={ref} className={`game-fx-skin game-fx-skin--${fx.skin}${visible ? '' : ' is-offscreen'}`} aria-hidden>
+      <SkinInner />
+      {visible && <GameFx slot='skin' preset={fx.skin} />}
     </span>
   ) : null;
 };

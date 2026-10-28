@@ -1,3 +1,5 @@
 -# 스킨 겹: 웹 components/game_fx.tsx 의 SkinLayer 와 같은 마크업
 %span.game-fx-skin{ class: "game-fx-skin--#{preset}", 'aria-hidden': 'true' }
+  %span.game-fx-skin__flow
+  %span.game-fx-skin__glow
   = render 'admin/game_effects/layer', slot: 'skin', preset: preset

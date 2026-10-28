@@ -60,8 +60,25 @@
   70%, 100% { transform: translateX(130%) skewX(-18deg); }
 }
 
+// 깃발 띠: 띠(높이 400%)가 한 무늬 길이(50%)만큼 위로 흐른다 (배경 위치를 바꾸는 대신 옮기기만 해서 컴포지터가 처리)
 @keyframes game-fx-house-banner {
-  to { background-position: 0 200%; }
+  to { transform: translateY(-50%); }
+}
+
+// 바탕 물결: 안쪽 겹(너비 400%)이 한 무늬 길이(75%)만큼 옆으로 흐른다
+@keyframes game-fx-house-flow {
+  to { transform: translateX(-75%); }
+}
+
+// 빛 번짐: 약한 상태(A)와 센 상태(B) 두 겹이 번갈아 나타난다 (그림자 값을 바꾸는 대신 투명도만)
+@keyframes game-fx-house-glow-a {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes game-fx-house-glow-b {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
 }
 
 // 흰 반짝이 파티클 (7~18번째, 기숙사 승리 효과만 18개를 그린다: components/game_fx.tsx·admin/game_effects/_layer)
@@ -163,11 +180,6 @@ $house-ring-sparks: (
   @keyframes game-fx-#{$key}-ring {
     0%, 100% { filter: brightness(1) saturate(1); box-shadow: 0 0 5px 1px rgba($b2, 0.7), 0 0 10px 2px rgba($a2, 0.4); }
     50% { filter: brightness(1.35) saturate(1.3); box-shadow: 0 0 12px 3px $b3, 0 0 22px 6px rgba($a2, 0.7); }
-  }
-
-  @keyframes game-fx-#{$key}-skin-glow {
-    0%, 100% { box-shadow: inset 0 0 0 1px rgba($b2, 0.6), inset 0 0 10px rgba($a2, 0.25); }
-    50% { box-shadow: inset 0 0 0 2px rgba($b3, 0.9), inset 0 0 26px rgba($a2, 0.45); }
   }
 
   // ── 소속 카드: 두 색 바탕이 흐르고 무늬가 지나가며, 금속빛 테두리가 빛나고, 커다란 상징이 포효한다 ──
@@ -361,9 +373,44 @@ $house-ring-sparks: (
 
   // ── 스킨: 두 색 물결 + 빛줄기 + 왼쪽 깃발 띠 + 커다란 상징 + 훑는 빛 + 떠다니는 그림 ──
   .game-fx-skin--#{$key} {
-    background: linear-gradient(115deg, rgba($a2, 0.26), rgba($b2, 0.26), rgba($a3, 0.22), rgba($b3, 0.3), rgba($a2, 0.26));
-    background-size: 300% 100%;
-    animation: game-fx-wave 4s linear infinite, game-fx-debut-pop 1s ease-out, game-fx-#{$key}-skin-glow 1.8s ease-in-out infinite;
+    animation: game-fx-debut-pop 1s ease-out;
+
+    // 두 색 물결: 한 무늬(너비의 3배)가 반복되는 넓은 겹이 옆으로 흐른다
+    > .game-fx-skin__flow {
+      display: block;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      inset-inline-start: 0;
+      width: 400%;
+      background: linear-gradient(115deg, rgba($a2, 0.26), rgba($b2, 0.26), rgba($a3, 0.22), rgba($b3, 0.3), rgba($a2, 0.26)) 0 0 / 75% 100%;
+      animation: game-fx-house-flow 2s linear infinite;
+    }
+
+    // 테두리 빛 번짐: 약한 상태와 센 상태 두 겹이 번갈아 나타난다 (1.8초)
+    > .game-fx-skin__glow {
+      display: block;
+      position: absolute;
+      inset: 0;
+
+      &::before,
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+      }
+
+      &::before {
+        box-shadow: inset 0 0 0 1px rgba($b2, 0.6), inset 0 0 10px rgba($a2, 0.25);
+        animation: game-fx-house-glow-a 1.8s ease-in-out infinite;
+      }
+
+      &::after {
+        box-shadow: inset 0 0 0 2px rgba($b3, 0.9), inset 0 0 26px rgba($a2, 0.45);
+        opacity: 0;
+        animation: game-fx-house-glow-b 1.8s ease-in-out infinite;
+      }
+    }
 
     // 커다란 상징 (오른쪽)
     &::before {
@@ -450,10 +497,11 @@ $house-ring-sparks: (
   .game-fx--skin.game-fx--#{$key}::after {
     content: '';
     position: absolute;
-    inset-block: 0;
+    top: 0;
+    height: 400%;
     inset-inline-start: 0;
     width: 4px;
-    background: linear-gradient(180deg, $a2, $b3, $a1, $b2, $a2) 0 0 / 100% 200%;
+    background: linear-gradient(180deg, $a2, $b3, $a1, $b2, $a2) 0 0 / 100% 50%;
     box-shadow: 0 0 8px $b2;
     animation: game-fx-house-banner 2s linear infinite;
   }

@@ -24,7 +24,7 @@ import { openModal } from 'mastodon/actions/modal';
 import { Column } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
 import { Remaining } from 'mastodon/components/countdown';
-import { GameFx } from 'mastodon/components/game_fx';
+import { GameFx, SkinInner } from 'mastodon/components/game_fx';
 import { Icon } from 'mastodon/components/icon';
 import type { IconProp } from 'mastodon/components/icon';
 import { LoadMore } from 'mastodon/components/load_more';
@@ -273,6 +273,7 @@ const WearingSlot: React.FC<{ wallet: Wallet; slot: 'deco' | 'title' | 'skin' }>
             {slot === 'skin' && (
               <span className='wearing-slot__skin'>
                 <span className={`game-fx-skin game-fx-skin--${worn.preset}`} aria-hidden>
+                  <SkinInner />
                   <GameFx slot='skin' preset={worn.preset} />
                 </span>
                 {avatar}
