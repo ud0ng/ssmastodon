@@ -303,7 +303,6 @@ ko:
         status_min_exclude_public: 최소 글자수에서 퍼블툿 제외
         status_page_url: 상태 페이지 URL
         status_search_enabled: 툿 본문 검색 사용
-        game_features_enabled: 컨텐츠 기능 사용
         status_search_scope: 검색 범위
         theme: 기본 테마
         thumbnail: 서버 썸네일

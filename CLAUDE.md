@@ -29,7 +29,7 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
 - 기본 프로필 사진·헤더: SiteUpload `default_avatar`/`default_header`, Paperclip default_url → `app/lib/default_account_image.rb`.
 - 관리자·설정 사이드바 로고: `BrandingHelper#render_themed_wordmark` (라이트 테마=낮 로고 `wordmark_light`, 다크=밤 로고).
 
-## 컨텐츠 기능 스위치 (서버 설정 > 운영 > 컨텐츠 기능 사용, Setting `game_features_enabled`, 기본 켜짐)
+## 컨텐츠 기능 스위치 (코드에서만: `Game::Switch::ENABLED`, 기본 true. 관리 화면 항목은 2026-10-28 에 없앴다)
 
 - 끄면 컨텐츠·이벤트·소속 점수·재화·상점·RP(마니또)·시트 설정이 통째로 막힌다. 데이터는 그대로라 다시 켜면 돌아온다. 컨텐츠를 안 쓰는 서버(커뮤니티 종료 후, 또는 기능을 안 쓰는 곳)에서 쓴다.
 - `Game::Switch.on?`(`app/lib/game/switch.rb`)이 기준. 막는 곳: 관리·API 주소(`config/routes/admin.rb`·`api.rb` 의 `constraints(Game::Switch)` 안 → 404, 시스템·자동봇 API 포함), 관리 메뉴(시스템·RP 숨김, 서버 설정은 운영 그룹으로 이동 `config/navigation.rb`),

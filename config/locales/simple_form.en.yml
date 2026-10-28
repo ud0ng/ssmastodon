@@ -309,7 +309,6 @@ en:
         status_min_exclude_public: Exclude non-reply posts from the minimum length
         status_page_url: Status page URL
         status_search_enabled: Enable full-text post search
-        game_features_enabled: Enable contents
         status_search_scope: Search scope
         theme: Default theme
         thumbnail: Server thumbnail

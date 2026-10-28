@@ -2,11 +2,9 @@
 
 require 'rails_helper'
 
-# 컨텐츠 기능 스위치 (서버 설정 > 운영 > 컨텐츠 기능 사용): 끄면 관리 화면·API 주소가 없는 주소가 되고, 켜면 그대로 돌아온다
+# 컨텐츠 기능 스위치 (코드의 Game::Switch::ENABLED, 관리 화면에는 없다): 끄면 관리 화면·API 주소가 없는 주소가 되고, 켜면 그대로 돌아온다
 # (화면을 그리는 확인은 Vite 빌드가 필요해 미리보기 서버에서 한다)
 RSpec.describe 'Game feature switch' do
-  after { Setting.game_features_enabled = true }
-
   # 주소가 없으면 404, 있으면 로그인·권한 때문에 401/302/403 등 (JSON 으로 받아 화면을 그리지 않는다)
   def not_found?(path)
     get path, headers: { 'Accept' => 'application/json' }
@@ -20,7 +18,7 @@ RSpec.describe 'Game feature switch' do
   end
 
   describe 'when switched off' do
-    before { Setting.game_features_enabled = false }
+    before { stub_const('Game::Switch::ENABLED', false) }
 
     it 'removes the admin game addresses' do
       %w(/admin/games/common /admin/characters /admin/shop/settings /admin/shop/list /admin/rp/manito /admin/sheets /admin/events /admin/characters/houses /admin/settings/staff).each do |path|
@@ -57,18 +55,11 @@ RSpec.describe 'Game feature switch' do
     end
   end
 
-  it 'enqueues game work again once switched back on' do
-    Setting.game_features_enabled = true
+  it 'enqueues game work when switched on' do
     expect { Fabricate(:status, account: Fabricate(:account), text: 'hello', visibility: :unlisted) }.to change(Game::ActivityWorker.jobs, :size).by(1)
   end
 
-  it 'can be toggled from the 운영 tab' do
-    sign_in Fabricate(:admin_user)
-
-    patch admin_settings_registrations_path, params: { form_admin_settings: { game_features_enabled: '0' } }
-    expect(Setting.game_features_enabled).to be false
-
-    patch admin_settings_registrations_path, params: { form_admin_settings: { game_features_enabled: '1' } }
-    expect(Setting.game_features_enabled).to be true
+  it 'is not a server setting any more' do
+    expect(Form::AdminSettings::KEYS).not_to include(:game_features_enabled)
   end
 end
