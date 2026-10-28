@@ -116,11 +116,13 @@ class InitialStateSerializer < ActiveModel::Serializer
       scheduled_status_daily_limit: ScheduledStatus::DAILY_LIMIT,
       dm_chat_enabled: Mastodon::DmChat.enabled?,
       # 상점 해금 (컨텐츠 설정 > 상점): 꺼지면 왼쪽 상점 메뉴·/shop 화면을 숨긴다
-      shop_enabled: Game::Config.for('currency')['shop_open'] || Game::Staff.web?(object_account_user),
+      # 컨텐츠 기능 스위치 (서버 설정 > 운영): 꺼지면 아래 해금과 상관없이 소속 점수판·인벤토리·재화·상점·컨텐츠·이벤트를 모두 숨긴다
+      game_enabled: Game::Switch.on?,
+      shop_enabled: Game::Switch.on? && (Game::Config.for('currency')['shop_open'] || Game::Staff.web?(object_account_user)),
       # 컨텐츠 해금 (컨텐츠 설정 > 설정): 꺼지면 컨텐츠 메뉴·화면을 숨긴다. 운영진은 상점·컨텐츠 모두 항상 보인다
-      contents_enabled: Game::Config.for('common')['contents_open'] || Game::Staff.web?(object_account_user),
+      contents_enabled: Game::Switch.on? && (Game::Config.for('common')['contents_open'] || Game::Staff.web?(object_account_user)),
       # 이벤트 해금 (이벤트 설정 > 설정): 꺼지면 이벤트 메뉴·화면을 숨긴다 (운영진은 항상 보인다)
-      events_enabled: Game::Events::Settings.unlocked? || Game::Staff.web?(object_account_user),
+      events_enabled: Game::Switch.on? && (Game::Events::Settings.unlocked? || Game::Staff.web?(object_account_user)),
       # 컨텐츠 툿(시스템 계정 툿·시스템에게 보낸 명령어 툿)은 웹 홈·타임라인·알림에서 숨기고 컨텐츠 메뉴에서만 본다
       system_acct: Game::System.username,
       system_account_id: Game::System.account&.id&.to_s,

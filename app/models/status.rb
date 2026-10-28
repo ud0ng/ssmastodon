@@ -152,7 +152,7 @@ class Status < ApplicationRecord
   after_create_commit :store_uri, if: :local?
   after_create_commit :update_statistics, if: :local?
   # 컨텐츠 툿 보상 (웹·앱 어디서 썼든 저장될 때 확인한다, Game::Activity)
-  after_create_commit :enqueue_game_activity, if: -> { local? && !reblog? && !direct_visibility? }
+  after_create_commit :enqueue_game_activity, if: -> { local? && !reblog? && !direct_visibility? && Game::Switch.on? }
 
   before_validation :prepare_contents, if: :local?
   before_validation :set_reblog
@@ -417,7 +417,7 @@ class Status < ApplicationRecord
     discard_time = Time.current
     Status.unscoped.where(reblog_of_id: id, deleted_at: [nil, deleted_at]).in_batches.update_all(deleted_at: discard_time) unless reblog?
     update_attribute(:deleted_at, discard_time)
-    Game::ManitoWorker.perform_async(id, 'revert') if !reblog? && Game::Manito.word_toot?(id) # 마니또 단어 툿이면 사용을 되돌린다 (redis, DB 를 찾지 않음)
+    Game::ManitoWorker.perform_async(id, 'revert') if Game::Switch.on? && !reblog? && Game::Manito.word_toot?(id) # 마니또 단어 툿이면 사용을 되돌린다 (redis, DB 를 찾지 않음)
 
     rewind_dm_room! if direct_visibility?
   end

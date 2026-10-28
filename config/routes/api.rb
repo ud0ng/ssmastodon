@@ -81,59 +81,62 @@ namespace :api, format: false do
       end
     end
 
-    # 웹 '시스템' 메뉴 (기숙사 점수·게임)
-    resource :system, only: [:show], controller: 'system'
-    namespace :system do
-      resources :games, only: [:show] do
-        post :open, on: :member
-      end
-      resources :commands, only: [:create]
-      resources :members, only: [:index]
-      resource :history, only: [:show]
-      resources :houses, only: [:show]
-      resource :fx, only: [:show], controller: 'fx'
-      resource :wallet, only: [:show] do
-        get :records
-        post :gift
-      end
-      resource :shop, only: [:show] do
-        post :purchase
-      end
-      resources :items, only: [] do
-        collection do
-          post :use
+    # 컨텐츠 기능 스위치(서버 설정 > 운영)를 끄면 웹 시스템·자동봇 API 는 모두 없는 주소(404)
+    constraints(Game::Switch) do
+      # 웹 '시스템' 메뉴 (기숙사 점수·게임)
+      resource :system, only: [:show], controller: 'system'
+      namespace :system do
+        resources :games, only: [:show] do
+          post :open, on: :member
+        end
+        resources :commands, only: [:create]
+        resources :members, only: [:index]
+        resource :history, only: [:show]
+        resources :houses, only: [:show]
+        resource :fx, only: [:show], controller: 'fx'
+        resource :wallet, only: [:show] do
+          get :records
           post :gift
-          post :discard
+        end
+        resource :shop, only: [:show] do
+          post :purchase
+        end
+        resources :items, only: [] do
+          collection do
+            post :use
+            post :gift
+            post :discard
+          end
+        end
+        resources :sessions, only: [:show, :destroy] do
+          member do
+            get :view
+            post :move
+            post :ready
+            post :join
+            post :start_now
+            post :accept
+            post :decline
+            post :invite_more
+            post :team
+            post :role
+            post :control
+            post :leave
+            post :cancel_start
+            post :chat
+          end
         end
       end
-      resources :sessions, only: [:show, :destroy] do
-        member do
-          get :view
-          post :move
-          post :ready
-          post :join
-          post :start_now
-          post :accept
-          post :decline
-          post :invite_more
-          post :team
-          post :role
-          post :control
-          post :leave
-          post :cancel_start
-          post :chat
-        end
-      end
-    end
 
-    # 자동봇(ssbot) 전용: 캐릭터·재화·상점 (컨텐츠 설정의 자동봇 계정만)
-    namespace :bot do
-      resource :config, only: [:show]
-      resources :shops, only: [:index]
-      post 'items/use', to: 'items#use'
-      post 'manito/guess', to: 'manito#guess'
-      resources :characters, only: [:index, :show] do
-        post :apply, on: :collection
+      # 자동봇(ssbot) 전용: 캐릭터·재화·상점 (컨텐츠 설정의 자동봇 계정만)
+      namespace :bot do
+        resource :config, only: [:show]
+        resources :shops, only: [:index]
+        post 'items/use', to: 'items#use'
+        post 'manito/guess', to: 'manito#guess'
+        resources :characters, only: [:index, :show] do
+          post :apply, on: :collection
+        end
       end
     end
 

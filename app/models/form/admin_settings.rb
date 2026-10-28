@@ -50,6 +50,7 @@ class Form::AdminSettings
     status_public_limit_unit
     status_public_limit_count
     status_search_enabled
+    game_features_enabled
     status_search_scope
     community_theme_enabled
     community_theme_main_light
@@ -100,6 +101,7 @@ class Form::AdminSettings
     captcha_enabled
     authorized_fetch
     status_search_enabled
+    game_features_enabled
     community_theme_enabled
     community_theme_post_button_main
     community_theme_box_border

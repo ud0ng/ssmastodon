@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import { apiRequestGet } from 'mastodon/api';
-import { me } from 'mastodon/initial_state';
+import { gameEnabled, me } from 'mastodon/initial_state';
 
 export interface GameFxShape {
   title?: string;
@@ -53,7 +53,7 @@ const load = () => {
 };
 
 const start = () => {
-  if (started || !me) return;
+  if (started || !me || !gameEnabled) return;
   started = true;
   load();
   window.setInterval(load, REFRESH_MS);

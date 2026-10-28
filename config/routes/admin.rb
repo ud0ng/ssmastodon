@@ -75,99 +75,102 @@ namespace :admin do
     end
   end
 
-  # 자동봇 시트 (관리 > 시트 설정)
-  resource :bot_sheet_connection, path: 'sheets/connection', only: [:show, :update], controller: 'bot_sheets/connections'
-  resources :bot_sheets, path: 'sheets', only: [:index, :show, :update], constraints: { id: /main|reservation|story|investigation/ } do
-    member do
-      post :rows, action: :append
-      patch :rows, action: :update_row
-      delete :rows, action: :destroy_row
+  # 컨텐츠 기능 스위치(서버 설정 > 운영)를 끄면 아래 주소는 모두 없는 주소(404)
+  constraints(Game::Switch) do
+    # 자동봇 시트 (관리 > 시트 설정)
+    resource :bot_sheet_connection, path: 'sheets/connection', only: [:show, :update], controller: 'bot_sheets/connections'
+    resources :bot_sheets, path: 'sheets', only: [:index, :show, :update], constraints: { id: /main|reservation|story|investigation/ } do
+      member do
+        post :rows, action: :append
+        patch :rows, action: :update_row
+        delete :rows, action: :destroy_row
+      end
     end
-  end
 
-  # 게임 (시스템 계정)
-  get 'games/houses', to: redirect('/admin/characters/houses')
-  resources :game_houses, path: 'characters/houses', only: [:index, :create, :update, :destroy] do
-    member do
-      post :effects, action: :add_effect, as: :add_effect
-      patch 'effects/:index', action: :update_effect, as: :effect
-      delete 'effects/:index', action: :remove_effect
+    # 게임 (시스템 계정)
+    get 'games/houses', to: redirect('/admin/characters/houses')
+    resources :game_houses, path: 'characters/houses', only: [:index, :create, :update, :destroy] do
+      member do
+        post :effects, action: :add_effect, as: :add_effect
+        patch 'effects/:index', action: :update_effect, as: :effect
+        delete 'effects/:index', action: :remove_effect
+      end
+      post :adjust, on: :collection
+      post :scoring, on: :collection
+      post :mode, on: :collection
+      patch :labels, on: :collection
+      post :kinds, action: :add_kind, on: :collection
+      delete 'kinds/:key', action: :remove_kind, on: :collection, as: :kind
     end
-    post :adjust, on: :collection
-    post :scoring, on: :collection
-    post :mode, on: :collection
-    patch :labels, on: :collection
-    post :kinds, action: :add_kind, on: :collection
-    delete 'kinds/:key', action: :remove_kind, on: :collection, as: :kind
-  end
-  resources :game_seasons, path: 'characters/seasons', only: [:create, :update, :destroy] do
-    member do
-      post :interim
-      post :finish
+    resources :game_seasons, path: 'characters/seasons', only: [:create, :update, :destroy] do
+      member do
+        post :interim
+        post :finish
+      end
+      patch :messages, on: :collection
     end
-    patch :messages, on: :collection
-  end
-  # 상점 설정 (관리 > 시스템 > 상점 설정): 설정 · 명령어 · 상점 목록 · 재화 기록 · 아이템 기록
-  get 'games/shops', to: redirect('/admin/shop/list')
-  get 'shop', to: redirect('/admin/shop/settings')
-  get 'shop/settings', to: 'game_shops#settings', as: :game_shop_settings
-  get 'shop/commands', to: 'game_shops#commands', as: :game_shop_commands
-  get 'shop/records', to: 'game_shop_records#money', as: :game_shop_money_records
-  get 'shop/item_records', to: 'game_shop_records#items', as: :game_shop_item_records
-  get 'shop/counter_records', to: 'game_shop_records#counters', as: :game_shop_counter_records
-  resources :game_shops, path: 'shop/list', only: [:index, :create, :update, :destroy] do
-    patch :currency, on: :collection
-  end
-  resources :game_shop_items, path: 'games/shop_items', only: [:create, :update, :destroy]
-  resources :game_effects, path: 'shop/effects', only: [:index, :create, :update, :destroy]
-  resources :game_counters, path: 'shop/counters', only: [:index, :create, :update, :destroy] do
-    resources :rules, controller: 'game_counter_rules', only: [:create, :update, :destroy]
-  end
-  resources :game_sessions, path: 'games/sessions', only: [] do
-    member do
-      post :advance
-      post :cancel
-      post :draw
-      post :decide
+    # 상점 설정 (관리 > 시스템 > 상점 설정): 설정 · 명령어 · 상점 목록 · 재화 기록 · 아이템 기록
+    get 'games/shops', to: redirect('/admin/shop/list')
+    get 'shop', to: redirect('/admin/shop/settings')
+    get 'shop/settings', to: 'game_shops#settings', as: :game_shop_settings
+    get 'shop/commands', to: 'game_shops#commands', as: :game_shop_commands
+    get 'shop/records', to: 'game_shop_records#money', as: :game_shop_money_records
+    get 'shop/item_records', to: 'game_shop_records#items', as: :game_shop_item_records
+    get 'shop/counter_records', to: 'game_shop_records#counters', as: :game_shop_counter_records
+    resources :game_shops, path: 'shop/list', only: [:index, :create, :update, :destroy] do
+      patch :currency, on: :collection
     end
-  end
-  resource :game_event, path: 'games/event', only: [:create]
-  get 'events', to: 'game_events#index', as: :game_events_settings
-  # RP > 마니또 설정 (설정 · 명단 · 기록)
-  scope 'rp', as: 'rp' do
-    get 'manito', to: 'manito#settings', as: :manito
-    patch 'manito', to: 'manito#update'
-    post 'manito/announce', to: 'manito#announce', as: :manito_announce
-    get 'manito/roster', to: 'manito#roster', as: :manito_roster
-    post 'manito/assign', to: 'manito#assign', as: :manito_assign
-    get 'manito/roster/:id', to: 'manito#words', as: :manito_words
-    patch 'manito/roster/:id', to: 'manito#update_words'
-    get 'manito/records', to: 'manito#records', as: :manito_records
-  end
-  get 'events/records', to: 'game_events#records', as: :game_event_records
-  resource :game_staff, path: 'settings/staff', only: [:update], controller: 'game_staff'
-  resources :game_settings, path: 'games', only: [:index, :show, :update]
-  resources :game_activities, path: 'characters/activity', only: [:index, :show] do
-    get :stats, on: :member
-    post :backfill, on: :collection
-    post :give, on: :collection
-    patch :criteria, on: :collection
-  end
-  resources :game_character_stats, path: 'characters/stats', only: [:index, :create, :update, :destroy]
-  get 'characters/activity_log', to: 'game_activity_logs#index', as: :game_activity_logs
-  get 'characters/house_records', to: 'game_house_records#index', as: :game_house_records
-  delete 'characters/house_records/:id', to: 'game_house_records#destroy', as: :game_house_record
-  get 'characters/records', to: 'game_records#index', as: :game_records
-  resources :game_characters, path: 'characters', only: [:index, :edit, :update] do
-    # 상세 > 인벤토리 카드: 아이템 더하기·고치기·지우기 (index = 인벤토리 안 순서)
-    member do
-      patch :group, action: :assign_group
-      post :items, action: :add_item
-      post :effects, action: :add_effect, as: :add_effect
-      patch 'effects/:index', action: :update_effect, as: :effect
-      delete 'effects/:index', action: :remove_effect
-      patch 'items/:index', action: :update_item, as: :item
-      delete 'items/:index', action: :remove_item
+    resources :game_shop_items, path: 'games/shop_items', only: [:create, :update, :destroy]
+    resources :game_effects, path: 'shop/effects', only: [:index, :create, :update, :destroy]
+    resources :game_counters, path: 'shop/counters', only: [:index, :create, :update, :destroy] do
+      resources :rules, controller: 'game_counter_rules', only: [:create, :update, :destroy]
+    end
+    resources :game_sessions, path: 'games/sessions', only: [] do
+      member do
+        post :advance
+        post :cancel
+        post :draw
+        post :decide
+      end
+    end
+    resource :game_event, path: 'games/event', only: [:create]
+    get 'events', to: 'game_events#index', as: :game_events_settings
+    # RP > 마니또 설정 (설정 · 명단 · 기록)
+    scope 'rp', as: 'rp' do
+      get 'manito', to: 'manito#settings', as: :manito
+      patch 'manito', to: 'manito#update'
+      post 'manito/announce', to: 'manito#announce', as: :manito_announce
+      get 'manito/roster', to: 'manito#roster', as: :manito_roster
+      post 'manito/assign', to: 'manito#assign', as: :manito_assign
+      get 'manito/roster/:id', to: 'manito#words', as: :manito_words
+      patch 'manito/roster/:id', to: 'manito#update_words'
+      get 'manito/records', to: 'manito#records', as: :manito_records
+    end
+    get 'events/records', to: 'game_events#records', as: :game_event_records
+    resource :game_staff, path: 'settings/staff', only: [:update], controller: 'game_staff'
+    resources :game_settings, path: 'games', only: [:index, :show, :update]
+    resources :game_activities, path: 'characters/activity', only: [:index, :show] do
+      get :stats, on: :member
+      post :backfill, on: :collection
+      post :give, on: :collection
+      patch :criteria, on: :collection
+    end
+    resources :game_character_stats, path: 'characters/stats', only: [:index, :create, :update, :destroy]
+    get 'characters/activity_log', to: 'game_activity_logs#index', as: :game_activity_logs
+    get 'characters/house_records', to: 'game_house_records#index', as: :game_house_records
+    delete 'characters/house_records/:id', to: 'game_house_records#destroy', as: :game_house_record
+    get 'characters/records', to: 'game_records#index', as: :game_records
+    resources :game_characters, path: 'characters', only: [:index, :edit, :update] do
+      # 상세 > 인벤토리 카드: 아이템 더하기·고치기·지우기 (index = 인벤토리 안 순서)
+      member do
+        patch :group, action: :assign_group
+        post :items, action: :add_item
+        post :effects, action: :add_effect, as: :add_effect
+        patch 'effects/:index', action: :update_effect, as: :effect
+        delete 'effects/:index', action: :remove_effect
+        patch 'items/:index', action: :update_item, as: :item
+        delete 'items/:index', action: :remove_item
+      end
     end
   end
 

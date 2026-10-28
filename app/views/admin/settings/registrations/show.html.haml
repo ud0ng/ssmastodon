@@ -32,6 +32,13 @@
               input_html: { rows: 2 },
               wrapper: :with_block_label
 
+  %h4= t('admin.settings.community.game_features')
+
+  .fields-group
+    = f.input :game_features_enabled,
+              as: :boolean,
+              wrapper: :with_label
+
   %h4= t('admin.settings.community.posting')
 
   .fields-group
@@ -115,14 +122,15 @@
 
 -# 운영진 계정: 공지·스토리·시스템 같은 운영진 계정. 캐릭터 명단에서 빠지고(소속·재화·인벤토리·전적 없음), 자동봇 운영진 명령어를 쓸 수 있다.
 -# (자동봇 시트 설정의 운영진 칸도 이 목록으로 대신한다)
-= form_tag admin_game_staff_path, method: :patch, class: 'simple_form', id: 'edit_game_staff' do
-  %h4= game_t('admin.games.staff.title')
+- if Game::Switch.on?
+  = form_tag admin_game_staff_path, method: :patch, class: 'simple_form', id: 'edit_game_staff' do
+    %h4= game_t('admin.games.staff.title')
 
-  .fields-group
-    %p.hint= game_t('admin.games.staff.hint')
-    - accounts = Account.local.without_instance_actor.order(:username).to_a
-    = render 'admin/ui/multi_select', name: 'usernames[]', placeholder: game_t('admin.games.shop.pick_admins'), selected: Array(Game::Config.for('currency')['admin_usernames']),
-                                      options: accounts.map { |account| ["#{account.display_name.presence || account.username} (@#{account.username})", account.username] }
+    .fields-group
+      %p.hint= game_t('admin.games.staff.hint')
+      - accounts = Account.local.without_instance_actor.order(:username).to_a
+      = render 'admin/ui/multi_select', name: 'usernames[]', placeholder: game_t('admin.games.shop.pick_admins'), selected: Array(Game::Config.for('currency')['admin_usernames']),
+                                        options: accounts.map { |account| ["#{account.display_name.presence || account.username} (@#{account.username})", account.username] }
 
-  .actions
-    = button_tag t('generic.save_changes'), type: :submit, class: 'button'
+    .actions
+      = button_tag t('generic.save_changes'), type: :submit, class: 'button'

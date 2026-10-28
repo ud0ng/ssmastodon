@@ -106,6 +106,7 @@ ko:
         status_min_characters: 툿 하나에 꼭 써야 하는 최소 글자수입니다. 멘션(@아이디)과 띄어쓰기는 세지 않습니다. 운영 계정, 사진·투표가 붙은 툿, 명령어 툿(시스템·봇 계정에 [명령어]를 쓴 툿, [명령어]만 쓴 툿)은 제외합니다. (0 ~ 1,000, 0이면 끔)
         status_page_url: 이 서버가 중단된 동안 사람들이 서버의 상태를 볼 수 있는 페이지 URL
         status_search_enabled: Elasticsearch 없이 서버 DB로 툿 본문과 CW를 검색합니다. 내 툿, 나를 멘션한 툿, 좋아요·북마크한 툿은 범위와 관계없이 검색됩니다.
+        game_features_enabled: 끄면 컨텐츠·이벤트·소속 점수·재화·상점·RP 메뉴와 화면, 관련 주소와 API, 자동봇 연동이 모두 막힙니다. 데이터는 지워지지 않고, 다시 켜면 그대로 돌아옵니다. 끈 뒤에는 서버의 자동봇(ssbot)도 멈춰 주세요.
         status_search_scope: 다른 사람의 툿을 어디까지 검색할지 정합니다.
         theme: 로그인 하지 않은 사용자나 새로운 사용자가 보게 될 테마.
         thumbnail: 대략 2:1 비율의 이미지가 서버 정보 옆에 표시됩니다.
@@ -303,6 +304,7 @@ ko:
         status_min_exclude_public: 최소 글자수에서 퍼블툿 제외
         status_page_url: 상태 페이지 URL
         status_search_enabled: 툿 본문 검색 사용
+        game_features_enabled: 컨텐츠 기능 사용 (컨텐츠·이벤트·소속·재화·상점·RP)
         status_search_scope: 검색 범위
         theme: 기본 테마
         thumbnail: 서버 썸네일

@@ -27,7 +27,7 @@ import { uploadCompose, resetCompose, changeComposeSpoilerness } from '../../act
 import { clearHeight } from '../../actions/height_cache';
 import { fetchServer, fetchServerTranslationLanguages } from '../../actions/server';
 import { expandHomeTimeline } from '../../actions/timelines';
-import initialState, { me, owner, singleUserMode, trendsEnabled, trendsAsLanding, disableHoverCards, shopEnabled, contentsEnabled, eventsEnabled } from '../../initial_state';
+import initialState, { me, owner, singleUserMode, trendsEnabled, trendsAsLanding, disableHoverCards, gameEnabled, shopEnabled, contentsEnabled, eventsEnabled } from '../../initial_state';
 
 import BundleColumnError from './components/bundle_column_error';
 import { UploadArea } from './components/upload_area';
@@ -248,8 +248,8 @@ class SwitchingColumnsArea extends PureComponent {
             {contentsEnabled ? <WrappedRoute path='/system/sessions/:id' component={SystemSession} content={children} /> : <Redirect from='/system/sessions/:id' to='/home' />}
             {contentsEnabled && eventsEnabled ? <WrappedRoute path='/system/group' component={SystemGroup} content={children} /> : <Redirect from='/system/group' to='/home' />}
             {contentsEnabled ? <WrappedRoute path='/system/games/:key' component={SystemGame} content={children} /> : <Redirect from='/system/games/:key' to='/home' />}
-            <WrappedRoute path='/system/:section(wallet|inventory)' component={SystemWallet} content={children} />
-            <WrappedRoute path='/system/record' component={SystemRecord} content={children} />
+            {gameEnabled ? <WrappedRoute path='/system/:section(wallet|inventory)' component={SystemWallet} content={children} /> : <Redirect from='/system/:section(wallet|inventory)' to='/home' />}
+            {gameEnabled ? <WrappedRoute path='/system/record' component={SystemRecord} content={children} /> : <Redirect from='/system/record' to='/home' />}
             {contentsEnabled ? <WrappedRoute path='/system/houses/:id' component={SystemHouse} content={children} /> : <Redirect from='/system/houses/:id' to='/home' />}
             <Redirect from='/system/me' to='/system/record' exact />
             <Redirect from='/system/houses' to='/system' exact />

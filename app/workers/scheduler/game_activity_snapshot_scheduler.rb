@@ -7,6 +7,6 @@ class Scheduler::GameActivitySnapshotScheduler
   sidekiq_options retry: 0, lock: :until_executed, lock_ttl: 1.hour.to_i
 
   def perform
-    Game::ActivitySnapshot.catch_up!
+    Game::ActivitySnapshot.catch_up! if Game::Switch.on?
   end
 end

@@ -20,7 +20,7 @@ module GameRoster
   end
 
   def sync_game_roster
-    Game::RosterSyncWorker.perform_async
+    Game::RosterSyncWorker.perform_async if Game::Switch.on?
   rescue StandardError => e
     Rails.logger.warn { "Game::RosterSyncWorker enqueue failed: #{e.class} #{e.message}" }
   end

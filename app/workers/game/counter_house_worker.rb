@@ -7,6 +7,8 @@ class Game::CounterHouseWorker
   sidekiq_options queue: 'scheduler', retry: 0
 
   def perform
+    return unless Game::Switch.on?
+
     GameCounter.where(affects_house: true).each(&:apply_house_points!)
   end
 end

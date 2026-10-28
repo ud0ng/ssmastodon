@@ -31,16 +31,17 @@ SimpleNavigation::Configuration.run do |navigation|
 
     n.item :user_invites, safe_join([material_symbol('person_add'), t('invites.title')]), invites_path, if: -> { current_user.can?(:invite_users) && current_user.functional? && !self_destruct }
 
-    n.item :admin, safe_join([material_symbol('manufacturing'), t('admin.title')]), nil, if: -> { current_user.can?(:manage_users, :manage_roles, :manage_announcements, :manage_custom_emojis, :administrator) && !self_destruct } do |s|
+    n.item :admin, safe_join([material_symbol('manufacturing'), t('admin.title')]), nil, if: -> { current_user.can?(:manage_users, :manage_roles, :manage_announcements, :manage_custom_emojis, :manage_settings, :administrator) && !self_destruct } do |s|
       s.item :accounts, safe_join([material_symbol('groups'), t('admin.accounts.title')]), admin_accounts_path(origin: 'local'), highlights_on: %r{/admin/accounts|admin/account_moderation_notes|/admin/pending_accounts|/admin/users}, if: -> { current_user.can?(:manage_users) }
       s.item :direct_messages, safe_join([material_symbol('mail'), t('admin.direct_messages.title')]), admin_direct_messages_path, highlights_on: %r{/admin/direct_messages}, if: -> { current_user.can?(:administrator, :manage_roles) }
       s.item :roles, safe_join([material_symbol('contact_mail'), t('admin.roles.title')]), admin_roles_path, highlights_on: %r{/admin/roles}, if: -> { current_user.can?(:manage_roles) }
       s.item :announcements, safe_join([material_symbol('campaign'), t('admin.announcements.title')]), admin_announcements_path, highlights_on: %r{/admin/announcements}, if: -> { current_user.can?(:manage_announcements) }
       s.item :custom_emojis, safe_join([material_symbol('mood'), t('admin.custom_emojis.title')]), admin_custom_emojis_path, highlights_on: %r{/admin/custom_emojis}, if: -> { current_user.can?(:manage_custom_emojis) }
+      s.item :server_settings, safe_join([material_symbol('tune'), t('admin.settings.title')]), admin_settings_path, highlights_on: %r{/admin/settings}, if: -> { current_user.can?(:manage_settings) && !Game::Switch.on? }
     end
 
     # 시스템: 서버 설정, 자동봇 시트, 컨텐츠(시스템 계정이 진행하는 게임) 설정, 캐릭터 명단
-    n.item :system, safe_join([material_symbol('settings'), t('admin.system_menu')]), nil, if: -> { current_user.can?(:manage_settings) && !self_destruct } do |s|
+    n.item :system, safe_join([material_symbol('settings'), t('admin.system_menu')]), nil, if: -> { current_user.can?(:manage_settings) && !self_destruct && Game::Switch.on? } do |s|
       s.item :settings, safe_join([material_symbol('tune'), t('admin.settings.title')]), admin_settings_path, highlights_on: %r{/admin/settings}, if: -> { current_user.can?(:manage_settings) }
       s.item :bot_sheets, safe_join([material_symbol('list_alt'), t('admin.bot_sheets.title')]), admin_bot_sheets_path, highlights_on: %r{/admin/sheets}, if: -> { current_user.can?(:manage_settings) }
       s.item :game_settings, safe_join([material_symbol('extension'), t('admin.games.title')]), admin_game_setting_path('common'), highlights_on: %r{/admin/games(?!/(events|event_messages|#{Game::Kinds.group_games.map(&:key).join('|')})\z)}, if: -> { current_user.can?(:manage_settings) }
@@ -50,7 +51,7 @@ SimpleNavigation::Configuration.run do |navigation|
     end
 
     # RP: 캐릭터끼리 하는 놀이 규칙 (마니또)
-    n.item :rp, safe_join([material_symbol('groups'), t('admin.rp_menu')]), nil, if: -> { current_user.can?(:manage_settings) && !self_destruct } do |s|
+    n.item :rp, safe_join([material_symbol('groups'), t('admin.rp_menu')]), nil, if: -> { current_user.can?(:manage_settings) && !self_destruct && Game::Switch.on? } do |s|
       s.item :manito, safe_join([material_symbol('visibility_off'), t('admin.manito.title')]), admin_rp_manito_path, highlights_on: %r{/admin/rp/manito}, if: -> { current_user.can?(:manage_settings) }
     end
 

@@ -165,7 +165,7 @@ class REST::StatusSerializer < ActiveModel::Serializer
 
   # 시스템 계정이 올렸어도 웹에서 숨기지 않는 툿: 아무도 태그하지 않고 올린 툿(호울러 연회장 문구·결산 공지 등, 컨텐츠 카드가 아닌 것)과 표시해 둔 안내(GameNotice, 태그된 호울러 DM)
   def game_notice?
-    return false unless object.account_id == Game::System.cached_account_id
+    return false unless Game::Switch.on? && object.account_id == Game::System.cached_account_id
 
     GameNotice.exists?(status_id: object.id) || (object.game_event.nil? && object.active_mentions.empty?) || answers_basic_command?
   end
@@ -183,7 +183,7 @@ class REST::StatusSerializer < ActiveModel::Serializer
   end
 
   def game_card?
-    object.account_id == Game::System.cached_account_id && object.game_event.present?
+    Game::Switch.on? && object.account_id == Game::System.cached_account_id && object.game_event.present?
   end
 
   def game_card

@@ -29,6 +29,15 @@ GCP VM 한 대에서 약 40명이 2026-10 부터 두 달쯤 쓰고 닫을 예정
 - 기본 프로필 사진·헤더: SiteUpload `default_avatar`/`default_header`, Paperclip default_url → `app/lib/default_account_image.rb`.
 - 관리자·설정 사이드바 로고: `BrandingHelper#render_themed_wordmark` (라이트 테마=낮 로고 `wordmark_light`, 다크=밤 로고).
 
+## 컨텐츠 기능 스위치 (서버 설정 > 운영 > 컨텐츠 기능 사용, Setting `game_features_enabled`, 기본 켜짐)
+
+- 끄면 컨텐츠·이벤트·소속 점수·재화·상점·RP(마니또)·시트 설정이 통째로 막힌다. 데이터는 그대로라 다시 켜면 돌아온다. 컨텐츠를 안 쓰는 서버(커뮤니티 종료 후, 또는 기능을 안 쓰는 곳)에서 쓴다.
+- `Game::Switch.on?`(`app/lib/game/switch.rb`)이 기준. 막는 곳: 관리·API 주소(`config/routes/admin.rb`·`api.rb` 의 `constraints(Game::Switch)` 안 → 404, 시스템·자동봇 API 포함), 관리 메뉴(시스템·RP 숨김, 서버 설정은 운영 그룹으로 이동 `config/navigation.rb`),
+  툿 저장 훅(`Status#enqueue_game_activity`·마니또 되돌리기·`PostStatusService#enqueue_game_command!`·`GameRoster`), 스케줄러(`GameActivitySnapshotScheduler`·`Game::CounterHouseWorker`), 시리얼라이저(`game_card`·`game_notice`),
+  웹 화면(`initial_state` 의 `game_enabled`/`shop_enabled`/`contents_enabled`/`events_enabled` → 글쓰기 패널 인벤토리·소속 점수판·메뉴·/system 화면·효과 목록 요청). 새 컨텐츠 화면·API·작업을 만들면 이 스위치에도 걸 것.
+- 끈 뒤에는 서버에서 자동봇(`sudo systemctl stop ssbot && sudo systemctl disable ssbot`)도 멈춘다 (봇이 부르는 API 가 404 가 된다). 옛 컨텐츠 툿(@system)은 웹에서 계속 숨긴다 (`system_acct` 등은 그대로 내려 준다).
+- 화면을 그리는 확인은 미리보기 서버에서 (spec/requests/game_switch_spec.rb 는 주소·플래그·훅만 본다).
+
 ## 시트 설정 (관리 > 시스템 > 시트 설정, /admin/sheets)
 
 - 자동봇 구글 시트 4개(기본·예약 툿·스토리·조사)를 탭으로 보여 주고, 기본 시트의 '설정' 워크시트(항목|값|설명)는 폼으로 고쳐 시트에 바로 쓴다.
