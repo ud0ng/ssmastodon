@@ -108,6 +108,59 @@
   to { background-position: 300% 0%; }
 }
 
+// 스킨 안쪽 겹 (위 설명): 흐르는 바탕은 너비 400% 겹을 한 무늬 길이(75%)만큼 밀고, 빛 번짐은 약한 상태(a)와 센 상태(b) 두 겹의 투명도를 번갈아 바꾼다
+@keyframes game-fx-skin-flow {
+  to { transform: translateX(-75%); }
+}
+
+@keyframes game-fx-skin-glow-a {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes game-fx-skin-glow-b {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+// 안쪽 겹 만들기: 바탕 그라데이션과 약한/센 빛 번짐 그림자를 받아 .game-fx-skin--<이름> 안에 넣는다
+@mixin skin-inner($gradient, $flow-seconds, $glow-seconds, $shadow-a, $shadow-b) {
+  > .game-fx-skin__flow {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    inset-inline-start: 0;
+    width: 400%;
+    background: $gradient 0 0 / 75% 100%;
+    animation: game-fx-skin-flow $flow-seconds linear infinite;
+  }
+
+  > .game-fx-skin__glow {
+    display: block;
+    position: absolute;
+    inset: 0;
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+
+    &::before {
+      box-shadow: $shadow-a;
+      animation: game-fx-skin-glow-a $glow-seconds ease-in-out infinite;
+    }
+
+    &::after {
+      box-shadow: $shadow-b;
+      opacity: 0;
+      animation: game-fx-skin-glow-b $glow-seconds ease-in-out infinite;
+    }
+  }
+}
+
 // ── 모양마다 그림과 움직임 (모든 자리 공통) ───────────────────
 .game-fx--gold .game-fx__p::before { content: '✨'; }
 .game-fx--gold .game-fx__p:nth-child(even)::before { content: '✦'; color: #f6c445; }
@@ -642,11 +695,6 @@
   60%, 100% { transform: translateX(120%); }
 }
 
-@keyframes game-fx-debut-glow {
-  0%, 100% { box-shadow: inset 0 0 0 2px #ffd54a, inset 0 0 8px rgb(255 213 74 / 60%), 0 0 0 transparent; }
-  50% { box-shadow: inset 0 0 0 2px #fff0a0, inset 0 0 24px rgb(255 213 74 / 95%), 0 0 0 transparent; }
-}
-
 @keyframes game-fx-debut-zoom {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.4); }
@@ -993,7 +1041,8 @@
 
   .game-fx { inset: 0; }
 
-  // 안쪽 겹(흐르는 바탕·빛 번짐)은 기숙사 승리 스킨(_game_fx_houses.scss)만 쓴다
+  // 안쪽 겹(흐르는 바탕·빛 번짐): 배경 위치·그림자 값을 매 프레임 바꾸면 메인 스레드가 칸 전체를 다시 그리므로, 겹을 옆으로 밀고 투명도만 바꾼다 (컴포지터가 처리).
+  // 데뷔탕트·기숙사 승리 스킨만 쓰고(각 스킨 아래), 나머지는 숨긴다
   &__flow,
   &__glow { display: none; }
 
@@ -1028,9 +1077,15 @@
 .notification-ungrouped .status > .game-fx-skin { display: none; }
 
 .game-fx-skin--debut {
-  background: linear-gradient(115deg, rgb(255 200 40 / 48%), rgb(255 240 160 / 58%), rgb(255 170 0 / 46%), rgb(255 228 110 / 54%), rgb(255 200 40 / 48%));
-  background-size: 300% 100%;
-  animation: game-fx-wave 3.5s linear infinite, game-fx-debut-pop 1s ease-out, game-fx-debut-glow 1.6s ease-in-out infinite;
+  animation: game-fx-debut-pop 1s ease-out;
+
+  // 금빛 물결 + 금빛 테두리 빛 번짐 (예전: 배경 위치·그림자 애니메이션, 같은 속도·모양)
+  @include skin-inner(
+    linear-gradient(115deg, rgb(255 200 40 / 48%), rgb(255 240 160 / 58%), rgb(255 170 0 / 46%), rgb(255 228 110 / 54%), rgb(255 200 40 / 48%)),
+    1.75s, 1.6s,
+    (inset 0 0 0 2px #ffd54a, inset 0 0 8px rgb(255 213 74 / 60%)),
+    (inset 0 0 0 2px #fff0a0, inset 0 0 24px rgb(255 213 74 / 95%))
+  );
 
   // 빛줄기 (스포트라이트): 돌지 않고 제자리에서 커졌다 작아졌다
   &::before {
@@ -1207,11 +1262,6 @@
   84% { opacity: 0; }
 }
 
-@keyframes game-fx-kiss-glow {
-  0%, 100% { box-shadow: inset 0 0 0 1px rgb(255 46 147 / 45%), inset 0 0 8px rgb(255 46 147 / 22%); }
-  50% { box-shadow: inset 0 0 0 1px rgb(255 140 200 / 70%), inset 0 0 18px rgb(255 46 147 / 38%); }
-}
-
 // 앙큼: 눈웃음치듯 빛이 사선으로 스윽 훑는다
 @keyframes game-fx-kiss-wink {
   0%, 25% { transform: translateX(-120%) skewX(-18deg); }
@@ -1219,9 +1269,15 @@
 }
 
 .game-fx-skin--debut2 {
-  background: linear-gradient(115deg, rgb(255 46 147 / 11%), rgb(255 140 200 / 15%), rgb(210 10 90 / 10%), rgb(255 95 176 / 14%), rgb(255 46 147 / 11%));
-  background-size: 300% 100%;
-  animation: game-fx-wave 3.8s linear infinite, game-fx-debut-pop 1s ease-out, game-fx-kiss-glow 1.8s ease-in-out infinite;
+  animation: game-fx-debut-pop 1s ease-out;
+
+  // 입술빛 물결 + 테두리 빛 번짐 (예전: 배경 위치·그림자 애니메이션, 같은 속도·모양)
+  @include skin-inner(
+    linear-gradient(115deg, rgb(255 46 147 / 11%), rgb(255 140 200 / 15%), rgb(210 10 90 / 10%), rgb(255 95 176 / 14%), rgb(255 46 147 / 11%)),
+    1.9s, 1.8s,
+    (inset 0 0 0 1px rgb(255 46 147 / 45%), inset 0 0 8px rgb(255 46 147 / 22%)),
+    (inset 0 0 0 1px rgb(255 140 200 / 70%), inset 0 0 18px rgb(255 46 147 / 38%))
+  );
 
   // 작은 하트 두 개도 따로 찍힌다
   &::before,
