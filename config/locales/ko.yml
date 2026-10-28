@@ -302,6 +302,7 @@ ko:
         statuses:
           finished: 끝남
           running: 진행 중
+          upcoming: 예정
         title: 시즌
       tabs:
         commands: 명령어

@@ -25,14 +25,14 @@
               %strong= season.name
             %td.bot-sheet-table__text= season.period.presence || '—'
             %td.bot-sheet-table__text
-              %span.game-badge{ class: (season.running? ? 'game-badge--tournament-running' : 'game-badge--tournament-finished') }= game_t("admin.games.seasons.statuses.#{season.status}")
+              %span.game-badge{ class: "game-badge--season-#{season.display_status}" }= game_t("admin.games.seasons.statuses.#{season.display_status}")
             %td.bot-sheet-table__text
-              - if season.running?
+              - if season.running? && !season.upcoming?
                 = Game::Points.ranking.map { |house, total| "#{house.name} #{total}" }.join(' · ').presence || '—'
               - else
                 = Array(season.results).map { |row| "#{row['name']} #{row['total']}" }.join(' · ').presence || '—'
             %td.bot-sheet-table__actions
-              - if season.running?
+              - if season.running? && !season.upcoming?
                 = button_to game_t('admin.games.seasons.interim'), interim_admin_game_season_path(season), method: :post, class: 'button button-secondary game-season__action', form_class: 'bot-sheet-table__delete', data: { confirm: game_t('admin.games.seasons.interim_confirm') }
                 = button_to game_t('admin.games.seasons.finish'), finish_admin_game_season_path(season), method: :post, class: 'button game-season__action', form_class: 'bot-sheet-table__delete', data: { confirm: game_t('admin.games.seasons.finish_confirm', name: season.name) }
               = button_tag material_symbol('edit'), type: :button, class: 'icon-button', title: game_t('admin.games.seasons.edit'), data: { modal_open: "season-#{season.id}" }

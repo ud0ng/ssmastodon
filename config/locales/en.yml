@@ -291,6 +291,7 @@ en:
         statuses:
           finished: Finished
           running: Running
+          upcoming: Upcoming
         title: Season
       tabs:
         commands: Commands

@@ -32,7 +32,7 @@ module Admin
     def interim
       authorize :settings, :update?
 
-      season = GameSeason.running.find(params[:id])
+      season = GameSeason.started.find(params[:id])
       Game::Summary.season_interim!(season)
       redirect_to admin_game_houses_path, notice: t('admin.games.seasons.posted')
     end
@@ -41,7 +41,7 @@ module Admin
     def finish
       authorize :settings, :update?
 
-      season = GameSeason.running.find(params[:id])
+      season = GameSeason.started.find(params[:id])
       Game::Summary.season_final!(season)
       redirect_to admin_game_houses_path, notice: t('admin.games.seasons.finished')
     end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # 시즌 (캐릭터 관리 > 소속). 진행 중인 시즌은 하나만.
+#   시작일이 아직 안 된 시즌은 '예정'(upcoming?)이라 시작일(한국 시간) 0시가 되기 전까지는 진행 중으로 치지 않는다 (current 가 아니고, 그동안은 시즌 종료 상태 그대로).
 # 소속 점수(GameHouse#total)는 그 시즌의 점수만 센다.
 #   시즌 종료(closed?): 진행 중인 시즌이 없고 끝난 시즌이 있을 때. 이때는 소속 점수를 더 얻지 못하고(컨텐츠·마니또·아이템·누적 수치·토너먼트 모두,
 #   운영진 직접 조정만 된다), 새 시즌을 시작할 때까지 끝난 시즌의 최종 점수·순위가 보인다. 새 시즌을 만들면 0부터.
@@ -13,10 +14,18 @@ class GameSeason < ApplicationRecord
   validate :period_order
 
   scope :running, -> { where(status: 'running') }
+  # 시작일이 없거나 이미 시작일이 된 진행 중 시즌 (예정인 시즌은 빠진다)
+  scope :started, -> { running.where(starts_on: nil).or(running.where(starts_on: ..today)) }
+  scope :upcoming, -> { running.where(starts_on: today.next..) }
   scope :finished, -> { where(status: 'finished') }
 
+  # 오늘(한국 시간 날짜)
+  def self.today
+    Time.current.in_time_zone(Game::ActivitySnapshot::ZONE).to_date
+  end
+
   def self.current
-    running.order(:id).last
+    started.order(:id).last
   end
 
   # 시즌 종료 상태: 진행 중인 시즌이 없고 끝난 시즌이 있다 (소속 점수를 얻지 못한다)
@@ -36,7 +45,7 @@ class GameSeason < ApplicationRecord
     return if season.nil?
 
     before = finished.where.not(id: season.id).where(finished_at: ...(season.finished_at || Time.current)).maximum(:finished_at)
-    before && [before, season.created_at].max
+    before && [before, season.created_at, season.starts_at].compact.max
   end
 
   # 시즌마다 활동을 세는 날짜 범위 [[시즌, 시작일, 종료일]] (오래된 시즌부터). 시작·종료 날짜를 안 적은 시즌은 앞 시즌이 끝난 다음 날부터,
@@ -62,6 +71,21 @@ class GameSeason < ApplicationRecord
 
   def finished?
     status == 'finished'
+  end
+
+  # 시작일이 아직 안 된 시즌 (시작일 0시가 되면 저절로 진행 중이 된다)
+  def upcoming?
+    running? && starts_on.present? && starts_on > self.class.today
+  end
+
+  # 시작일 0시 (한국 시간). 시작일을 안 적었으면 nil
+  def starts_at
+    starts_on&.in_time_zone(Game::ActivitySnapshot::ZONE)&.beginning_of_day
+  end
+
+  # 목록에 보일 상태: 예정 / 진행 중 / 끝남
+  def display_status
+    upcoming? ? 'upcoming' : status
   end
 
   def period

@@ -4040,12 +4040,18 @@ button.game-token:focus-visible {
 }
 
 .game-badge--tournament-running,
+.game-badge--season-running,
 .game-badge--match-playing,
 .game-badge--match-judging {
   --badge: #d08a2c;
 }
 
+.game-badge--season-upcoming {
+  --badge: #5b7fd6;
+}
+
 .game-badge--tournament-finished,
+.game-badge--season-finished,
 .game-badge--match-done {
   --badge: #3c9a5f;
 }

@@ -72,6 +72,37 @@ RSpec.describe Game::Points do
     expect(gryffindor.total).to eq 5
   end
 
+  it 'keeps the closed state until the new season\'s start date, then starts it from zero' do
+    first = finished_session
+    described_class.award(first, first.players.first, 10)
+    Game::Summary.season_final!(GameSeason.create!(name: '1학기'))
+
+    travel 1.second
+    upcoming = GameSeason.create!(name: '2학기', starts_on: GameSeason.today + 3, ends_on: GameSeason.today + 30)
+    expect(upcoming).to be_upcoming
+    expect(GameSeason.current).to be_nil
+    expect(GameSeason.closed?).to be true
+    expect(gryffindor.total).to eq 10
+    during = finished_session
+    expect { expect(described_class.award(during, during.players.first, 5)).to include('시즌이 끝나') }.to_not change(GameHousePoint, :count)
+
+    # 시작일(한국 시간 0시)이 되면 저절로 시작: 0부터
+    travel_to(upcoming.starts_at + 1.minute) do
+      expect(upcoming.reload).to_not be_upcoming
+      expect(GameSeason.current).to eq upcoming
+      expect(GameSeason.closed?).to be false
+      expect(gryffindor.total).to eq 0
+      later = finished_session
+      described_class.award(later, later.players.first, 5)
+      expect(gryffindor.total).to eq 5
+    end
+  end
+
+  it 'treats a season that starts today (or has no start date) as running right away' do
+    expect(GameSeason.create!(name: '오늘 시작', starts_on: GameSeason.today)).to_not be_upcoming
+    expect(GameSeason.current.name).to eq '오늘 시작'
+  end
+
   it 'blocks manito, counter and item house points while the season is closed' do
     GameSeason.create!(name: '1학기', status: 'finished', finished_at: 1.minute.ago)
     counter = GameCounter.create!(name: '시험 벌점', affects_house: true, house_amount: -1, house_interval_minutes: 60, house_applied_at: 3.hours.ago)
