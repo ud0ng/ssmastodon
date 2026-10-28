@@ -107,7 +107,6 @@ en:
         status_min_characters: Minimum number of characters in a post. Mentions and spaces are not counted. Staff accounts, posts with media or polls, and command posts ([commands] to the system or bot accounts, or only [commands]) are exempt. (0 – 1,000, 0 turns it off)
         status_page_url: URL of a page where people can see the status of this server during an outage
         status_search_enabled: Search post text and content warnings using the database, without Elasticsearch. Your own posts, posts mentioning you and posts you favourited or bookmarked are always searchable.
-        game_features_enabled: When off, contents, events, house points, currency, shop and RP menus, pages, URLs and APIs are all blocked. Data is kept and returns when turned back on. Stop the bot (ssbot) on the server too.
         status_search_scope: How far searches reach into other people's posts.
         theme: Theme that logged out visitors and new users see.
         thumbnail: A roughly 2:1 image displayed alongside your server information.
@@ -310,7 +309,7 @@ en:
         status_min_exclude_public: Exclude non-reply posts from the minimum length
         status_page_url: Status page URL
         status_search_enabled: Enable full-text post search
-        game_features_enabled: Enable contents (events, house points, currency, shop, RP)
+        game_features_enabled: Enable contents
         status_search_scope: Search scope
         theme: Default theme
         thumbnail: Server thumbnail
