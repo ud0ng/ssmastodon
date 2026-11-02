@@ -215,8 +215,19 @@ ARG FFMPEG_URL=https://ffmpeg.org/releases
 
 WORKDIR /usr/local/ffmpeg/src
 # Download and extract ffmpeg source code
-ADD ${FFMPEG_URL}/ffmpeg-${FFMPEG_VERSION}.tar.xz /usr/local/ffmpeg/src/
-RUN tar xf ffmpeg-${FFMPEG_VERSION}.tar.xz;
+# ADD <URL> 은 캐시가 있어도 빌드마다 ffmpeg.org 에 접속해서, 그쪽이 불안정하면 빌드가 매번 실패한다.
+# 그래서 RUN 으로 받는다 (한 번 받으면 캐시돼서 다시 접속하지 않는다). 여러 번 시도하고, 끝내 안 되면 GitHub 의 같은 버전 소스를 쓴다.
+RUN set -e; \
+  for i in 1 2 3 4 5 6 7 8; do \
+    if curl -fsSL --connect-timeout 20 --max-time 300 -o ffmpeg.tar.xz "${FFMPEG_URL}/ffmpeg-${FFMPEG_VERSION}.tar.xz" && tar xf ffmpeg.tar.xz; then break; fi; \
+    rm -rf ffmpeg.tar.xz "ffmpeg-${FFMPEG_VERSION}"; sleep 5; \
+  done; \
+  if [ ! -d "ffmpeg-${FFMPEG_VERSION}" ]; then \
+    curl -fsSL --retry 5 --connect-timeout 20 -o ffmpeg.tar.gz "https://github.com/FFmpeg/FFmpeg/archive/refs/tags/n${FFMPEG_VERSION}.tar.gz"; \
+    tar xzf ffmpeg.tar.gz; \
+    mv "FFmpeg-n${FFMPEG_VERSION}" "ffmpeg-${FFMPEG_VERSION}"; \
+  fi; \
+  rm -f ffmpeg.tar.xz ffmpeg.tar.gz;
 
 WORKDIR /usr/local/ffmpeg/src/ffmpeg-${FFMPEG_VERSION}
 
