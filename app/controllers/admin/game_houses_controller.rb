@@ -7,6 +7,10 @@ module Admin
       authorize :settings, :show?
 
       GameHouse.ensure_defaults!
+      # 소속 해금 스위치 (상점 설정과 같은 'currency' 묶음 폼)
+      @sections = Game::Config.schema('currency').group_by(&:group)
+      @values = Game::Config.for('currency')
+      @accounts = []
       common = Game::Config.for('common')
       @mode = GameHouse.mode
       @labels = Game::GroupKinds.labels

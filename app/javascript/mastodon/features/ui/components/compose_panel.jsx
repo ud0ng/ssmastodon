@@ -9,7 +9,7 @@ import { Search } from 'mastodon/features/compose/components/search';
 import { WalletBar } from 'mastodon/features/compose/components/wallet_bar';
 import ComposeFormContainer from 'mastodon/features/compose/containers/compose_form_container';
 import { LinkFooter } from 'mastodon/features/ui/components/link_footer';
-import { gameEnabled } from 'mastodon/initial_state';
+import { gameEnabled, housesEnabled, shopEnabled } from 'mastodon/initial_state';
 import { withIdentity } from 'mastodon/identity_context';
 import { useBreakpoint } from 'mastodon/hooks/useBreakpoint';
 
@@ -49,8 +49,9 @@ const ComposePanel = ({ identity }) => {
       {signedIn && (
         <>
           <ComposeFormContainer singleColumn />
-          {gameEnabled && <WalletBar />}
-          {gameEnabled && <HousePoints />}
+          {/* 재화·인벤토리·전적은 상점 해금, 소속 점수는 소속 해금을 따른다 */}
+          {gameEnabled && shopEnabled && <WalletBar />}
+          {gameEnabled && housesEnabled && <HousePoints />}
         </>
       )}
 

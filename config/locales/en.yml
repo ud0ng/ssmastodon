@@ -517,7 +517,9 @@ en:
           to: To
         commands: "Commands"
         open: "Shop open"
-        open_hint: "Open or close the shop. When closed, the shop menu and page disappear for users."
+        open_hint: "Open or close the shop. When closed, the shop menu and page, and the currency, inventory and record under the compose box disappear for users."
+        houses_open: "Houses open"
+        houses_open_hint: "Show house points or not. When closed, the house points under the compose box disappear for users."
         commands_hint: "Names of the shop commands the bot handles. Its [help] uses these names too."
         admin_commands: "Staff commands"
         admin_commands_hint: "Commands only staff accounts can use."

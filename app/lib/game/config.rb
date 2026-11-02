@@ -256,7 +256,9 @@ module Game
     # 상점 (컨텐츠 설정 > 상점). 자동봇이 /api/v1/bot/config 로 읽는다 (명령어 이름·운영진·도움말)
     CURRENCY = [
       # 상점 해금: 끄면 웹 상점 메뉴·화면이 사라지고 웹·자동봇 구매를 받지 않는다 (인벤토리·사용·양도는 그대로)
-      Field.new(key: 'shop_open', type: :boolean, default: true, group: 'shop_open', label: '상점 해금', hint: '끄면 사용자 화면에서 상점 메뉴가 사라지고 [상점]·[구매]를 받지 않습니다 (운영진은 웹에서 항상 보입니다)'),
+      Field.new(key: 'shop_open', type: :boolean, default: true, group: 'shop_open', label: '상점 해금', hint: '끄면 사용자 화면에서 상점 메뉴와 글쓰기창 아래 재화·인벤토리·전적이 사라지고 [상점]·[구매]를 받지 않습니다 (운영진은 웹에서 항상 보입니다)'),
+      # 소속 해금 (캐릭터 관리 > 소속): 끄면 글쓰기창 아래 소속 점수판이 사라진다
+      Field.new(key: 'houses_open', type: :boolean, default: true, group: 'houses_open', label: '소속 해금', hint: '끄면 사용자 화면의 글쓰기창 아래 소속 점수가 사라집니다 (운영진은 웹에서 항상 보입니다)'),
       # 효과 on/off (상점 설정 > 효과 목록): 끄면 아이템으로 붙은 효과도 소속 카드·툿 어디에도 안 보인다
       Field.new(key: 'effects_enabled', type: :boolean, default: true, group: 'effects', label: '효과 켜기', hint: '끄면 아이템으로 붙은 효과도 보이지 않습니다'),
 

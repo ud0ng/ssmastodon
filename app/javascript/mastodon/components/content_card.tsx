@@ -115,6 +115,12 @@ const PlayerStat: React.FC<{ card: GameCard; player: CardPlayer }> = ({ card, pl
       return <span className='content-card__score'>{num(bySeat(data.scores)[seat])}</span>;
     case 'duel':
       return <Hearts left={num(bySeat(data.hp)[seat])} full={num(data.max_hp)} />;
+    // 빗자루 경주: 이긴 바퀴 · 남은 체력 (모두에게 공개)
+    case 'broom_race':
+      return <span className='content-card__score'>{num(bySeat(data.wins)[seat])}/{num(data.wins_needed)} · <GameIcon name='foot' /> {num(bySeat(data.stamina)[seat])}</span>;
+    // 구슬 홀짝: 가진 구슬
+    case 'marbles':
+      return <span className='content-card__score'><GameIcon name='coin' /> {num(bySeat(data.marbles)[seat])}</span>;
     case 'potion': {
       // 아이템 소지 개수: 방어권·재시도권 아이콘 + 남은/처음 (0/1)
       const owned = bySeat(bySeat(data.items)[seat]);
@@ -608,6 +614,41 @@ const Board: React.FC<{ card: GameCard; room?: boolean }> = ({ card, room = fals
             ) : (
               <FormattedMessage id='content_card.max_turns' defaultMessage='Up to {turns} turns' values={{ turns: num(data.max_turns) }} />
             )}
+          </div>
+        </div>
+      );
+    }
+
+    case 'broom_race': {
+      // 바퀴 진행 막대 + 지난 바퀴에 쓴 체력
+      const laps = num(data.laps);
+      const last = data.last_lap ? bySeat(data.last_lap) : null;
+      const amounts = last ? bySeat(last.amounts) : {};
+      return (
+        <div className='content-card__board'>
+          <div className='content-card__progress'>
+            <span style={{ width: `${laps ? (Math.min(num(last?.lap), laps) / laps) * 100 : 0}%` }} />
+          </div>
+          {last && (
+            <div className='content-card__clash'>
+              {card.players.map((player) => (
+                <span key={player.seat} className={last.winner_seat === player.seat ? 'content-card__spell content-card__spell--win' : 'content-card__spell'}>{num(amounts[String(player.seat)])}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    case 'marbles': {
+      // 지난 라운드: 쥔 구슬 수 · 맞혔는지 (지금 쥔 수는 끝날 때까지 보이지 않는다)
+      const last = data.last_round ? bySeat(data.last_round) : null;
+      if (room || !last) return null;
+      return (
+        <div className='content-card__board'>
+          <div className='content-card__chips'>
+            <span className='content-card__chip'>{names[String(last.hider_seat)]} · {num(last.count)}개</span>
+            <span className={last.right ? 'content-card__chip content-card__chip--good' : 'content-card__chip content-card__chip--bad'}>{last.right ? '맞힘' : '틀림'} {num(last.bet)}개</span>
           </div>
         </div>
       );

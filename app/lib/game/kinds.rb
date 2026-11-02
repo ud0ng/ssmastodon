@@ -11,6 +11,8 @@ module Game
         'gobstones' => Game::Kinds::Gobstones,
         'duel' => Game::Kinds::Duel,
         'potion' => Game::Kinds::Potion,
+        'broom_race' => Game::Kinds::BroomRace,
+        'marbles' => Game::Kinds::Marbles,
         'flying' => Game::Kinds::Flying,
         # 웹 전용
         'maze' => Game::Web::Maze,

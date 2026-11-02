@@ -38,6 +38,24 @@ module Game
         items: [['%{cmd_special}', '한 판에 한 번. 이기면 피해 %{special_multiplier}배, 지면 내가 %{special_multiplier}배 피해를 입습니다.', 'sword']],
         steps: ['[%{command}] @상대 로 신청', '턴마다 DM 으로 [%{cmd_attack}] [%{cmd_disarm}] [%{cmd_defend}] 중 하나', '필살기는 주문 뒤에 붙여 보냅니다: [%{cmd_attack}/%{cmd_special}]'],
       },
+      'broom_race' => {
+        summary: '체력을 다섯 바퀴에 나눠 쓰는 순수 수 싸움 빗자루 경주',
+        rules: [
+          { icon: 'foot', title: '체력 나누기', text: '각자 체력 %{stamina}로 %{laps}바퀴를 돕니다. 바퀴마다 이번에 쓸 체력을 몰래 정하고, 두 사람이 내면 함께 공개됩니다.' },
+          { icon: 'star', title: '바퀴 승부', text: '더 많이 쓴 쪽이 그 바퀴를 이깁니다. 같으면 아무도 이기지 못합니다. 쓴 체력은 돌아오지 않고, 남은 체력은 모두에게 공개됩니다.' },
+        ],
+        roles: [{ win: '%{wins_needed}바퀴를 먼저 이기면 승리합니다. %{laps}바퀴가 끝나면 이긴 바퀴가 많은 쪽이 승리합니다. (같으면 무승부)' }],
+        steps: ['[%{command}] @상대 로 신청', '바퀴마다 DM 으로 [%{cmd_push}/숫자] (0도 됩니다)', '시간 안에 안 내면 0 을 낸 것으로 칩니다'],
+      },
+      'marbles' => {
+        summary: '쥔 구슬이 홀인지 짝인지 걸고 맞히는 블러핑 대결',
+        rules: [
+          { icon: 'hands', title: '숨기기', text: '숨기는 사람이 손에 쥘 구슬 수를 몰래 정합니다. (1개 이상, 가진 만큼까지)' },
+          { icon: 'coin', title: '맞히기', text: '맞히는 사람이 홀·짝과 걸 구슬 수를 공개로 말합니다. 맞히면 건 만큼 가져오고, 틀리면 건 만큼 내줍니다. 역할은 라운드마다 바뀝니다.' },
+        ],
+        roles: [{ win: '상대 구슬을 모두 가져오면 승리합니다. 최대 %{max_rounds}라운드가 지나면 구슬이 많은 쪽이 승리합니다. (같으면 무승부)' }],
+        steps: ['[%{command}] @상대 로 신청 (각자 구슬 %{marbles}개)', '숨기는 사람: DM 으로 [%{cmd_hide}/숫자]', '맞히는 사람: [%{cmd_odd}/건 수] 또는 [%{cmd_even}/건 수]'],
+      },
       'potion' => {
         summary: '재료 순서를 추리해 마법약을 먼저 완성하는 대결',
         rules: [

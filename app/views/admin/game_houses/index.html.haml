@@ -4,6 +4,9 @@
 - content_for :heading do
   = render 'admin/game_characters/heading'
 
+-# 소속 해금: 끄면 사용자 글쓰기창 아래 소속 점수판이 사라진다
+= render 'admin/game_shops/currency_sections', groups: { 'houses_open' => 'houses_open' }, return_to: admin_game_houses_path
+
 -# 점수 기준 소속: 기숙사 / 진영 중 점수를 모을 쪽
 - add_any = button_tag safe_join([material_symbol('add'), game_t('admin.games.houses.add_any')]), type: :button, class: 'button', data: { modal_open: 'house-add-kind' }
 - rename = button_tag safe_join([material_symbol('edit'), game_t('admin.games.houses.rename')]), type: :button, class: 'button button-tertiary', data: { modal_open: 'house-labels' }

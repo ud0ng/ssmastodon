@@ -101,6 +101,7 @@ export const dmChatEnabled = getMeta('dm_chat_enabled');
 // 컨텐츠 기능 스위치(서버 설정 > 운영): 꺼지면 소속 점수판·인벤토리·재화·상점·컨텐츠·이벤트가 모두 안 보인다
 export const gameEnabled = getMeta('game_enabled') !== false;
 export const shopEnabled = getMeta('shop_enabled') !== false;
+export const housesEnabled = getMeta('houses_enabled') !== false;
 export const contentsEnabled = getMeta('contents_enabled') !== false;
 export const eventsEnabled = getMeta('events_enabled') !== false;
 export const systemAcct = getMeta('system_acct');

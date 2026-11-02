@@ -67,7 +67,8 @@ module Admin
 
       Game::Config.merge!('currency', params.fetch(:config, {}).permit!.to_h)
       back = params[:return_to].to_s
-      redirect_to (back.start_with?('/admin/shop/') && !back.start_with?('//') ? back : admin_game_shop_settings_path), notice: t('generic.changes_saved_msg')
+      # 상점 설정 화면과 캐릭터 관리 > 소속(소속 해금)에서 저장한다
+      redirect_to (back.start_with?('/admin/shop/', '/admin/characters/') && !back.start_with?('//') ? back : admin_game_shop_settings_path), notice: t('generic.changes_saved_msg')
     end
 
     private
