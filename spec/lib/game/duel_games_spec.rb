@@ -45,7 +45,7 @@ RSpec.describe 'Duel games: broom race and marbles' do
       start('경주')
       expect(session.status).to eq 'active'
 
-      dm(alice, '[투입/5]')
+      dm(alice, '[투입] 5') # 방 화면 버튼 모양
       expect(session.state['choices']).to eq(seat_of(alice) => 5) # 상대가 낼 때까지 공개하지 않는다
       dm(bob, '[투입/3]')
       expect(session.state['wins'][seat_of(alice)]).to eq 1
@@ -102,9 +102,9 @@ RSpec.describe 'Duel games: broom race and marbles' do
       first_hider = hider
       first_guesser = guesser
 
-      dm(first_hider, '[쥐기/3]')
+      dm(first_hider, '[쥐기] 3')
       expect(session.state['phase']).to eq 'guess'
-      toot(first_guesser, '@system [홀/4]')
+      toot(first_guesser, '@system [홀] 4')
 
       expect(session.state['marbles']).to eq(seat_of(first_guesser) => 14, seat_of(first_hider) => 6)
       expect(hider).to eq first_guesser # 역할이 바뀐다

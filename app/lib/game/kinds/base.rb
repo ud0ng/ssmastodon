@@ -223,6 +223,12 @@ module Game
         false
       end
 
+      # 숫자 인자: [투입/6] 도, 방 화면 버튼이 보내는 [투입] 6 도 받는다
+      def number_arg(args, status)
+        word = args.first.presence || status&.text.to_s.split(Game::Engine::COMMAND, 2).last.to_s.gsub(/@\S+/, '').split.first
+        Integer(word.to_s.strip, exception: false)
+      end
+
       # 다음 턴 시간 제한
       def wait_for_turn!
         Game::Engine.set_deadline_in!(session, Game::Config.turn_seconds.seconds)

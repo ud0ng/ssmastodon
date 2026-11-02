@@ -39,7 +39,7 @@ module Game
         wait_for_turn!
       end
 
-      def handle(player, command, args, _status)
+      def handle(player, command, args, status)
         return false unless command == config['cmd_eat']
 
         if player.seat != state['seat']
@@ -48,7 +48,7 @@ module Game
         end
 
         bag = state['bag']
-        count = args.first.to_i.clamp(1, [config['max_per_turn'].to_i, 1].max)
+        count = (number_arg(args, status) || 1).clamp(1, [config['max_per_turn'].to_i, 1].max)
         count = [count, bag.size].min
         eaten = []
         worst = false

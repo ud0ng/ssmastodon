@@ -54,7 +54,7 @@ module Game
         action = { config['cmd_hide'] => :hide, config['cmd_odd'] => :odd, config['cmd_even'] => :even }[command]
         return false if action.nil?
 
-        action == :hide ? hide!(player, args, status) : guess!(player, action, args)
+        action == :hide ? hide!(player, args, status) : guess!(player, action, args, status)
         true
       end
 
@@ -136,7 +136,7 @@ module Game
         return post(render(config['msg_not_turn'], player: state['phase'] == 'hide' ? hider : guesser)) unless state['phase'] == 'hide' && player.seat == state['hider']
         return unless require_dm!(player, status)
 
-        count = Integer(args.first.to_s.strip, exception: false)
+        count = number_arg(args, status)
         return dm(player, render(config['msg_bad_hide'], max: marbles_of(player))) if count.nil? || !count.between?(1, marbles_of(player))
 
         state['hidden'] = count
@@ -146,10 +146,10 @@ module Game
         ask_guess!
       end
 
-      def guess!(player, parity, args)
+      def guess!(player, parity, args, status)
         return post(render(config['msg_not_turn'], player: state['phase'] == 'hide' ? hider : guesser)) unless state['phase'] == 'guess' && player.seat == guesser.seat
 
-        bet = Integer(args.first.to_s.strip, exception: false)
+        bet = number_arg(args, status)
         return post(render(config['msg_bad_bet'], max: max_bet)) if bet.nil? || !bet.between?(1, max_bet)
 
         settle!(parity.to_s, bet)

@@ -46,7 +46,7 @@ module Game
 
         seat = player.seat.to_s
         left = state['stamina'][seat]
-        amount = Integer(args.first.to_s.strip, exception: false)
+        amount = number_arg(args, status)
         if amount.nil? || !amount.between?(0, left)
           dm(player, render(config['msg_bad_amount'], left: left))
           return true
