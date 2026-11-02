@@ -13,7 +13,9 @@ class Api::V1::System::CommandsController < Api::BaseController
   before_action :require_contents_open!
 
   def create
-    web_session = params[:session_id].present? ? GameSession.find_by(id: params[:session_id]) : nil
+    return private_match if ActiveModel::Type::Boolean.new.cast(params[:private_match])
+
+    web_session =params[:session_id].present? ? GameSession.find_by(id: params[:session_id]) : nil
     return web_command(web_session) if web_session&.web_channel?
 
     text, thread, visibility = params[:session_id].present? ? session_command : new_command
@@ -27,6 +29,21 @@ class Api::V1::System::CommandsController < Api::BaseController
   end
 
   private
+
+  # 운영진의 비공개 대결: 고른 두 사람이 DM 으로만 겨룬다 (Game::PrivateMatch). 연 운영진은 참가하지 않는다.
+  def private_match
+    return render json: { error: 'forbidden' }, status: 403 unless current_user.can?(:manage_settings)
+
+    kind = Game::Kinds.registry[params[:kind].to_s]
+    return render json: { error: 'invalid' }, status: 422 if kind.nil? || !kind.enabled?
+
+    usernames = Array(params[:players]).map { |acct| clean(acct).delete_prefix('@') }
+    accounts = Account.local.where(username: usernames).sort_by { |account| usernames.index(account.username) }
+    result = Game::PrivateMatch.create!(kind, host: current_account, accounts: accounts)
+    return render json: { error: result, limit: true }, status: 422 if result.is_a?(String)
+
+    render json: { status_id: result.root_status_id&.to_s, session_id: result.id.to_s }
+  end
 
   # 웹 전용 컨텐츠(시작한 뒤): 툿을 올리지 않고 웹에서 바로 행동을 넣는다
   def web_command(session)

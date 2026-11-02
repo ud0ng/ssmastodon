@@ -117,6 +117,12 @@ export const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy:
   const [sent, setSent] = useState(false);
 
   const openChallenge = useCallback(() => {
+    // 운영진은 1:1 컨텐츠에서 비공개 대결(두 사람 초대)도 열 수 있어, 내가 바쁘거나 횟수를 채웠어도 창은 연다
+    const canPrivate = Boolean(game.staff) && game.max_opponents === 1;
+    if (canPrivate) {
+      dispatch(openModal({ modalType: 'CHALLENGE', modalProps: { gameKey: game.key, name: game.name, maxOpponents: game.max_opponents, minOpponents: game.min_opponents ?? 1, canPrivate } }));
+      return;
+    }
     if (game.busy) {
       onBusy();
       return;
@@ -134,7 +140,7 @@ export const StartButton: React.FC<{ game: GameInfo; onSent: () => void; onBusy:
       return;
     }
     dispatch(openModal({ modalType: 'CHALLENGE', modalProps: { gameKey: game.key, name: game.name, maxOpponents: game.max_opponents, minOpponents: game.min_opponents ?? 1, team: (game.team ?? false) || (game.uneven_teams ?? false), unevenTeams: game.uneven_teams ?? false } }));
-  }, [dispatch, intl, game.key, game.name, game.max_opponents, game.min_opponents, game.team, game.uneven_teams, game.daily_limit_message, game.busy, onBusy]);
+  }, [dispatch, intl, game.key, game.name, game.max_opponents, game.min_opponents, game.team, game.uneven_teams, game.daily_limit_message, game.busy, game.staff, onBusy]);
 
   // 이벤트가 열린 뒤: 내 방이 생기면 거기로, 아니면 잠깐 안내
   const afterOpened = useCallback(() => {

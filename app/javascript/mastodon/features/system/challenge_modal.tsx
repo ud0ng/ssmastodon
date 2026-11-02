@@ -32,10 +32,12 @@ interface Props {
   team?: boolean;
   // 팀 인원이 달라도 되는 팀 대결(도둑 지도): 우리 팀은 1명부터, 상대 팀은 우리 팀 인원 이상 ~ 최대
   unevenTeams?: boolean;
+  // 운영진: 두 사람을 골라 비공개 대결(DM, 점수·전적 없음)을 열 수 있다 (1:1 컨텐츠)
+  canPrivate?: boolean;
   onClose: () => void;
 }
 
-const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOpponents = 1, team = false, unevenTeams = false, onClose }) => {
+const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOpponents = 1, team = false, unevenTeams = false, canPrivate = false, onClose }) => {
   const intl = useIntl();
   const history = useHistory();
   const [members, setMembers] = useState<Member[]>([]);
@@ -49,6 +51,9 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
   const [failed, setFailed] = useState(false);
   // 하루 신청 횟수를 넘었을 때 서버가 돌려주는 안내 (신청되지 않는다)
   const [limitMessage, setLimitMessage] = useState<string | null>(null);
+  // 신청하기(내가 겨룬다) / 비공개 대결(운영진이 두 사람을 고른다)
+  const [mode, setMode] = useState<'challenge' | 'private'>('challenge');
+  const privateMode = canPrivate && mode === 'private';
 
   useEffect(() => {
     apiRequestGet<Member[]>('v1/system/members')
@@ -89,20 +94,24 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
 
       setPicked((current) => {
         if (current.includes(acct)) return current.filter((item) => item !== acct);
+        if (privateMode) return current.length >= 2 ? current : [...current, acct];
         if (team) return current.length >= maxMates ? current : [...current, acct];
         if (maxOpponents === 1) return [acct];
         return current.length >= maxOpponents ? current : [...current, acct];
       });
     },
-    [team, step, rivalCap, maxMates, maxOpponents],
+    [team, step, rivalCap, maxMates, maxOpponents, privateMode],
   );
 
   const send = useCallback(() => {
     setBusy(true);
     setFailed(false);
     setLimitMessage(null);
-    sendCommand({ kind: gameKey, opponents: team ? [...picked, ...rivals] : picked, ...(unevenTeams ? { team_size: picked.length + 1 } : {}) })
-      .then(() => waitForSession(gameKey))
+    const request = privateMode
+      ? sendCommand({ kind: gameKey, private_match: true, players: picked }).then((response) => (response as { session_id?: string }).session_id ?? null)
+      : sendCommand({ kind: gameKey, opponents: team ? [...picked, ...rivals] : picked, ...(unevenTeams ? { team_size: picked.length + 1 } : {}) })
+        .then(() => waitForSession(gameKey));
+    request
       .then((sessionId) => {
         if (sessionId) {
           onClose();
@@ -120,7 +129,7 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
       .finally(() => {
         setBusy(false);
       });
-  }, [gameKey, picked, rivals, team, onClose, history]);
+  }, [gameKey, picked, rivals, team, unevenTeams, privateMode, onClose, history]);
 
   return (
     <div className='modal-root__modal safety-action-modal challenge-modal'>
@@ -129,7 +138,9 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
           <div className='safety-action-modal__confirmation'>
             <h1>{name}</h1>
             <p>
-              {team ? (
+              {privateMode ? (
+                <FormattedMessage id='system.game.private_pick' defaultMessage='Pick two people. They play only by DM, and it does not count toward points or records.' />
+              ) : team ? (
                 step === 'mine' ? (
                   <FormattedMessage id='system.game.pick_team_mine' defaultMessage='Pick your team (you plus {min}-{max} people)' values={{ min: minMates, max: maxMates }} />
                 ) : unevenTeams ? (
@@ -145,6 +156,17 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
             </p>
           </div>
         </div>
+
+        {canPrivate && !sent && (
+          <div className='challenge-modal__steps'>
+            <button type='button' className={mode === 'challenge' ? 'challenge-modal__step challenge-modal__step--on' : 'challenge-modal__step'} onClick={() => { setMode('challenge'); setPicked([]); }}>
+              <FormattedMessage id='system.game.mode_challenge' defaultMessage='Challenge' />
+            </button>
+            <button type='button' className={mode === 'private' ? 'challenge-modal__step challenge-modal__step--on' : 'challenge-modal__step'} onClick={() => { setMode('private'); setPicked([]); }}>
+              🔒 <FormattedMessage id='system.game.mode_private' defaultMessage='Private match' /> {mode === 'private' ? `${picked.length}/2` : ''}
+            </button>
+          </div>
+        )}
 
         {team && !sent && (
           <div className='challenge-modal__steps'>
@@ -186,7 +208,7 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
                     <img src={member.avatar} alt='' />
                     <span className='system-member__name'>{member.name}</span>
                     {member.house && <span className='system-member__house'>{member.house.name}</span>}
-                    {index >= 0 && (team || maxOpponents > 1) && <span className='system-member__order'>{index + 1}</span>}
+                    {index >= 0 && (team || maxOpponents > 1 || privateMode) && <span className='system-member__order'>{index + 1}</span>}
                   </button>
                 );
               })}
@@ -228,8 +250,10 @@ const ChallengeModal: React.FC<Props> = ({ gameKey, name, maxOpponents, minOppon
                   <FormattedMessage id='system.game.next' defaultMessage='Next' />
                 </Button>
               ) : (
-                <Button disabled={busy || (team ? (unevenTeams ? rivals.length < teamSize || rivals.length > rivalMax : rivals.length !== teamSize) : picked.length < minOpponents)} onClick={send}>
-                  <FormattedMessage id='system.game.invite' defaultMessage='Challenge' />
+                <Button disabled={busy || (privateMode ? picked.length !== 2 : team ? (unevenTeams ? rivals.length < teamSize || rivals.length > rivalMax : rivals.length !== teamSize) : picked.length < minOpponents)} onClick={send}>
+                  {privateMode
+                    ? <FormattedMessage id='system.game.invite_private' defaultMessage='Invite' />
+                    : <FormattedMessage id='system.game.invite' defaultMessage='Challenge' />}
                 </Button>
               )}
             </>

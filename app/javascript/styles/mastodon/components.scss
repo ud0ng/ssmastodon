@@ -16596,6 +16596,13 @@ body .search__popout__menu__item {
     color: var(--ct-dim, var(--color-text-secondary));
     border: 1px solid var(--sys-gold-soft);
     border-radius: 999px;
+    background: transparent;
+    font-family: inherit;
+
+    // 운영진: 신청하기 / 비공개 대결 고르기 (버튼)
+    &:is(button) {
+      cursor: pointer;
+    }
 
     &--on {
       font-weight: 700;

@@ -257,8 +257,8 @@ module Game
           player.update!(result: draw ? 'draw' : (winners.include?(player) ? 'win' : 'lose'))
         end
         session.update!(status: 'finished', finished_at: Time.now.utc, deadline_at: nil)
-        # 테스트 플레이: 결과 안내만 (점수·보상·토너먼트에는 넣지 않는다)
-        return post([message, '(테스트 플레이라 점수와 보상은 없습니다)'].compact.join("\n\n")) if session.test?
+        # 테스트 플레이·비공개 대결: 결과 안내만 (점수·보상·토너먼트에는 넣지 않는다)
+        return post([message, session.state['private_match'] ? '(비공개 대결이라 점수와 보상은 없습니다)' : '(테스트 플레이라 점수와 보상은 없습니다)'].compact.join("\n\n")) if session.test?
 
         reward_lines = draw || winners.any? ? give_rewards! : []
 

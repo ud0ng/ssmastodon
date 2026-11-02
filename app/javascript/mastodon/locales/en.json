@@ -1495,5 +1495,9 @@
   "compose.public_limit.ready": "You can post again now.",
   "compose.public_limit.remaining": "Time left: {time}",
   "compose.public_limit.title": "Public post limit",
-  "house.sum_posts_season": "{season} toots (toots / chars)"
+  "house.sum_posts_season": "{season} toots (toots / chars)",
+  "system.game.invite_private": "Invite",
+  "system.game.mode_challenge": "Challenge",
+  "system.game.mode_private": "Private match",
+  "system.game.private_pick": "Pick two people. They play only by DM, and it does not count toward points or records."
 }

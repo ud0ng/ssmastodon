@@ -1638,5 +1638,9 @@
   "house.final": "{season} 최종 {term} 점수",
   "house.season_end_rank": "시즌 종료 · {rank}위",
   "house.season_end_title": "{season} 시즌 종료",
-  "house.season_end_hint": "새 시즌이 시작될 때까지 {term} 점수를 얻지 못합니다. 새 시즌은 0점부터 시작합니다."
+  "house.season_end_hint": "새 시즌이 시작될 때까지 {term} 점수를 얻지 못합니다. 새 시즌은 0점부터 시작합니다.",
+  "system.game.invite_private": "초대하기",
+  "system.game.mode_challenge": "신청하기",
+  "system.game.mode_private": "비공개 대결",
+  "system.game.private_pick": "두 명을 고르세요. 두 사람의 DM으로만 대결하고, 소속 점수·보상·전적에 들어가지 않아요."
 }
