@@ -1,0 +1,214 @@
+@use 'variables' as *;
+
+// 1:1 컨텐츠 기록판 (features/system/duel_board.tsx): 방 위쪽(PC 에서는 왼쪽)에 두 사람의 라운드 기록을 나란히 쌓는다.
+// 색·박스는 커뮤니티 낮/밤 테마를 따르고, 결과 색만 대화의 결과 배지와 같은 초록·주황·빨강으로 고정한다.
+.duel-board {
+  --db-good: #2f9e5b;
+  --db-warn: #d98a1f;
+  --db-bad: #d9534f;
+  --db-line: var(--ct-line, var(--background-border-color));
+  --db-row: color-mix(in srgb, var(--ct-dim, #888) 12%, var(--ct-panel, var(--background-color)));
+  --db-dim: var(--ct-dim, var(--color-text-secondary));
+
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+
+  &__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  &__legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px 3px 4px;
+    border: 1px solid var(--db-line);
+    border-radius: 999px;
+    font-size: 12px;
+
+    b {
+      display: inline-grid;
+      place-items: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: var(--db-row);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  &__columns {
+    display: grid;
+  }
+
+  &__column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    padding: 0 12px;
+
+    & + & {
+      border-inline-start: 1px solid var(--db-line);
+    }
+
+    &:first-child {
+      padding-inline-start: 0;
+    }
+
+    &:last-child {
+      padding-inline-end: 0;
+    }
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 38px;
+    padding: 4px 6px 4px 10px;
+    border-radius: 10px;
+    background: var(--db-row);
+
+    &--pending {
+      border: 1px dashed var(--db-line);
+      background: transparent;
+    }
+  }
+
+  &__round {
+    flex: 0 0 auto;
+    min-width: 16px;
+    color: var(--db-dim);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__cells {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    gap: 2px 6px;
+    min-width: 0;
+  }
+
+  &__cell {
+    font-size: 14px;
+    font-weight: 700;
+
+    &--big {
+      min-width: 0.9em;
+      font-size: 18px;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+    }
+
+    &--good {
+      color: var(--db-good);
+    }
+
+    &--warn {
+      color: var(--db-warn);
+    }
+
+    &--bad {
+      color: var(--db-bad);
+    }
+
+    &--dim {
+      color: var(--db-dim);
+      font-weight: 500;
+    }
+  }
+
+  &__chip {
+    flex: 0 0 auto;
+    min-width: 34px;
+    padding: 2px 8px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: var(--db-dim);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    white-space: nowrap;
+
+    &--good {
+      background: var(--db-good);
+    }
+
+    &--warn {
+      background: var(--db-warn);
+    }
+
+    &--bad {
+      background: var(--db-bad);
+    }
+
+    &--zero {
+      border-color: var(--db-line);
+      background: transparent;
+      color: var(--db-dim);
+      font-weight: 500;
+    }
+
+    &--note {
+      min-width: 0;
+      padding: 0 2px;
+      background: transparent;
+      color: var(--db-dim);
+      font-size: 12px;
+      font-weight: 500;
+    }
+  }
+
+  &__pending {
+    color: var(--db-dim);
+    font-size: 13px;
+  }
+
+  &__summary {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    margin-top: 4px;
+    padding: 10px;
+    border: 1px solid var(--db-line);
+    border-radius: 14px;
+    background: var(--db-row);
+
+    &--win {
+      border: 2px solid var(--ct-point, #{$ui-highlight-color});
+    }
+  }
+
+  &__summary-label {
+    color: var(--db-dim);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  &__summary-value {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__summary-note {
+    color: var(--db-dim);
+    font-size: 11px;
+  }
+
+  &__key {
+    margin: 0;
+    color: var(--db-dim);
+    font-size: 12px;
+    text-align: center;
+  }
+}

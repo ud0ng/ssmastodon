@@ -109,6 +109,29 @@ module Game
         finish!(winner: winner, message: render(config['msg_timeout'], player: loser, winner: winner, **Game::Config.turn_time))
       end
 
+      # 웹 기록판: 차례마다 꺼내 먹은 젤리빈의 맛 (최악의 맛은 빨강)
+      def board_for(player)
+        mine = player&.seat&.to_s
+        # 같은 사람이 이어서 먹은 것은 한 차례로 묶는다
+        turns = Array(state['eaten_log']).chunk_while { |a, b| a['seat'] == b['seat'] }.to_a
+        columns = players.to_h do |each|
+          seat = each.seat.to_s
+          eaten = 0
+          rows = turns.each_with_index.filter_map do |beans, index|
+            next unless beans.first['seat'].to_s == seat
+
+            eaten += beans.size
+            { round: index + 1, cells: beans.map { |bean| [bean['flavor'].to_s, bean['worst'] ? 'bad' : nil] }, chips: [["#{beans.size}개", 'note']] }
+          end
+          pending = if session.status == 'active' && state['seat'].to_s == seat
+                      seat == mine ? '먹을 차례' : '고르는 중…'
+                    end
+          [seat, { rows: rows, pending: pending, summary: { label: '먹은 젤리빈', value: eaten.to_s, note: nil, win: each.result == 'win' } }]
+        end
+        bag = state['bag'] || []
+        { columns: columns, key: "남은 젤리빈 #{bag.size}개 · 그중 최악의 맛(#{config['worst_flavor']}) #{bag.count { |bean| bean['worst'] }}개" }
+      end
+
       private
 
       def current

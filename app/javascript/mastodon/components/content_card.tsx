@@ -17,7 +17,7 @@ interface House {
   emoji: string;
 }
 
-interface CardPlayer {
+export interface CardPlayer {
   seat: number;
   account_id: string;
   acct: string;
@@ -308,7 +308,7 @@ const RoomMiddle: React.FC<{ card: GameCard }> = ({ card }) => (
 );
 
 // 내 메시지가 오른쪽에 붙으니 내 캐릭터도 오른쪽에 둔다 (여럿이면 맨 뒤)
-const orderPlayers = (players: CardPlayer[]) => [...players].sort((a, b) => Number(a.account_id === me) - Number(b.account_id === me));
+export const orderPlayers = (players: CardPlayer[]) => [...players].sort((a, b) => Number(a.account_id === me) - Number(b.account_id === me));
 
 // 퀴디치 방 게임판: 점수 대결 막대(왼쪽 팀 ↔ 오른쪽 팀) + 턴 트랙(지난 턴은 득점한 쪽 색, 지금 턴은 고리)
 const QuidditchBoard: React.FC<{ card: GameCard }> = ({ card }) => {

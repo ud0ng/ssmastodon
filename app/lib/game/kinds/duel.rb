@@ -100,6 +100,35 @@ module Game
         spells + specials
       end
 
+      # 웹 기록판: 턴마다 고른 주문과 승패, 그 뒤 HP. 이번 턴에 고른 주문은 나에게만 보인다.
+      def board_for(player)
+        mine = player&.seat&.to_s
+        columns = players.to_h do |each|
+          seat = each.seat.to_s
+          rows = Array(state['history']).map do |round|
+            won = round['winner_seat']&.to_s == seat
+            result = if round['winner_seat'].nil? then %w(무 zero)
+                     elsif won then %w(승 good)
+                     else %w(패 bad)
+                     end
+            { round: round['turn'], cells: [[round.dig('choices', seat).to_s, won ? 'good' : nil]], chips: [result, ["HP #{round.dig('hp', seat)}", 'note']] }
+          end
+          chosen = state.dig('choices', seat)
+          pending = if session.status == 'active'
+                      if seat == mine
+                        chosen ? "#{choice_label(chosen)} · 상대를 기다리는 중" : '주문을 고를 차례'
+                      else
+                        chosen ? '주문을 골랐음' : '고르는 중…'
+                      end
+                    end
+          note = state.dig('special_used', seat) ? "#{config['cmd_special']} 사용함" : "#{config['cmd_special']} 남음"
+          [seat, { rows: rows, pending: pending, summary: { label: 'HP', value: "#{state.dig('hp', seat).to_i} / #{config['hp'].to_i}", note: note, win: each.result == 'win' } }]
+        end
+        legend = SPELLS.map { |key| [config["cmd_#{key}"], config["spell_#{key}"]] }
+        cycle = (SPELLS + [SPELLS.first]).map { |key| config["cmd_#{key}"] }.join(' > ')
+        { legend: legend, columns: columns, key: "#{cycle} · 이긴 쪽이 피해를 줍니다" }
+      end
+
       private
 
       def ask_all!
@@ -150,9 +179,10 @@ module Game
           'choices' => { a.seat.to_s => choice_label(choice_a), b.seat.to_s => choice_label(choice_b) },
           'winner_seat' => winner&.seat,
         }
+        (state['history'] ||= []) << state['last_round'].merge('turn' => session.turn, 'hp' => state['hp'].dup)
         state['choices'] = {}
 
-        fallen = players.find { |player| state['hp'][player.seat.to_s].zero? }
+        fallen =players.find { |player| state['hp'][player.seat.to_s].zero? }
         if fallen
           survivor = session.opponent_of(fallen)
           finish!(winner: survivor, message: "#{round_text}\n\n#{render(config['msg_win'], winner: survivor, loser: fallen)}")

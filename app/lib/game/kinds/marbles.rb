@@ -100,7 +100,52 @@ module Game
         end
       end
 
+      # 웹 기록판: 라운드마다 내가 한 일(쥐기 n · 홀/짝 건 수)과 얻고 잃은 구슬. 쥔 수는 라운드가 끝나야 공개 (내가 쥐었으면 나에게만).
+      def board_for(player)
+        mine = player&.seat&.to_s
+        columns = players.to_h do |each|
+          seat = each.seat.to_s
+          deltas = Array(state['rounds']).map { |round| marble_delta(round, seat) }
+          count = state.dig('marbles', seat).to_i - deltas.sum
+          rows = Array(state['rounds']).zip(deltas).map do |round, delta|
+            count += delta
+            action = if round['hider_seat'].to_s == seat
+                       "#{config['cmd_hide']} #{round['count']}"
+                     else
+                       "#{round['guess'] ? config["cmd_#{round['guess']}"] : '시간 초과'} #{round['bet']}"
+                     end
+            { round: round['round'], cells: [[action, nil]], chips: [[delta.positive? ? "+#{delta}" : delta.to_s, delta.positive? ? 'good' : 'bad'], ["구슬 #{count}", 'note']] }
+          end
+          note = ('이번 라운드 숨기는 쪽' if session.status == 'active' && state['hider'].to_s == seat) ||
+                 ('이번 라운드 맞히는 쪽' if session.status == 'active')
+          [seat, { rows: rows, pending: marble_pending(seat, mine), summary: { label: '구슬', value: state.dig('marbles', seat).to_i.to_s, note: note, win: each.result == 'win' } }]
+        end
+        { columns: columns, key: '숨긴 구슬 수가 홀인지 짝인지 맞히면 건 만큼 가져오고, 틀리면 내줍니다' }
+      end
+
       private
+
+      # 이 라운드에서 이 자리가 얻은(+)·잃은(-) 구슬
+      def marble_delta(round, seat)
+        guesser_won = round['right']
+        mine_is_guesser = round['hider_seat'].to_s != seat
+        mine_is_guesser == guesser_won ? round['bet'].to_i : -round['bet'].to_i
+      end
+
+      def marble_pending(seat, mine)
+        return unless %w(hide guess).include?(state['phase']) && session.status == 'active'
+
+        hiding = state['hider'].to_s == seat
+        if state['phase'] == 'hide'
+          return hiding ? '구슬을 쥘 차례' : '상대가 구슬을 쥐는 중' if seat == mine
+
+          hiding ? '쥐는 중…' : nil
+        elsif seat == mine
+          hiding ? "#{state['hidden']}개 쥠 · 상대가 맞히는 중" : '홀/짝을 맞힐 차례'
+        else
+          hiding ? '구슬을 쥐었음' : '맞히는 중…'
+        end
+      end
 
       def hider
         players.find { |player| player.seat == state['hider'] }

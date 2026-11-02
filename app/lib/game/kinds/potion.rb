@@ -72,7 +72,7 @@ module Game
           'potion' => (config['potions'].presence || ['마법약']).sample,
           'shown' => shown,
           'answer' => answer,
-          'tries' => {}, 'guesses' => {}, 'allowed' => {}, 'shield' => {}, 'solved' => [],
+          'tries' => {}, 'guesses' => {}, 'allowed' => {}, 'shield' => {}, 'solved' => [], 'history' => {}, 'rounds' => [],
           'items' => players.to_h { |player| [player.seat.to_s, items.dup] }
         )
         session.update!(turn: 1)
@@ -110,6 +110,40 @@ module Game
           actions << Game::Card.action(config["cmd_#{key}"], seats: seats, dm: true, style: 'secondary', row: 2, hint: ITEM_HINTS[key]) if seats.any?
         end
         actions
+      end
+
+      # 웹 방 화면의 조합 기록판. 내 줄은 재료 번호와 결과를 다 보여 주고, 상대 줄은 라운드마다 공개된 결과(P·T)만.
+      # 끝난 판은 모두의 재료 번호와 정답을 보여 준다.
+      #   끝나면 번호를 정답에 맞춰 칠한다 (초록 자리까지 맞음 · 주황 재료만 맞음 · 흐림 없음).
+      def board_for(player)
+        finished = session.status == 'finished'
+        mine = player&.seat&.to_s
+        numbers = finished ? answer.to_a.map { |name| state['shown'].index(name) } : nil
+        size = answer.to_a.size
+        columns = players.to_h do |each|
+          seat = each.seat.to_s
+          rows = if seat == mine || finished
+                   state.dig('history', seat).to_a.map do |row|
+                     { round: row['round'], cells: row['guess'].each_with_index.map { |digit, index| [digit.to_s, digit_tone(digit, index, numbers)] }, chips: result_chips(row['strike'], row['ball']) }
+                   end
+                 else
+                   state['rounds'].to_a.flat_map do |round|
+                     round.dig('results', seat).to_a.map { |strike, ball| { round: round['round'], cells: Array.new(size) { ['·', 'dim'] }, chips: result_chips(strike, ball) } }
+                   end
+                 end
+          solved = state['solved'].to_a.include?(seat)
+          # 이번 라운드: 상대는 냈는지만 보이고, 결과는 라운드가 끝나야 공개
+          pending = if session.status == 'active' && !solved
+                      if seat == mine
+                        done?(seat) ? '조합 완료 · 결과를 기다리는 중' : '조합할 차례'
+                      else
+                        done?(seat) ? '조합 완료' : '조합 중…'
+                      end
+                    end
+          summary = { label: solved ? '정답 · 맞힘' : '정답', value: numbers ? numbers.join(' ') : Array.new(size, '?').join(' '), note: "재료 #{size}가지를 순서대로", win: solved }
+          [seat, { rows: rows, pending: pending, summary: summary }]
+        end
+        { legend: state['shown'].to_a.each_with_index.map { |name, index| [index.to_s, name] }, columns: columns, key: 'P: 재료와 순서가 맞음 · T: 재료는 맞지만 순서가 틀림' }
       end
 
       # 정답은 끝난 뒤에만. 이번 라운드의 시도 결과는 두 사람이 모두 낸 뒤 공개 툿으로만 알린다 (먼저 낸 사람의 결과가 보이지 않게).
@@ -181,6 +215,7 @@ module Game
         (state['guesses'][seat] ||= []) << { 'strike' => strike, 'ball' => ball }
         state['tries'][seat] = state['tries'][seat].to_i + 1
         state['solved'] << seat if strike == answer.size
+        ((state['history'] ||= {})[seat] ||= []) << { 'round' => session.turn, 'guess' => guess.map { |name| state['shown'].index(name) }, 'strike' => strike, 'ball' => ball }
         session.save!
         dm(player, render(config['msg_hint'], try: state['tries'][seat], guess: guess.join(' → '), strike: strike, ball: ball))
         dm(player, render(config['msg_again'], brew: config['cmd_brew'])) unless done?(seat)
@@ -234,24 +269,41 @@ module Game
       end
 
       # 한 사람의 결과 줄들. 상대가 방어권을 썼으면 이 사람의 결과 숫자 하나를 ? 로 가린다.
+      def digit_tone(digit, index, numbers)
+        return if numbers.nil?
+        return 'good' if numbers[index] == digit
+
+        numbers.include?(digit) ? 'warn' : 'dim'
+      end
+
+      # [P ×n] [T ×n] 칩 (0 은 빈 칩, 방어권으로 가린 것은 '?')
+      def result_chips(strike, ball)
+        [["#{strike}P", strike.to_s == '0' ? 'zero' : 'good'], ["#{ball}T", ball.to_s == '0' ? 'zero' : 'warn']]
+      end
+
       def shielded?(player)
         players.any? { |other| other.id != player.id && state.dig('shield', other.seat.to_s) }
       end
 
-      def result_lines(player)
-        seat = player.seat.to_s
-        results = state.dig('guesses', seat).to_a
-        return render(config['msg_skip'], player: player) if results.empty?
+      # 공개되는 결과 [[P, T], …]. 상대가 방어권을 썼으면 숫자 하나를 '?' 로
+      def public_pairs(player)
+        pairs = state.dig('guesses', player.seat.to_s).to_a.map { |result| [result['strike'].to_s, result['ball'].to_s] }
+        pairs[rand(pairs.size)][rand(2)] = '?' if pairs.any? && shielded?(player)
+        pairs
+      end
 
-        pairs = results.map { |result| [result['strike'].to_s, result['ball'].to_s] }
-        pairs[rand(pairs.size)][rand(2)] = '?' if shielded?(player)
+      def result_lines(player, pairs)
+        return render(config['msg_skip'], player: player) if pairs.empty?
+
         lines = pairs.map { |strike, ball| render(config['msg_line'], player: player, strike: strike, ball: ball) }
         lines << render(config['msg_shield_used']) if shielded?(player)
         lines.join("\n")
       end
 
       def end_turn!
-        turn_text = render(config['msg_turn'], turn: session.turn, lines: players.map { |player| result_lines(player) }.join("\n"))
+        pairs = players.to_h { |player| [player.seat.to_s, public_pairs(player)] }
+        (state['rounds'] ||= []) << { 'round' => session.turn, 'results' => pairs }
+        turn_text = render(config['msg_turn'], turn: session.turn, lines: players.map { |player| result_lines(player, pairs[player.seat.to_s]) }.join("\n"))
         answer_text = answer.map { |name| state['shown'].index(name) }.join(' → ')
         solved = players.select { |player| state['solved'].include?(player.seat.to_s) }
 

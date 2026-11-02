@@ -87,6 +87,31 @@ module Game
         advance!(current, render(config['msg_timeout_throw'], player: current))
       end
 
+      # 웹 기록판: 던질 때마다 고른 강도와 명중 여부, 그 뒤 점수
+      def board_for(player)
+        mine = player&.seat&.to_s
+        columns = players.to_h do |each|
+          seat = each.seat.to_s
+          total = 0
+          throws = Array(state['log']).select { |entry| entry['seat'].to_s == seat }
+          rows = throws.map do |entry|
+            score = entry['score'].to_i
+            total += score
+            result = if entry['hit'] then ["명중 +#{score}", 'good']
+                     elsif score.negative? then [score.to_s, 'bad']
+                     else %w(빗나감 zero)
+                     end
+            { round: entry['round'], cells: [[entry['strength'] || '시간 초과', entry['hit'] ? 'good' : nil]], chips: [result, ["#{total}점", 'note']] }
+          end
+          pending = if session.status == 'active' && state['seat'].to_s == seat
+                      seat == mine ? '던질 차례' : '던지는 중…'
+                    end
+          [seat, { rows: rows, pending: pending, summary: { label: '점수', value: state.dig('scores', seat).to_i.to_s, note: "#{throws.size} / #{rounds}번 던짐", win: each.result == 'win' } }]
+        end
+        legend = STRENGTHS.map { |key| [config["cmd_#{key}"], "#{config["hit_#{key}"]}% · +#{config["score_#{key}"]}"] }
+        { legend: legend, columns: columns, key: "#{config['cmd_strong']}으로 던져 빗나가면 #{config['miss_strong']}점" }
+      end
+
       private
 
       def rounds
@@ -119,6 +144,7 @@ module Game
       end
 
       def advance!(player, result)
+        (state['log'] ||= []) << state['last_throw'].merge('round' => session.turn)
         state['throws'] += 1
         round = session.turn
         board = players.map { |each| "#{each.name} #{state['scores'][each.seat.to_s]}점" }.join(' · ')

@@ -135,6 +135,22 @@ module Game
         []
       end
 
+      # 웹 방 화면 (GET /api/v1/system/sessions/:id/view). 1:1 컨텐츠는 board_for 로 기록판을 만든다 (features/system/duel_board.tsx).
+      # 웹 전용 컨텐츠·비행 대결은 각자 view_for 를 따로 둔다.
+      def view_for(player)
+        board = board_for(player)
+        board && { board: true, mine: player&.seat&.to_s }.merge(board)
+      end
+
+      # 1:1 기록판: 사람마다 한 칸 (PC 에서는 왼쪽에 나란히).
+      #   { legend: [[번호, 이름]], key: 맨 아래 안내,
+      #     columns: { 자리 => { rows: [{ round:, cells: [[글자, 색]], chips: [[글자, 색]] }], pending: 이번 차례 안내, summary: { label:, value:, note:, win: } } } }
+      #   색: good(초록) warn(주황) bad(빨강) dim(흐림) zero(빈 칩) note(글자만), nil 이면 기본
+      # 참가자에게만 보인다. 남이 몰래 고른 것은 넣지 않는다.
+      def board_for(_player)
+        nil
+      end
+
       # 동시에 고르는 컨텐츠(결투·퀴디치·비행)에서 아직 이번 턴 선택을 내지 않은 자리들 — 선택한 사람의 웹 버튼·'내 차례'를 거두는 데 쓴다
       def pending_seats
         players.map(&:seat).reject { |seat| (state['choices'] || {}).key?(seat.to_s) }

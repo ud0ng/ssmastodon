@@ -63,6 +63,18 @@ RSpec.describe 'Duel games: broom race and marbles' do
       expect(session.status).to eq 'finished'
       expect(session.player_for(alice).result).to eq 'win'
       expect(GameHousePoint.where(game_session_id: session.id).sum(:amount)).to eq 5
+
+      board = Game::Kinds::BroomRace.new(session).view_for(session.player_for(bob))
+      expect(board[:columns][seat_of(alice)][:rows].map { |row| row[:cells].first.first }).to eq %w(5 2 4 4)
+      expect(board[:columns][seat_of(bob)][:rows].first[:chips]).to eq [%w(패 zero), ['남은 체력 12', 'note']]
+      expect(board[:columns][seat_of(alice)][:summary]).to include(value: '3 / 3', win: true)
+    end
+
+    it 'shows only that the other has chosen, not how much' do
+      start('경주')
+      dm(alice, '[투입/5]')
+      expect(Game::Kinds::BroomRace.new(session).view_for(session.player_for(bob))[:columns][seat_of(alice)][:pending]).to eq '투입 완료'
+      expect(Game::Kinds::BroomRace.new(session).view_for(session.player_for(alice))[:columns][seat_of(alice)][:pending]).to start_with '5 투입'
     end
 
     it 'refuses more stamina than is left, and counts a timeout as zero' do
@@ -109,6 +121,10 @@ RSpec.describe 'Duel games: broom race and marbles' do
       expect(session.state['marbles']).to eq(seat_of(first_guesser) => 14, seat_of(first_hider) => 6)
       expect(hider).to eq first_guesser # 역할이 바뀐다
       expect(session.turn).to eq 2
+
+      board = Game::Kinds::Marbles.new(session).view_for(session.player_for(first_hider))
+      expect(board[:columns][seat_of(first_hider)][:rows]).to eq [{ round: 1, cells: [['쥐기 3', nil]], chips: [%w(-4 bad), ['구슬 6', 'note']] }]
+      expect(board[:columns][seat_of(first_guesser)][:rows].first[:cells]).to eq [['홀 4', nil]]
 
       dm(hider, '[쥐기/2]')
       toot(guesser, '@system [홀/6]') # 틀리면 건 만큼 내준다

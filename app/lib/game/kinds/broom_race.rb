@@ -81,7 +81,39 @@ module Game
         seats.empty? ? [] : [Game::Card.action(config['cmd_push'], seats: seats, dm: true, hint: "[#{config['cmd_push']}/숫자]")]
       end
 
+      # 웹 기록판: 바퀴마다 쓴 체력과 승패, 그 뒤 남은 체력. 이번 바퀴에 낸 양은 나에게만 보인다.
+      def board_for(player)
+        mine = player&.seat&.to_s
+        columns = players.to_h do |each|
+          seat = each.seat.to_s
+          left = state.dig('stamina', seat).to_i + state['laps'].to_a.sum { |lap| lap.dig('amounts', seat).to_i }
+          rows = state['laps'].to_a.map do |lap|
+            amount = lap.dig('amounts', seat).to_i
+            left -= amount
+            won = lap['winner_seat']&.to_s == seat
+            result = if lap['winner_seat'].nil? then %w(무 zero)
+                     elsif won then %w(승 good)
+                     else %w(패 zero)
+                     end
+            { round: lap['lap'], cells: [[amount.to_s, won ? 'good' : nil]], chips: [result, ["남은 체력 #{left}", 'note']] }
+          end
+          [seat, { rows: rows, pending: race_pending(seat, mine), summary: { label: '이긴 바퀴', value: "#{state.dig('wins', seat).to_i} / #{wins_needed}", note: "남은 체력 #{state.dig('stamina', seat).to_i}", win: each.result == 'win' } }]
+        end
+        { columns: columns, key: "많이 쓴 쪽이 그 바퀴를 이깁니다 · #{wins_needed}바퀴를 먼저 이기면 승리" }
+      end
+
       private
+
+      def race_pending(seat, mine)
+        return unless session.status == 'active'
+
+        chosen = state.dig('choices', seat)
+        if seat == mine
+          chosen ? "#{chosen} 투입 · 상대를 기다리는 중" : '투입할 차례'
+        else
+          chosen ? '투입 완료' : '고르는 중…'
+        end
+      end
 
       def laps
         config['laps'].to_i.clamp(1, 15)

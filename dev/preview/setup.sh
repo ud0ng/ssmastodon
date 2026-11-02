@@ -28,7 +28,8 @@ build() {
     tar -C "$ROOT" --null --ignore-failed-read -T - -cf - | tar -C "$ctx" -xf -
 
   echo '== 이미지 빌드 (몇 분 걸림) =='
-  docker build -t ssmastodon:local "$ctx"
+  # ffmpeg.org 가 안 열릴 때: 받아 둔 ffmpeg-*.tar.xz 를 로컬에서 내주고 FFMPEG_URL=http://host.docker.internal:포트 로 실행
+  docker build ${FFMPEG_URL:+--build-arg FFMPEG_URL=$FFMPEG_URL} -t ssmastodon:local "$ctx"
   docker build -f "$ctx/streaming/Dockerfile" -t ssmastodon-streaming:local "$ctx"
 }
 

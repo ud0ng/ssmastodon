@@ -43,6 +43,7 @@ import { GreengottsStage, type GoldChat } from './greengotts_stage';
 import type { CsMessage } from './chamber_stage';
 import { ChamberStage } from './chamber_stage';
 import { ChamberPlay } from './secret_chamber';
+import { BOARD_KINDS, DuelBoard } from './duel_board';
 
 // 무대 화면으로만 보이는 이벤트 (옛 채팅방 화면 없음)
 const EVENT_KINDS = ['flying', 'maze', 'marauders_map', 'secret_chamber', 'dumbledores_army', 'greengotts'];
@@ -310,6 +311,8 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<RoomData | null>(null);
   const [failed, setFailed] = useState(false);
+  // 방을 다시 읽을 때마다 늘어난다 (기록판도 함께 다시 읽는다)
+  const [tick, setTick] = useState(0);
   const [busy, setBusy] = useState(false);
   const [command, setCommand] = useState('');
   const [dm, setDm] = useState(false);
@@ -322,12 +325,15 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
 
   // 대기방은 전체 화면이라 판 화면용 두 칸 배치는 쓰지 않는다
   // (이벤트 화면은 어두운 무대 전체를 쓰므로 옛 방 배치를 쓰지 않는다: 왼쪽에 마스토돈 아이콘 메뉴가 남는다)
-  useRoomLayout(false, !EVENT_KINDS.includes(data?.kind ?? ''));
+  // 1:1 컨텐츠(참가자): PC 에서는 왼쪽에 기록판, 오른쪽에 대화를 나란히 둔다
+  const boardRoom = BOARD_KINDS.includes(data?.kind ?? '') && data?.player && ['active', 'finished'].includes(data.status);
+  useRoomLayout(Boolean(boardRoom), !EVENT_KINDS.includes(data?.kind ?? ''));
 
   const load = useCallback(() => {
     apiRequestGet<RoomData>(`v1/system/sessions/${id}`)
       .then((room) => {
         setData(room);
+        setTick((value) => value + 1);
         setFailed(false);
         return room;
       })
@@ -611,6 +617,7 @@ const SystemSession: React.FC<{ multiColumn?: boolean }> = ({ multiColumn }) => 
       {data && (current || boardShown) && (
         <div className={['maze', 'secret_chamber'].includes(data.kind) ? 'system-page game-room__status game-room__status--maze' : 'system-page game-room__status'}>
           {current && !boardShown && <ContentCardView card={current} variant='room' />}
+          {current && boardRoom && data && <DuelBoard sessionId={data.id} card={current} tick={tick} />}
           {boardShown && data.kind === 'secret_chamber' && <ChamberPlay sessionId={data.id} onMoved={load} />}
         </div>
       )}

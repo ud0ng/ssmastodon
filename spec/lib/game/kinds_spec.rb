@@ -54,6 +54,10 @@ RSpec.describe 'Game kinds' do
       expect(session.status).to eq 'finished'
       expect(session.player_for(first).result).to eq 'win'
       expect(session.state['scores'].values).to contain_exactly(2, 0)
+
+      board = Game::Kinds::Gobstones.new(session).view_for(session.player_for(first))
+      expect(board[:columns][session.player_for(first).seat.to_s][:rows].map { |row| row[:chips] }).to eq [[['명중 +1', 'good'], %w(1점 note)], [['명중 +1', 'good'], %w(2점 note)]]
+      expect(board[:columns][session.player_for(first).seat.to_s][:summary]).to include(value: '2', win: true)
     end
 
     it 'counts a timed-out throw as zero and keeps playing' do
@@ -83,6 +87,20 @@ RSpec.describe 'Game kinds' do
       result = @replies.find { |status| status.visibility == 'private' }
       expect(result.text).to include('1턴', '해리 vs 드레이코', '[방어]　　[공격]', '해리의 주문이 통했습니다', '드레이코 -1')
       expect(session.state['hp']).to eq('0' => 3, '1' => 2)
+    end
+
+    it 'keeps a board for the web room and hides the spell picked this turn from the other' do
+      toot(alice, '@system [방어]', visibility: 'direct')
+      toot(bob, '@system [공격]', visibility: 'direct')
+      toot(alice, '@system [무장해제]', visibility: 'direct')
+
+      alice_seat = session.player_for(alice).seat.to_s
+      bob_seat = session.player_for(bob).seat.to_s
+      seen_by_bob = Game::Kinds::Duel.new(session).view_for(session.player_for(bob))
+      expect(seen_by_bob[:columns][alice_seat][:rows]).to eq [{ round: 1, cells: [%w(방어 good)], chips: [%w(승 good), ['HP 3', 'note']] }]
+      expect(seen_by_bob[:columns][bob_seat][:rows].first[:chips].first).to eq %w(패 bad)
+      expect(seen_by_bob[:columns][alice_seat][:pending]).to eq '주문을 골랐음' # 무엇을 골랐는지는 숨김
+      expect(Game::Kinds::Duel.new(session).view_for(session.player_for(alice))[:columns][alice_seat][:pending]).to start_with '무장해제'
     end
 
     it 'does not take spells sent in public' do
@@ -151,6 +169,24 @@ RSpec.describe 'Game kinds' do
       result = @replies.find { |status| status.visibility == 'private' }
       expect(result.text).to include('1라운드', '드레이코: [P ×0] [T ×0]')
       expect(session.turn).to eq 2
+    end
+
+    it 'keeps a board for the web room: my numbers, only the public results of the other' do
+      wrong = (1..9).to_a - answer_numbers
+      guess = answer_numbers.permutation.find { |order| order.first != 0 && order != answer_numbers }
+      toot(alice, "@system [조합] #{guess.join(' ')}", visibility: 'direct')
+
+      alice_seat = session.player_for(alice).seat.to_s
+      bob_seat = session.player_for(bob).seat.to_s
+      before_round = Game::Kinds::Potion.new(session).view_for(session.player_for(bob))
+      expect(before_round[:columns][alice_seat][:pending]).to eq '조합 완료'
+      expect(before_round[:columns][alice_seat][:rows]).to eq [] # 라운드가 끝나기 전에는 상대 결과 없음
+
+      toot(bob, "@system [조합] #{wrong.first(3).join(' ')}", visibility: 'direct')
+      seen_by_bob = Game::Kinds::Potion.new(session).view_for(session.player_for(bob))
+      expect(seen_by_bob[:columns][bob_seat][:rows]).to eq [{ round: 1, cells: wrong.first(3).map { |digit| [digit.to_s, nil] }, chips: [%w(0P zero), %w(0T zero)] }]
+      expect(seen_by_bob[:columns][alice_seat][:rows].first[:cells].map(&:first).uniq).to eq ['·'] # 상대의 재료 번호는 숨김
+      expect(seen_by_bob[:columns][alice_seat][:summary][:value]).to eq '? ? ?'
     end
 
     it 'lets the first to brew the right order win' do
