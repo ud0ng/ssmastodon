@@ -8,6 +8,7 @@ import { setupBrowserNotifications } from 'mastodon/actions/notifications';
 import api, { setActiveAccountToken } from 'mastodon/api';
 import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from 'mastodon/api/multi_accounts_constants';
 import type { ApiAccountJSON } from 'mastodon/api_types/accounts';
+import { startCommunityParticles } from 'mastodon/community_particles';
 import Mastodon from 'mastodon/containers/mastodon';
 import { getAccessToken, me } from 'mastodon/initial_state';
 import * as perf from 'mastodon/performance';
@@ -151,6 +152,8 @@ function main() {
     const root = createRoot(mountNode);
     root.render(<Mastodon {...props} />);
     store.dispatch(setupBrowserNotifications());
+    // 커뮤니티 테마 배경 파티클 (디자인 탭에서 켰을 때만 그린다)
+    startCommunityParticles();
 
     if (isProduction() && me && 'serviceWorker' in navigator) {
       const { Workbox } = await import('workbox-window');

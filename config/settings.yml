@@ -48,6 +48,9 @@ defaults: &defaults
   community_theme_dm_button_text_light: ''
   community_theme_dm_button_text_dark: ''
   community_theme_default: light
+  community_theme_particles: false
+  community_theme_particles_light: ''
+  community_theme_particles_dark: ''
   community_theme_paren_size: ''
   community_theme_page_light: ''
   community_theme_box_light: ''

@@ -177,6 +177,18 @@ RSpec.describe ThemeHelper do
       end
     end
 
+    context 'with background particles' do
+      it 'emits the particle colours only when they are on, falling back to white' do
+        expect(helper.community_theme_tags('community-light')).to_not include('--community-theme-particles-')
+
+        Setting.community_theme_particles = true
+        Setting.community_theme_particles_dark = '#aabbcc'
+        expect(helper.community_theme_tags('community-light'))
+          .to include('--community-theme-particles-light:#ffffff;')
+          .and include('--community-theme-particles-dark:#aabbcc;')
+      end
+    end
+
     context 'when only the light main colour is set' do
       before { Setting.community_theme_main_light = '#3F4479' }
 

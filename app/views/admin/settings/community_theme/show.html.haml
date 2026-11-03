@@ -52,6 +52,18 @@
                 as: :boolean,
                 wrapper: :with_label
 
+  .fields-group
+    = f.input :community_theme_particles,
+              as: :boolean,
+              wrapper: :with_label
+
+  .fields-row
+    - { 'light' => '#ffffff', 'dark' => '#f5f5f5' }.each do |mode, fallback|
+      .fields-row__column.fields-row__column-6.fields-group
+        = f.input :"community_theme_particles_#{mode}",
+                  wrapper: :with_label,
+                  input_html: { placeholder: fallback, pattern: '#[0-9a-fA-F]{6}', maxlength: 7 }
+
   .community-theme-editor{ data: { community_theme_editor: true, default_color: CommunityTheme::DEFAULT_COLOR } }
     .community-theme-editor__previews
       - CommunityTheme::MODES.each do |mode|

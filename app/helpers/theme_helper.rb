@@ -78,6 +78,14 @@ module ThemeHelper
       declarations << "--community-theme-#{name.dasherize}-border:#{community_theme.border?(name) ? 1 : 0}px;"
     end
 
+    # 배경 파티클 (떨어지는 작은 점): 켰을 때만 낮/밤 색을 넣는다 (community_particles.ts 가 --ct-particles 를 읽는다)
+    if Setting.community_theme_particles
+      { 'light' => '#ffffff', 'dark' => '#f5f5f5' }.each do |mode, fallback|
+        color = Setting.public_send(:"community_theme_particles_#{mode}").presence || fallback
+        declarations << "--community-theme-particles-#{mode}:#{color};" if color.match?(Form::AdminSettings::COMMUNITY_THEME_COLOR_FORMAT)
+      end
+    end
+
     CommunityTheme::MODES.each do |mode|
       upload = InstancePresenter.new.public_send(:"community_theme_background_#{mode}")
       declarations << "--community-theme-background-#{mode}:url(\"#{css_string_escape(upload.file.url)}\");" if upload.present?

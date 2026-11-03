@@ -21,6 +21,7 @@
   --ct-point: var(--community-theme-point-light);
   --ct-on-point: var(--community-theme-on-point-light);
   --ct-background-image: var(--community-theme-background-light, none);
+  --ct-particles: var(--community-theme-particles-light, );
 
   --ct-page: var(--community-theme-page-light);
   --ct-base: var(--community-theme-box-light);
@@ -64,6 +65,7 @@
   --ct-point: var(--community-theme-point-dark);
   --ct-on-point: var(--community-theme-on-point-dark);
   --ct-background-image: var(--community-theme-background-dark, none);
+  --ct-particles: var(--community-theme-particles-dark, );
 
   --ct-page: var(--community-theme-page-dark);
   --ct-base: var(--community-theme-box-dark);
@@ -1316,4 +1318,14 @@ body.community-theme:not(.admin) {
   .item-modal__stepper .icon-button:not(:disabled):hover {
     background: var(--ct-hover);
   }
+}
+
+// 배경 파티클 캔버스 (mastodon/community_particles.ts): 배경(body) 위, 모든 화면 아래. 클릭을 막지 않는다.
+.community-particles {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
