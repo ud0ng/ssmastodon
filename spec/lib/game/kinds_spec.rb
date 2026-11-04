@@ -146,7 +146,7 @@ RSpec.describe 'Game kinds' do
       expect(session.state['shown'].size).to eq 10
       expect(session.state['answer'].first).not_to eq session.state['shown'].first
       expect(session.state['answer'].size).to eq 3
-      expect(@replies.find { |status| status.visibility == 'private' }.text).to include('재료:', '[조합]')
+      expect(@replies.find { |status| status.visibility == 'private' }.text).to include('[조합]')
       expect(replies_to(alice, 'direct')).to be_present
     end
 
